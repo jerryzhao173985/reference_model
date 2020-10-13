@@ -1,0 +1,6 @@
+[submodule "thirdparty/eigen"]
+	path = thirdparty/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "thirdparty/flatbuffers"]
+	path = thirdparty/flatbuffers
+	url = https://github.com/google/flatbuffers

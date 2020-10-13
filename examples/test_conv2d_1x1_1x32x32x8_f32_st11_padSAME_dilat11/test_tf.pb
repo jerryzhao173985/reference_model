@@ -1,0 +1,163 @@
+node {
+  name: "keras_learning_phase/input"
+  op: "Const"
+  attr {
+    key: "dtype"
+    value {
+      type: DT_BOOL
+    }
+  }
+  attr {
+    key: "value"
+    value {
+      tensor {
+        dtype: DT_BOOL
+        tensor_shape {
+        }
+        bool_val: false
+      }
+    }
+  }
+}
+node {
+  name: "keras_learning_phase"
+  op: "PlaceholderWithDefault"
+  input: "keras_learning_phase/input"
+  attr {
+    key: "dtype"
+    value {
+      type: DT_BOOL
+    }
+  }
+  attr {
+    key: "shape"
+    value {
+      shape {
+      }
+    }
+  }
+}
+node {
+  name: "placeholder_0"
+  op: "Placeholder"
+  attr {
+    key: "dtype"
+    value {
+      type: DT_FLOAT
+    }
+  }
+  attr {
+    key: "shape"
+    value {
+      shape {
+        dim {
+          size: 1
+        }
+        dim {
+          size: 32
+        }
+        dim {
+          size: 32
+        }
+        dim {
+          size: 8
+        }
+      }
+    }
+  }
+}
+node {
+  name: "const_1"
+  op: "Const"
+  attr {
+    key: "dtype"
+    value {
+      type: DT_FLOAT
+    }
+  }
+  attr {
+    key: "value"
+    value {
+      tensor {
+        dtype: DT_FLOAT
+        tensor_shape {
+          dim {
+            size: 1
+          }
+          dim {
+            size: 1
+          }
+          dim {
+            size: 8
+          }
+          dim {
+            size: 16
+          }
+        }
+        tensor_content: "\234\225\213?\343\017\327>\324\256K\277\371\365->9KC??q\254?Gp\031\276\257I\305\276.UL\277\336\263\260?\272\245#?\2343\337\277\016\312\363\277I\003\353\277\232F\325\277\255\264\301\277t@A\277\311#;\276D-\374?\347/\322?\026U\242?3E\217?\217\225\206?\204v\360\277\033[\217?\310\033\260\276\273\277\331\276w{\257?v\315\310?u\252\343?0\254\222?m\004\274?4\3420\277n\016\261\277D\362\202\276\251}j?\225\242\014\277\240\322\300?\233\205\202?\362\375\362?\377\302\222?\337\t\275=\207\021\r\277\"4\337\277\351?\354\276\037\362f>\326Z\214>2o\364?\201\357\357;\2703\332?[;J\277Ta\253\277\335}\324\277\354) ?&5\253?\353\257\231?\031~\242\277\225i\006\277\025\225\343?\rs\227\274\007\367L?uH\231?\303\027\305\276\315\247\260=_x\374?6\305\310\277\017\337\350?\206@\035\276\217\235\355?\300d\323?H*\266\277\223\300\332\277\325\251\256?9j\007\275\356\025T?\006\240\302\2779)N?\3212\217\274\233p\027\277\312a\212>\265ly?\310?\247?\345%\356\2767\257\342\277\345\276\226=\367\202\267\276!\254\307=\375\326!?\017\256\274\273\006\321\201?@0\242\277\325\333\355?\353\030\212\276\025|\000>\224\2353\277\270\250@\277\213\014\246\277\275q-\277\225\370\366?7\033\363\276\331\246\022?\306\3439\277\242\334\030\277(K\375?W\322G>d\350K\277\236\2754?\177\262\252\277\024\327K>\221\220\306?D\244\304\276\243 \342?t\326\026?u7\363?\365\000\200\276*\215\361\276?\256\035\277\210o\266\277&\026\"\277\342\021i\276;m\317\276\373N\037?T?\205?$\340\361?\230\032\034\277\004\235*?\225\254\324?\263\207\016>"
+      }
+    }
+  }
+}
+node {
+  name: "result"
+  op: "Conv2D"
+  input: "placeholder_0"
+  input: "const_1"
+  attr {
+    key: "T"
+    value {
+      type: DT_FLOAT
+    }
+  }
+  attr {
+    key: "data_format"
+    value {
+      s: "NHWC"
+    }
+  }
+  attr {
+    key: "dilations"
+    value {
+      list {
+        i: 1
+        i: 1
+        i: 1
+        i: 1
+      }
+    }
+  }
+  attr {
+    key: "explicit_paddings"
+    value {
+      list {
+      }
+    }
+  }
+  attr {
+    key: "padding"
+    value {
+      s: "SAME"
+    }
+  }
+  attr {
+    key: "strides"
+    value {
+      list {
+        i: 1
+        i: 1
+        i: 1
+        i: 1
+      }
+    }
+  }
+  attr {
+    key: "use_cudnn_on_gpu"
+    value {
+      b: true
+    }
+  }
+}
+versions {
+  producer: 498
+}

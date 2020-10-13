@@ -1,0 +1,253 @@
+
+// Copyright (c) 2020, ARM Limited.
+//
+//    Licensed under the Apache License, Version 2.0 (the "License");
+//    you may not use this file except in compliance with the License.
+//    You may obtain a copy of the License at
+//
+//         http://www.apache.org/licenses/LICENSE-2.0
+//
+//    Unless required by applicable law or agreed to in writing, software
+//    distributed under the License is distributed on an "AS IS" BASIS,
+//    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//    See the License for the specific language governing permissions and
+//    limitations under the License.
+
+#ifndef OPS_TENSOR_OPS_H
+#define OPS_TENSOR_OPS_H
+
+#include "graph_node.h"
+#include "quant_util.h"
+
+using namespace tosa;
+
+namespace TosaReference
+{
+
+template <int Rank, DType Dtype>
+class OpArgMax : public GraphNode
+{
+public:
+    OpArgMax(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpArgMax();
+
+    virtual int checkTensorAttributes();
+    virtual int eval();
+
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<DType_INT32>::type;
+    using TIn          = Eigen::Tensor<InEigenType, Rank>;
+    using TOut         = Eigen::Tensor<OutEigenType, Rank - 1>;
+
+protected:
+    TosaAxisAttribute* attribute;
+    TosaReference::TensorTemplate<TIn>* input;
+    TosaReference::TensorTemplate<TOut>* output;
+};
+
+template <DType Dtype>
+class OpAvgPool2d : public GraphNode
+{
+public:
+    OpAvgPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpAvgPool2d();
+
+    virtual int checkTensorAttributes();
+    virtual int eval();
+
+    static constexpr DType AccDtype = GetAccDType<Dtype, Dtype>::value;
+    using InEigenType               = typename GetEigenType<Dtype>::type;
+    using AccEigenType              = typename GetEigenType<AccDtype>::type;
+    using OutEigenType              = typename GetEigenType<Dtype>::type;
+    using TIn                       = Eigen::Tensor<InEigenType, 4>;
+    using TOut                      = Eigen::Tensor<OutEigenType, 4>;
+
+    static constexpr int64_t QMin = GetQMin<Dtype>::value;
+    static constexpr int64_t QMax = GetQMax<Dtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TOut>* out;
+    tosa::TosaPool2dAttribute* attribute;
+    tosa::TosaUnaryQuantInfo* qinfo;
+
+protected:
+    // return a 1D [N] tensor that describes a how many valid elements covered in the input space
+    ETensor1<int32_t> calculate_div_map_1d(int in_size, int out_size, int kernel_size, int stride);
+};
+
+template <DType InDtype, DType WeightDtype>
+class OpConv2d : public GraphNode
+{
+public:
+    OpConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpConv2d();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    static constexpr DType AccDtype = GetAccDType<InDtype, WeightDtype>::value;
+
+    using InEigenType     = typename GetEigenType<InDtype>::type;
+    using WeightEigenType = typename GetEigenType<WeightDtype>::type;
+    using AccEigenType    = typename GetEigenType<AccDtype>::type;
+    using TIn             = Eigen::Tensor<InEigenType, 4>;
+    using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
+    using TBias           = Eigen::Tensor<AccEigenType, 1>;
+    using TAcc            = Eigen::Tensor<AccEigenType, 4>;
+
+    static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
+    static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* input;
+    TosaReference::TensorTemplate<TWeight>* weight;
+    TosaReference::TensorTemplate<TBias>* bias;
+    TosaReference::TensorTemplate<TAcc>* output;
+    tosa::TosaConv2dAttribute* attribute;
+    tosa::TosaConvQuantInfo* qinfo;
+};
+
+template <DType InDtype, DType WeightDtype>
+class OpDepthwiseConv2d : public GraphNode
+{
+public:
+    OpDepthwiseConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpDepthwiseConv2d();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    static constexpr DType AccDtype = GetAccDType<InDtype, WeightDtype>::value;
+
+    using InEigenType     = typename GetEigenType<InDtype>::type;
+    using WeightEigenType = typename GetEigenType<WeightDtype>::type;
+    using AccEigenType    = typename GetEigenType<AccDtype>::type;
+    using TIn             = Eigen::Tensor<InEigenType, 4>;
+    using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
+    using TBias           = Eigen::Tensor<AccEigenType, 1>;
+    using TAcc            = Eigen::Tensor<AccEigenType, 4>;
+
+    static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
+    static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* input;
+    TosaReference::TensorTemplate<TWeight>* weight;
+    TosaReference::TensorTemplate<TBias>* bias;
+    TosaReference::TensorTemplate<TAcc>* output;
+    tosa::TosaConv2dAttribute* attribute;
+    tosa::TosaConvQuantInfo* qinfo;
+};
+
+template <DType InDtype, DType WeightDtype>
+class OpFullyConnected : public GraphNode
+{
+public:
+    OpFullyConnected(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpFullyConnected();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    static constexpr DType AccDtype = GetAccDType<InDtype, WeightDtype>::value;
+    using InEigenType               = typename GetEigenType<InDtype>::type;
+    using WeightEigenType           = typename GetEigenType<WeightDtype>::type;
+    using AccEigenType              = typename GetEigenType<AccDtype>::type;
+    using TIn                       = Eigen::Tensor<InEigenType, 2>;
+    using TWeight                   = Eigen::Tensor<WeightEigenType, 2>;
+    using TBias                     = Eigen::Tensor<AccEigenType, 1>;
+    using TAcc                      = Eigen::Tensor<AccEigenType, 2>;
+
+    static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
+    static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* input;
+    TosaReference::TensorTemplate<TWeight>* weight;
+    TosaReference::TensorTemplate<TBias>* bias;
+    TosaReference::TensorTemplate<TAcc>* output;
+    tosa::TosaConvQuantInfo* qinfo;
+};
+
+template <DType Dtype>
+class OpMatMul : public GraphNode
+{
+public:
+    OpMatMul(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpMatMul();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    static constexpr DType AccDtype  = GetAccDType<Dtype, Dtype>::value;
+    using InEigenType                = typename GetEigenType<Dtype>::type;
+    using AccEigenType               = typename GetEigenType<AccDtype>::type;
+    using TIn                        = Eigen::Tensor<InEigenType, 2>;
+    using TAcc                       = Eigen::Tensor<AccEigenType, 2>;
+    static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
+    static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* a;
+    TosaReference::TensorTemplate<TIn>* b;
+    TosaReference::TensorTemplate<TAcc>* c;
+    tosa::TosaMatMulQuantInfo* qinfo;
+};
+
+template <DType Dtype>
+class OpMaxPool2d : public GraphNode
+{
+public:
+    OpMaxPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpMaxPool2d();
+
+    virtual int checkTensorAttributes();
+    virtual int eval();
+
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    using TIn          = Eigen::Tensor<InEigenType, 4>;
+    using TOut         = Eigen::Tensor<OutEigenType, 4>;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TOut>* out;
+    tosa::TosaPool2dAttribute* attribute;
+};
+
+template <DType InDtype, DType WeightDtype>
+class OpTransposeConv2d : public GraphNode
+{
+public:
+    OpTransposeConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    virtual ~OpTransposeConv2d();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    static constexpr DType AccDtype = GetAccDType<InDtype, WeightDtype>::value;
+
+    using InEigenType     = typename GetEigenType<InDtype>::type;
+    using WeightEigenType = typename GetEigenType<WeightDtype>::type;
+    using AccEigenType    = typename GetEigenType<AccDtype>::type;
+    using TIn             = Eigen::Tensor<InEigenType, 4>;
+    using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
+    using TBias           = Eigen::Tensor<AccEigenType, 1>;
+    using TAcc            = Eigen::Tensor<AccEigenType, 4>;
+
+    static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
+    static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* input;
+    TosaReference::TensorTemplate<TWeight>* weight;
+    TosaReference::TensorTemplate<TBias>* bias;
+    TosaReference::TensorTemplate<TAcc>* output;
+    TosaTransposeConv2dAttribute* attribute;
+    TosaConvQuantInfo* qinfo;
+};
+
+};    // namespace TosaReference
+
+#endif

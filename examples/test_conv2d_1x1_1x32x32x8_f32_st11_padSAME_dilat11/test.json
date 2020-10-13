@@ -1,0 +1,19 @@
+{
+  "pb": "test_tf.pb",
+  "ofm_file": "ref_ofm.npy",
+  "ofm_placeholder": "result",
+  "ifm_file": [
+    "placeholder_0.npy"
+  ],
+  "ifm_placeholder": [
+    "placeholder_0:0"
+  ],
+  "ifm_shape": [
+    [
+      1,
+      32,
+      32,
+      8
+    ]
+  ]
+}
