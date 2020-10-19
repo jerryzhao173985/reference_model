@@ -268,9 +268,9 @@ int OpAvgPool2d<Dtype>::eval()
     {
         this->out->getTensor() = sum.binaryExpr(div_map, [](AccEigenType value, int32_t div) -> OutEigenType {
             int32_t multiplier, shift;
-            TosaReference::QuantUtil<AccDtype>::reciprocal_scale(div, multiplier, shift);
+            TosaReference::QuantUtil::reciprocal_scale(div, multiplier, shift);
 
-            return (OutEigenType)TosaReference::QuantUtil<AccDtype>::apply_scale(value, multiplier, shift, false);
+            return (OutEigenType)TosaReference::QuantUtil::apply_scale_32(value, multiplier, shift, false);
         });
         this->out->getTensor() = this->out->getTensor() + (OutEigenType)(this->qinfo->output_zp());
         this->out->getTensor() = this->out->getTensor().cwiseMax((OutEigenType)QMin);
