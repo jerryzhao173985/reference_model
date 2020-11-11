@@ -81,6 +81,12 @@ DEF_ATTRIBUTE(Rescale, 7,
               bool, S, double_round,
               bool, S, per_channel)
 
+DEF_ATTRIBUTE(Mul, 1,
+              int32_t, S, shift)
+
+DEF_ATTRIBUTE(ArithmeticRightShift, 1,
+              bool, S, round)
+
 DEF_ATTRIBUTE(CondIf, 2,
               string, S, then_branch,
               string, S, else_branch)

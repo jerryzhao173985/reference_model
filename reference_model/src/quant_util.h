@@ -34,8 +34,7 @@ public:
                                  int32_t& multiplier,
                                  int32_t& shift)
     {
-        ASSERT_MSG(value > 0,
-                   "AvgPool2d reciprocal_scale() error: # of elements should be > 1 but is %d", value);
+        ASSERT_MSG(value > 0, "AvgPool2d reciprocal_scale() error: # of elements should be > 1 but is %d", value);
         uint32_t value_u32 = (uint32_t)value;
         int32_t k          = 32 - LEADING_ZEROS_32(value_u32 - 1);    // (1<<k)/2 < value <= (1<<k)
         int64_t numerator  = ((1L << 30) + 1) << k;

@@ -45,7 +45,7 @@ DEF_OPERATOR(tanh,                    TANH,                     Tanh,           
 
 /* elementwise - binary */
 DEF_OPERATOR(add,                     ADD,                      Add,                    None,             None)
-DEF_OPERATOR(arithmetic_right_shift,  ARITHMETIC_RIGHT_SHIFT,   ArithmeticRightShift,   None,             None)
+DEF_OPERATOR(arithmetic_right_shift,  ARITHMETIC_RIGHT_SHIFT,   ArithmeticRightShift,   ArithmeticRightShift, None)
 DEF_OPERATOR(bitwise_and,             BITWISE_AND,              BitwiseAnd,             None,             None)
 DEF_OPERATOR(bitwise_or,              BITWISE_OR,               BitwiseOr,              None,             None)
 DEF_OPERATOR(bitwise_xor,             BITWISE_XOR,              BitwiseXor,             None,             None)
@@ -56,7 +56,7 @@ DEF_OPERATOR(logical_or,              LOGICAL_OR,               LogicalOr,      
 DEF_OPERATOR(logical_xor,             LOGICAL_XOR,              LogicalXor,             None,             None)
 DEF_OPERATOR(maximum,                 MAXIMUM,                  Maximum,                None,             None)
 DEF_OPERATOR(minimum,                 MINIMUM,                  Minimum,                None,             None)
-DEF_OPERATOR(mul,                     MUL,                      Mul,                    None,             None)
+DEF_OPERATOR(mul,                     MUL,                      Mul,                    Mul,              None)
 DEF_OPERATOR(pow,                     POW,                      Pow,                    None,             None)
 DEF_OPERATOR(sub,                     SUB,                      Sub,                    None,             None)
 DEF_OPERATOR(table,                   TABLE,                    Table,                  None,             None)

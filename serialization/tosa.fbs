@@ -167,7 +167,8 @@ union Attribute {
   ResizeAttribute,
   ClampAttribute,
   RescaleAttribute,
-  CustomAttribute,
+  MulAttribute,
+  ArithmeticRightShiftAttribute,
   CondIfAttribute,
   WhileLoopAttribute,
 }
@@ -238,8 +239,12 @@ table RescaleAttribute {
   per_channel: bool;
 }
 
-table CustomAttribute {
-  identifier: string;
+table MulAttribute {
+  shift: int32;
+}
+
+table ArithmeticRightShiftAttribute {
+  round: bool;
 }
 
 table CondIfAttribute {

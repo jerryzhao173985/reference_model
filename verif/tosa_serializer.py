@@ -247,6 +247,24 @@ class TosaSerializerAttribute(TosaSerializerUnion):
         self.bools.append((a.RescaleAttributeAddPerChannel,
                            per_channel))
 
+    def MulAttribute(self, shift):
+        from tosa import MulAttribute as a, Attribute
+
+        self.utype = Attribute.Attribute().MulAttribute
+        self.optFcns = (a.MulAttributeStart, a.MulAttributeEnd)
+
+        self.ints.append((a.MulAttributeAddShift,
+                         shift))
+
+    def ArithmeticRightShiftAttribute(self, round):
+        from tosa import ArithmeticRightShiftAttribute as a, Attribute
+
+        self.utype = Attribute.Attribute().ArithmeticRightShiftAttribute
+        self.optFcns = (a.ArithmeticRightShiftAttributeStart, a.ArithmeticRightShiftAttributeEnd)
+
+        self.bools.append((a.ArithmeticRightShiftAttributeAddRound,
+                         round))
+
     def CustomAttribute(self, identifier):
         from tosa import CustomAttribute as a, Attribute
 

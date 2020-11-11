@@ -30,7 +30,8 @@ class Attribute(object):
     ResizeAttribute = 9
     ClampAttribute = 10
     RescaleAttribute = 11
-    CustomAttribute = 12
-    CondIfAttribute = 13
-    WhileLoopAttribute = 14
+    MulAttribute = 12
+    ArithmeticRightShiftAttribute = 13
+    CondIfAttribute = 14
+    WhileLoopAttribute = 15
 
