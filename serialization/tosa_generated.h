@@ -296,21 +296,22 @@ enum Op {
   Op_TILE = 56,
   Op_TRANSPOSE = 57,
   Op_GATHER = 58,
-  Op_RESIZE = 59,
-  Op_CAST = 60,
-  Op_RESCALE = 61,
-  Op_CONST = 62,
-  Op_PLACEHOLDER = 63,
-  Op_IDENTITY = 64,
-  Op_IDENTITYN = 65,
-  Op_CUSTOM = 66,
-  Op_COND_IF = 67,
-  Op_WHILE_LOOP = 68,
+  Op_SCATTER = 59,
+  Op_RESIZE = 60,
+  Op_CAST = 61,
+  Op_RESCALE = 62,
+  Op_CONST = 63,
+  Op_PLACEHOLDER = 64,
+  Op_IDENTITY = 65,
+  Op_IDENTITYN = 66,
+  Op_CUSTOM = 67,
+  Op_COND_IF = 68,
+  Op_WHILE_LOOP = 69,
   Op_MIN = Op_UNKNOWN,
   Op_MAX = Op_WHILE_LOOP
 };
 
-inline const Op (&EnumValuesOp())[69] {
+inline const Op (&EnumValuesOp())[70] {
   static const Op values[] = {
     Op_UNKNOWN,
     Op_ARGMAX,
@@ -371,6 +372,7 @@ inline const Op (&EnumValuesOp())[69] {
     Op_TILE,
     Op_TRANSPOSE,
     Op_GATHER,
+    Op_SCATTER,
     Op_RESIZE,
     Op_CAST,
     Op_RESCALE,
@@ -446,6 +448,7 @@ inline const char * const *EnumNamesOp() {
     "TILE",
     "TRANSPOSE",
     "GATHER",
+    "SCATTER",
     "RESIZE",
     "CAST",
     "RESCALE",
@@ -1176,7 +1179,9 @@ struct ResizeAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     VT_STRIDE = 6,
     VT_OFFSET = 8,
     VT_SHIFT = 10,
-    VT_MODE = 12
+    VT_STRIDE_FP = 12,
+    VT_OFFSET_FP = 14,
+    VT_MODE = 16
   };
   const flatbuffers::Vector<int32_t> *output_size() const {
     return GetPointer<const flatbuffers::Vector<int32_t> *>(VT_OUTPUT_SIZE);
@@ -1190,6 +1195,12 @@ struct ResizeAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   int32_t shift() const {
     return GetField<int32_t>(VT_SHIFT, 0);
   }
+  const flatbuffers::Vector<float> *stride_fp() const {
+    return GetPointer<const flatbuffers::Vector<float> *>(VT_STRIDE_FP);
+  }
+  const flatbuffers::Vector<float> *offset_fp() const {
+    return GetPointer<const flatbuffers::Vector<float> *>(VT_OFFSET_FP);
+  }
   ResizeMode mode() const {
     return static_cast<ResizeMode>(GetField<uint32_t>(VT_MODE, 0));
   }
@@ -1202,6 +1213,10 @@ struct ResizeAttribute FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
            VerifyOffset(verifier, VT_OFFSET) &&
            verifier.VerifyVector(offset()) &&
            VerifyField<int32_t>(verifier, VT_SHIFT) &&
+           VerifyOffset(verifier, VT_STRIDE_FP) &&
+           verifier.VerifyVector(stride_fp()) &&
+           VerifyOffset(verifier, VT_OFFSET_FP) &&
+           verifier.VerifyVector(offset_fp()) &&
            VerifyField<uint32_t>(verifier, VT_MODE) &&
            verifier.EndTable();
   }
@@ -1221,6 +1236,12 @@ struct ResizeAttributeBuilder {
   }
   void add_shift(int32_t shift) {
     fbb_.AddElement<int32_t>(ResizeAttribute::VT_SHIFT, shift, 0);
+  }
+  void add_stride_fp(flatbuffers::Offset<flatbuffers::Vector<float>> stride_fp) {
+    fbb_.AddOffset(ResizeAttribute::VT_STRIDE_FP, stride_fp);
+  }
+  void add_offset_fp(flatbuffers::Offset<flatbuffers::Vector<float>> offset_fp) {
+    fbb_.AddOffset(ResizeAttribute::VT_OFFSET_FP, offset_fp);
   }
   void add_mode(ResizeMode mode) {
     fbb_.AddElement<uint32_t>(ResizeAttribute::VT_MODE, static_cast<uint32_t>(mode), 0);
@@ -1243,9 +1264,13 @@ inline flatbuffers::Offset<ResizeAttribute> CreateResizeAttribute(
     flatbuffers::Offset<flatbuffers::Vector<int32_t>> stride = 0,
     flatbuffers::Offset<flatbuffers::Vector<int32_t>> offset = 0,
     int32_t shift = 0,
+    flatbuffers::Offset<flatbuffers::Vector<float>> stride_fp = 0,
+    flatbuffers::Offset<flatbuffers::Vector<float>> offset_fp = 0,
     ResizeMode mode = ResizeMode_UNKNOWN) {
   ResizeAttributeBuilder builder_(_fbb);
   builder_.add_mode(mode);
+  builder_.add_offset_fp(offset_fp);
+  builder_.add_stride_fp(stride_fp);
   builder_.add_shift(shift);
   builder_.add_offset(offset);
   builder_.add_stride(stride);
@@ -1259,16 +1284,22 @@ inline flatbuffers::Offset<ResizeAttribute> CreateResizeAttributeDirect(
     const std::vector<int32_t> *stride = nullptr,
     const std::vector<int32_t> *offset = nullptr,
     int32_t shift = 0,
+    const std::vector<float> *stride_fp = nullptr,
+    const std::vector<float> *offset_fp = nullptr,
     ResizeMode mode = ResizeMode_UNKNOWN) {
   auto output_size__ = output_size ? _fbb.CreateVector<int32_t>(*output_size) : 0;
   auto stride__ = stride ? _fbb.CreateVector<int32_t>(*stride) : 0;
   auto offset__ = offset ? _fbb.CreateVector<int32_t>(*offset) : 0;
+  auto stride_fp__ = stride_fp ? _fbb.CreateVector<float>(*stride_fp) : 0;
+  auto offset_fp__ = offset_fp ? _fbb.CreateVector<float>(*offset_fp) : 0;
   return tosa::CreateResizeAttribute(
       _fbb,
       output_size__,
       stride__,
       offset__,
       shift,
+      stride_fp__,
+      offset_fp__,
       mode);
 }
 
@@ -1875,7 +1906,7 @@ struct Version FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
     return GetField<int32_t>(VT__MAJOR, 0);
   }
   int32_t _minor() const {
-    return GetField<int32_t>(VT__MINOR, 20);
+    return GetField<int32_t>(VT__MINOR, 21);
   }
   int32_t _patch() const {
     return GetField<int32_t>(VT__PATCH, 0);
@@ -1900,7 +1931,7 @@ struct VersionBuilder {
     fbb_.AddElement<int32_t>(Version::VT__MAJOR, _major, 0);
   }
   void add__minor(int32_t _minor) {
-    fbb_.AddElement<int32_t>(Version::VT__MINOR, _minor, 20);
+    fbb_.AddElement<int32_t>(Version::VT__MINOR, _minor, 21);
   }
   void add__patch(int32_t _patch) {
     fbb_.AddElement<int32_t>(Version::VT__PATCH, _patch, 0);
@@ -1923,7 +1954,7 @@ struct VersionBuilder {
 inline flatbuffers::Offset<Version> CreateVersion(
     flatbuffers::FlatBufferBuilder &_fbb,
     int32_t _major = 0,
-    int32_t _minor = 20,
+    int32_t _minor = 21,
     int32_t _patch = 0,
     bool _experimental = false) {
   VersionBuilder builder_(_fbb);

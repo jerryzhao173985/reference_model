@@ -100,7 +100,8 @@ DEF_OPERATOR(tile,                    TILE,                     Tile,           
 DEF_OPERATOR(transpose,               TRANSPOSE,                Transpose,              None,             None)
 
 /* gather/scatter */
-DEF_OPERATOR(gather,                  GATHER,                   Gather,                 Axis,             None)
+DEF_OPERATOR(gather,                  GATHER,                   Gather,                 None,             None)
+DEF_OPERATOR(scatter,                 SCATTER,                  Scatter,                None,             None)
 
 /* image */
 DEF_OPERATOR(resize,                  RESIZE,                   Resize,                 Resize,           None)

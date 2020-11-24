@@ -133,6 +133,7 @@ enum Op:uint32 {
 
   // Gather/scatter operation
   GATHER,
+  SCATTER,
 
   // Image
   RESIZE,
@@ -219,6 +220,8 @@ table ResizeAttribute {
   stride: [int32];
   offset: [int32];
   shift: int32;
+  stride_fp: [float];
+  offset_fp: [float];
   mode: ResizeMode;
 }
 
@@ -285,7 +288,7 @@ table PadQuantInfo {
 
 table Version {
   _major: int32 = 0;
-  _minor: int32 = 20;
+  _minor: int32 = 21;
   _patch: int32 = 0;
   _experimental: bool = false;
 }

@@ -43,6 +43,8 @@ protected:
     std::vector<int32_t> stride;
     std::vector<int32_t> offset;
     int32_t shift;
+    std::vector<float> stride_fp;
+    std::vector<float> offset_fp;
     ResizeMode mode;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;

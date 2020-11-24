@@ -59,11 +59,13 @@ DEF_ATTRIBUTE(Slice, 2,
 DEF_ATTRIBUTE(Tile, 1,
               int32_t, V, multiples)
 
-DEF_ATTRIBUTE(Resize, 5,
+DEF_ATTRIBUTE(Resize, 7,
               int32_t, V, output_size,
               int32_t, V, stride,
               int32_t, V, offset,
               int32_t, S, shift,
+              float, V, stride_fp,
+              float, V, offset_fp,
               ResizeMode, S, mode)
 
 DEF_ATTRIBUTE(Clamp, 4,

@@ -123,33 +123,6 @@
     DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 5, DTYPE)                                                                 \
     DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 6, DTYPE)
 
-#define DEF_INSTANTIATE_GATHER(OP, DTYPE)                                                                              \
-    /* gather op takes input and index rank as template argument  */                                                   \
-    /* note output rank = input rank - 1 + index rank             */                                                   \
-    /* and max rank allowed in tosa_reference is 6                */                                                   \
-    /* so only specific input and index pair is instantiated      */                                                   \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 1, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 2, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 3, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 4, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 5, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 1, 6, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 2, 1, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 2, 2, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 2, 3, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 2, 4, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 2, 5, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 3, 1, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 3, 2, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 3, 3, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 3, 4, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 4, 1, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 4, 2, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 4, 3, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 5, 1, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 5, 2, DTYPE)                                                                 \
-    DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 1, DTYPE)
-
 #define INIT_ATTRIBUTE(ATTRIBUTE_NAME)                                                                                 \
     if (auto p = dynamic_cast<Tosa##ATTRIBUTE_NAME##Attribute*>(attribute_))                                           \
     {                                                                                                                  \

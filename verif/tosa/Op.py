@@ -77,14 +77,15 @@ class Op(object):
     TILE = 56
     TRANSPOSE = 57
     GATHER = 58
-    RESIZE = 59
-    CAST = 60
-    RESCALE = 61
-    CONST = 62
-    PLACEHOLDER = 63
-    IDENTITY = 64
-    IDENTITYN = 65
-    CUSTOM = 66
-    COND_IF = 67
-    WHILE_LOOP = 68
+    SCATTER = 59
+    RESIZE = 60
+    CAST = 61
+    RESCALE = 62
+    CONST = 63
+    PLACEHOLDER = 64
+    IDENTITY = 65
+    IDENTITYN = 66
+    CUSTOM = 67
+    COND_IF = 68
+    WHILE_LOOP = 69
 

@@ -45,7 +45,7 @@ class Version(object):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
         if o != 0:
             return self._tab.Get(flatbuffers.number_types.Int32Flags, o + self._tab.Pos)
-        return 20
+        return 21
 
     # Version
     def _patch(self):
@@ -63,7 +63,7 @@ class Version(object):
 
 def VersionStart(builder): builder.StartObject(4)
 def VersionAdd_major(builder, Major): builder.PrependInt32Slot(0, Major, 0)
-def VersionAdd_minor(builder, Minor): builder.PrependInt32Slot(1, Minor, 20)
+def VersionAdd_minor(builder, Minor): builder.PrependInt32Slot(1, Minor, 21)
 def VersionAdd_patch(builder, Patch): builder.PrependInt32Slot(2, Patch, 0)
 def VersionAdd_experimental(builder, Experimental): builder.PrependBoolSlot(3, Experimental, 0)
 def VersionEnd(builder): return builder.EndObject()

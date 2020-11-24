@@ -218,59 +218,6 @@
         }                                                                                                              \
     }
 
-#define DEF_FACTORY_GATHER(OP, DTYPE)                                                                                  \
-    if (inputDType == DType_##DTYPE && outputDType == DType_##DTYPE)                                                   \
-    {                                                                                                                  \
-        switch (inputRank)                                                                                             \
-        {                                                                                                              \
-            case 1:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 1, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 2, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 3, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 4, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 5, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 6, DTYPE);                                                    \
-                }                                                                                                      \
-            case 2:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 1, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 2, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 3, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 4, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 5, DTYPE);                                                    \
-                }                                                                                                      \
-            case 3:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 1, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 2, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 3, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 4, DTYPE);                                                    \
-                }                                                                                                      \
-            case 4:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 4, 1, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 4, 2, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 4, 3, DTYPE);                                                    \
-                }                                                                                                      \
-            case 5:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 5, 1, DTYPE);                                                    \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 5, 2, DTYPE);                                                    \
-                }                                                                                                      \
-            case 6:                                                                                                    \
-                switch (index_rank)                                                                                    \
-                {                                                                                                      \
-                    DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 6, 1, DTYPE);                                                    \
-                }                                                                                                      \
-        }                                                                                                              \
-    }
-
 namespace TosaReference
 {
 

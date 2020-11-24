@@ -63,18 +63,23 @@ class TosaSerializerUnion:
         self.floats = []
         self.strings = []
         self.intvecs = []
+        self.fpvecs = []
 
     def serialize(self, builder):
 
         # We have to build strings and vectors first
         strList = []
         intVecList = []
+        fpVecList = []
 
         for fcn, val in self.strings:
             strList.append((fcn, builder.CreateString(val)))
 
         for fcn, val in self.intvecs:
             intVecList.append((fcn, TosaSerializer.serializeInt32Vec(builder, val)))
+
+        for fcn, val in self.fpvecs:
+            fpVecList.append((fcn, TosaSerializer.serializeFpVec(builder, val)))
 
         startFcn, endFcn = self.optFcns
 
@@ -94,6 +99,9 @@ class TosaSerializerUnion:
             fcn(builder, val)
 
         for fcn, val in intVecList:
+            fcn(builder, val)
+
+        for fcn, val in fpVecList:
             fcn(builder, val)
 
         return endFcn(builder)
@@ -193,7 +201,7 @@ class TosaSerializerAttribute(TosaSerializerUnion):
         self.intvecs.append((a.TileAttributeAddMultiples,
                              multiples))
 
-    def ResizeAttribute(self, output_size, stride, offset, shift, mode):
+    def ResizeAttribute(self, output_size, stride, offset, shift, stride_fp, offset_fp, mode):
         from tosa import ResizeAttribute as a, Attribute
 
         self.utype = Attribute.Attribute().ResizeAttribute
@@ -207,6 +215,10 @@ class TosaSerializerAttribute(TosaSerializerUnion):
                              offset))
         self.ints.append((a.ResizeAttributeAddShift,
                          shift))
+        self.fpvecs.append((a.ResizeAttributeAddStrideFp,
+                            stride_fp))
+        self.fpvecs.append((a.ResizeAttributeAddOffsetFp,
+                            offset_fp))
         self.ints.append((a.ResizeAttributeAddMode,
                          mode))
 
@@ -689,6 +701,13 @@ class TosaSerializer:
         builder.StartVector(4, len(vec), 4)
         for v in vec[::-1]:
             builder.PrependInt32(v)
+        return builder.EndVector(len(vec))
+
+    @staticmethod
+    def serializeFpVec(builder, vec):
+        builder.StartVector(4, len(vec), 4)
+        for v in vec[::-1]:
+            builder.PrependFloat32(v)
         return builder.EndVector(len(vec))
 
     @staticmethod
