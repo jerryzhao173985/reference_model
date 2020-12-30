@@ -1225,8 +1225,14 @@ NumpyUtilities::NPError NumpyUtilities::checkNpyHeader(FILE* infile, const uint3
                 if (!ptr)
                     break;
 
-                shape.push_back(atoi(ptr));
-                totalElems *= atoi(ptr);
+                int dim = atoi(ptr);
+
+                // Dimension is 0
+                if (dim == 0)
+                    break;
+
+                shape.push_back(dim);
+                totalElems *= dim;
                 ptr = strtok_r(NULL, ",", &end);
             }
 
