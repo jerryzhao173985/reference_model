@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -68,17 +68,8 @@ class TypeChecker
 public:
     static bool is_integer(DType dtype)
     {
-        if (dtype == DType_INT4 || dtype == DType_INT8 || dtype == DType_AINT8 || dtype == DType_UINT8 ||
+        if (dtype == DType_INT4 || dtype == DType_INT8 || dtype == DType_UINT8 ||
             dtype == DType_INT16 || dtype == DType_INT32 || dtype == DType_INT48)
-        {
-            return true;
-        }
-        return false;
-    }
-    static bool is_symmetric(DType dtype)
-    {
-        if (dtype == DType_INT4 || dtype == DType_INT8 || dtype == DType_INT16 || dtype == DType_INT32 ||
-            dtype == DType_INT48)
         {
             return true;
         }

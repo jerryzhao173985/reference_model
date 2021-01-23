@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -74,23 +74,21 @@ struct TosaGraph;
 enum DType {
   DType_UNKNOWN = 0,
   DType_BOOL = 1,
-  DType_AINT8 = 2,
-  DType_UINT8 = 3,
-  DType_INT4 = 4,
-  DType_INT8 = 5,
-  DType_INT16 = 6,
-  DType_INT32 = 7,
-  DType_INT48 = 8,
-  DType_FLOAT = 9,
+  DType_UINT8 = 2,
+  DType_INT4 = 3,
+  DType_INT8 = 4,
+  DType_INT16 = 5,
+  DType_INT32 = 6,
+  DType_INT48 = 7,
+  DType_FLOAT = 8,
   DType_MIN = DType_UNKNOWN,
   DType_MAX = DType_FLOAT
 };
 
-inline const DType (&EnumValuesDType())[10] {
+inline const DType (&EnumValuesDType())[9] {
   static const DType values[] = {
     DType_UNKNOWN,
     DType_BOOL,
-    DType_AINT8,
     DType_UINT8,
     DType_INT4,
     DType_INT8,
@@ -106,7 +104,6 @@ inline const char * const *EnumNamesDType() {
   static const char * const names[] = {
     "UNKNOWN",
     "BOOL",
-    "AINT8",
     "UINT8",
     "INT4",
     "INT8",

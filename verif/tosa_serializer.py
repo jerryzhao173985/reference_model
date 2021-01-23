@@ -1,6 +1,6 @@
 
 
-# Copyright (c) 2020, ARM Limited.
+# Copyright (c) 2020-2021, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import json
 # here.
 DTypeNames = [ 'UNKNOWN',
                'BOOL',
-               'AINT8',
                'UINT8',
                'INT4',
                'INT8',

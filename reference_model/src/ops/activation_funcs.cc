@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
             this->fcn       = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
         }
         break;
-        case DType_AINT8:
+        case DType_INT8:
         case DType_INT16:
         {
             InEigenType min = (InEigenType)attribute->min_int();
@@ -107,7 +107,7 @@ int OpTanh<Rank, Dtype>::register_fcn()
 
 // template explicit instantiation
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FLOAT);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT16);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReluN, FLOAT);

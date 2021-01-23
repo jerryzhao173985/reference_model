@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -251,7 +251,7 @@ int OpBitwiseAnd<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_AINT8:
+        case DType_INT8:
         case DType_INT16:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a & b; };
@@ -268,7 +268,7 @@ int OpBitwiseOr<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_AINT8:
+        case DType_INT8:
         case DType_INT16:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a | b; };
@@ -285,7 +285,7 @@ int OpBitwiseXor<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_AINT8:
+        case DType_INT8:
         case DType_INT16:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a ^ b; };
@@ -567,15 +567,15 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpArithmeticRightShift, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpArithmeticRightShift, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpArithmeticRightShift, INT32);
 
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseAnd, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseAnd, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseAnd, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseAnd, INT32);
 
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseOr, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseOr, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseOr, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseOr, INT32);
 
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT32);
 

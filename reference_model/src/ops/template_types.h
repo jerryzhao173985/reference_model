@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -84,11 +84,6 @@ struct GetEigenType<DType_BOOL>
     using type = bool;
 };
 template <>
-struct GetEigenType<DType_AINT8>
-{
-    using type = int32_t;
-};
-template <>
 struct GetEigenType<DType_UINT8>
 {
     using type = int32_t;
@@ -119,11 +114,6 @@ template <>
 struct GetNumBits<DType_BOOL>
 {
     static constexpr int32_t value = 1;
-};
-template <>
-struct GetNumBits<DType_AINT8>
-{
-    static constexpr int32_t value = 8;
 };
 template <>
 struct GetNumBits<DType_UINT8>
@@ -163,11 +153,6 @@ struct GetQMin
     static constexpr int64_t value = 0L;
 };
 template <>
-struct GetQMin<DType_AINT8>
-{
-    static constexpr int64_t value = -128L;
-};
-template <>
 struct GetQMin<DType_UINT8>
 {
     static constexpr int64_t value = 0L;
@@ -204,11 +189,6 @@ struct GetQMax
     static constexpr int64_t value = 0L;
 };
 template <>
-struct GetQMax<DType_AINT8>
-{
-    static constexpr int64_t value = 127L;
-};
-template <>
 struct GetQMax<DType_UINT8>
 {
     static constexpr int64_t value = 255L;
@@ -242,17 +222,12 @@ struct GetQMax<DType_INT48>
 template <DType TIn1, DType TIn2>
 struct GetAccDType;
 template <>
-struct GetAccDType<DType_AINT8, DType_AINT8>
+struct GetAccDType<DType_INT8, DType_INT4>
 {
     static constexpr DType value = DType_INT32;
 };
 template <>
-struct GetAccDType<DType_AINT8, DType_INT4>
-{
-    static constexpr DType value = DType_INT32;
-};
-template <>
-struct GetAccDType<DType_AINT8, DType_INT8>
+struct GetAccDType<DType_INT8, DType_INT8>
 {
     static constexpr DType value = DType_INT32;
 };

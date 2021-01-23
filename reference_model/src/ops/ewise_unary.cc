@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -91,7 +91,7 @@ int OpBitwiseNot<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_AINT8:
+        case DType_INT8:
         case DType_INT16:
         case DType_INT32:
             this->fcn = [](InEigenType a) -> OutEigenType { return ~a; };
@@ -228,7 +228,7 @@ int OpNegate<Rank, Dtype>::register_fcn()
                 return result;
             };
             break;
-        case DType_AINT8:
+        case DType_INT8:
             ASSERT(this->qinfo);
             this->fcn = [this](InEigenType a) -> OutEigenType {
                 InEigenType result = -(a - this->qinfo->input_zp()) + this->qinfo->output_zp();
@@ -276,7 +276,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, INT32);
 
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT32);
 
@@ -293,7 +293,7 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalNot, BOOL);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FLOAT);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, AINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT32);
 

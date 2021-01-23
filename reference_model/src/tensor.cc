@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2021, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -107,7 +107,6 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, fdatabuf);
             break;
         case DType_INT32:
-        case DType_AINT8:
         case DType_UINT8:
         case DType_INT4:
         case DType_INT8:
@@ -163,7 +162,6 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             }
             break;
         case DType_INT32:
-        case DType_AINT8:
         case DType_UINT8:
         case DType_INT4:
         case DType_INT8:
@@ -232,7 +230,6 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
             free(fdatabuf);
             break;
         case DType_INT32:
-        case DType_AINT8:
         case DType_UINT8:
         case DType_INT4:
         case DType_INT8:
