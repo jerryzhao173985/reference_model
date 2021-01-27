@@ -683,7 +683,7 @@ class TosaArgGen:
 
                     # Randomly generate legal output dimensions and shift
                     # and then compute the stride and offset based on them
-                    output_dims = [ testGen.randInt(), testGen.randInt() ]
+                    output_dims = [ testGen.randInt(1), testGen.randInt(1) ]
                     in_center_h = (ifm_shape[1] - 1) / 2.0
                     in_center_w = (ifm_shape[2] - 1) / 2.0
                     out_center_h = (output_dims[0] - 1) / 2.0

@@ -127,7 +127,8 @@ def main():
 
     print('{} matching tests'.format(len(testList)))
     for opName, testStr, dtype, shapeList, testArgs in testList:
-        print(testStr)
+        if args.verbose:
+            print(testStr)
         ttg.serializeTest(opName, testStr, dtype, shapeList, testArgs)
     print('Done creating {} tests'.format(len(testList)))
 
