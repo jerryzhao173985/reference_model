@@ -130,6 +130,22 @@ int SubgraphTraverser::initializeGraph()
             }
         }
 
+        // if dtype/rank still not initialized with above pass, we initialize without Usage check
+        if (in_dtype == DType_UNKNOWN && in_rank == 0)
+        {
+            for (auto name : op->GetInputTensorNames())
+            {
+                TosaSerializationTensor* ts = block->GetTensorByName(name);
+                ASSERT_MSG(ts, "SubgraphTraverser: fail to get tensor %s from TosaSerializationHandler", name.c_str());
+
+                if (ts->GetShape().size() >= in_rank)
+                {
+                    in_dtype = ts->GetDtype();
+                    in_rank  = ts->GetShape().size();
+                }
+            }
+        }
+
         for (auto name : op->GetOutputTensorNames())
         {
 
