@@ -19,29 +19,34 @@ import shlex
 import subprocess
 from enum import IntEnum, unique
 
+
 def run_sh_command(args, full_cmd, capture_output=False):
-    '''Utility function to run an external command. Optionally return captured stdout/stderr'''
+    """Utility function to run an external command. Optionally return captured stdout/stderr"""
 
     # Quote the command line for printing
-    full_cmd_esc = [ shlex.quote(x) for x in full_cmd ]
+    full_cmd_esc = [shlex.quote(x) for x in full_cmd]
 
     if args.verbose:
-        print('### Running {}'.format(' '.join(full_cmd_esc)))
+        print("### Running {}".format(" ".join(full_cmd_esc)))
 
     if capture_output:
         rc = subprocess.run(full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if rc.returncode != 0:
-            print(rc.stdout.decode('utf-8'))
-            print(rc.stderr.decode('utf-8'))
-            raise Exception('Error running command: {}.\n{}'.format(' '.join(full_cmd_esc), rc.stderr.decode('utf-8')))
+            print(rc.stdout.decode("utf-8"))
+            print(rc.stderr.decode("utf-8"))
+            raise Exception(
+                "Error running command: {}.\n{}".format(
+                    " ".join(full_cmd_esc), rc.stderr.decode("utf-8")
+                )
+            )
         return (rc.stdout, rc.stderr)
     else:
         rc = subprocess.run(full_cmd)
     if rc.returncode != 0:
-        raise Exception('Error running command: {}'.format(' '.join(full_cmd_esc)))
+        raise Exception("Error running command: {}".format(" ".join(full_cmd_esc)))
+
 
 class TosaTestRunner:
-
     def __init__(self, args, runnerArgs, testDir):
 
         self.args = args
@@ -49,7 +54,7 @@ class TosaTestRunner:
         self.testDir = testDir
 
         # Load the json test file
-        with open(os.path.join(testDir, 'desc.json'), 'r') as fd:
+        with open(os.path.join(testDir, "desc.json"), "r") as fd:
             self.testDesc = json.load(fd)
 
     def runModel(self):

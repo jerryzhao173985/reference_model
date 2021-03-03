@@ -32,19 +32,24 @@ import math
 
 from enum import IntEnum, Enum, unique
 
+# Include the ../thirdparty/serialization_lib/python directory in PYTHONPATH
+parent_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(
+    os.path.join(parent_dir, "..", "thirdparty", "serialization_lib", "python")
+)
 import tosa_serializer as ts
 from tosa_serializer import *
 import tosa
 
 # Convenience variables to the flatc-generated types that should be enums, but aren't
 DType = tosa.DType.DType()
-Usage = tosa.Usage.Usage()
-Format = tosa.Format.Format()
-Op    = tosa.Op.Op()
+Op = tosa.Op.Op()
 ResizeMode = tosa.ResizeMode.ResizeMode()
 
+
 class TosaQuantGen:
-    '''QuantizedInfo random generator helper functions.  Specify with 'qgen': in the operator defintion'''
+    """QuantizedInfo random generator helper functions.  Specify with 'qgen': in the operator defintion"""
+
     def __init__(self):
         pass
 
@@ -107,30 +112,31 @@ class TosaQuantGen:
             m = -m
 
         multiplier = round(m * (1 << scaleBits))
-        assert(multiplier <= (1 << scaleBits))
+        assert multiplier <= (1 << scaleBits)
 
         if multiplier == (1 << scaleBits):
             multiplier = multiplier // 2
             shift = shift + 1
 
         shift = (-shift) + scaleBits
-        #print('scalefp {} scaleBits {} m {} mult {} shift {}'.format(scaleFp, scaleBits, m, multiplier, shift))
+        # print('scalefp {} scaleBits {} m {} mult {} shift {}'.format(scaleFp, scaleBits, m, multiplier, shift))
 
-        assert(multiplier <= (1 << scaleBits))
-        assert(shift >= 0 and shift <= 63)
+        assert multiplier <= (1 << scaleBits)
+        assert shift >= 0 and shift <= 63
 
         return multiplier, shift
 
 
-class TosaTensorGen():
-    ''' Tensor generators create a shape list for the placeholder and const tensor
-    data operands for the operator.  The actual random data is generated separately for each test.'''
+class TosaTensorGen:
+    """Tensor generators create a shape list for the placeholder and const tensor
+    data operands for the operator.  The actual random data is generated separately for each test."""
+
     def __init__(self):
         pass
 
     @staticmethod
     def tgBasic(testGen, opName, rank):
-        pl, const = opName['operands']
+        pl, const = opName["operands"]
         shape = testGen.makeShape(rank)
 
         shape_list = []
@@ -141,9 +147,9 @@ class TosaTensorGen():
 
     @staticmethod
     def tgNHWC(testGen, opName, rank):
-        pl, const = opName['operands']
+        pl, const = opName["operands"]
 
-        assert(rank == 4)
+        assert rank == 4
 
         shape = testGen.makeShape(rank)
 
@@ -159,11 +165,11 @@ class TosaTensorGen():
 
     @staticmethod
     def tgScatter(testGen, opName, rank):
-        pl, const = opName['operands']
+        pl, const = opName["operands"]
 
-        assert(pl == 2)
-        assert(const == 0)
-        assert(rank == 3)
+        assert pl == 2
+        assert const == 0
+        assert rank == 3
 
         values_in_shape = testGen.makeShape(rank)
 
@@ -171,7 +177,9 @@ class TosaTensorGen():
         if testGen.args.max_batch_size:
             values_in_shape[0] = (values_in_shape[0] % testGen.args.max_batch_size) + 1
 
-        W = testGen.randInt(testGen.args.tensor_shape_range[0], testGen.args.tensor_shape_range[1])
+        W = testGen.randInt(
+            testGen.args.tensor_shape_range[0], testGen.args.tensor_shape_range[1]
+        )
         input_shape = [values_in_shape[0], W, values_in_shape[2]]
 
         shape_list = []
@@ -184,7 +192,7 @@ class TosaTensorGen():
     def tgBroadcastFuzz(testGen, op, rank):
         shape = testGen.makeShape(rank)
 
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
         shape_list = []
 
@@ -204,9 +212,9 @@ class TosaTensorGen():
 
     @staticmethod
     def tgConv2D(testGen, op, rank):
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
-        assert(rank == 4)
+        assert rank == 4
 
         # IFM dimensions are NHWC
         ifm_shape = testGen.makeShape(rank)
@@ -216,7 +224,7 @@ class TosaTensorGen():
             ifm_shape[0] = (ifm_shape[0] % testGen.args.max_batch_size) + 1
 
         # Get the filter height/width from the operator parameters
-        filter_hw = op['filter']
+        filter_hw = op["filter"]
 
         # Generate a random OFM depth
         ofm_depth = testGen.makeShape(1)[0]
@@ -231,9 +239,9 @@ class TosaTensorGen():
 
     @staticmethod
     def tgTransposeConv2D(testGen, op, rank):
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
-        assert(rank == 4)
+        assert rank == 4
 
         # IFM dimensions are NHWC
         ifm_shape = testGen.makeShape(rank)
@@ -243,7 +251,7 @@ class TosaTensorGen():
             ifm_shape[0] = (ifm_shape[0] % testGen.args.max_batch_size) + 1
 
         # Get the filter height/width from the operator parameters
-        filter_hw = op['filter']
+        filter_hw = op["filter"]
 
         # Generate a random OFM depth
         ofm_depth = testGen.makeShape(1)[0]
@@ -255,10 +263,10 @@ class TosaTensorGen():
 
     @staticmethod
     def tgDepthwiseConv2D(testGen, op, rank):
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
-        assert(rank == 4)
-        assert(pl == 1 and const == 2)
+        assert rank == 4
+        assert pl == 1 and const == 2
 
         # IFM dimensions are NHWC
         ifm_shape = testGen.makeShape(rank)
@@ -269,11 +277,13 @@ class TosaTensorGen():
 
         # Get the filter height/width from the operator parameters
         # Filter is KH, HW, C, M
-        filter_hw = op['filter']
+        filter_hw = op["filter"]
 
         # Generate a random OFM depth, but don't let it get too big because
         # the output depth is M * C
-        filter_m = (testGen.makeShape(1)[0] % (testGen.args.tensor_shape_range[1] // 4)) + 1
+        filter_m = (
+            testGen.makeShape(1)[0] % (testGen.args.tensor_shape_range[1] // 4)
+        ) + 1
 
         # The filter dimensions are HWCM
         filter_shape = np.asarray([filter_hw[0], filter_hw[1], ifm_shape[3], filter_m])
@@ -285,10 +295,10 @@ class TosaTensorGen():
 
     @staticmethod
     def tgFullyConnected(testGen, op, rank):
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
-        assert(rank == 2)
-        assert(pl == 2 and const == 0)
+        assert rank == 2
+        assert pl == 2 and const == 0
 
         input_shape = testGen.makeShape(rank)
         filter_oc = testGen.makeShape(1)[0]
@@ -300,10 +310,10 @@ class TosaTensorGen():
 
     @staticmethod
     def tgMatmul(testGen, op, rank):
-        pl, const = op['operands']
+        pl, const = op["operands"]
 
-        assert(rank == 2)
-        assert(pl == 2 and const == 0)
+        assert rank == 2
+        assert pl == 2 and const == 0
 
         a_shape = testGen.makeShape(rank)
         b_oc = testGen.makeShape(1)[0]
@@ -311,29 +321,31 @@ class TosaTensorGen():
 
         return [a_shape, b_shape]
 
+
 class TosaArgGen:
-    '''Argument generators create exhaustive or random lists of attributes for operators that take
-       attributes or other parameters.  The return value is a list of (descriptive_name, [arglist])
-       tuples where the descriptive_name is appended to the test name and the arglist is expanded
-       as arguments to the operator build function.'''
+    """Argument generators create exhaustive or random lists of attributes for operators that take
+    attributes or other parameters.  The return value is a list of (descriptive_name, [arglist])
+    tuples where the descriptive_name is appended to the test name and the arglist is expanded
+    as arguments to the operator build function."""
+
     def __init__(self):
         pass
 
     @staticmethod
     def agNone(testGen, opName, shapeList, dtype):
-        '''A trivial argument generator for operators that don't take any
-           non-tensor arguments'''
-        return [('', [])]
+        """A trivial argument generator for operators that don't take any
+        non-tensor arguments"""
+        return [("", [])]
 
     @staticmethod
     def agAxis(testGen, opName, shapeList, dtype):
-        '''Build the axis argument for operators that take a single axis'''
+        """Build the axis argument for operators that take a single axis"""
         axes = []
 
         shape = shapeList[0]
 
         for a in range(0, len(shape)):
-            axes.append(('axis_{}'.format(a), [a]))
+            axes.append(("axis_{}".format(a), [a]))
         return axes
 
     @staticmethod
@@ -344,8 +356,8 @@ class TosaArgGen:
         filter_shape = shapeList[1]
 
         # Must be rank 4
-        assert(len(ifm_shape) == 4)
-        assert(len(filter_shape) == 4)
+        assert len(ifm_shape) == 4
+        assert len(filter_shape) == 4
 
         maxStride = testGen.args.max_conv_stride
         maxPadding = testGen.args.max_conv_padding + 1
@@ -356,20 +368,24 @@ class TosaArgGen:
             for padding in range(0, (maxPadding) ** 4):
                 for dilation in range(0, maxDilation ** 2):
 
-                    s = [stride // maxStride + 1,
-                         stride % maxStride + 1]
-                    p = [(padding // (maxPadding * 4)) % maxPadding,
-                         (padding // (maxPadding * 2)) % maxPadding,
-                         (padding // (maxPadding * 1)) % maxPadding,
-                         padding % maxPadding]
-                    d = [ dilation // maxDilation + 1,
-                          dilation % maxDilation + 1]
+                    s = [stride // maxStride + 1, stride % maxStride + 1]
+                    p = [
+                        (padding // (maxPadding * 4)) % maxPadding,
+                        (padding // (maxPadding * 2)) % maxPadding,
+                        (padding // (maxPadding * 1)) % maxPadding,
+                        padding % maxPadding,
+                    ]
+                    d = [dilation // maxDilation + 1, dilation % maxDilation + 1]
 
                     # 4 padding parameters for regular conv2d
-                    arg_list.append(('st{}{}_pad{}{}{}{}_dilat{}{}'.format(s[0], s[1],
-                                                                           p[0], p[1], p[2], p[3],
-                                                                           d[0], d[1]),
-                                     [ s, p, d ]))
+                    arg_list.append(
+                        (
+                            "st{}{}_pad{}{}{}{}_dilat{}{}".format(
+                                s[0], s[1], p[0], p[1], p[2], p[3], d[0], d[1]
+                            ),
+                            [s, p, d],
+                        )
+                    )
         return arg_list
 
     @staticmethod
@@ -380,8 +396,8 @@ class TosaArgGen:
         filter_shape = shapeList[1]
 
         # Must be rank 4
-        assert(len(ifm_shape) == 4)
-        assert(len(filter_shape) == 4)
+        assert len(ifm_shape) == 4
+        assert len(filter_shape) == 4
 
         maxStride = testGen.args.max_conv_stride
         maxPadding = testGen.args.max_conv_padding + 1
@@ -392,27 +408,47 @@ class TosaArgGen:
             for out_padding in range(0, (maxPadding) ** 2):
                 for dilation in range(0, maxDilation ** 2):
 
-                    s = [stride // maxStride + 1,
-                         stride % maxStride + 1]
-                    p = [(out_padding // (maxPadding * 1)) % maxPadding,
-                         out_padding % maxPadding]
-                    d = [ dilation // maxDilation + 1,
-                          dilation % maxDilation + 1]
+                    s = [stride // maxStride + 1, stride % maxStride + 1]
+                    p = [
+                        (out_padding // (maxPadding * 1)) % maxPadding,
+                        out_padding % maxPadding,
+                    ]
+                    d = [dilation // maxDilation + 1, dilation % maxDilation + 1]
 
-                    oh = (ifm_shape[1] - filter_shape[1] - (filter_shape[1] - 1) * (d[0] - 1) + \
-                          2 * p[0]) // s[0] + 1
+                    oh = (
+                        ifm_shape[1]
+                        - filter_shape[1]
+                        - (filter_shape[1] - 1) * (d[0] - 1)
+                        + 2 * p[0]
+                    ) // s[0] + 1
 
-                    ow = (ifm_shape[2] - filter_shape[2] - (filter_shape[2] - 1) * (d[1] - 1) + \
-                          2 * p[1]) // s[1] + 1
+                    ow = (
+                        ifm_shape[2]
+                        - filter_shape[2]
+                        - (filter_shape[2] - 1) * (d[1] - 1)
+                        + 2 * p[1]
+                    ) // s[1] + 1
 
                     # Output shape
-                    os = [ ifm_shape[0], oh, ow, filter_shape[0] ]
+                    os = [ifm_shape[0], oh, ow, filter_shape[0]]
 
-                    arg_list.append(('st{}{}_outpad{}{}_dilat{}{}_os{}x{}x{}x{}'.format(s[0], s[1],
-                                                                                        p[0], p[1],
-                                                                                        d[0], d[1],
-                                                                                        os[0], os[1], os[2], os[3]),
-                                     [ s, p, d, os ]))
+                    arg_list.append(
+                        (
+                            "st{}{}_outpad{}{}_dilat{}{}_os{}x{}x{}x{}".format(
+                                s[0],
+                                s[1],
+                                p[0],
+                                p[1],
+                                d[0],
+                                d[1],
+                                os[0],
+                                os[1],
+                                os[2],
+                                os[3],
+                            ),
+                            [s, p, d, os],
+                        )
+                    )
 
         return arg_list
 
@@ -430,14 +466,14 @@ class TosaArgGen:
             paddings = np.zeros((rank * 2), dtype=np.int32)
 
             # Fill in the 1's
-            for r in (range(rank * 2)):
+            for r in range(rank * 2):
                 if (v >> r) & 1:
                     paddings[r] = 1
 
             # Reshape back to a 2D array
             paddings = paddings.reshape((rank, 2))
 
-            arg_list.append(('pad{0:b}'.format(v), [ paddings ]))
+            arg_list.append(("pad{0:b}".format(v), [paddings]))
 
         return arg_list
 
@@ -446,7 +482,7 @@ class TosaArgGen:
         arg_list = []
 
         shape = shapeList[0]
-        assert(len(shape) == 4)
+        assert len(shape) == 4
 
         maxStride = testGen.args.max_pooling_stride
         maxKernel = testGen.args.max_pooling_kernel
@@ -455,19 +491,23 @@ class TosaArgGen:
         for kernel in range(0, maxKernel ** 2):
             for stride in range(0, maxStride ** 2):
                 for padding in range(0, maxPadding ** 4):
-                    s = [stride // maxStride + 1,
-                         stride % maxStride + 1]
-                    k = [(kernel // maxKernel) + 2,
-                         (kernel % maxKernel) + 2]
-                    p = [(padding // (maxPadding * 4)) % maxPadding,
-                         (padding // (maxPadding * 2)) % maxPadding,
-                         (padding // (maxPadding * 1)) % maxPadding,
-                         padding % maxPadding]
+                    s = [stride // maxStride + 1, stride % maxStride + 1]
+                    k = [(kernel // maxKernel) + 2, (kernel % maxKernel) + 2]
+                    p = [
+                        (padding // (maxPadding * 4)) % maxPadding,
+                        (padding // (maxPadding * 2)) % maxPadding,
+                        (padding // (maxPadding * 1)) % maxPadding,
+                        padding % maxPadding,
+                    ]
 
-                    arg_list.append(('st{}{}_kern{}{}_pad{}{}{}{}'.format(s[0], s[1],
-                                                                          k[0], k[1],
-                                                                          p[0], p[1], p[2], p[3]),
-                                     [k, s, p]))
+                    arg_list.append(
+                        (
+                            "st{}{}_kern{}{}_pad{}{}{}{}".format(
+                                s[0], s[1], k[0], k[1], p[0], p[1], p[2], p[3]
+                            ),
+                            [k, s, p],
+                        )
+                    )
         return arg_list
 
     @staticmethod
@@ -476,20 +516,20 @@ class TosaArgGen:
 
         # Enumerate the output types here
         if inDtype == DType.INT8:
-            dtypeList = [ DType.BOOL, DType.INT16, DType.INT32, DType.FLOAT ]
+            dtypeList = [DType.BOOL, DType.INT16, DType.INT32, DType.FLOAT]
         elif inDtype == DType.INT16:
-            dtypeList = [ DType.BOOL, DType.INT8, DType.INT32, DType.FLOAT ]
+            dtypeList = [DType.BOOL, DType.INT8, DType.INT32, DType.FLOAT]
         elif inDtype == DType.INT32:
-            dtypeList = [ DType.BOOL, DType.INT8, DType.INT16, DType.FLOAT ]
+            dtypeList = [DType.BOOL, DType.INT8, DType.INT16, DType.FLOAT]
         elif inDtype == DType.BOOL:
-            dtypeList = [ DType.INT8, DType.INT16, DType.INT32 ]
+            dtypeList = [DType.INT8, DType.INT16, DType.INT32]
         elif inDtype == DType.FLOAT:
-            dtypeList = [ DType.INT8, DType.INT16, DType.INT32 ]
+            dtypeList = [DType.INT8, DType.INT16, DType.INT32]
         else:
-            raise Exception('Unexpected input dtype: {}'.format(inDtype))
+            raise Exception("Unexpected input dtype: {}".format(inDtype))
 
         for dtype in dtypeList:
-            arg_list.append(('out{}'.format(DTypeNames[dtype]), [dtype]))
+            arg_list.append(("out{}".format(DTypeNames[dtype]), [dtype]))
 
         return arg_list
 
@@ -498,17 +538,26 @@ class TosaArgGen:
         arg_list = []
 
         # Enumerate the output types here
-        for dtype in [ DType.INT8, DType.INT16, DType.INT32 ]:
-            for scale32 in [ False, True ]:
-                for double_round in [ False, True ]:
-                    for per_channel in [ False, True ]:
+        for dtype in [DType.INT8, DType.INT16, DType.INT32]:
+            for scale32 in [False, True]:
+                for double_round in [False, True]:
+                    for per_channel in [False, True]:
 
                         if inDtype == DType.INT48 and scale32:
                             # Illegal condition.  Must be scale32=False
                             continue
 
-                        arg_list.append(('out{}_sc{}_dr{}_pc{}'.format(DTypeNames[dtype], int(scale32), int(double_round), int(per_channel)),
-                                         [dtype, scale32, double_round, per_channel]))
+                        arg_list.append(
+                            (
+                                "out{}_sc{}_dr{}_pc{}".format(
+                                    DTypeNames[dtype],
+                                    int(scale32),
+                                    int(double_round),
+                                    int(per_channel),
+                                ),
+                                [dtype, scale32, double_round, per_channel],
+                            )
+                        )
 
         return arg_list
 
@@ -521,9 +570,9 @@ class TosaArgGen:
 
                 shift = testGen.randInt(0, 32)
 
-                arg_list.append(('perm{}_shift{}'.format(p, shift), [shift]))
+                arg_list.append(("perm{}_shift{}".format(p, shift), [shift]))
         else:
-            arg_list.append(('shift0', [0]))
+            arg_list.append(("shift0", [0]))
 
         return arg_list
 
@@ -531,8 +580,8 @@ class TosaArgGen:
     def agArithmeticRightShift(testGen, opName, shapeList, dtype):
         arg_list = []
 
-        arg_list.append(('roundTrue', [True]))
-        arg_list.append(('roundFalse', [False]))
+        arg_list.append(("roundTrue", [True]))
+        arg_list.append(("roundFalse", [False]))
 
         return arg_list
 
@@ -563,7 +612,7 @@ class TosaArgGen:
         for p in range(testGen.args.num_rand_permutations):
             newRank = testGen.randInt(1, 6)
             newShape = []
-            if (len(factors) < newRank):
+            if len(factors) < newRank:
                 continue
 
             remainingElements = totalElements
@@ -572,7 +621,9 @@ class TosaArgGen:
                 # pick rank-1 factors
                 newShape.append(shuffledFactors[0])
                 remainingElements = remainingElements // shuffledFactors[0]
-                shuffledFactors = testGen.rng.permutation(TosaArgGen.getFactors(remainingElements))
+                shuffledFactors = testGen.rng.permutation(
+                    TosaArgGen.getFactors(remainingElements)
+                )
             newShape.append(remainingElements)
 
             # Toss in a -1 sometimes
@@ -580,10 +631,9 @@ class TosaArgGen:
             if minusOne < newRank:
                 newShape[minusOne] = -1
 
-            arg_list.append(('perm{}_rank{}'.format(p, newRank), [newShape]))
+            arg_list.append(("perm{}_rank{}".format(p, newRank), [newShape]))
 
         return arg_list
-
 
     @staticmethod
     def agTranspose(testGen, opName, shapeList, dtype):
@@ -603,7 +653,7 @@ class TosaArgGen:
                     break
 
             if not found:
-                arg_list.append(('perm{}'.format(p), [perms]))
+                arg_list.append(("perm{}".format(p), [perms]))
 
         return arg_list
 
@@ -618,7 +668,7 @@ class TosaArgGen:
             begin = []
             size = []
 
-            valid=True
+            valid = True
 
             for i in range(rank):
                 if ifm_shape[i] > 1:
@@ -633,7 +683,7 @@ class TosaArgGen:
                     size.append(1)
 
             if valid:
-                arg_list.append(('perm{}'.format(p), [begin, size]))
+                arg_list.append(("perm{}".format(p), [begin, size]))
         return arg_list
 
     @staticmethod
@@ -652,7 +702,7 @@ class TosaArgGen:
             for i in range(rank):
                 multiples.append(testGen.randInt(1, 4))
 
-            arg_list.append(('perm{}'.format(p), [multiples]))
+            arg_list.append(("perm{}".format(p), [multiples]))
 
         return arg_list
 
@@ -666,15 +716,15 @@ class TosaArgGen:
 
             # Exclude illegal {mode, type} configurations.  Pick legal output types
             if m == ResizeMode.NEAREST and dtype == DType.INT8:
-                outputDTypeList = [ DType.INT32 ]
+                outputDTypeList = [DType.INT32]
             elif m == ResizeMode.NEAREST and dtype == DType.INT16:
-                outputDTypeList = [ DType.INT16 ]
+                outputDTypeList = [DType.INT16]
             elif m == ResizeMode.BILINEAR and dtype == DType.INT8:
-                outputDTypeList = [ DType.INT8 ]
+                outputDTypeList = [DType.INT8]
             elif m == ResizeMode.BILINEAR and dtype == DType.INT16:
-                outputDTypeList = [ DType.INT48 ]
+                outputDTypeList = [DType.INT48]
             elif dtype == DType.FLOAT:
-                outputDTypeList = [ DType.FLOAT ]
+                outputDTypeList = [DType.FLOAT]
             else:
                 continue
 
@@ -683,7 +733,7 @@ class TosaArgGen:
 
                     # Randomly generate legal output dimensions and shift
                     # and then compute the stride and offset based on them
-                    output_dims = [ testGen.randInt(1), testGen.randInt(1) ]
+                    output_dims = [testGen.randInt(1), testGen.randInt(1)]
                     in_center_h = (ifm_shape[1] - 1) / 2.0
                     in_center_w = (ifm_shape[2] - 1) / 2.0
                     out_center_h = (output_dims[0] - 1) / 2.0
@@ -698,12 +748,33 @@ class TosaArgGen:
                         shift = 0
                         stride = [0, 0]
                         offset = [0, 0]
-                        stride_fp = [ fp_stride_y, fp_stride_x]
-                        offset_fp = [ fp_offset_y, fp_offset_x]
-                        arg_list.append(('mode{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}'.format(m, output_dims[0], output_dims[1],
-                                                                                                  testGen.typeStr(outputDType), stride_fp[0], stride_fp[1],
-                                                                                                  offset_fp[0], offset_fp[1]),
-                                             [m, stride, offset, shift, stride_fp, offset_fp, output_dims, dtype, outputDType]))
+                        stride_fp = [fp_stride_y, fp_stride_x]
+                        offset_fp = [fp_offset_y, fp_offset_x]
+                        arg_list.append(
+                            (
+                                "mode{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}".format(
+                                    m,
+                                    output_dims[0],
+                                    output_dims[1],
+                                    testGen.typeStr(outputDType),
+                                    stride_fp[0],
+                                    stride_fp[1],
+                                    offset_fp[0],
+                                    offset_fp[1],
+                                ),
+                                [
+                                    m,
+                                    stride,
+                                    offset,
+                                    shift,
+                                    stride_fp,
+                                    offset_fp,
+                                    output_dims,
+                                    dtype,
+                                    outputDType,
+                                ],
+                            )
+                        )
                     else:
                         shift = 11
                         unit = float(1 << shift)
@@ -712,7 +783,14 @@ class TosaArgGen:
                         offset_y = int(round(fp_offset_y * unit))
                         offset_x = int(round(fp_offset_x * unit))
 
-                        while (stride_y >= 32768 or stride_x >= 32768 or offset_y >= 32768 or offset_x >= 32768 or offset_y < -32768 or offset_x < -32768):
+                        while (
+                            stride_y >= 32768
+                            or stride_x >= 32768
+                            or offset_y >= 32768
+                            or offset_x >= 32768
+                            or offset_y < -32768
+                            or offset_x < -32768
+                        ):
                             shift = shift - 1
                             unit = float(1 << shift)
                             stride_y = int(round(fp_stride_y * unit))
@@ -720,16 +798,38 @@ class TosaArgGen:
                             offset_y = int(round(fp_offset_y * unit))
                             offset_x = int(round(fp_offset_x * unit))
 
-                        stride = [ stride_y, stride_x]
-                        offset = [ offset_y, offset_x]
+                        stride = [stride_y, stride_x]
+                        offset = [offset_y, offset_x]
 
                         stride_fp = [0.0, 0.0]
                         offset_fp = [0.0, 0.0]
 
-                        arg_list.append(('mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}'.format(m, shift, output_dims[0], output_dims[1],
-                                                                                                  testGen.typeStr(outputDType), stride[0], stride[1],
-                                                                                                  offset[0], offset[1]),
-                                             [m, stride, offset, shift, stride_fp, offset_fp, output_dims, dtype, outputDType]))
+                        arg_list.append(
+                            (
+                                "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}".format(
+                                    m,
+                                    shift,
+                                    output_dims[0],
+                                    output_dims[1],
+                                    testGen.typeStr(outputDType),
+                                    stride[0],
+                                    stride[1],
+                                    offset[0],
+                                    offset[1],
+                                ),
+                                [
+                                    m,
+                                    stride,
+                                    offset,
+                                    shift,
+                                    stride_fp,
+                                    offset_fp,
+                                    output_dims,
+                                    dtype,
+                                    outputDType,
+                                ],
+                            )
+                        )
 
         return arg_list
 
@@ -740,7 +840,7 @@ class TosaArgGen:
         arg_list = []
 
         for c in [False, True]:
-            arg_list.append(('cond{}'.format(int(c)), [ c ]))
+            arg_list.append(("cond{}".format(int(c)), [c]))
 
         return arg_list
 
@@ -749,9 +849,10 @@ class TosaArgGen:
         arg_list = []
 
         for iter in [0, 1, 4]:
-            arg_list.append(('iter{}'.format(iter), [ iter ]))
+            arg_list.append(("iter{}".format(iter), [iter]))
 
         return arg_list
+
 
 class TosaTestGen:
     def __init__(self, args):
@@ -777,11 +878,13 @@ class TosaTestGen:
         return self.ser
 
     def serialize(self, testName):
-        with open(os.path.join(self.basePath, self.testPath, '{}.tosa'.format(testName)), 'wb') as fd:
+        with open(
+            os.path.join(self.basePath, self.testPath, "{}.tosa".format(testName)), "wb"
+        ) as fd:
             fd.write(self.ser.serialize())
 
-        with open(os.path.join(self.basePath, self.testPath, 'desc.json'), 'w') as fd:
-            fd.write(self.ser.writeJson('{}.tosa'.format(testName)))
+        with open(os.path.join(self.basePath, self.testPath, "desc.json"), "w") as fd:
+            fd.write(self.ser.writeJson("{}.tosa".format(testName)))
 
     def getRandTensor(self, shape, dtype):
         RAND_SHIFT_FACTOR = 0.5
@@ -797,20 +900,26 @@ class TosaTestGen:
         elif dtype == DType.INT16:
             return np.int32(self.rng.integers(low=-32768, high=32768, size=shape))
         elif dtype == DType.INT32:
-            return np.int32(self.rng.integers(low=-(1 << 31), high=(1 << 31), size=shape))
+            return np.int32(
+                self.rng.integers(low=-(1 << 31), high=(1 << 31), size=shape)
+            )
         elif dtype == DType.INT48:
-            return np.int64(self.rng.integers(low=-(1 << 47), high=(1 << 47), size=shape))
+            return np.int64(
+                self.rng.integers(low=-(1 << 47), high=(1 << 47), size=shape)
+            )
         elif dtype == DType.FLOAT:
-            return np.float32(self.rng.random(size=shape) - RAND_SHIFT_FACTOR * RAND_SCALE_FACTOR)
+            return np.float32(
+                self.rng.random(size=shape) - RAND_SHIFT_FACTOR * RAND_SCALE_FACTOR
+            )
         else:
-            raise Exception('Unrecognized Dtype: {}'.format(dtype))
+            raise Exception("Unrecognized Dtype: {}".format(dtype))
 
     def buildPlaceholderTensors(self, shape_list, dtype):
         placeholders = []
 
         for shape in shape_list:
             arr = self.getRandTensor(shape, dtype)
-            placeholders.append(self.ser.addPlaceholder(shape, dtype, Usage.ACTIVATION, [], arr))
+            placeholders.append(self.ser.addPlaceholder(shape, dtype, arr))
 
         return placeholders
 
@@ -819,16 +928,20 @@ class TosaTestGen:
 
         for shape in shape_list:
             arr = self.getRandTensor(shape, dtype)
-            consts.append(self.ser.addConst(shape, dtype, Usage.ACTIVATION, [], arr))
+            consts.append(self.ser.addConst(shape, dtype, arr))
 
         return consts
 
     def makeShape(self, rank):
         if self.targetted_shape:
             return np.int32(self.targetted_shape)
-        return np.int32(self.rng.integers(low=self.args.tensor_shape_range[0],
-                                          high=self.args.tensor_shape_range[1],
-                                          size=rank))
+        return np.int32(
+            self.rng.integers(
+                low=self.args.tensor_shape_range[0],
+                high=self.args.tensor_shape_range[1],
+                size=rank,
+            )
+        )
 
     def setTargetShape(self, shape):
         self.targetted_shape = shape
@@ -848,13 +961,13 @@ class TosaTestGen:
         elif dtype == DType.INT16:
             low, high = (-32768, 32768)
         elif dtype == DType.INT32:
-            low, high = (-(1<<31), (1<<31))
+            low, high = (-(1 << 31), (1 << 31))
         elif dtype == DType.INT48:
-            low, high = (-(1<<47), (1<<47))
+            low, high = (-(1 << 47), (1 << 47))
             # Special size
             return np.int64(self.rng.integers(low, high, size=1))[0]
         else:
-            raise Exception('Unknown dtype: {}'.format(dtype))
+            raise Exception("Unknown dtype: {}".format(dtype))
 
         return np.int32(self.rng.integers(low, high, size=1))[0]
 
@@ -865,30 +978,30 @@ class TosaTestGen:
         for i in shape:
             sStr.append(str(i))
 
-        return 'x'.join(sStr)
+        return "x".join(sStr)
 
     def typeStr(self, t):
         if t == DType.BOOL:
-            return 'b'
+            return "b"
         elif t == DType.INT4:
-            return 'i4'
+            return "i4"
         elif t == DType.INT8:
-            return 'i8'
+            return "i8"
         elif t == DType.UINT8:
-            return 'u8'
+            return "u8"
         elif t == DType.INT16:
-            return 'i16'
+            return "i16"
         elif t == DType.INT32:
-            return 'i32'
+            return "i32"
         elif t == DType.INT48:
-            return 'i48'
+            return "i48"
         elif t == DType.FLOAT:
-            return 'float'
+            return "float"
         else:
-            raise Exception('Unknown dtype, cannot convert to string: {}'.format(t))
+            raise Exception("Unknown dtype, cannot convert to string: {}".format(t))
 
     def typeWidth(self, t):
-        ''' Get the datatype width for integer types'''
+        """ Get the datatype width for integer types"""
         if t == DType.INT4:
             return 4
         elif t == DType.INT8:
@@ -902,7 +1015,7 @@ class TosaTestGen:
         elif t == DType.INT48:
             return 48
         else:
-            raise Exception('Unknown dtype, cannot convert to string: {}'.format(t))
+            raise Exception("Unknown dtype, cannot convert to string: {}".format(t))
 
     # Argument generators
     # Returns a list of tuples (stringDescriptor, [build_fcn_arg_list])
@@ -910,8 +1023,7 @@ class TosaTestGen:
     # The build_fcn_arg_list is expanded and passed to the operator test
     # build function
 
-
-    def build_unary(self, op, a, qinfo = None):
+    def build_unary(self, op, a, qinfo=None):
         result_tens = OutputShaper.unaryOp(self.ser, a)
         self.ser.addOperator(op, [a.name], [result_tens.name], None, qinfo)
         return result_tens
@@ -952,7 +1064,7 @@ class TosaTestGen:
     def build_table(self, op, a):
         # Constant size, random values
         table_arr = self.getRandTensor([513], DType.INT16)
-        table_tens = self.ser.addConst(table_arr.shape, DType.INT16, Usage.INDEX, [], table_arr)
+        table_tens = self.ser.addConst(table_arr.shape, DType.INT16, table_arr)
 
         result_tens = OutputShaper.tableOp(self.ser, a, table_tens)
         self.ser.addOperator(op, [a.name, table_tens.name], [result_tens.name], None)
@@ -985,42 +1097,37 @@ class TosaTestGen:
         self.ser.addOperator(op, [a.name], [result_tens.name], attr)
         return result_tens
 
-    def build_pool2d(self, op, input, kernel, stride, pad, qinfo = None):
+    def build_pool2d(self, op, input, kernel, stride, pad, qinfo=None):
         result_tens = OutputShaper.pool2dOp(self.ser, input, kernel, stride, pad)
 
         attr = ts.TosaSerializerAttribute()
         attr.Pool2dAttribute(kernel, stride, pad)
-        input.addFormat(Format.NHWC)
 
         self.ser.addOperator(op, [input.name], [result_tens.name], attr, qinfo)
         return result_tens
 
     def build_conv2d(self, op, ifm, filter, bias, strides, padding, dilations, qinfo):
-        assert(len(padding) == 4)
-        result_tens = OutputShaper.conv2dOp(self.ser, ifm, filter, strides, padding, dilations)
+        assert len(padding) == 4
+        result_tens = OutputShaper.conv2dOp(
+            self.ser, ifm, filter, strides, padding, dilations
+        )
 
         attr = ts.TosaSerializerAttribute()
         attr.Conv2dAttribute(padding, strides, dilations)
 
-        ifm.addFormat(Format.NHWC)
-        # Update the filter ordering
-        filter.addUsage(Usage.WEIGHT)
-        filter.addFormat(Format.OHWI)
-
-        self.ser.addOperator(op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo)
+        self.ser.addOperator(
+            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+        )
         return result_tens
 
-    def build_transpose_conv2d(self, op, ifm, filter, stride, outpad, dilation, output_shape, qinfo):
-        assert(len(outpad) == 2)
+    def build_transpose_conv2d(
+        self, op, ifm, filter, stride, outpad, dilation, output_shape, qinfo
+    ):
+        assert len(outpad) == 2
         result_tens = OutputShaper.transposeConv2DOp(self.ser, ifm, output_shape)
 
         attr = ts.TosaSerializerAttribute()
         attr.TransposeConv2DAttribute(outpad, stride, dilation, output_shape)
-
-        ifm.addFormat(Format.NHWC)
-        # Update the filter ordering
-        filter.addUsage(Usage.WEIGHT)
-        filter.addFormat(Format.OHWI)
 
         # Create bias here since the acc_t depends on (but isn't the same as) the input dtype
         # The bias is OC
@@ -1031,32 +1138,39 @@ class TosaTestGen:
         elif ifm.dtype == DType.FLOAT:
             bias_type = DType.FLOAT
         else:
-            raise Exception('Unsupported dtype for transpose_conv2d: {}'.format(ifm.dtype))
+            raise Exception(
+                "Unsupported dtype for transpose_conv2d: {}".format(ifm.dtype)
+            )
 
         bias_arr = self.getRandTensor([filter.shape[0]], bias_type)
-        bias_tens = self.ser.addConst([filter.shape[0]], bias_type, [], [], bias_arr)
+        bias_tens = self.ser.addConst([filter.shape[0]], bias_type, bias_arr)
 
-        self.ser.addOperator(op, [ifm.name, filter.name, bias_tens.name], [result_tens.name], attr, qinfo)
+        self.ser.addOperator(
+            op, [ifm.name, filter.name, bias_tens.name], [result_tens.name], attr, qinfo
+        )
         return result_tens
 
-    def build_depthwise_conv2d(self, op, ifm, filter, bias, strides, padding, dilations, qinfo):
-        result_tens = OutputShaper.depthwiseConv2dOp(self.ser, ifm, filter, strides, padding, dilations)
+    def build_depthwise_conv2d(
+        self, op, ifm, filter, bias, strides, padding, dilations, qinfo
+    ):
+        result_tens = OutputShaper.depthwiseConv2dOp(
+            self.ser, ifm, filter, strides, padding, dilations
+        )
 
         attr = ts.TosaSerializerAttribute()
         attr.Conv2dAttribute(padding, strides, dilations)
 
-        ifm.addFormat(Format.NHWC)
-        filter.addUsage(Usage.WEIGHT)
-        filter.addFormat(Format.HWIM)
-
-        self.ser.addOperator(op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo)
+        self.ser.addOperator(
+            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+        )
         return result_tens
 
     def build_fully_connected(self, op, ifm, filter, bias, qinfo):
         result_tens = OutputShaper.fullyConnectedOp(self.ser, ifm, filter)
 
-        filter.addUsage(Usage.WEIGHT)
-        self.ser.addOperator(op, [ifm.name, filter.name, bias.name], [result_tens.name], None, qinfo)
+        self.ser.addOperator(
+            op, [ifm.name, filter.name, bias.name], [result_tens.name], None, qinfo
+        )
         return result_tens
 
     def build_matmul(self, op, a, b, qinfo):
@@ -1142,9 +1256,11 @@ class TosaTestGen:
         # Need to turn the padding array into a TOSA tensor here.
         # This is one of the few tensor operands that does not get
         # randomly generated
-        padding_tens = self.ser.addConst(padding.shape, DType.INT32, [], [], padding)
+        padding_tens = self.ser.addConst(padding.shape, DType.INT32, padding)
 
-        self.ser.addOperator(op, [a.name, padding_tens.name], [result_tens.name], None, qinfo)
+        self.ser.addOperator(
+            op, [a.name, padding_tens.name], [result_tens.name], None, qinfo
+        )
 
     def build_reshape(self, op, a, newShape):
         result_tens = OutputShaper.reshapeOp(self.ser, a, newShape)
@@ -1167,7 +1283,7 @@ class TosaTestGen:
     def build_transpose(self, op, a, perms):
         result_tens = OutputShaper.transposeOp(self.ser, a, perms)
 
-        perms_tens = self.ser.addConst([len(perms)], DType.INT32, Usage.ACTIVATION, [], np.int32(perms))
+        perms_tens = self.ser.addConst([len(perms)], DType.INT32, np.int32(perms))
 
         self.ser.addOperator(op, [a.name, perms_tens.name], [result_tens.name])
         return result_tens
@@ -1190,16 +1306,19 @@ class TosaTestGen:
         self.ser.addOperator(op, [a.name], [result_tens.name], attr)
         return result_tens
 
-
     def build_gather(self, op, values):
 
         # Create a new indicies tensor
         # here with data that doesn't exceed the dimensions of the values tensor
 
-        K = values.shape[1] # K
-        W = self.randInt(self.args.tensor_shape_range[0], self.args.tensor_shape_range[1]) # W
-        indicies_arr = np.int32(self.rng.integers(low=0, high=K, size=[values.shape[0], W])) # (N, W)
-        indicies = self.ser.addConst(indicies_arr.shape, DType.INT32, Usage.INDEX, [], indicies_arr)
+        K = values.shape[1]  # K
+        W = self.randInt(
+            self.args.tensor_shape_range[0], self.args.tensor_shape_range[1]
+        )  # W
+        indicies_arr = np.int32(
+            self.rng.integers(low=0, high=K, size=[values.shape[0], W])
+        )  # (N, W)
+        indicies = self.ser.addConst(indicies_arr.shape, DType.INT32, indicies_arr)
 
         result_tens = OutputShaper.gatherOp(self.ser, values, indicies)
 
@@ -1212,32 +1331,65 @@ class TosaTestGen:
         # Create a new indicies tensor
         # here with data that doesn't exceed the dimensions of the values_in tensor
 
-        K = values_in.shape[1] # K
-        W = input.shape[1] # W
-        indicies_arr = np.int32(self.rng.integers(low=0, high=K, size=[values_in.shape[0], W])) # (N, W)
-        indicies = self.ser.addConst(indicies_arr.shape, DType.INT32, Usage.INDEX, [], indicies_arr)
+        K = values_in.shape[1]  # K
+        W = input.shape[1]  # W
+        indicies_arr = np.int32(
+            self.rng.integers(low=0, high=K, size=[values_in.shape[0], W])
+        )  # (N, W)
+        indicies = self.ser.addConst(indicies_arr.shape, DType.INT32, indicies_arr)
 
         result_tens = OutputShaper.scatterOp(self.ser, values_in, indicies, input)
 
-        self.ser.addOperator(op, [values_in.name, indicies.name, input.name], [result_tens.name])
+        self.ser.addOperator(
+            op, [values_in.name, indicies.name, input.name], [result_tens.name]
+        )
 
         return result_tens
 
-    def build_resize(self, op, input, mode, stride, offset, shift, stride_fp, offset_fp, output_dims, input_dtype, output_dtype):
-        result_tens = OutputShaper.resizeOp(self.ser, input, mode, stride, offset, shift, stride_fp, offset_fp, output_dims, input_dtype, output_dtype)
+    def build_resize(
+        self,
+        op,
+        input,
+        mode,
+        stride,
+        offset,
+        shift,
+        stride_fp,
+        offset_fp,
+        output_dims,
+        input_dtype,
+        output_dtype,
+    ):
+        result_tens = OutputShaper.resizeOp(
+            self.ser,
+            input,
+            mode,
+            stride,
+            offset,
+            shift,
+            stride_fp,
+            offset_fp,
+            output_dims,
+            input_dtype,
+            output_dtype,
+        )
 
         attr = ts.TosaSerializerAttribute()
 
-        attr.ResizeAttribute(output_dims, stride, offset, shift, stride_fp, offset_fp, mode)
+        attr.ResizeAttribute(
+            output_dims, stride, offset, shift, stride_fp, offset_fp, mode
+        )
 
         self.ser.addOperator(op, [input.name], [result_tens.name], attr)
         return result_tens
 
     def build_identityn(self, op, val, val2):
 
-        result_tens  = OutputShaper.unaryOp(self.ser, val)
+        result_tens = OutputShaper.unaryOp(self.ser, val)
         result_tens2 = OutputShaper.unaryOp(self.ser, val2)
-        self.ser.addOperator(op, [val.name, val2.name], [result_tens.name, result_tens2.name])
+        self.ser.addOperator(
+            op, [val.name, val2.name], [result_tens.name, result_tens2.name]
+        )
         return result_tens
 
     def build_placeholder(self, op, val):
@@ -1287,27 +1439,30 @@ class TosaTestGen:
             # Cap the scaling at 2^15 - 1 for scale16
             scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), 32767.0)
 
-        #print('{} {} -> {}'.format(out_type_width, in_type_width, scale_arr))
+        # print('{} {} -> {}'.format(out_type_width, in_type_width, scale_arr))
 
         multiplier_arr = np.int32(np.zeros(shape=[nc]))
         shift_arr = np.int32(np.zeros(shape=[nc]))
 
         for i in range(nc):
-            multiplier_arr[i], shift_arr[i] = TosaQuantGen.computeMultiplierAndShift(scale_arr[i], scale32)
+            multiplier_arr[i], shift_arr[i] = TosaQuantGen.computeMultiplierAndShift(
+                scale_arr[i], scale32
+            )
             if shift_arr[i] < 2 or shift_arr[i] > 62:
-                self.ser.setExpectedFailure(True, 'OpRescale: invalid shift value')
+                self.ser.setExpectedFailure(True, "OpRescale: invalid shift value")
 
-        #print('multiplier {} shift {} inzp {} outzp {}'.format(multiplier_arr, shift_arr, input_zp, output_zp))
+        # print('multiplier {} shift {} inzp {} outzp {}'.format(multiplier_arr, shift_arr, input_zp, output_zp))
 
         attr = ts.TosaSerializerAttribute()
-        attr.RescaleAttribute(input_zp,
-                              output_zp,
-                              multiplier_arr,
-                              shift_arr,
-                              scale32,
-                              double_round,
-
-                              per_channel)
+        attr.RescaleAttribute(
+            input_zp,
+            output_zp,
+            multiplier_arr,
+            shift_arr,
+            scale32,
+            double_round,
+            per_channel,
+        )
 
         self.ser.addOperator(op, [val.name], [result_tens.name], attr)
         return result_tens
@@ -1318,7 +1473,7 @@ class TosaTestGen:
         # and fill them with const nodes for the body.
 
         # Condition tensor
-        cond_tens = self.ser.addConst([], DType.BOOL, Usage.ACTIVATION, [], [cond])
+        cond_tens = self.ser.addConst([], DType.BOOL, [cond])
 
         # Make then/else tensors
         out_shape = then_tens.shape
@@ -1326,11 +1481,11 @@ class TosaTestGen:
         else_arr = np.int32(self.rng.integers(0, 255, size=out_shape))
 
         # And the result tensor based on any of the outputs
-        result_tens = self.ser.addOutput(out_shape, DType.INT32, Usage.ACTIVATION, [])
+        result_tens = self.ser.addOutput(out_shape, DType.INT32)
 
         # Create the attribute with the names of the then/else blocks
-        then_block = 'THEN_BLOCK'
-        else_block = 'ELSE_BLOCK'
+        then_block = "THEN_BLOCK"
+        else_block = "ELSE_BLOCK"
         attr = ts.TosaSerializerAttribute()
         attr.CondIfAttribute(then_block, else_block)
 
@@ -1339,11 +1494,11 @@ class TosaTestGen:
 
         self.ser.startBasicBlock(then_block)
         # Build the actual then/else tensors inside their blocks
-        then_tens = self.ser.addConst(out_shape, DType.INT32, Usage.ACTIVATION, [], then_arr)
+        then_tens = self.ser.addConst(out_shape, DType.INT32, then_arr)
         self.ser.addOutputTensor(then_tens)
 
         self.ser.startBasicBlock(else_block)
-        else_tens = self.ser.addConst(out_shape, DType.INT32, Usage.ACTIVATION, [], else_arr)
+        else_tens = self.ser.addConst(out_shape, DType.INT32, else_arr)
         self.ser.addOutputTensor(else_tens)
 
         return result_tens
@@ -1353,67 +1508,71 @@ class TosaTestGen:
         # alternately add or subtract them based on the condition
 
         # Condition tensor
-        cond_tens = self.ser.addConst([], DType.BOOL, Usage.ACTIVATION, [], [cond])
+        cond_tens = self.ser.addConst([], DType.BOOL, [cond])
 
-        result_tens = self.ser.addOutput(a.shape, a.dtype, Usage.ACTIVATION, [])
+        result_tens = self.ser.addOutput(a.shape, a.dtype)
         self.ser.currBasicBlock.addOutput(result_tens.name)
 
         # Create the attribute with the names of the then/else blocks
-        then_block = 'THEN_BLOCK'
-        else_block = 'ELSE_BLOCK'
+        then_block = "THEN_BLOCK"
+        else_block = "ELSE_BLOCK"
         attr = ts.TosaSerializerAttribute()
         attr.CondIfAttribute(then_block, else_block)
 
         # Finally, build the op and the two blocks
-        self.ser.addOperator(op, [cond_tens.name, a.name, b.name], [result_tens.name], attr)
+        self.ser.addOperator(
+            op, [cond_tens.name, a.name, b.name], [result_tens.name], attr
+        )
 
         self.ser.startBasicBlock(then_block)
         self.ser.addInputTensor(a)
         self.ser.addInputTensor(b)
-        then_tens = self.ser.addOutput(a.shape, a.dtype, a.usage, a.dformat)
+        then_tens = self.ser.addOutput(a.shape, a.dtype)
         self.ser.addOperator(Op.ADD, [a.name, b.name], [then_tens.name])
 
         self.ser.startBasicBlock(else_block)
         self.ser.addInputTensor(a)
         self.ser.addInputTensor(b)
-        else_tens = self.ser.addOutput(a.shape, a.dtype, a.usage, a.dformat)
+        else_tens = self.ser.addOutput(a.shape, a.dtype)
         self.ser.addOperator(Op.SUB, [a.name, b.name], [else_tens.name])
 
         return result_tens
 
     def build_while_loop(self, op, a, iter_val):
-        iter = self.ser.addPlaceholder([], DType.INT32, Usage.ACTIVATION, [], [np.int32(iter_val)])
+        iter = self.ser.addPlaceholder([], DType.INT32, [np.int32(iter_val)])
 
-        cond_block = 'COND_BLOCK'
-        body_block = 'BODY_BLOCK'
+        cond_block = "COND_BLOCK"
+        body_block = "BODY_BLOCK"
 
         attr = ts.TosaSerializerAttribute()
         attr.WhileLoopAttribute(cond_block, body_block)
 
         # Accumulator tensor
-        #acc = self.ser.addOutput(a.shape, a.dtype, a.usage, a.dformat)
+        # acc = self.ser.addOutput(a.shape, a.dtype)
         acc_init_val = np.int32(np.zeros(a.shape))
-        acc = self.ser.addPlaceholder(a.shape, a.dtype, a.usage, a.dformat, acc_init_val)
+        acc = self.ser.addPlaceholder(a.shape, a.dtype, acc_init_val)
 
         # Intermediate/output tensors for everything going through the loop
-        iter_out = self.ser.addIntermediate(iter.shape, iter.dtype, iter.usage, iter.dformat)
-        a_out    = self.ser.addIntermediate(a.shape, a.dtype, a.usage, a.dformat)
-        acc_out  = self.ser.addIntermediate(acc.shape, acc.dtype, acc.usage, acc.dformat)
+        iter_out = self.ser.addIntermediate(iter.shape, iter.dtype)
+        a_out = self.ser.addIntermediate(a.shape, a.dtype)
+        acc_out = self.ser.addIntermediate(acc.shape, acc.dtype)
 
         # While_loop operator
-        self.ser.addOperator(op,
-                             [iter.name, a.name, acc.name],
-                             [iter_out.name, a_out.name, acc_out.name], attr)
+        self.ser.addOperator(
+            op,
+            [iter.name, a.name, acc.name],
+            [iter_out.name, a_out.name, acc_out.name],
+            attr,
+        )
 
         # COND block (input: iter, output: cond_tens )
         self.ser.startBasicBlock(cond_block)
         self.ser.addInputTensor(iter)
         self.ser.addInputTensor(a)
         self.ser.addInputTensor(acc)
-        zero_tens = self.ser.addConst([], DType.INT32, [], [], [np.int32(0)])
-        cond_tens = self.ser.addOutput([], DType.BOOL, [], [])
-        self.ser.addOperator(Op.GREATER, [iter.name, zero_tens.name],
-                             [cond_tens.name])
+        zero_tens = self.ser.addConst([], DType.INT32, [np.int32(0)])
+        cond_tens = self.ser.addOutput([], DType.BOOL)
+        self.ser.addOperator(Op.GREATER, [iter.name, zero_tens.name], [cond_tens.name])
 
         # BODY block (input: a, acc, iter, output: a, acc, iter)
         # Note that local intermediate tensors need to be declared here for the outputs
@@ -1421,9 +1580,9 @@ class TosaTestGen:
         self.ser.addInputTensor(iter)
         self.ser.addInputTensor(a)
         self.ser.addInputTensor(acc)
-        one_tens = self.ser.addConst([], DType.INT32, [], [], [np.int32(1)])
-        iter_body_out = self.ser.addIntermediate(iter.shape, iter.dtype, iter.usage, iter.dformat)
-        acc_body_out  = self.ser.addIntermediate(acc.shape, acc.dtype, acc.usage, acc.dformat)
+        one_tens = self.ser.addConst([], DType.INT32, [np.int32(1)])
+        iter_body_out = self.ser.addIntermediate(iter.shape, iter.dtype)
+        acc_body_out = self.ser.addIntermediate(acc.shape, acc.dtype)
         self.ser.addOperator(Op.ADD, [a.name, acc.name], [acc_body_out.name])
         self.ser.addOperator(Op.SUB, [iter.name, one_tens.name], [iter_body_out.name])
         self.ser.addOutputTensor(iter_body_out)
@@ -1432,21 +1591,22 @@ class TosaTestGen:
 
         return acc_out
 
-
-    def genOpTestList(self, opName, shapeFilter=[None], rankFilter=None, dtypeFilter=None):
+    def genOpTestList(
+        self, opName, shapeFilter=[None], rankFilter=None, dtypeFilter=None
+    ):
 
         try:
             op = self.TOSA_OP_LIST[opName]
         except KeyError as e:
-            raise Exception('Cannot find op with name {}'.format(opName))
+            raise Exception("Cannot find op with name {}".format(opName))
 
         # Initialize a new random number generator
         self.rng = np.random.default_rng(self.random_seed)
 
-        build_fcn, tgen_fcn, agen_fcn = op['build_fcn']
+        build_fcn, tgen_fcn, agen_fcn = op["build_fcn"]
 
         # Generate the lists of arguments
-        rmin, rmax = op['rank']
+        rmin, rmax = op["rank"]
 
         # Test list consists of a tuple of:
         # (opName, testNameStr, dtype, shapeList, argumentsList)
@@ -1461,7 +1621,7 @@ class TosaTestGen:
             if rankFilter is not None and r not in rankFilter:
                 continue
 
-            for t in op['types']:
+            for t in op["types"]:
 
                 # Filter tests based on dtype?
                 if dtypeFilter is not None:
@@ -1487,13 +1647,15 @@ class TosaTestGen:
                     if agen_fcn:
                         argList = agen_fcn(self, opName, shapeList, t)
                     else:
-                        argList = [('', [])]
+                        argList = [("", [])]
 
                     for argStr, args in argList:
                         if argStr:
-                            testStr = '{}_{}_{}_{}'.format(opName, shapeStr, typeStr, argStr)
+                            testStr = "{}_{}_{}_{}".format(
+                                opName, shapeStr, typeStr, argStr
+                            )
                         else:
-                            testStr = '{}_{}_{}'.format(opName, shapeStr, typeStr)
+                            testStr = "{}_{}_{}".format(opName, shapeStr, typeStr)
 
                         testList.append((opName, testStr, t, shapeList, args))
 
@@ -1503,16 +1665,16 @@ class TosaTestGen:
         try:
             op = self.TOSA_OP_LIST[opName]
         except KeyError as e:
-            raise Exception('Cannot find op with name {}'.format(opName))
+            raise Exception("Cannot find op with name {}".format(opName))
 
         # Create a serializer
         self.createSerializer(opName, testStr)
 
-        build_fcn, tgen_fcn, agen_fcn = op['build_fcn']
-        pCount, cCount = op['operands']
+        build_fcn, tgen_fcn, agen_fcn = op["build_fcn"]
+        pCount, cCount = op["operands"]
 
         try:
-            qgen = op['qgen']
+            qgen = op["qgen"]
         except KeyError:
             qgen = None
 
@@ -1520,8 +1682,10 @@ class TosaTestGen:
         tens = []
 
         # If test is ArithmeticRightShift, force value of operand[1] to be within [0, num_bits]
-        if op['op'] == Op.ARITHMETIC_RIGHT_SHIFT:
-            assert pCount == 2 and cCount == 0, 'Op.ArithmeticRightShift must have 2 placeholders, 0 consts'
+        if op["op"] == Op.ARITHMETIC_RIGHT_SHIFT:
+            assert (
+                pCount == 2 and cCount == 0
+            ), "Op.ArithmeticRightShift must have 2 placeholders, 0 consts"
 
             placeholders = []
             for idx, shape in enumerate(shapeList[:]):
@@ -1533,10 +1697,10 @@ class TosaTestGen:
                     elif dtype == DType.INT32:
                         arr = np.int32(self.rng.integers(low=0, high=32, size=shape))
                     else:
-                        raise Exception('OpArithmeticRightShift: invalid input dtype')
+                        raise Exception("OpArithmeticRightShift: invalid input dtype")
                 else:
                     arr = self.getRandTensor(shapeList[0], dtype)
-                placeholders.append(self.ser.addPlaceholder(shape, dtype, Usage.ACTIVATION, [], arr))
+                placeholders.append(self.ser.addPlaceholder(shape, dtype, arr))
 
             tens.extend(placeholders)
         else:
@@ -1550,36 +1714,44 @@ class TosaTestGen:
 
         try:
             if qinfo is not None:
-                resultName = build_fcn(self, op['op'], *tens, *testArgs, qinfo)
+                resultName = build_fcn(self, op["op"], *tens, *testArgs, qinfo)
             else:
-                resultName = build_fcn(self, op['op'], *tens, *testArgs)
+                resultName = build_fcn(self, op["op"], *tens, *testArgs)
         except TypeError as e:
-            print('build_fcn: {}\nTensors: {}\nArgs: {}\n'.format(build_fcn, tens, testArgs))
+            print(
+                "build_fcn: {}\nTensors: {}\nArgs: {}\n".format(
+                    build_fcn, tens, testArgs
+                )
+            )
             raise e
 
         # Save the serialized test
-        self.serialize('test')
+        self.serialize("test")
 
     def createDynamicOpLists(self):
 
         # Dynamically create op lists for convolutions with a list of kernel sizes
-        KERNELS = [ [1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3] ]
+        KERNELS = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
 
         for k in KERNELS:
-            testName = 'conv2d_{}x{}'.format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST['conv2d_TEMPLATE'].copy()
-            self.TOSA_OP_LIST[testName]['filter'] = k
-            self.TOSA_OP_LIST[testName]['template'] = False
+            testName = "conv2d_{}x{}".format(k[0], k[1])
+            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv2d_TEMPLATE"].copy()
+            self.TOSA_OP_LIST[testName]["filter"] = k
+            self.TOSA_OP_LIST[testName]["template"] = False
 
-            testName = 'depthwise_conv2d_{}x{}'.format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST['depthwise_conv2d_TEMPLATE'].copy()
-            self.TOSA_OP_LIST[testName]['filter'] = k
-            self.TOSA_OP_LIST[testName]['template'] = False
+            testName = "depthwise_conv2d_{}x{}".format(k[0], k[1])
+            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST[
+                "depthwise_conv2d_TEMPLATE"
+            ].copy()
+            self.TOSA_OP_LIST[testName]["filter"] = k
+            self.TOSA_OP_LIST[testName]["template"] = False
 
-            testName = 'transpose_conv2d_{}x{}'.format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST['transpose_conv2d_TEMPLATE'].copy()
-            self.TOSA_OP_LIST[testName]['filter'] = k
-            self.TOSA_OP_LIST[testName]['template'] = False
+            testName = "transpose_conv2d_{}x{}".format(k[0], k[1])
+            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST[
+                "transpose_conv2d_TEMPLATE"
+            ].copy()
+            self.TOSA_OP_LIST[testName]["filter"] = k
+            self.TOSA_OP_LIST[testName]["template"] = False
 
         # Delete any templates after having created any dynamic ops
         # This is a two-pass operation because it's bad practice to delete
@@ -1587,7 +1759,7 @@ class TosaTestGen:
         keyList = []
         for k in self.TOSA_OP_LIST:
             try:
-                if self.TOSA_OP_LIST[k]['template'] == True:
+                if self.TOSA_OP_LIST[k]["template"] == True:
                     keyList.append(k)
                     continue
             except KeyError:
@@ -1597,36 +1769,46 @@ class TosaTestGen:
             del self.TOSA_OP_LIST[k]
 
     def initOpListDefaults(self):
-        '''Fill in default fields for ops if they aren't already specified.
-           Look for missing required fields (datastructure linting).'''
+        """Fill in default fields for ops if they aren't already specified.
+        Look for missing required fields (datastructure linting)."""
         for op in self.TOSA_OP_LIST:
 
             # Required fields
             try:
-                pl, c = self.TOSA_OP_LIST[op]['operands']
+                pl, c = self.TOSA_OP_LIST[op]["operands"]
             except (KeyError, ValueError, TypeError):
-                raise Exception('Op {} is missing a valid operand tuple in TOSA_OP_LIST'.format(op))
+                raise Exception(
+                    "Op {} is missing a valid operand tuple in TOSA_OP_LIST".format(op)
+                )
 
             try:
-                fcn, tgen, arggen = self.TOSA_OP_LIST[op]['build_fcn']
+                fcn, tgen, arggen = self.TOSA_OP_LIST[op]["build_fcn"]
             except (KeyError, ValueError, TypeError):
-                raise Exception('Op {} is missing a valid build_fcn tuple in TOSA_OP_LIST'.format(op))
+                raise Exception(
+                    "Op {} is missing a valid build_fcn tuple in TOSA_OP_LIST".format(
+                        op
+                    )
+                )
 
             try:
-                types = self.TOSA_OP_LIST[op]['types']
+                types = self.TOSA_OP_LIST[op]["types"]
             except KeyError as e:
-                raise Exception('Op {} is missing a valid type list in TOSA_OP_LIST'.format(op))
+                raise Exception(
+                    "Op {} is missing a valid type list in TOSA_OP_LIST".format(op)
+                )
 
             try:
-                opcode = self.TOSA_OP_LIST[op]['op']
+                opcode = self.TOSA_OP_LIST[op]["op"]
             except KeyError as e:
-                raise Exception('Op {} is missing the Op field in TOSA_OP_LIST'.format(op))
+                raise Exception(
+                    "Op {} is missing the Op field in TOSA_OP_LIST".format(op)
+                )
 
             # Put in default rank range, if missing
             try:
-                rank = self.TOSA_OP_LIST[op]['rank']
+                rank = self.TOSA_OP_LIST[op]["rank"]
             except KeyError:
-                self.TOSA_OP_LIST[op]['rank'] = self.DEFAULT_RANK_RANGE
+                self.TOSA_OP_LIST[op]["rank"] = self.DEFAULT_RANK_RANGE
 
     # Tensor operator list
     #  'op': op name
@@ -1635,494 +1817,516 @@ class TosaTestGen:
     #    if not specified, defaults to (1, 4)
     #  'build_fcn': tuple of the function to (build_operator(), TensorGen function, ArgGen enum)
     #  'types': array of datatypes to be tested
-    TYPE_FP = [ DType.FLOAT ]
+    TYPE_FP = [DType.FLOAT]
 
-    TYPE_INT = [ DType.INT8, DType.INT16, DType.INT32 ]                      # Excludes INT4
-    TYPE_INT_FP = [ DType.INT8, DType.INT16, DType.INT32, DType.FLOAT ]      # Excludes INT4
+    TYPE_INT = [DType.INT8, DType.INT16, DType.INT32]  # Excludes INT4
+    TYPE_INT_FP = [DType.INT8, DType.INT16, DType.INT32, DType.FLOAT]  # Excludes INT4
 
-    TYPE_BOOL = [ DType.BOOL ]
-    TYPE_FI32 = [ DType.FLOAT, DType.INT32 ]
-    TYPE_FIB = [ DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL ]
-    TYPE_FI16 = [ DType.FLOAT, DType.INT16 ]
+    TYPE_BOOL = [DType.BOOL]
+    TYPE_FI32 = [DType.FLOAT, DType.INT32]
+    TYPE_FIB = [DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL]
+    TYPE_FI16 = [DType.FLOAT, DType.INT16]
 
-    TYPE_NARROW_INT_FP = [ DType.INT8, DType.INT16, DType.FLOAT ]
+    TYPE_NARROW_INT_FP = [DType.INT8, DType.INT16, DType.FLOAT]
 
     DEFAULT_RANK_RANGE = (1, 4)
 
     TOSA_OP_LIST = {
         # Binary ops
-        'add':
-        { 'op':        Op.ADD,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'arithmetic_right_shift':
-        { 'op':        Op.ARITHMETIC_RIGHT_SHIFT,
-          'operands':  (2, 0),
-          'build_fcn': (build_arithmetic_right_shift, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agArithmeticRightShift),
-          'types':     TYPE_INT },
-
-        'bitwise_and':
-        { 'op':        Op.BITWISE_AND,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_INT },
-
-        'bitwise_or':
-        { 'op':        Op.BITWISE_OR,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_INT },
-
-        'bitwise_xor':
-        { 'op':        Op.BITWISE_XOR,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_INT },
-
-        'logical_and':
-        { 'op':        Op.LOGICAL_AND,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_BOOL },
-
-        'logical_left_shift':
-        { 'op':        Op.LOGICAL_LEFT_SHIFT,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_INT },
-
-        'logical_right_shift':
-        { 'op':        Op.LOGICAL_RIGHT_SHIFT,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_INT },
-
-        'logical_or':
-        { 'op':        Op.LOGICAL_OR,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_BOOL },
-
-        'logical_xor':
-        { 'op':        Op.LOGICAL_XOR,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_BOOL },
-
-        'max':
-        { 'op':        Op.MAXIMUM,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'min':
-        { 'op':        Op.MINIMUM,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'mul':
-        { 'op':        Op.MUL,
-          'operands':  (2, 0),
-          'build_fcn': (build_mul, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agMul),
-          'types':     TYPE_INT_FP },
-
-        'pow':
-        { 'op':        Op.POW,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'sub':
-        { 'op':        Op.SUB,
-          'operands':  (2, 0),
-          'build_fcn': (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'table':
-        { 'op':        Op.TABLE,
-          # Use the automatic generation functions to create the input array
-          # but create the table tensor in the build function, as it may be
-          # a different type from the input
-          'operands':  (1, 0),
-          'build_fcn': (build_table, TosaTensorGen.tgBasic, None),
-          'types':     [ DType.INT16 ] },
-
-        'argmax':
-        { 'op':        Op.ARGMAX,
-          'operands': (1, 0),
-          'build_fcn': (build_argmax, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':      TYPE_NARROW_INT_FP },
-
+        "add": {
+            "op": Op.ADD,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "arithmetic_right_shift": {
+            "op": Op.ARITHMETIC_RIGHT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (
+                build_arithmetic_right_shift,
+                TosaTensorGen.tgBroadcastFuzz,
+                TosaArgGen.agArithmeticRightShift,
+            ),
+            "types": TYPE_INT,
+        },
+        "bitwise_and": {
+            "op": Op.BITWISE_AND,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+        "bitwise_or": {
+            "op": Op.BITWISE_OR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+        "bitwise_xor": {
+            "op": Op.BITWISE_XOR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+        "logical_and": {
+            "op": Op.LOGICAL_AND,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+        "logical_left_shift": {
+            "op": Op.LOGICAL_LEFT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+        "logical_right_shift": {
+            "op": Op.LOGICAL_RIGHT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+        "logical_or": {
+            "op": Op.LOGICAL_OR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+        "logical_xor": {
+            "op": Op.LOGICAL_XOR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+        "max": {
+            "op": Op.MAXIMUM,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "min": {
+            "op": Op.MINIMUM,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "mul": {
+            "op": Op.MUL,
+            "operands": (2, 0),
+            "build_fcn": (build_mul, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agMul),
+            "types": TYPE_INT_FP,
+        },
+        "pow": {
+            "op": Op.POW,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "sub": {
+            "op": Op.SUB,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "table": {
+            "op": Op.TABLE,
+            # Use the automatic generation functions to create the input array
+            # but create the table tensor in the build function, as it may be
+            # a different type from the input
+            "operands": (1, 0),
+            "build_fcn": (build_table, TosaTensorGen.tgBasic, None),
+            "types": [DType.INT16],
+        },
+        "argmax": {
+            "op": Op.ARGMAX,
+            "operands": (1, 0),
+            "build_fcn": (build_argmax, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_NARROW_INT_FP,
+        },
         # Templated operator.  Filled in by createDynamicOpLists
-        'conv2d_TEMPLATE':
-        { 'op':       Op.CONV2D,
-          'operands':  (1, 2),
-          'rank':     (4, 4),
-          'build_fcn': (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv2D),
-          'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_NARROW_INT_FP,
-          'template': True },
-
+        "conv2d_TEMPLATE": {
+            "op": Op.CONV2D,
+            "operands": (1, 2),
+            "rank": (4, 4),
+            "build_fcn": (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv2D),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_NARROW_INT_FP,
+            "template": True,
+        },
         # Templated operator.  Filled in by createDynamicOpLists
-        'depthwise_conv2d_TEMPLATE':
-        { 'op':       Op.DEPTHWISE_CONV2D,
-          'operands':  (1, 2),
-          'filter':   [1, 1],
-          'rank':     (4, 4),
-          'build_fcn': (build_depthwise_conv2d, TosaTensorGen.tgDepthwiseConv2D, TosaArgGen.agConv2D),
-          'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_NARROW_INT_FP,
-          'template': True },
-
+        "depthwise_conv2d_TEMPLATE": {
+            "op": Op.DEPTHWISE_CONV2D,
+            "operands": (1, 2),
+            "filter": [1, 1],
+            "rank": (4, 4),
+            "build_fcn": (
+                build_depthwise_conv2d,
+                TosaTensorGen.tgDepthwiseConv2D,
+                TosaArgGen.agConv2D,
+            ),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_NARROW_INT_FP,
+            "template": True,
+        },
         # Templated operator.  Filled in by createDynamicOpLists
-        'transpose_conv2d_TEMPLATE':
-        { 'op':       Op.TRANSPOSE_CONV2D,
-          'operands':  (1, 1),
-          'rank':     (4, 4),
-          'build_fcn': (build_transpose_conv2d, TosaTensorGen.tgTransposeConv2D, TosaArgGen.agTransposeConv2D),
-          'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_NARROW_INT_FP,
-          'template': True },
-
-        'fully_connected':
-        { 'op':       Op.FULLY_CONNECTED,
-          'operands': (2, 0),
-          'rank':     (2, 2),
-          'build_fcn': (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
-          'qgen':      TosaQuantGen.qgConv,
-          'types':    TYPE_NARROW_INT_FP },
-
-        'matmul':
-        { 'op':       Op.MATMUL,
-          'operands': (2, 0),
-          'rank':     (2, 2),
-          'build_fcn': (build_matmul, TosaTensorGen.tgMatmul, None),
-          'qgen':      TosaQuantGen.qgMatmul,
-          'types':     TYPE_NARROW_INT_FP },
-
+        "transpose_conv2d_TEMPLATE": {
+            "op": Op.TRANSPOSE_CONV2D,
+            "operands": (1, 1),
+            "rank": (4, 4),
+            "build_fcn": (
+                build_transpose_conv2d,
+                TosaTensorGen.tgTransposeConv2D,
+                TosaArgGen.agTransposeConv2D,
+            ),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_FP,
+            "template": True,
+        },
+        "fully_connected": {
+            "op": Op.FULLY_CONNECTED,
+            "operands": (2, 0),
+            "rank": (2, 2),
+            "build_fcn": (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_NARROW_INT_FP,
+        },
+        "matmul": {
+            "op": Op.MATMUL,
+            "operands": (2, 0),
+            "rank": (2, 2),
+            "build_fcn": (build_matmul, TosaTensorGen.tgMatmul, None),
+            "qgen": TosaQuantGen.qgMatmul,
+            "types": TYPE_NARROW_INT_FP,
+        },
         # Unary operators
-        'abs':
-        { 'op':        Op.ABS,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FI32 },
-
-        'bitwise_not':
-        { 'op':        Op.BITWISE_NOT,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_INT },
-
-        'ceil':
-        { 'op':        Op.CEIL,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'clz':
-        { 'op':        Op.CLZ,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     [ DType.INT32 ] },
-
-        'exp':
-        { 'op':        Op.EXP,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'floor':
-        { 'op':        Op.FLOOR,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'log':
-        { 'op':        Op.LOG,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'floor':
-        { 'op':        Op.FLOOR,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'logical_not':
-        { 'op':        Op.LOGICAL_NOT,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_BOOL },
-
-        'negate':
-        { 'op':        Op.NEGATE,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'qgen':      TosaQuantGen.qgUnary,
-          'types':     TYPE_INT_FP },
-
-        'reciprocal':
-        { 'op':        Op.RECIPROCAL,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'rsqrt':
-        { 'op':        Op.RSQRT,
-          'operands':  (1, 0),
-          'build_fcn': (build_unary, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
+        "abs": {
+            "op": Op.ABS,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FI32,
+        },
+        "bitwise_not": {
+            "op": Op.BITWISE_NOT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_INT,
+        },
+        "ceil": {
+            "op": Op.CEIL,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "clz": {
+            "op": Op.CLZ,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": [DType.INT32],
+        },
+        "exp": {
+            "op": Op.EXP,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "floor": {
+            "op": Op.FLOOR,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "log": {
+            "op": Op.LOG,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "floor": {
+            "op": Op.FLOOR,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "logical_not": {
+            "op": Op.LOGICAL_NOT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_BOOL,
+        },
+        "negate": {
+            "op": Op.NEGATE,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "qgen": TosaQuantGen.qgUnary,
+            "types": TYPE_INT_FP,
+        },
+        "reciprocal": {
+            "op": Op.RECIPROCAL,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "rsqrt": {
+            "op": Op.RSQRT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
         # Ternary operators
-        'select':
-        { 'op':       Op.SELECT,
-          'operands': (3, 0),
-          'build_fcn': (build_select, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FIB },
-
+        "select": {
+            "op": Op.SELECT,
+            "operands": (3, 0),
+            "build_fcn": (build_select, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FIB,
+        },
         # Comparison operators
-        'equal':
-        { 'op':       Op.EQUAL,
-          'operands': (2, 0),
-          'build_fcn': (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'greater_equal':
-        { 'op':       Op.GREATER_EQUAL,
-          'operands': (2, 0),
-          'build_fcn': (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
-        'greater':
-        { 'op':       Op.GREATER,
-          'operands': (2, 0),
-          'build_fcn': (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-          'types':     TYPE_FI32 },
-
+        "equal": {
+            "op": Op.EQUAL,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "greater_equal": {
+            "op": Op.GREATER_EQUAL,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+        "greater": {
+            "op": Op.GREATER,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
         # Pooling operators
-        'avg_pool2d':
-        { 'op':       Op.AVG_POOL2D,
-          'operands': (1, 0),
-          'rank':     (4, 4),
-          'build_fcn': (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
-          'qgen':      TosaQuantGen.qgUnary,
-          'types':     TYPE_NARROW_INT_FP },
-
-
-        'max_pool2d':
-        { 'op':       Op.MAX_POOL2D,
-          'operands': (1, 0),
-          'rank':     (4, 4),
-          'build_fcn': (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
-          'types':     TYPE_NARROW_INT_FP },
-
+        "avg_pool2d": {
+            "op": Op.AVG_POOL2D,
+            "operands": (1, 0),
+            "rank": (4, 4),
+            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
+            "qgen": TosaQuantGen.qgUnary,
+            "types": TYPE_NARROW_INT_FP,
+        },
+        "max_pool2d": {
+            "op": Op.MAX_POOL2D,
+            "operands": (1, 0),
+            "rank": (4, 4),
+            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
+            "types": TYPE_NARROW_INT_FP,
+        },
         # Reduce operators
-        'reduce_any':
-        { 'op':       Op.REDUCE_ANY,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_BOOL },
-
-        'reduce_all':
-        { 'op':       Op.REDUCE_ALL,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_BOOL },
-
-        'reduce_max':
-        { 'op':       Op.REDUCE_MAX,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_INT_FP },
-
-        'reduce_min':
-        { 'op':       Op.REDUCE_MAX,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_INT_FP },
-
-        'reduce_product':
-        { 'op':       Op.REDUCE_PRODUCT,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_FP },
-
-        'reduce_sum':
-        { 'op':       Op.REDUCE_SUM,
-          'operands':  (1, 0),
-          'build_fcn': (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_FI32 },
-
+        "reduce_any": {
+            "op": Op.REDUCE_ANY,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_BOOL,
+        },
+        "reduce_all": {
+            "op": Op.REDUCE_ALL,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_BOOL,
+        },
+        "reduce_max": {
+            "op": Op.REDUCE_MAX,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_INT_FP,
+        },
+        "reduce_min": {
+            "op": Op.REDUCE_MAX,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_INT_FP,
+        },
+        "reduce_product": {
+            "op": Op.REDUCE_PRODUCT,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FP,
+        },
+        "reduce_sum": {
+            "op": Op.REDUCE_SUM,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FI32,
+        },
         # Activation functions
-        'clamp':
-        { 'op':        Op.CLAMP,
-          'operands':  (1, 0),
-          'build_fcn': (build_clamp, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_NARROW_INT_FP },
-
-        'relun':
-        { 'op':        Op.RELUN,
-          'operands':  (1, 0),
-          'build_fcn': (build_relun, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FI32 },
-
-        'sigmoid':
-        { 'op':        Op.SIGMOID,
-          'operands':  (1, 0),
-          'build_fcn': (build_sigmoid, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
-        'tanh':
-        { 'op':        Op.TANH,
-          'operands':  (1, 0),
-          'build_fcn': (build_tanh, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_FP },
-
+        "clamp": {
+            "op": Op.CLAMP,
+            "operands": (1, 0),
+            "build_fcn": (build_clamp, TosaTensorGen.tgBasic, None),
+            "types": TYPE_NARROW_INT_FP,
+        },
+        "relun": {
+            "op": Op.RELUN,
+            "operands": (1, 0),
+            "build_fcn": (build_relun, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FI32,
+        },
+        "sigmoid": {
+            "op": Op.SIGMOID,
+            "operands": (1, 0),
+            "build_fcn": (build_sigmoid, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+        "tanh": {
+            "op": Op.TANH,
+            "operands": (1, 0),
+            "build_fcn": (build_tanh, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
         # Data layout operators
-        'concat':
-        { 'op':        Op.CONCAT,
-          'operands':  (2, 0),
-          'build_fcn': (build_concat, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_FIB },
-
-        'pad':
-        { 'op':        Op.PAD,
-          'operands':  (1, 0),
-          'build_fcn': (build_pad, TosaTensorGen.tgBasic, TosaArgGen.agPad),
-          'qgen':      TosaQuantGen.qgPad,
-          'types':     TYPE_FIB },
-
-        'reshape':
-        { 'op':        Op.RESHAPE,
-          'operands':  (1, 0),
-          'build_fcn': (build_reshape, TosaTensorGen.tgBasic, TosaArgGen.agReshape),
-          'types':     TYPE_FIB },
-
-        'reverse':
-        { 'op':        Op.REVERSE,
-          'operands':  (1, 0),
-          'build_fcn': (build_reverse, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':     TYPE_FIB },
-
-        'slice':
-        { 'op':        Op.SLICE,
-          'operands':  (1, 0),
-          'build_fcn': (build_slice, TosaTensorGen.tgBasic, TosaArgGen.agSlice),
-          'types':     TYPE_FIB },
-
-        'tile':
-        { 'op':        Op.TILE,
-          'operands':  (1, 0),
-          'build_fcn': (build_tile, TosaTensorGen.tgBasic, TosaArgGen.agTile),
-          'types':     TYPE_FIB },
-
-        'transpose':
-        { 'op':        Op.TRANSPOSE,
-          'operands':  (1, 0),
-          'rank':      (2, 4),  # Do not allow tranpose on rank=1
-          'build_fcn': (build_transpose, TosaTensorGen.tgBasic, TosaArgGen.agTranspose),
-          'types':     TYPE_FIB },
-
+        "concat": {
+            "op": Op.CONCAT,
+            "operands": (2, 0),
+            "build_fcn": (build_concat, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FIB,
+        },
+        "pad": {
+            "op": Op.PAD,
+            "operands": (1, 0),
+            "build_fcn": (build_pad, TosaTensorGen.tgBasic, TosaArgGen.agPad),
+            "qgen": TosaQuantGen.qgPad,
+            "types": TYPE_FIB,
+        },
+        "reshape": {
+            "op": Op.RESHAPE,
+            "operands": (1, 0),
+            "build_fcn": (build_reshape, TosaTensorGen.tgBasic, TosaArgGen.agReshape),
+            "types": TYPE_FIB,
+        },
+        "reverse": {
+            "op": Op.REVERSE,
+            "operands": (1, 0),
+            "build_fcn": (build_reverse, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FIB,
+        },
+        "slice": {
+            "op": Op.SLICE,
+            "operands": (1, 0),
+            "build_fcn": (build_slice, TosaTensorGen.tgBasic, TosaArgGen.agSlice),
+            "types": TYPE_FIB,
+        },
+        "tile": {
+            "op": Op.TILE,
+            "operands": (1, 0),
+            "build_fcn": (build_tile, TosaTensorGen.tgBasic, TosaArgGen.agTile),
+            "types": TYPE_FIB,
+        },
+        "transpose": {
+            "op": Op.TRANSPOSE,
+            "operands": (1, 0),
+            "rank": (2, 4),  # Do not allow tranpose on rank=1
+            "build_fcn": (
+                build_transpose,
+                TosaTensorGen.tgBasic,
+                TosaArgGen.agTranspose,
+            ),
+            "types": TYPE_FIB,
+        },
         # Scatter/Gather
-        'gather':
-        { 'op':        Op.GATHER,
-          # Only specify 'values' tensor here. 'indices' is generated in op building stage
-          'operands':  (1, 0),
-          'rank':      (3, 3),
-          'build_fcn': (build_gather, TosaTensorGen.tgBasic, None),
-          'types':     TYPE_INT_FP },
-
-        'scatter':
-        { 'op':        Op.SCATTER,
-          # Only specify 'values_in' tensor here.
-          #'indices' and 'input' are generated in op building stage
-          'operands':  (2, 0),
-          'rank':      (3, 3),
-          'build_fcn': (build_scatter, TosaTensorGen.tgScatter, None),
-          'types':     TYPE_INT_FP },
-
+        "gather": {
+            "op": Op.GATHER,
+            # Only specify 'values' tensor here. 'indices' is generated in op building stage
+            "operands": (1, 0),
+            "rank": (3, 3),
+            "build_fcn": (build_gather, TosaTensorGen.tgBasic, None),
+            "types": TYPE_INT_FP,
+        },
+        "scatter": {
+            "op": Op.SCATTER,
+            # Only specify 'values_in' tensor here.
+            #'indices' and 'input' are generated in op building stage
+            "operands": (2, 0),
+            "rank": (3, 3),
+            "build_fcn": (build_scatter, TosaTensorGen.tgScatter, None),
+            "types": TYPE_INT_FP,
+        },
         # Image operations
-        'resize':
-        { 'op':        Op.RESIZE,
-          'operands':  (1, 0),
-          'rank':      (4, 4),
-          'build_fcn': ( build_resize, TosaTensorGen.tgNHWC, TosaArgGen.agResize),
-          'types':    [ DType.INT8, DType.INT16, DType.FLOAT ] },
-
-
+        "resize": {
+            "op": Op.RESIZE,
+            "operands": (1, 0),
+            "rank": (4, 4),
+            "build_fcn": (build_resize, TosaTensorGen.tgNHWC, TosaArgGen.agResize),
+            "types": [DType.INT8, DType.INT16, DType.FLOAT],
+        },
         # Data nodes
-        'placeholder':
-        { 'op':       Op.PLACEHOLDER,
-          'operands': (1, 0),
-          'build_fcn':  ( build_placeholder, TosaTensorGen.tgBasic, None),
-          'types':  TYPE_FIB },
-
-        'const':
-        { 'op':       Op.CONST,
-          'operands': (1, 0),
-          'build_fcn':  ( build_placeholder, TosaTensorGen.tgBasic, None),
-          'types':  TYPE_FIB },
-
-
-        'identity':
-        { 'op':       Op.IDENTITY,
-          'operands': (1, 0),
-          'build_fcn':  ( build_unary, TosaTensorGen.tgBasic, None),
-          'types':  TYPE_FIB },
-
-
-        'identityn':
-        { 'op':       Op.IDENTITYN,
-          'operands': (2, 0),
-          'build_fcn':  ( build_identityn, TosaTensorGen.tgBasic, None),
-          'types':  TYPE_FIB },
-
+        "placeholder": {
+            "op": Op.PLACEHOLDER,
+            "operands": (1, 0),
+            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+        "const": {
+            "op": Op.CONST,
+            "operands": (1, 0),
+            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+        "identity": {
+            "op": Op.IDENTITY,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+        "identityn": {
+            "op": Op.IDENTITYN,
+            "operands": (2, 0),
+            "build_fcn": (build_identityn, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
         # Type conversion
-        'cast':
-        { 'op':       Op.CAST,
-          'operands': (1, 0),
-          'build_fcn': ( build_cast, TosaTensorGen.tgBasic, TosaArgGen.agCast ),
-          'types':    [ DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL ] },
-
-        'rescale':
-        { 'op':       Op.RESCALE,
-          'operands': (1, 0),
-          'build_fcn': ( build_rescale, TosaTensorGen.tgBasic, TosaArgGen.agRescale ),
-          'types':     [ DType.INT8, DType.INT16, DType.INT32, DType.INT48 ] },
-
+        "cast": {
+            "op": Op.CAST,
+            "operands": (1, 0),
+            "build_fcn": (build_cast, TosaTensorGen.tgBasic, TosaArgGen.agCast),
+            "types": [DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL],
+        },
+        "rescale": {
+            "op": Op.RESCALE,
+            "operands": (1, 0),
+            "build_fcn": (build_rescale, TosaTensorGen.tgBasic, TosaArgGen.agRescale),
+            "types": [DType.INT8, DType.INT16, DType.INT32, DType.INT48],
+        },
         # Custom
         # Not implemented.
-
         # Control flow
-
         # Two varients of cond_if, one that generates one of two constant tensors (no
         # inputs to the basic blocks, one output) and another that either adds or subtracts two tensors
         # (two inputs to the basic blocks, one output)
-        'cond_if_const':
-        { 'op':        Op.COND_IF,
-          'operands':  (0, 2),
-          'build_fcn': ( build_cond_if_const, TosaTensorGen.tgBasic, TosaArgGen.agCondIf ),
-          'types':     [ DType.BOOL ] },
-
-        'cond_if_binary':
-        { 'op':        Op.COND_IF,
-          'operands':  (2, 0),
-          'build_fcn': ( build_cond_if_binary, TosaTensorGen.tgBasic, TosaArgGen.agCondIf ),
-          'types':     TYPE_FI32 },
-
+        "cond_if_const": {
+            "op": Op.COND_IF,
+            "operands": (0, 2),
+            "build_fcn": (
+                build_cond_if_const,
+                TosaTensorGen.tgBasic,
+                TosaArgGen.agCondIf,
+            ),
+            "types": [DType.BOOL],
+        },
+        "cond_if_binary": {
+            "op": Op.COND_IF,
+            "operands": (2, 0),
+            "build_fcn": (
+                build_cond_if_binary,
+                TosaTensorGen.tgBasic,
+                TosaArgGen.agCondIf,
+            ),
+            "types": TYPE_FI32,
+        },
         # while_loop
-        'while_loop':
-        { 'op':        Op.WHILE_LOOP,
-          'operands':  (0, 1),
-          'build_fcn': ( build_while_loop, TosaTensorGen.tgBasic, TosaArgGen.agWhileLoop ),
-          'types':     [DType.INT32] },
-
-
+        "while_loop": {
+            "op": Op.WHILE_LOOP,
+            "operands": (0, 1),
+            "build_fcn": (
+                build_while_loop,
+                TosaTensorGen.tgBasic,
+                TosaArgGen.agWhileLoop,
+            ),
+            "types": [DType.INT32],
+        },
     }
+
 
 class OutputShaper:
     # Methods in this class compute the expected output shape and datatype
@@ -2134,8 +2338,8 @@ class OutputShaper:
     # creating a new output tensor
     @staticmethod
     def binaryBroadcastOp(ser, a, b):
-        assert(len(a.shape) == len(b.shape))
-        assert(a.dtype == b.dtype)
+        assert len(a.shape) == len(b.shape)
+        assert a.dtype == b.dtype
 
         shape = []
         for i in range(len(a.shape)):
@@ -2144,39 +2348,39 @@ class OutputShaper:
             else:
                 shape.append(a.shape[i])
 
-        return ser.addOutput(shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(shape, a.dtype)
 
     @staticmethod
     def binaryNonBroadcastOp(ser, a, b):
-        assert(len(a.shape) == len(b.shape))
-        assert(a.dtype == b.dtype)
+        assert len(a.shape) == len(b.shape)
+        assert a.dtype == b.dtype
 
         shape = []
         for i in range(len(a.shape)):
-            assert(a.shape[i] == b.shape[i])
+            assert a.shape[i] == b.shape[i]
             shape.append(a.shape[i])
 
-        return ser.addOutput(shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(shape, a.dtype)
 
     @staticmethod
     def unaryOp(ser, a):
-        return ser.addOutput(a.shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(a.shape, a.dtype)
 
     @staticmethod
     def selectOp(ser, cond, a, b):
-        assert(len(a.shape) == len(b.shape) and len(a.shape) == len(cond.shape))
-        assert(a.dtype == b.dtype)
+        assert len(a.shape) == len(b.shape) and len(a.shape) == len(cond.shape)
+        assert a.dtype == b.dtype
 
         shape = []
         for i in range(len(a.shape)):
             shape.append(max(cond.shape[i], a.shape[i], b.shape[i]))
 
-        return ser.addOutput(shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(shape, a.dtype)
 
     @staticmethod
     def binaryComparisonOp(ser, a, b):
-        assert(len(a.shape) == len(b.shape))
-        assert(a.dtype == b.dtype)
+        assert len(a.shape) == len(b.shape)
+        assert a.dtype == b.dtype
 
         # Do broadcast
         shape = []
@@ -2187,7 +2391,7 @@ class OutputShaper:
                 shape.append(a.shape[i])
 
         # Force the output type to bool
-        return ser.addOutput(shape, DType.BOOL, a.usage, a.dformat)
+        return ser.addOutput(shape, DType.BOOL)
 
     @staticmethod
     def reduceOp(ser, a, axis):
@@ -2196,13 +2400,13 @@ class OutputShaper:
 
         shape[axis] = 1
 
-        return ser.addOutput(shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(shape, a.dtype)
 
     @staticmethod
     def argmaxOp(ser, a, axis):
         shape = a.shape.copy()
         del shape[axis]
-        return ser.addOutput(shape, DType.INT32, a.usage, a.dformat)
+        return ser.addOutput(shape, DType.INT32)
 
     @staticmethod
     def conv2dOp(ser, ifm, filter, strides, padding, dilations):
@@ -2216,17 +2420,27 @@ class OutputShaper:
             # From H,W to T,B,L,R
             padding = [padding[0], padding[0], padding[1], padding[1]]
 
-        h = (ifm.shape[1] - filter.shape[1] - (filter.shape[1] - 1) * (dilations[0] - 1) + \
-             padding[0] + padding[1]) // strides[0] + 1
+        h = (
+            ifm.shape[1]
+            - filter.shape[1]
+            - (filter.shape[1] - 1) * (dilations[0] - 1)
+            + padding[0]
+            + padding[1]
+        ) // strides[0] + 1
 
-        w = (ifm.shape[2] - filter.shape[2] - (filter.shape[2] - 1) * (dilations[1] - 1) + \
-             padding[2] + padding[3]) // strides[1] + 1
+        w = (
+            ifm.shape[2]
+            - filter.shape[2]
+            - (filter.shape[2] - 1) * (dilations[1] - 1)
+            + padding[2]
+            + padding[3]
+        ) // strides[1] + 1
 
         if h <= 0 or w <= 0:
             # Invalid test parameters?
             h = 0
             w = 0
-            ser.setExpectedFailure(True, 'Invalid combination of conv2d parameters')
+            ser.setExpectedFailure(True, "Invalid combination of conv2d parameters")
 
         ofm_shape = [ifm.shape[0], h, w, filter.shape[0]]
 
@@ -2237,29 +2451,39 @@ class OutputShaper:
         elif ifm.dtype == DType.FLOAT:
             out_dtype = DType.FLOAT
         else:
-            raise Exception('Unsupported input dtype: {}'.format(ifm.dtype))
+            raise Exception("Unsupported input dtype: {}".format(ifm.dtype))
 
         if ifm.dtype == DType.INT16:
             ser.setExpectedFailure(True, "INT16 support is in progress")
 
-        return ser.addOutput(ofm_shape, out_dtype, ifm.usage, ifm.dformat)
+        return ser.addOutput(ofm_shape, out_dtype)
 
     @staticmethod
     def depthwiseConv2dOp(ser, ifm, filter, strides, padding, dilations):
         # IFM:    NHWC
         # Filter: HWCM
         # OFM:    NHW C*M
-        h = (ifm.shape[1] - filter.shape[0] - (filter.shape[0] - 1) * (dilations[0] - 1) + \
-             padding[0] + padding[1]) // strides[0] + 1
+        h = (
+            ifm.shape[1]
+            - filter.shape[0]
+            - (filter.shape[0] - 1) * (dilations[0] - 1)
+            + padding[0]
+            + padding[1]
+        ) // strides[0] + 1
 
-        w = (ifm.shape[2] - filter.shape[1] - (filter.shape[1] - 1) * (dilations[1] - 1) + \
-             padding[2] + padding[3]) // strides[1] + 1
+        w = (
+            ifm.shape[2]
+            - filter.shape[1]
+            - (filter.shape[1] - 1) * (dilations[1] - 1)
+            + padding[2]
+            + padding[3]
+        ) // strides[1] + 1
 
         if h <= 0 or w <= 0:
             # Invalid test parameters?
             h = 0
             w = 0
-            ser.setExpectedFailure(True, 'Invalid combination of conv2d parameters')
+            ser.setExpectedFailure(True, "Invalid combination of conv2d parameters")
 
         ofm_shape = [ifm.shape[0], h, w, filter.shape[2] * filter.shape[3]]
 
@@ -2270,13 +2494,12 @@ class OutputShaper:
         elif ifm.dtype == DType.FLOAT:
             out_dtype = DType.FLOAT
         else:
-            raise Exception('Unsupported input dtype: {}'.format(ifm.dtype))
+            raise Exception("Unsupported input dtype: {}".format(ifm.dtype))
 
         if ifm.dtype == DType.INT16:
             ser.setExpectedFailure(True, "INT16 support is in progress")
 
-        return ser.addOutput(ofm_shape, out_dtype, ifm.usage, ifm.dformat)
-
+        return ser.addOutput(ofm_shape, out_dtype)
 
     @staticmethod
     def pool2dOp(ser, ifm, kernel, stride, pad):
@@ -2288,10 +2511,10 @@ class OutputShaper:
             # Invalid test parameters?
             h = 0
             w = 0
-            ser.setExpectedFailure(True, 'Invalid combination of pooling parameters')
+            ser.setExpectedFailure(True, "Invalid combination of pooling parameters")
 
         ofm_shape = [ifm.shape[0], h, w, ifm.shape[3]]
-        return ser.addOutput(ofm_shape, ifm.dtype, ifm.usage, ifm.dformat)
+        return ser.addOutput(ofm_shape, ifm.dtype)
 
     @staticmethod
     def fullyConnectedOp(ser, input, filter):
@@ -2308,12 +2531,12 @@ class OutputShaper:
         elif input.dtype == DType.FLOAT:
             out_dtype = DType.FLOAT
         else:
-            raise Exception('Unsupported input dtype: {}'.format(input.dtype))
+            raise Exception("Unsupported input dtype: {}".format(input.dtype))
 
         if input.dtype == DType.INT16:
             ser.setExpectedFailure(True, "INT16 support is in progress")
 
-        return ser.addOutput(output_shape, out_dtype, input.usage, input.dformat)
+        return ser.addOutput(output_shape, out_dtype)
 
     @staticmethod
     def matmulOp(ser, a, b):
@@ -2330,9 +2553,9 @@ class OutputShaper:
         elif a.dtype == DType.FLOAT:
             out_dtype = DType.FLOAT
         else:
-            raise Exception('UNsupported input dtype for matmul: {}'.format(a.dtype))
+            raise Exception("UNsupported input dtype for matmul: {}".format(a.dtype))
 
-        return ser.addOutput(output_shape, out_dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, out_dtype)
 
     @staticmethod
     def concatOp(ser, a, b, axis):
@@ -2340,7 +2563,7 @@ class OutputShaper:
         output_shape = a.shape.copy()
         output_shape[axis] = a.shape[axis] + b.shape[axis]
 
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def padOp(ser, a, padding):
@@ -2350,7 +2573,7 @@ class OutputShaper:
         for i in range(len(output_shape)):
             output_shape[i] = padding[i][0] + padding[i][1] + output_shape[i]
 
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def reshapeOp(ser, a, shape):
@@ -2371,34 +2594,34 @@ class OutputShaper:
             if output_shape[i] == -1:
                 output_shape[i] = totalElements // totalOutputElements
 
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def sliceOp(ser, a, begin, size):
 
         output_shape = size.copy()
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def tileOp(ser, a, multiples):
 
         output_shape = a.shape.copy()
-        assert(len(multiples) == len(output_shape))
+        assert len(multiples) == len(output_shape)
 
         for i in range(len(output_shape)):
             output_shape[i] = a.shape[i] * multiples[i]
 
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def transposeOp(ser, a, perms):
         output_shape = a.shape.copy()
-        assert(len(perms) == len(output_shape))
+        assert len(perms) == len(output_shape)
 
         for i in range(len(output_shape)):
             output_shape[i] = a.shape[perms[i]]
 
-        return ser.addOutput(output_shape, a.dtype, a.usage, a.dformat)
+        return ser.addOutput(output_shape, a.dtype)
 
     @staticmethod
     def gatherOp(ser, values, indices):
@@ -2408,72 +2631,84 @@ class OutputShaper:
 
         output_shape = [values.shape[0], indices.shape[1], values.shape[2]]
 
-        return ser.addOutput(output_shape, values.dtype, values.usage, values.dformat)
+        return ser.addOutput(output_shape, values.dtype)
 
     @staticmethod
     def scatterOp(ser, values_in, indices, input):
         assert len(values_in.shape) == 3
         assert len(indices.shape) == 2
         assert len(input.shape) == 3
-        assert values_in.shape[0] == indices.shape[0] # N
-        assert input.shape[1] == indices.shape[1] # W
-        assert values_in.shape[2] == input.shape[2] # C
+        assert values_in.shape[0] == indices.shape[0]  # N
+        assert input.shape[1] == indices.shape[1]  # W
+        assert values_in.shape[2] == input.shape[2]  # C
 
         output_shape = values_in.shape
 
-        return ser.addOutput(output_shape, values_in.dtype, values_in.usage, values_in.dformat)
+        return ser.addOutput(output_shape, values_in.dtype)
 
     @staticmethod
     def tableOp(ser, input, table):
         # Same shape as the input, but with the type of the table.
-        return ser.addOutput(input.shape, DType.INT32, input.usage, input.dformat)
+        return ser.addOutput(input.shape, DType.INT32)
 
     @staticmethod
-    def resizeOp(ser, input, mode, stride, offset, shift, stride_fp, offset_fp, output_dims, input_dtype, output_dtype):
+    def resizeOp(
+        ser,
+        input,
+        mode,
+        stride,
+        offset,
+        shift,
+        stride_fp,
+        offset_fp,
+        output_dims,
+        input_dtype,
+        output_dtype,
+    ):
 
         output_dims = [input.shape[0], output_dims[0], output_dims[1], input.shape[3]]
 
         if input_dtype == DType.FLOAT:
             if stride_fp[0] <= 0 or stride_fp[1] <= 0:
-                ser.setExpectedFailure(True, 'Negative or zero stride')
+                ser.setExpectedFailure(True, "Negative or zero stride")
         else:
             if stride[0] <= 0 or stride[1] <= 0:
-                ser.setExpectedFailure(True, 'Negative or zero stride')
+                ser.setExpectedFailure(True, "Negative or zero stride")
 
         if mode == ResizeMode.BILINEAR:
             if input_dtype == DType.INT8:
                 if output_dtype != DType.INT32:
-                    ser.setExpectedFailure(True, 'Invalid output data type')
+                    ser.setExpectedFailure(True, "Invalid output data type")
             elif input_dtype == DType.INT16:
                 if output_dtype != DType.INT48:
-                    ser.setexpectedfailure(true, 'Invalid output data type')
+                    ser.setexpectedfailure(true, "Invalid output data type")
             elif input_dtype == DType.FLOAT:
                 if output_dtype != DType.FLOAT:
-                    ser.setexpectedfailure(true, 'Invalid output data type')
+                    ser.setexpectedfailure(true, "Invalid output data type")
             else:
-                ser.setexpectedfailure(true, 'Invalid input data type')
+                ser.setexpectedfailure(true, "Invalid input data type")
 
         elif mode == ResizeMode.NEAREST:
             if input_dtype == DType.INT8:
                 if output_dtype != DType.INT8:
-                    ser.setExpectedFailure(True, 'Invalid output data type')
+                    ser.setExpectedFailure(True, "Invalid output data type")
             elif input_dtype == DType.INT16:
                 if output_dtype != DType.INT16:
-                    ser.setexpectedfailure(true, 'Invalid output data type')
+                    ser.setexpectedfailure(true, "Invalid output data type")
             elif input_dtype == DType.FLOAT:
                 if output_dtype != DType.FLOAT:
-                    ser.setexpectedfailure(true, 'Invalid output data type')
+                    ser.setexpectedfailure(true, "Invalid output data type")
             else:
-                ser.setexpectedfailure(true, 'Invalid input data type')
+                ser.setexpectedfailure(true, "Invalid input data type")
 
         else:
-            ser.setexpectedfailure(true, 'Invalid resize mode')
+            ser.setexpectedfailure(true, "Invalid resize mode")
 
-        return ser.addOutput(output_dims, output_dtype, input.usage, input.dformat)
+        return ser.addOutput(output_dims, output_dtype)
 
     @staticmethod
     def typeConversionOp(ser, val, out_dtype):
-        return ser.addOutput(val.shape, out_dtype, val.usage, val.dformat)
+        return ser.addOutput(val.shape, out_dtype)
 
     @staticmethod
     def transposeConv2DOp(ser, ifm, output_shape):
@@ -2484,12 +2719,12 @@ class OutputShaper:
         elif ifm.dtype == DType.FLOAT:
             out_dtype = DType.FLOAT
         else:
-            raise Exception('Unsupported input dtype: {}'.format(ifm.dtype))
+            raise Exception("Unsupported input dtype: {}".format(ifm.dtype))
 
         if output_shape[1] <= 0 or output_shape[2] <= 0:
-            ser.setExpectedFailure(True, 'Negative output shape')
+            ser.setExpectedFailure(True, "Negative output shape")
 
         if ifm.dtype == DType.INT16:
             ser.setExpectedFailure(True, "INT16 support is in progress")
 
-        return ser.addOutput(output_shape, out_dtype, ifm.usage, ifm.dformat)
+        return ser.addOutput(output_shape, out_dtype)

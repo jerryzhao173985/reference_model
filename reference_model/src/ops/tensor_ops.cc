@@ -103,12 +103,6 @@ int OpAvgPool2d<Dtype>::checkTensorAttributes()
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    if (!in->hasFormat(Format_NHWC))
-    {
-        printNodeValidationError("OpAvgPool2d: unsupported tensor format");
-        return 1;
-    }
-
     if (attribute->padding().size() != 4)
     {
         printNodeValidationError("OpAvgPool2d: illegal size for attribute padding");
@@ -321,27 +315,10 @@ int OpConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         printNodeValidationError("OpConv2d: bias tensor must be rank 1");
     }
 
-    if (inputs[1]->getIsConst() == 0)
-    {
-        printNodeValidationError("OpConv2d: weight tensor is not const typed");
-    }
-
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
     bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
     output = dynamic_cast<TosaReference::TensorTemplate<TAcc>*>(outputs[0]);
-
-    if (!input->hasFormat(Format_NHWC))
-    {
-        printNodeValidationError("OpConv2d: unsupported input tensor format");
-        return 1;
-    }
-
-    if (!weight->hasFormat(Format_OHWI))
-    {
-        printNodeValidationError("OpConv2d: unsupported weight tensor format");
-        return 1;
-    }
 
     if (attribute->padding().size() != 4)
     {
@@ -530,27 +507,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         printNodeValidationError("OpDepthwiseConv2d: bias tensor must be rank 1");
     }
 
-    if (inputs[1]->getIsConst() == 0)
-    {
-        printNodeValidationError("OpDepthwiseConv2d: weight tensor is not const typed");
-    }
-
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
     bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
     output = dynamic_cast<TosaReference::TensorTemplate<TAcc>*>(outputs[0]);
-
-    if (!input->hasFormat(Format_NHWC))
-    {
-        printNodeValidationError("OpDepthwiseConv2d: unsupported input tensor format");
-        return 1;
-    }
-
-    if (!weight->hasFormat(Format_HWIM))
-    {
-        printNodeValidationError("OpDepthwiseConv2d: unsupported weight tensor format");
-        return 1;
-    }
 
     if (attribute->padding().size() != 4)
     {
@@ -881,12 +841,6 @@ int OpMaxPool2d<Dtype>::checkTensorAttributes()
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    if (!in->hasFormat(Format_NHWC))
-    {
-        printNodeValidationError("OpMaxPool2d: unsupported tensor format");
-        return 1;
-    }
-
     if (attribute->padding().size() != 4)
     {
         printNodeValidationError("OpMaxPool2d: illegal size for attribute padding");
@@ -1021,27 +975,10 @@ int OpTransposeConv2d<InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (inputs[1]->getIsConst() == 0)
-    {
-        printNodeValidationError("OpTransposeConv2d: weight tensor is not const typed");
-    }
-
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
     bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
     output = dynamic_cast<TosaReference::TensorTemplate<TAcc>*>(outputs[0]);
-
-    if (!input->hasFormat(Format_NHWC))
-    {
-        printNodeValidationError("OpTransposeConv2d: unsupported input tensor format");
-        return 1;
-    }
-
-    if (!weight->hasFormat(Format_OHWI))
-    {
-        printNodeValidationError("OpTransposeConv2d: unsupported weight tensor format");
-        return 1;
-    }
 
     if (attribute->outpad().size() != 2)
     {

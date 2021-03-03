@@ -15,8 +15,6 @@
 
 #include <stdio.h>
 
-#include "flatbuffers/idl.h"
-#include "flatbuffers/util.h"
 #include "model_common.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"

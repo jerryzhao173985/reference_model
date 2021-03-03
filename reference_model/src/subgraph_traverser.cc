@@ -103,110 +103,118 @@ int SubgraphTraverser::initializeGraph()
     for (auto op : block->GetOperators())
     {
         // translated TosaSerializationOperator to GraphNode
-        DType in_dtype = DType_UNKNOWN, out_dtype = DType_UNKNOWN, weight_dtype = DType_UNKNOWN;
-        uint32_t in_rank = 0, out_rank = 0, weight_rank = 0;
-        for (auto name : op->GetInputTensorNames())
+        DType input_dtype    = DType_UNKNOWN;
+        DType output_dtype   = DType_UNKNOWN;
+        DType weight_dtype   = DType_UNKNOWN;
+        uint32_t input_rank  = 0;
+        uint32_t output_rank = 0;
+        uint32_t weight_rank = 0;
+        int32_t input_index  = -1;
+        int32_t weight_index = -1;
+
+        switch (op->GetOp())
         {
-
-            TosaSerializationTensor* ts = block->GetTensorByName(name);
-            ASSERT_MSG(ts, "SubgraphTraverser: fail to get tensor %s from TosaSerializationHandler", name.c_str());
-
-            if (ts->HasUsage(Usage_WEIGHT))
-            {
-                weight_dtype = ts->GetDtype();
-                weight_rank  = ts->GetShape().size();
-            }
-            else if (ts->HasUsage(Usage_INDEX))
-            {
-                // do nothing, but this will prevent tensor's dtype/rank being wrongly used as template argument when initializing this op
-            }
-            else if (ts->HasUsage(Usage_ACTIVATION))
-            {
-                if (ts->GetShape().size() >= in_rank)
-                {
-                    in_dtype = ts->GetDtype();
-                    in_rank  = ts->GetShape().size();
-                }
-            }
+            case Op_CONV2D:
+            case Op_DEPTHWISE_CONV2D:
+            case Op_TRANSPOSE_CONV2D:
+            case Op_FULLY_CONNECTED:
+                input_index  = 0;
+                weight_index = 1;
+                break;
+            case Op_SELECT:
+                input_index = 1;
+                break;
+            default:
+                if (!op->GetInputTensorNames().empty())
+                    input_index = 0;
+                break;
         }
 
-        // if dtype/rank still not initialized with above pass, we initialize without Usage check
-        if (in_dtype == DType_UNKNOWN && in_rank == 0)
+        if (input_index != -1)
         {
-            for (auto name : op->GetInputTensorNames())
-            {
-                TosaSerializationTensor* ts = block->GetTensorByName(name);
-                ASSERT_MSG(ts, "SubgraphTraverser: fail to get tensor %s from TosaSerializationHandler", name.c_str());
+            ASSERT_MSG((size_t)input_index < op->GetInputTensorNames().size(),
+                       "Op=%s, input_index %d must be within [0, num_input - 1]", EnumNamesOp()[op->GetOp()],
+                       input_index);
 
-                if (ts->GetShape().size() >= in_rank)
-                {
-                    in_dtype = ts->GetDtype();
-                    in_rank  = ts->GetShape().size();
-                }
-            }
+            std::string input_name                = op->GetInputTensorNames()[input_index];
+            TosaSerializationTensor* input_tensor = block->GetTensorByName(input_name);
+            ASSERT_MSG(input_tensor, "SubgraphTraverser: fail to get input tensor %s from TosaSerializationHandler",
+                       input_name.c_str());
+            input_dtype = input_tensor->GetDtype();
+            input_rank  = input_tensor->GetShape().size();
         }
 
-        for (auto name : op->GetOutputTensorNames())
+        if (weight_index != -1)
         {
-
-            TosaSerializationTensor* ts = block->GetTensorByName(name);
-            ASSERT_MSG(ts, "SubgraphTraverser: fail to get tensor %s from TosaSerializationHandler", name.c_str());
-
-            out_dtype = ts->GetDtype();
-            out_rank  = ts->GetShape().size();
+            ASSERT_MSG((size_t)weight_index < op->GetInputTensorNames().size(),
+                       "Op=%s, weight_index %d must be within [0, num_input - 1]", EnumNamesOp()[op->GetOp()],
+                       weight_index);
+            std::string weight_name                = op->GetInputTensorNames()[weight_index];
+            TosaSerializationTensor* weight_tensor = block->GetTensorByName(weight_name);
+            ASSERT_MSG(weight_tensor, "SubgraphTraverser: fail to get weight tensor %s from TosaSerializationHandler",
+                       weight_name.c_str());
+            weight_dtype = weight_tensor->GetDtype();
+            weight_rank  = weight_tensor->GetShape().size();
         }
+
+        std::string output_name                = op->GetOutputTensorNames()[0];
+        TosaSerializationTensor* output_tensor = block->GetTensorByName(output_name);
+        ASSERT_MSG(output_tensor, "SubgraphTraverser: fail to get output tensor %s from TosaSerializationHandler",
+                   output_name.c_str());
+        output_dtype = output_tensor->GetDtype();
+        output_rank  = output_tensor->GetShape().size();
 
         DEBUG_INFO(GT, "Creating operator id_%03u, %8s, %lu input tensors, %lu output tensors", idx,
                    EnumNamesOp()[op->GetOp()], op->GetInputTensorNames().size(), op->GetOutputTensorNames().size());
 
-        GraphNode* cn = OpFactory::newOp(tsh, op->GetOp(), op->GetAttribute(), op->GetQInfo(), idx, in_dtype, in_rank,
-                                         out_dtype, out_rank, weight_dtype, weight_rank);
-        if (!cn)
+        GraphNode* node = OpFactory::newOp(tsh, op->GetOp(), op->GetAttribute(), op->GetQInfo(), idx, input_dtype,
+                                           input_rank, output_dtype, output_rank, weight_dtype, weight_rank);
+        if (!node)
         {
-            if (weight_dtype == DType_UNKNOWN && weight_rank == 0)
+            if (weight_index == -1)
             {
                 fprintf(g_func_debug.func_debug_file,
                         "OpFactory could not allocate op %8s input=(%s rank %d) -> (%s rank %d)",
-                        EnumNamesOp()[op->GetOp()], EnumNamesDType()[in_dtype], in_rank, EnumNamesDType()[out_dtype],
-                        out_rank);
+                        EnumNamesOp()[op->GetOp()], EnumNamesDType()[input_dtype], input_rank,
+                        EnumNamesDType()[output_dtype], output_rank);
             }
             else
             {
                 fprintf(g_func_debug.func_debug_file,
                         "OpFactory could not allocate op %8s input=(%s rank %d), weight=(%s rank %d) -> (%s rank %d)",
-                        EnumNamesOp()[op->GetOp()], EnumNamesDType()[in_dtype], in_rank, EnumNamesDType()[weight_dtype],
-                        weight_rank, EnumNamesDType()[out_dtype], out_rank);
+                        EnumNamesOp()[op->GetOp()], EnumNamesDType()[input_dtype], input_rank,
+                        EnumNamesDType()[weight_dtype], weight_rank, EnumNamesDType()[output_dtype], output_rank);
             }
 
-            for (auto ts : op->GetInputTensors())
+            for (auto& ts : op->GetInputTensorNames())
             {
-                fprintf(g_func_debug.func_debug_file, "Input: %s\n", ts->GetName().c_str());
+                fprintf(g_func_debug.func_debug_file, "Input: %s\n", ts.c_str());
             }
 
-            for (auto ts : op->GetOutputTensors())
+            for (auto& ts : op->GetOutputTensorNames())
             {
-                fprintf(g_func_debug.func_debug_file, "Output: %s\n", ts->GetName().c_str());
+                fprintf(g_func_debug.func_debug_file, "Output: %s\n", ts.c_str());
             }
             FATAL_ERROR("Unsupported operation type or rank.");
         }
 
-        for (auto name : op->GetInputTensorNames())
+        for (auto& name : op->GetInputTensorNames())
         {
-            cn->addInputName(name);
+            node->addInputName(name);
         }
 
         for (auto name : op->GetOutputTensorNames())
         {
-            cn->addOutputName(name);
+            node->addOutputName(name);
         }
 
-        addNode(cn);
+        addNode(node);
 
         // if node doesn't have any inputs (i.e. CONST)
         // it should be ready for evaluation
-        if (op->GetInputTensorNames().empty() && !cn->getOnNextNodeList())
+        if (op->GetInputTensorNames().empty() && !node->getOnNextNodeList())
         {
-            addToNextNodeList(cn);
+            addToNextNodeList(node);
         }
 
         idx++;
@@ -215,47 +223,40 @@ int SubgraphTraverser::initializeGraph()
     for (auto ts : block->GetTensors())
     {
 
-        bool is_const = false;
-        if (ts->HasUsage(Usage_WEIGHT))
-        {
-            is_const = true;
-        }
-
         DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
-        TosaReference::Tensor* ct =
-            TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetUsage(), ts->GetFormat(), ts->GetShape(),
-                                     is_const, ts->GetShape().size());
+        TosaReference::Tensor* tensor =
+            TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(), ts->GetShape().size());
 
-        if (ts->GetNpyFilePtr())
+        if (!ts->GetNpyFilePtr().empty())
         {
-            if (ct->allocate())
+            if (tensor->allocate())
             {
-                FATAL_ERROR("Fail to allocate Eigen tensor %s", ct->getName().c_str());
+                FATAL_ERROR("Fail to allocate Eigen tensor %s", tensor->getName().c_str());
             }
 
             bzero(tensor_fullname, sizeof(tensor_fullname));
             snprintf(tensor_fullname, sizeof(tensor_fullname), "%s/%s", g_func_config.subgraph_dir,
-                     ts->GetNpyFilePtr()->c_str());
-            if (ct->readFromNpyFile(tensor_fullname))
+                     ts->GetNpyFilePtr().c_str());
+            if (tensor->readFromNpyFile(tensor_fullname))
             {
-                FATAL_ERROR("Cannot read input data into graph tensor %s from block %s", ct->getName().c_str(),
+                FATAL_ERROR("Cannot read input data into graph tensor %s from block %s", tensor->getName().c_str(),
                             block->GetName().c_str());
             }
         }
 
         // update this->tensors
-        addTensor(ct);
+        addTensor(tensor);
     }
 
     DEBUG_INFO(GT, "Enumerating block %s graph inputs", block->GetName().c_str());
     for (auto& input_name : block->GetInputs())
     {
-        TosaReference::Tensor* ct = findTensorByName(input_name);
+        TosaReference::Tensor* tensor = findTensorByName(input_name);
         DEBUG_INFO(GT, "input tensor name=%s", input_name.c_str());
-        if (ct)
+        if (tensor)
         {
-            ct->setIsSubgraphInput();
-            inputTensors.push_back(ct);
+            tensor->setIsSubgraphInput();
+            inputTensors.push_back(tensor);
         }
         else
         {
@@ -266,12 +267,12 @@ int SubgraphTraverser::initializeGraph()
     DEBUG_INFO(GT, "Enumerating block %s graph outputs", block->GetName().c_str());
     for (auto& output_name : block->GetOutputs())
     {
-        TosaReference::Tensor* ct = findTensorByName(output_name);
+        TosaReference::Tensor* tensor = findTensorByName(output_name);
         DEBUG_INFO(GT, "output tensor name=%s\n", output_name.c_str());
-        if (ct)
+        if (tensor)
         {
-            ct->setIsSubgraphOutput();
-            outputTensors.push_back(ct);
+            tensor->setIsSubgraphOutput();
+            outputTensors.push_back(tensor);
         }
         else
         {
@@ -333,12 +334,12 @@ int SubgraphTraverser::evaluateNextNode()
         WARNING("Node %lu has been evaluated %d times.  Loop suspected.", currNode->getID(), currNode->getEvalCount());
     }
 
-    for (auto ct : currNode->getOutputs())
+    for (auto tensor : currNode->getOutputs())
     {
-        if (!ct->is_allocated())
-            if (ct->allocate())
+        if (!tensor->is_allocated())
+            if (tensor->allocate())
             {
-                FATAL_ERROR("Fail to allocate Eigen tensor %s", ct->getName().c_str());
+                FATAL_ERROR("Fail to allocate Eigen tensor %s", tensor->getName().c_str());
             }
     }
 
@@ -348,26 +349,26 @@ int SubgraphTraverser::evaluateNextNode()
     }
 
     // free input tensor if all of its consumers have all of their outputs ready and it's not block's output
-    for (auto ct : currNode->getInputs())
+    for (auto tensor : currNode->getInputs())
     {
         bool in_use = false;
-        for (auto cn : ct->getConsumers())
+        for (auto node : tensor->getConsumers())
         {
-            if (!cn->hasAllOutputsReady())
+            if (!node->hasAllOutputsReady())
             {
                 in_use = true;
             }
         }
         for (auto name : block->GetOutputs())
         {
-            if (name == ct->getName())
+            if (name == tensor->getName())
             {
                 in_use = true;
             }
         }
         if (!in_use)
         {
-            ct->deallocate();
+            tensor->deallocate();
         }
     }
 
@@ -433,29 +434,29 @@ int SubgraphTraverser::clearAllNodeMarkings()
     return false;
 }
 
-int SubgraphTraverser::addTensor(TosaReference::Tensor* ct)
+int SubgraphTraverser::addTensor(TosaReference::Tensor* tensor)
 {
     // Enforce no duplicate tensors/tensor names
     // O(N), but the number of tensors is small
     for (TosaReference::Tensor* currTensor : tensors)
     {
-        if (ct == currTensor || currTensor->getName() == ct->getName())
+        if (tensor == currTensor || currTensor->getName() == tensor->getName())
         {
-            FATAL_ERROR("Error: Duplicate tensor or tensor name being added to graph: %s\n", ct->getName().c_str());
+            FATAL_ERROR("Error: Duplicate tensor or tensor name being added to graph: %s\n", tensor->getName().c_str());
             return 1;
         }
     }
 
-    tensors.push_back(ct);
+    tensors.push_back(tensor);
 
-    if (ct->getIsSubgraphInput())
+    if (tensor->getIsSubgraphInput())
     {
-        inputTensors.push_back(ct);
+        inputTensors.push_back(tensor);
     }
 
-    if (ct->getIsSubgraphOutput())
+    if (tensor->getIsSubgraphOutput())
     {
-        outputTensors.push_back(ct);
+        outputTensors.push_back(tensor);
     }
 
     return 0;

@@ -19,6 +19,7 @@ import shlex
 import subprocess
 from tosa_test_runner import TosaTestRunner, run_sh_command
 
+
 class TosaRefRunner(TosaTestRunner):
     def __init__(self, args, runnerArgs, testDir):
         super().__init__(args, runnerArgs, testDir)
@@ -28,28 +29,33 @@ class TosaRefRunner(TosaTestRunner):
         # Uses arguments from the argParser args, not the runnerArgs
         args = self.args
 
-        ref_cmd = [ args.ref_model_path,
-                    '-Csubgraph_file={}'.format(self.testDesc['tosa_file']),
-                    '-Csubgraph_dir={}'.format(self.testDir),
-                    '-Cinput_dir={}'.format(self.testDir),
-                    '-Coutput_dir={}'.format(self.testDir),
-                    '-Coutput_tensor_prefix=ref-',  # Naming agreement with TosaSerializer
-                    ]
+        ref_cmd = [
+            args.ref_model_path,
+            "-Csubgraph_file={}".format(self.testDesc["tosa_file"]),
+            "-Csubgraph_dir={}".format(self.testDir),
+            "-Cinput_dir={}".format(self.testDir),
+            "-Coutput_dir={}".format(self.testDir),
+            "-Coutput_tensor_prefix=ref-",  # Naming agreement with TosaSerializer
+        ]
 
         # Build up input tensor_name/filename list
         inputTensors = []
-        for i in range(len(self.testDesc['ifm_placeholder'])):
-            inputTensors.append('{}:{}'.format(self.testDesc['ifm_placeholder'][i], self.testDesc['ifm_file'][i]))
+        for i in range(len(self.testDesc["ifm_placeholder"])):
+            inputTensors.append(
+                "{}:{}".format(
+                    self.testDesc["ifm_placeholder"][i], self.testDesc["ifm_file"][i]
+                )
+            )
 
-        ref_cmd.append('-Cinput_tensor={}'.format(','.join(inputTensors)))
+        ref_cmd.append("-Cinput_tensor={}".format(",".join(inputTensors)))
 
         if args.ref_debug:
-            ref_cmd.extend(['-dALL', '-l{}'.format(args.ref_debug)])
+            ref_cmd.extend(["-dALL", "-l{}".format(args.ref_debug)])
 
         if args.ref_intermediates:
-            ref_cmd.extend(['-Ddump_intermediates=1'])
+            ref_cmd.extend(["-Ddump_intermediates=1"])
 
-        expectedFailure = self.testDesc['expected_failure']
+        expectedFailure = self.testDesc["expected_failure"]
 
         try:
             run_sh_command(self.args, ref_cmd)

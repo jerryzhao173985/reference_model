@@ -292,9 +292,8 @@ int OpWhileLoop::checkTensorAttributes()
 int OpWhileLoop::eval()
 {
 
-    TosaReference::Tensor0<bool> cond_output_ctensor(
-        std::string("cond_output"), DType_BOOL, std::vector<Usage>({ Usage_ACTIVATION }),
-        std::vector<Format>({ Format_UNKNOWN }), std::vector<int32_t>({}), false);
+    TosaReference::Tensor0<bool> cond_output_ctensor(std::string("cond_output"), DType_BOOL,
+                                                     std::vector<int32_t>({}));
 
     cond_output_ctensor.allocate();
     std::vector<TosaReference::Tensor*> cond_block_outputs;

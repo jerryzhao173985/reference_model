@@ -29,8 +29,8 @@ tools:
 * GCC (tested with 7.5.0) or Clang C++ compiler (tested with clang-9)
   with C++17 support
 
-The model includes the TOSA Serialization Library, Eigen 3.3.7, and
-FlatBuffers 1.11.0 as git submodules.  The model is written using
+The model includes the TOSA Serialization Library and Eigen 3.3.7
+as git submodules.  The model is written using
 C++17 and has been primarily tested on Ubuntu x86_64 18.04 LTS Linux
 systems.
 
@@ -42,8 +42,7 @@ The testing infrastructure requires:
 Check out the required git submodules with:
 
 ``` bash
-$ git submodule init
-$ git submodule update
+$ git submodule update --init --recursive
 ```
 
 # Compilation

@@ -22,17 +22,11 @@ using namespace tosa;
 
 TosaReference::Tensor::Tensor(std::string tensorName_,
                               DType tensorDtype_,
-                              const std::vector<Usage>& tensorUsage_,
-                              const std::vector<Format>& tensorFormat_,
-                              std::vector<int> shape_,
-                              int isConst_)
+                              std::vector<int> shape_)
 {
     tensorName   = std::string(tensorName_);
     tensorDtype  = tensorDtype_;
-    tensorUsage  = std::vector<Usage>(tensorUsage_);
-    tensorFormat = std::vector<Format>(tensorFormat_);
     shape        = std::vector<int>(shape_);
-    isConst      = isConst_;
     producer     = nullptr;
     isValid      = false;
     consumers.clear();
@@ -74,17 +68,16 @@ int TosaReference::Tensor::addConsumer(GraphNode* node)
 
 int TosaReference::Tensor::dumpTensorParams(FILE* out) const
 {
-    fprintf(out, "Name: %s DType=%s Usage=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(),
-            EnumNamesDType()[getDtype()], getUsageAsString().c_str(), getIsValid(), getRank(),
-            getShapeAsString().c_str());
+    fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(), EnumNamesDType()[getDtype()],
+            getIsValid(), getRank(), getShapeAsString().c_str());
 
     return 0;
 }
 
 int TosaReference::Tensor::dumpTensorParams(std::ostream& out) const
 {
-    out << "Name: " << getName() << " DType=" << EnumNamesDType()[getDtype()] << " Usage=" << getUsageAsString()
-        << " isValid=" << getIsValid() << " Rank=" << getRank() << " Shape=" << getShapeAsString() << "\n";
+    out << "Name: " << getName() << " DType=" << EnumNamesDType()[getDtype()] << " isValid=" << getIsValid()
+        << " Rank=" << getRank() << " Shape=" << getShapeAsString() << "\n";
 
     return 0;
 }

@@ -26,8 +26,8 @@ else()
   set(CMAKE_CXX_FLAGS "-Wall -Wno-ignored-attributes")
 endif()
 
-set(FLATBUFFERS_DIR "../thirdparty/flatbuffers/")
-set(SERIALIZATION_DIR "../serialization")
+set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
+set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
 
 set (CXX_SOURCE
      src/main.cpp
@@ -64,13 +64,13 @@ target_include_directories(tosa_reference_model
     ${FLATBUFFERS_DIR}/include
     ../thirdparty/eigen/
     ../thirdparty/eigen/unsupported/
-    ${SERIALIZATION_DIR}
+    ${SERIALIZATION_DIR}/include
 )
 
 target_link_libraries(tosa_reference_model
   PRIVATE
+    tosa_serialization_lib
     flatbuffers
-    tosa_serialization
 )
 
 install (TARGETS tosa_reference_model DESTINATION bin)
