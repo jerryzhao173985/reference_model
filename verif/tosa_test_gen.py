@@ -1851,116 +1851,23 @@ class TosaTestGen:
     DEFAULT_RANK_RANGE = (1, 4)
 
     TOSA_OP_LIST = {
-        # Binary ops
-        "add": {
-            "op": Op.ADD,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "arithmetic_right_shift": {
-            "op": Op.ARITHMETIC_RIGHT_SHIFT,
-            "operands": (2, 0),
-            "build_fcn": (
-                build_arithmetic_right_shift,
-                TosaTensorGen.tgBroadcastFuzz,
-                TosaArgGen.agArithmeticRightShift,
-            ),
-            "types": TYPE_INT,
-        },
-        "bitwise_and": {
-            "op": Op.BITWISE_AND,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_INT,
-        },
-        "bitwise_or": {
-            "op": Op.BITWISE_OR,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_INT,
-        },
-        "bitwise_xor": {
-            "op": Op.BITWISE_XOR,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_INT,
-        },
-        "logical_and": {
-            "op": Op.LOGICAL_AND,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_BOOL,
-        },
-        "logical_left_shift": {
-            "op": Op.LOGICAL_LEFT_SHIFT,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_INT,
-        },
-        "logical_right_shift": {
-            "op": Op.LOGICAL_RIGHT_SHIFT,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_INT,
-        },
-        "logical_or": {
-            "op": Op.LOGICAL_OR,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_BOOL,
-        },
-        "logical_xor": {
-            "op": Op.LOGICAL_XOR,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_BOOL,
-        },
-        "max": {
-            "op": Op.MAXIMUM,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "min": {
-            "op": Op.MINIMUM,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "mul": {
-            "op": Op.MUL,
-            "operands": (2, 0),
-            "build_fcn": (build_mul, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agMul),
-            "types": TYPE_INT_FP,
-        },
-        "pow": {
-            "op": Op.POW,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "sub": {
-            "op": Op.SUB,
-            "operands": (2, 0),
-            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "table": {
-            "op": Op.TABLE,
-            # Use the automatic generation functions to create the input array
-            # but create the table tensor in the build function, as it may be
-            # a different type from the input
-            "operands": (1, 0),
-            "build_fcn": (build_table, TosaTensorGen.tgBasic, None),
-            "types": [DType.INT16],
-        },
+        # Tensor operators
         "argmax": {
             "op": Op.ARGMAX,
             "operands": (1, 0),
             "build_fcn": (build_argmax, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_NARROW_INT_FP,
         },
+
+        "avg_pool2d": {
+            "op": Op.AVG_POOL2D,
+            "operands": (1, 0),
+            "rank": (4, 4),
+            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
+            "qgen": TosaQuantGen.qgUnary,
+            "types": TYPE_NARROW_INT_FP,
+        },
+
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
             "op": Op.CONV2D,
@@ -1971,6 +1878,9 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
+
+        # Conv3d TBD
+
         # Templated operator.  Filled in by createDynamicOpLists
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
@@ -1986,6 +1896,33 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
+
+        "fully_connected": {
+            "op": Op.FULLY_CONNECTED,
+            "operands": (1, 2),
+            "rank": (2, 2),
+            "build_fcn": (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_CONV2D,
+        },
+
+        "matmul": {
+            "op": Op.MATMUL,
+            "operands": (2, 0),
+            "rank": (2, 2),
+            "build_fcn": (build_matmul, TosaTensorGen.tgMatmul, None),
+            "qgen": TosaQuantGen.qgMatmul,
+            "types": TYPE_NARROW_INT_FP,
+        },
+
+        "max_pool2d": {
+            "op": Op.MAX_POOL2D,
+            "operands": (1, 0),
+            "rank": (4, 4),
+            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
+            "types": TYPE_NARROW_INT_FP,
+        },
+
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
             "op": Op.TRANSPOSE_CONV2D,
@@ -2000,175 +1937,7 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
-        "fully_connected": {
-            "op": Op.FULLY_CONNECTED,
-            "operands": (1, 2),
-            "rank": (2, 2),
-            "build_fcn": (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
-            "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV2D,
-        },
-        "matmul": {
-            "op": Op.MATMUL,
-            "operands": (2, 0),
-            "rank": (2, 2),
-            "build_fcn": (build_matmul, TosaTensorGen.tgMatmul, None),
-            "qgen": TosaQuantGen.qgMatmul,
-            "types": TYPE_NARROW_INT_FP,
-        },
-        # Unary operators
-        "abs": {
-            "op": Op.ABS,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FI32,
-        },
-        "bitwise_not": {
-            "op": Op.BITWISE_NOT,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_INT,
-        },
-        "ceil": {
-            "op": Op.CEIL,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "clz": {
-            "op": Op.CLZ,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": [DType.INT32],
-        },
-        "exp": {
-            "op": Op.EXP,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "floor": {
-            "op": Op.FLOOR,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "log": {
-            "op": Op.LOG,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "floor": {
-            "op": Op.FLOOR,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "logical_not": {
-            "op": Op.LOGICAL_NOT,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_BOOL,
-        },
-        "negate": {
-            "op": Op.NEGATE,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "qgen": TosaQuantGen.qgUnary,
-            "types": TYPE_INT_FP,
-        },
-        "reciprocal": {
-            "op": Op.RECIPROCAL,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        "rsqrt": {
-            "op": Op.RSQRT,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FP,
-        },
-        # Ternary operators
-        "select": {
-            "op": Op.SELECT,
-            "operands": (3, 0),
-            "build_fcn": (build_select, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FIB,
-        },
-        # Comparison operators
-        "equal": {
-            "op": Op.EQUAL,
-            "operands": (2, 0),
-            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "greater_equal": {
-            "op": Op.GREATER_EQUAL,
-            "operands": (2, 0),
-            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        "greater": {
-            "op": Op.GREATER,
-            "operands": (2, 0),
-            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
-            "types": TYPE_FI32,
-        },
-        # Pooling operators
-        "avg_pool2d": {
-            "op": Op.AVG_POOL2D,
-            "operands": (1, 0),
-            "rank": (4, 4),
-            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
-            "qgen": TosaQuantGen.qgUnary,
-            "types": TYPE_NARROW_INT_FP,
-        },
-        "max_pool2d": {
-            "op": Op.MAX_POOL2D,
-            "operands": (1, 0),
-            "rank": (4, 4),
-            "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
-            "types": TYPE_NARROW_INT_FP,
-        },
-        # Reduce operators
-        "reduce_any": {
-            "op": Op.REDUCE_ANY,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_BOOL,
-        },
-        "reduce_all": {
-            "op": Op.REDUCE_ALL,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_BOOL,
-        },
-        "reduce_max": {
-            "op": Op.REDUCE_MAX,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_INT_FP,
-        },
-        "reduce_min": {
-            "op": Op.REDUCE_MAX,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_INT_FP,
-        },
-        "reduce_product": {
-            "op": Op.REDUCE_PRODUCT,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_FP,
-        },
-        "reduce_sum": {
-            "op": Op.REDUCE_SUM,
-            "operands": (1, 0),
-            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-            "types": TYPE_FI32,
-        },
+
         # Activation functions
         "clamp": {
             "op": Op.CLAMP,
@@ -2176,24 +1945,300 @@ class TosaTestGen:
             "build_fcn": (build_clamp, TosaTensorGen.tgBasic, None),
             "types": TYPE_NARROW_INT_FP,
         },
+
         "relun": {
             "op": Op.RELUN,
             "operands": (1, 0),
             "build_fcn": (build_relun, TosaTensorGen.tgBasic, None),
             "types": TYPE_FI32,
         },
+
         "sigmoid": {
             "op": Op.SIGMOID,
             "operands": (1, 0),
             "build_fcn": (build_sigmoid, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
+
         "tanh": {
             "op": Op.TANH,
             "operands": (1, 0),
             "build_fcn": (build_tanh, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
+
+        # Elementwise Binary Operators
+        "add": {
+            "op": Op.ADD,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "arithmetic_right_shift": {
+            "op": Op.ARITHMETIC_RIGHT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (
+                build_arithmetic_right_shift,
+                TosaTensorGen.tgBroadcastFuzz,
+                TosaArgGen.agArithmeticRightShift,
+            ),
+            "types": TYPE_INT,
+        },
+
+        "bitwise_and": {
+            "op": Op.BITWISE_AND,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+
+        "bitwise_or": {
+            "op": Op.BITWISE_OR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+
+        "bitwise_xor": {
+            "op": Op.BITWISE_XOR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+
+        "logical_and": {
+            "op": Op.LOGICAL_AND,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+
+        "logical_left_shift": {
+            "op": Op.LOGICAL_LEFT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+
+        "logical_right_shift": {
+            "op": Op.LOGICAL_RIGHT_SHIFT,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_INT,
+        },
+
+        "logical_or": {
+            "op": Op.LOGICAL_OR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+
+        "logical_xor": {
+            "op": Op.LOGICAL_XOR,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_BOOL,
+        },
+
+        "maximum": {
+            "op": Op.MAXIMUM,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "minimum": {
+            "op": Op.MINIMUM,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "mul": {
+            "op": Op.MUL,
+            "operands": (2, 0),
+            "build_fcn": (build_mul, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agMul),
+            "types": TYPE_INT_FP,
+        },
+
+        "pow": {
+            "op": Op.POW,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "sub": {
+            "op": Op.SUB,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "table": {
+            "op": Op.TABLE,
+            # Use the automatic generation functions to create the input array
+            # but create the table tensor in the build function, as it may be
+            # a different type from the input
+            "operands": (1, 0),
+            "build_fcn": (build_table, TosaTensorGen.tgBasic, None),
+            "types": [DType.INT16],
+        },
+
+        # Elementwise Unary operators
+        "abs": {
+            "op": Op.ABS,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FI32,
+        },
+
+        "bitwise_not": {
+            "op": Op.BITWISE_NOT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_INT,
+        },
+
+        "ceil": {
+            "op": Op.CEIL,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "clz": {
+            "op": Op.CLZ,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": [DType.INT32],
+        },
+
+        "exp": {
+            "op": Op.EXP,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "floor": {
+            "op": Op.FLOOR,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "log": {
+            "op": Op.LOG,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "logical_not": {
+            "op": Op.LOGICAL_NOT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_BOOL,
+        },
+
+        "negate": {
+            "op": Op.NEGATE,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "qgen": TosaQuantGen.qgUnary,
+            "types": TYPE_INT_FP,
+        },
+
+        "reciprocal": {
+            "op": Op.RECIPROCAL,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        "rsqrt": {
+            "op": Op.RSQRT,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FP,
+        },
+
+        # Elementwise Ternary operators
+        "select": {
+            "op": Op.SELECT,
+            "operands": (3, 0),
+            "build_fcn": (build_select, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FIB,
+        },
+
+        # Comparison operators
+        "equal": {
+            "op": Op.EQUAL,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "greater_equal": {
+            "op": Op.GREATER_EQUAL,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        "greater": {
+            "op": Op.GREATER,
+            "operands": (2, 0),
+            "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": TYPE_FI32,
+        },
+
+        # Reduction operators
+        "reduce_all": {
+            "op": Op.REDUCE_ALL,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_BOOL,
+        },
+
+        "reduce_any": {
+            "op": Op.REDUCE_ANY,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_BOOL,
+        },
+
+        "reduce_max": {
+            "op": Op.REDUCE_MAX,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_INT_FP,
+        },
+
+        "reduce_min": {
+            "op": Op.REDUCE_MAX,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_INT_FP,
+        },
+
+        "reduce_product": {
+            "op": Op.REDUCE_PRODUCT,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FP,
+        },
+
+        "reduce_sum": {
+            "op": Op.REDUCE_SUM,
+            "operands": (1, 0),
+            "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
+            "types": TYPE_FI32,
+        },
+
         # Data layout operators
         "concat": {
             "op": Op.CONCAT,
@@ -2201,6 +2246,7 @@ class TosaTestGen:
             "build_fcn": (build_concat, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FIB,
         },
+
         "pad": {
             "op": Op.PAD,
             "operands": (1, 0),
@@ -2208,30 +2254,35 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgPad,
             "types": TYPE_FIB,
         },
+
         "reshape": {
             "op": Op.RESHAPE,
             "operands": (1, 0),
             "build_fcn": (build_reshape, TosaTensorGen.tgBasic, TosaArgGen.agReshape),
             "types": TYPE_FIB,
         },
+
         "reverse": {
             "op": Op.REVERSE,
             "operands": (1, 0),
             "build_fcn": (build_reverse, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FIB,
         },
+
         "slice": {
             "op": Op.SLICE,
             "operands": (1, 0),
             "build_fcn": (build_slice, TosaTensorGen.tgBasic, TosaArgGen.agSlice),
             "types": TYPE_FIB,
         },
+
         "tile": {
             "op": Op.TILE,
             "operands": (1, 0),
             "build_fcn": (build_tile, TosaTensorGen.tgBasic, TosaArgGen.agTile),
             "types": TYPE_FIB,
         },
+
         "transpose": {
             "op": Op.TRANSPOSE,
             "operands": (1, 0),
@@ -2243,6 +2294,36 @@ class TosaTestGen:
             ),
             "types": TYPE_FIB,
         },
+
+        # Data nodes
+        "const": {
+            "op": Op.CONST,
+            "operands": (1, 0),
+            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+
+        "identity": {
+            "op": Op.IDENTITY,
+            "operands": (1, 0),
+            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+
+        "identityn": {
+            "op": Op.IDENTITYN,
+            "operands": (2, 0),
+            "build_fcn": (build_identityn, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+
+        "placeholder": {
+            "op": Op.PLACEHOLDER,
+            "operands": (1, 0),
+            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
+            "types": TYPE_FIB,
+        },
+
         # Scatter/Gather
         "gather": {
             "op": Op.GATHER,
@@ -2252,6 +2333,7 @@ class TosaTestGen:
             "build_fcn": (build_gather, TosaTensorGen.tgBasic, None),
             "types": TYPE_INT_FP,
         },
+
         "scatter": {
             "op": Op.SCATTER,
             # Only specify 'values_in' tensor here.
@@ -2261,6 +2343,7 @@ class TosaTestGen:
             "build_fcn": (build_scatter, TosaTensorGen.tgScatter, None),
             "types": TYPE_INT_FP,
         },
+
         # Image operations
         "resize": {
             "op": Op.RESIZE,
@@ -2269,31 +2352,7 @@ class TosaTestGen:
             "build_fcn": (build_resize, TosaTensorGen.tgNHWC, TosaArgGen.agResize),
             "types": [DType.INT8, DType.INT16, DType.FLOAT],
         },
-        # Data nodes
-        "placeholder": {
-            "op": Op.PLACEHOLDER,
-            "operands": (1, 0),
-            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
-        "const": {
-            "op": Op.CONST,
-            "operands": (1, 0),
-            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
-        "identity": {
-            "op": Op.IDENTITY,
-            "operands": (1, 0),
-            "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
-        "identityn": {
-            "op": Op.IDENTITYN,
-            "operands": (2, 0),
-            "build_fcn": (build_identityn, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
+
         # Type conversion
         "cast": {
             "op": Op.CAST,
@@ -2301,15 +2360,19 @@ class TosaTestGen:
             "build_fcn": (build_cast, TosaTensorGen.tgBasic, TosaArgGen.agCast),
             "types": [DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL],
         },
+
         "rescale": {
             "op": Op.RESCALE,
             "operands": (1, 0),
             "build_fcn": (build_rescale, TosaTensorGen.tgBasic, TosaArgGen.agRescale),
             "types": [DType.INT8, DType.INT16, DType.INT32, DType.INT48],
         },
+
         # Custom
         # Not implemented.
-        # Control flow
+
+
+        # Control flow operators
         # Two varients of cond_if, one that generates one of two constant tensors (no
         # inputs to the basic blocks, one output) and another that either adds or subtracts two tensors
         # (two inputs to the basic blocks, one output)
