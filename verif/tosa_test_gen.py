@@ -50,7 +50,7 @@ class TosaQuantGen:
 
     @staticmethod
     def needsQinfo(op, dtype):
-        if dtype == DType.INT8:
+        if dtype == DType.INT8 or dtype == DType.INT16:
             return True
         return False
 
@@ -1754,7 +1754,7 @@ class TosaTestGen:
         { 'op':        Op.ARGMAX,
           'operands': (1, 0),
           'build_fcn': (build_argmax, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
-          'types':      TYPE_FP },
+          'types':      TYPE_NARROW_INT_FP },
 
         # Templated operator.  Filled in by createDynamicOpLists
         'conv2d_TEMPLATE':
@@ -1763,7 +1763,7 @@ class TosaTestGen:
           'rank':     (4, 4),
           'build_fcn': (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv2D),
           'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_FP,
+          'types':     TYPE_NARROW_INT_FP,
           'template': True },
 
         # Templated operator.  Filled in by createDynamicOpLists
@@ -1774,7 +1774,7 @@ class TosaTestGen:
           'rank':     (4, 4),
           'build_fcn': (build_depthwise_conv2d, TosaTensorGen.tgDepthwiseConv2D, TosaArgGen.agConv2D),
           'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_FP,
+          'types':     TYPE_NARROW_INT_FP,
           'template': True },
 
         # Templated operator.  Filled in by createDynamicOpLists
@@ -1784,7 +1784,7 @@ class TosaTestGen:
           'rank':     (4, 4),
           'build_fcn': (build_transpose_conv2d, TosaTensorGen.tgTransposeConv2D, TosaArgGen.agTransposeConv2D),
           'qgen':      TosaQuantGen.qgConv,
-          'types':     TYPE_FP,
+          'types':     TYPE_NARROW_INT_FP,
           'template': True },
 
         'fully_connected':
@@ -1793,7 +1793,7 @@ class TosaTestGen:
           'rank':     (2, 2),
           'build_fcn': (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
           'qgen':      TosaQuantGen.qgConv,
-          'types':    TYPE_FP },
+          'types':    TYPE_NARROW_INT_FP },
 
         'matmul':
         { 'op':       Op.MATMUL,
@@ -2239,6 +2239,9 @@ class OutputShaper:
         else:
             raise Exception('Unsupported input dtype: {}'.format(ifm.dtype))
 
+        if ifm.dtype == DType.INT16:
+            ser.setExpectedFailure(True, "INT16 support is in progress")
+
         return ser.addOutput(ofm_shape, out_dtype, ifm.usage, ifm.dformat)
 
     @staticmethod
@@ -2268,6 +2271,9 @@ class OutputShaper:
             out_dtype = DType.FLOAT
         else:
             raise Exception('Unsupported input dtype: {}'.format(ifm.dtype))
+
+        if ifm.dtype == DType.INT16:
+            ser.setExpectedFailure(True, "INT16 support is in progress")
 
         return ser.addOutput(ofm_shape, out_dtype, ifm.usage, ifm.dformat)
 
@@ -2303,6 +2309,9 @@ class OutputShaper:
             out_dtype = DType.FLOAT
         else:
             raise Exception('Unsupported input dtype: {}'.format(input.dtype))
+
+        if input.dtype == DType.INT16:
+            ser.setExpectedFailure(True, "INT16 support is in progress")
 
         return ser.addOutput(output_shape, out_dtype, input.usage, input.dformat)
 
@@ -2479,5 +2488,8 @@ class OutputShaper:
 
         if output_shape[1] <= 0 or output_shape[2] <= 0:
             ser.setExpectedFailure(True, 'Negative output shape')
+
+        if ifm.dtype == DType.INT16:
+            ser.setExpectedFailure(True, "INT16 support is in progress")
 
         return ser.addOutput(output_shape, out_dtype, ifm.usage, ifm.dformat)

@@ -1,6 +1,6 @@
 import os
 
-# Copyright (c) 2020, ARM Limited.
+# Copyright (c) 2020-2021, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -61,6 +61,6 @@ class TosaRefRunner(TosaTestRunner):
             if expectedFailure:
                 result = TosaTestRunner.Result.EXPECTED_FAILURE
             else:
-                result = TosaTestRunner.Result.EXPECTED_PASS
+                result = TosaTestRunner.Result.UNEXPECTED_FAILURE
 
         return result
