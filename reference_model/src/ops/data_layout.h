@@ -40,8 +40,7 @@ public:
 
 protected:
     Eigen::array<int, Rank> reverser;
-    TosaReference::TensorTemplate<TIn>* lhs;
-    TosaReference::TensorTemplate<TIn>* rhs;
+    std::vector<TosaReference::TensorTemplate<TIn>*> ins;
     TosaAxisAttribute* attribute;
     TosaReference::TensorTemplate<TOut>* out;
 };
