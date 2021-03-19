@@ -71,9 +71,9 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     int32_t output_zp               = attribute->output_zp();
     std::vector<int32_t> multiplier = attribute->multiplier();
     std::vector<int32_t> shift      = attribute->shift();
-    //bool scale32 = attribute->scale32();
-    bool double_round = attribute->double_round();
-    bool per_channel  = attribute->per_channel();
+    bool scale32                    = attribute->scale32();
+    bool double_round               = attribute->double_round();
+    bool per_channel                = attribute->per_channel();
 
     // reshape [d0, d1, ..., dn] into [d0 * d1 ..., dn]
     Eigen::array<Eigen::Index, 2> shape_2d;
@@ -94,7 +94,6 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
     ETensor2<OutEigenType> output_2d(shape_2d);
 
-    // TODO: pass scale32 in when 16-bit mode implemented
     if (per_channel)
     {
         ETensor2<InEigenType> curr_channel_slice_prescaled;
@@ -110,10 +109,15 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
             channel_shift                = shift[i];
             curr_channel_slice_postscaled =
                 curr_channel_slice_prescaled.unaryExpr([input_zp, output_zp, channel_multiplier, channel_shift,
-                                                        double_round](InEigenType in_val) -> OutEigenType {
+                                                        double_round, scale32](InEigenType in_val) -> OutEigenType {
                     InEigenType input_zp_shifted = in_val - (InEigenType)input_zp;
-                    int32_t scaled = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, channel_multiplier,
-                                                                              channel_shift, double_round);
+                    int32_t scaled;
+                    if (scale32)
+                        scaled = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, channel_multiplier,
+                                                                          channel_shift, double_round);
+                    else
+                        scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
+                                                                          channel_shift);
                     OutEigenType out_val = (OutEigenType)(scaled + output_zp);
                     out_val              = std::max<OutEigenType>(out_val, QMin);
                     out_val              = std::min<OutEigenType>(out_val, QMax);
@@ -130,16 +134,20 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     {
         int32_t tensor_multiplier = multiplier[0];
         int32_t tensor_shift      = shift[0];
-        output_2d                 = input_reshaped.unaryExpr(
-            [input_zp, output_zp, tensor_multiplier, tensor_shift, double_round](InEigenType in_val) -> OutEigenType {
-                InEigenType input_zp_shifted = in_val - (InEigenType)input_zp;
-                int32_t scaled       = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, tensor_multiplier,
-                                                                          tensor_shift, double_round);
-                OutEigenType out_val = (OutEigenType)(scaled + output_zp);
-                out_val              = std::max<OutEigenType>(out_val, QMin);
-                out_val              = std::min<OutEigenType>(out_val, QMax);
-                return out_val;
-            });
+        output_2d = input_reshaped.unaryExpr([input_zp, output_zp, tensor_multiplier, tensor_shift, double_round,
+                                              scale32](InEigenType in_val) -> OutEigenType {
+            InEigenType input_zp_shifted = in_val - (InEigenType)input_zp;
+            int32_t scaled;
+            if (scale32)
+                scaled = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, tensor_multiplier, tensor_shift,
+                                                                  double_round);
+            else
+                scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
+            OutEigenType out_val = (OutEigenType)(scaled + output_zp);
+            out_val              = std::max<OutEigenType>(out_val, QMin);
+            out_val              = std::min<OutEigenType>(out_val, QMax);
+            return out_val;
+        });
     }
 
     // reshape [d0 * d1 ..., dn] back to [d0, d1, ..., dn]
