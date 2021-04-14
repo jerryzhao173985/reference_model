@@ -436,7 +436,7 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
                 if (shift > 0)
                 {
                     int64_t round = 1L << (shift - 1);
-                    result        = a * b + round;
+                    result        = static_cast<int64_t>(a) * static_cast<int64_t>(b) + round;
                     result        = result >> shift;
 
                     ASSERT_MSG_NODE(result >= QMin && result <= QMax,
