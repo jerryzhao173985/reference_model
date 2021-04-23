@@ -232,6 +232,7 @@ int OpNegate<Rank, Dtype>::register_fcn()
             ASSERT(this->qinfo);
             this->fcn = [this](InEigenType a) -> OutEigenType {
                 InEigenType result = -(a - this->qinfo->input_zp()) + this->qinfo->output_zp();
+                result = std::min(std::max(result, static_cast<InEigenType>(QMin)), static_cast<InEigenType>(QMax));
                 return result;
             };
             break;
