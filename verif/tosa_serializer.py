@@ -616,10 +616,7 @@ class TosaSerializer:
         )
 
     def setExpectedFailure(self, desc="", val=True):
-        self.expectedFailure = val
-        self.expectedFailureDesc = desc
 
-    def setExpectedFailure(self, desc="", val=True):
         self.expectedFailure = val
         self.expectedFailureDesc = desc
 
