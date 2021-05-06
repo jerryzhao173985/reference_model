@@ -1,10 +1,7 @@
 {
-  "tf_model_filename": "model.pb",
-  "tf_result_npy_filename": "tf_result.npy",
-  "tf_result_name": "result",
   "tflite_model_filename": "model.tflite",
   "tflite_result_npy_filename": "tflite_result.npy",
-  "tflite_result_name": "Identity",
+  "tflite_result_name": "Identity_int8",
   "ifm_file": [
     "placeholder_0.npy"
   ],
@@ -18,5 +15,9 @@
       32,
       8
     ]
-  ]
+  ],
+  "framework_exclusions": [
+    "tf"
+  ],
+  "quantized": 1
 }

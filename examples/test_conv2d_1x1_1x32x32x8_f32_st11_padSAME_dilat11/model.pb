@@ -1,45 +1,12 @@
 node {
-  name: "keras_learning_phase/input"
-  op: "Const"
-  attr {
-    key: "dtype"
-    value {
-      type: DT_BOOL
-    }
-  }
-  attr {
-    key: "value"
-    value {
-      tensor {
-        dtype: DT_BOOL
-        tensor_shape {
-        }
-        bool_val: false
-      }
-    }
-  }
-}
-node {
-  name: "keras_learning_phase"
-  op: "PlaceholderWithDefault"
-  input: "keras_learning_phase/input"
-  attr {
-    key: "dtype"
-    value {
-      type: DT_BOOL
-    }
-  }
-  attr {
-    key: "shape"
-    value {
-      shape {
-      }
-    }
-  }
-}
-node {
   name: "placeholder_0"
   op: "Placeholder"
+  attr {
+    key: "_user_specified_name"
+    value {
+      s: "placeholder_0"
+    }
+  }
   attr {
     key: "dtype"
     value {
@@ -67,7 +34,7 @@ node {
   }
 }
 node {
-  name: "const_1"
+  name: "result/filter"
   op: "Const"
   attr {
     key: "dtype"
@@ -103,7 +70,7 @@ node {
   name: "result"
   op: "Conv2D"
   input: "placeholder_0"
-  input: "const_1"
+  input: "result/filter"
   attr {
     key: "T"
     value {
@@ -158,6 +125,17 @@ node {
     }
   }
 }
+node {
+  name: "Identity"
+  op: "Identity"
+  input: "result"
+  attr {
+    key: "T"
+    value {
+      type: DT_FLOAT
+    }
+  }
+}
 versions {
-  producer: 498
+  producer: 714
 }
