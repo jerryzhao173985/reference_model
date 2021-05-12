@@ -134,6 +134,9 @@ GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT16);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT32);
             break;
+        case Op_DIV:
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpDiv, INT32);
+            break;
         case Op_LOGICAL_AND:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalAnd, BOOL);
             break;
@@ -346,21 +349,12 @@ GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
         // data_nodes
         case Op_CONST:
             return new OpConst(id);
-        case Op_PLACEHOLDER:
-            return new OpPlaceholder(id);
         case Op_IDENTITY:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, FLOAT);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT32);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT8);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT16);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, BOOL);
-            break;
-        case Op_IDENTITYN:
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, FLOAT);
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT32);
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT8);
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT16);
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, BOOL);
             break;
 
         // type_conversion

@@ -42,29 +42,6 @@ int OpConst::eval()
     return GraphNode::eval();
 }
 
-OpPlaceholder::OpPlaceholder(uint64_t id_)
-    : GraphNode(Op_PLACEHOLDER, id_)
-{
-    setRequiredOperands(0, 1);
-}
-
-OpPlaceholder::~OpPlaceholder()
-{}
-
-int OpPlaceholder::checkTensorAttributes()
-{
-    if (validateRequiredOperands())
-        return 1;
-
-    return 0;
-}
-
-int OpPlaceholder::eval()
-{
-    // Evaluation is trivial for placeholders
-    return GraphNode::eval();
-}
-
 template <int Rank, DType Dtype>
 OpIdentity<Rank, Dtype>::OpIdentity(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
     : GraphNode(Op_IDENTITY, id_)
@@ -107,64 +84,11 @@ int OpIdentity<Rank, Dtype>::eval()
     return GraphNode::eval();
 }
 
-template <int Rank, DType Dtype>
-OpIdentityN<Rank, Dtype>::OpIdentityN(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_IDENTITYN, id_)
-{
-    setRequiredRank(0, 6);
-}
-
-template <int Rank, DType Dtype>
-OpIdentityN<Rank, Dtype>::~OpIdentityN()
-{}
-
-template <int Rank, DType Dtype>
-int OpIdentityN<Rank, Dtype>::checkTensorAttributes()
-{
-
-    if (inputs.size() != outputs.size())
-    {
-        printNodeValidationError("Input and output tensor list lengths are not equal");
-        return 1;
-    }
-
-    for (size_t i = 0; i < inputs.size(); i++)
-    {
-        ins.push_back(dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[i]));
-        outs.push_back(dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[i]));
-
-        if (ins[i]->matchRankTypeShape(*outs[i]))
-        {
-            printNodeValidationError("Input and output tensor rank, type, or shape do not match");
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-template <int Rank, DType Dtype>
-int OpIdentityN<Rank, Dtype>::eval()
-{
-    for (size_t i = 0; i < ins.size(); i++)
-    {
-        outs[i]->getTensor() = ins[i]->getTensor();
-    }
-
-    return GraphNode::eval();
-}
-
 // template explicit instantiation
-// note OpConst and OpPlaceholder are not templated
+// note OpConst is not templated
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, BOOL);
-
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, FLOAT);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT8);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, INT32);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentityN, BOOL);

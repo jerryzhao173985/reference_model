@@ -65,8 +65,8 @@ public:
     static int32_t apply_scale_16(int64_t value, int16_t multiplier, int32_t shift)
     {
         ASSERT_MSG(multiplier >= 0, "apply_scale_16() error: multiplier should >= 0 but is %d", multiplier);
-        ASSERT_MSG(value >= -(static_cast<int64_t>(1) << 47) && value < (static_cast<int64_t>(1) << 47),
-                   "apply_scale_16() error: value should be within [-(1^47), 1^47]");
+        ASSERT_MSG(shift >= 2 && shift <= 62, "apply_scale_16() error: shift should be within [2, 62] but is %d",
+                   shift);
         int64_t round  = 1L << (shift - 1);
         int64_t result = value * (int64_t)multiplier + round;
         result         = result >> shift;

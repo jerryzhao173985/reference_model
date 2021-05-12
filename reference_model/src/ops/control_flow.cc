@@ -93,6 +93,8 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
             return 1;
         }
 
+        tensor->setIsValid();
+
         // Push ready consumers to the next node list
         for (auto gn : tensor->getConsumers())
         {
@@ -292,8 +294,7 @@ int OpWhileLoop::checkTensorAttributes()
 int OpWhileLoop::eval()
 {
 
-    TosaReference::Tensor0<bool> cond_output_ctensor(std::string("cond_output"), DType_BOOL,
-                                                     std::vector<int32_t>({}));
+    TosaReference::Tensor0<bool> cond_output_ctensor(std::string("cond_output"), DType_BOOL, std::vector<int32_t>({}));
 
     cond_output_ctensor.allocate();
     std::vector<TosaReference::Tensor*> cond_block_outputs;

@@ -1710,10 +1710,101 @@ class TosaTestGen:
                     else:
                         raise Exception("OpArithmeticRightShift: invalid input dtype")
                 else:
-                    arr = self.getRandTensor(shapeList[0], dtypeList[idx])
+                    arr = self.getRandTensor(shape, dtypeList[idx])
                 placeholders.append(self.ser.addPlaceholder(shape, dtypeList[idx], arr))
 
             tens.extend(placeholders)
+        elif op["op"] == Op.DIV:
+            assert (
+                pCount == 2 and cCount == 0
+            ), "Op.Div must have 2 placeholders, 0 consts"
+
+            placeholders = []
+
+            # Two invalid cases for Op.DIV:
+            # 1. divisor == 0
+            # 2. dividend == (1<<31) and divisor == -1
+            while True:
+                dividend_arr = self.getRandTensor(shapeList[0], dtypeList[0])
+                divisor_arr = self.getRandTensor(shapeList[1], dtypeList[1])
+
+                if (divisor_arr == 0).any():
+                    continue
+
+                if (dividend_arr == (2 ** 31)).any() and (divisor_arr == -1).any():
+                    continue
+
+                break
+
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[0], dtypeList[0], dividend_arr)
+            )
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[1], dtypeList[1], divisor_arr)
+            )
+
+            tens.extend(placeholders)
+        elif op["op"] == Op.MUL:
+            assert (
+                pCount == 2 and cCount == 0
+            ), "Op.MUL must have 2 placeholders, 0 consts"
+
+            if dtypeList[0] == DType.FLOAT:
+                tens.extend(self.buildPlaceholderTensors(shapeList[:], dtypeList[:]))
+            else:
+                placeholders = []
+
+                # Make sure multiply result in int32 range
+                shift = testArgs[0]
+                if dtypeList[0] == DType.INT8:
+                    num_bits = 8
+                elif dtypeList[0] == DType.INT16:
+                    num_bits = 16
+                elif dtypeList[0] == DType.INT32:
+                    num_bits = 32
+                else:
+                    raise Exception("OpMul: invalid input dtype")
+
+                for idx, shape in enumerate(shapeList[:]):
+                    low = -(2 ** (num_bits - 1))
+                    high = (2 ** (num_bits - 1)) - 1
+
+                    a_arr = np.int32(
+                        self.rng.integers(low=low, high=high, size=shapeList[0])
+                    )
+                    b_arr = np.int32(
+                        self.rng.integers(low=low, high=high, size=shapeList[1])
+                    )
+
+                i = 0
+                while True:
+
+                    a_arr_64 = a_arr.astype(np.int64)
+                    b_arr_64 = b_arr.astype(np.int64)
+
+                    if shift > 0:
+                        rounding = 1 << (shift - 1)
+                        result_arr = ((a_arr_64 * b_arr_64) + rounding) >> shift
+                    else:
+                        result_arr = a_arr_64 * b_arr_64
+
+                    if (result_arr > -(2 ** 31)).all() and (
+                        result_arr <= ((2 ** 31) - 1)
+                    ).all():
+                        break
+
+                    i = i + 1
+                    a_arr = a_arr // 2
+                    b_arr = b_arr // 2
+
+                placeholders.append(
+                    self.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
+                )
+                placeholders.append(
+                    self.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr)
+                )
+
+                tens.extend(placeholders)
         else:
             tens.extend(
                 self.buildPlaceholderTensors(shapeList[0:pCount], dtypeList[0:pCount])
@@ -1858,7 +1949,6 @@ class TosaTestGen:
             "build_fcn": (build_argmax, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_NARROW_INT_FP,
         },
-
         "avg_pool2d": {
             "op": Op.AVG_POOL2D,
             "operands": (1, 0),
@@ -1867,7 +1957,6 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgUnary,
             "types": TYPE_NARROW_INT_FP,
         },
-
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
             "op": Op.CONV2D,
@@ -1878,9 +1967,7 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
-
         # Conv3d TBD
-
         # Templated operator.  Filled in by createDynamicOpLists
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
@@ -1896,7 +1983,6 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
-
         "fully_connected": {
             "op": Op.FULLY_CONNECTED,
             "operands": (1, 2),
@@ -1905,7 +1991,6 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgConv,
             "types": TYPE_CONV2D,
         },
-
         "matmul": {
             "op": Op.MATMUL,
             "operands": (2, 0),
@@ -1914,7 +1999,6 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgMatmul,
             "types": TYPE_NARROW_INT_FP,
         },
-
         "max_pool2d": {
             "op": Op.MAX_POOL2D,
             "operands": (1, 0),
@@ -1922,7 +2006,6 @@ class TosaTestGen:
             "build_fcn": (build_pool2d, TosaTensorGen.tgNHWC, TosaArgGen.agPooling),
             "types": TYPE_NARROW_INT_FP,
         },
-
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
             "op": Op.TRANSPOSE_CONV2D,
@@ -1937,7 +2020,6 @@ class TosaTestGen:
             "types": TYPE_CONV2D,
             "template": True,
         },
-
         # Activation functions
         "clamp": {
             "op": Op.CLAMP,
@@ -1945,28 +2027,24 @@ class TosaTestGen:
             "build_fcn": (build_clamp, TosaTensorGen.tgBasic, None),
             "types": TYPE_NARROW_INT_FP,
         },
-
         "relun": {
             "op": Op.RELUN,
             "operands": (1, 0),
             "build_fcn": (build_relun, TosaTensorGen.tgBasic, None),
             "types": TYPE_FI32,
         },
-
         "sigmoid": {
             "op": Op.SIGMOID,
             "operands": (1, 0),
             "build_fcn": (build_sigmoid, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "tanh": {
             "op": Op.TANH,
             "operands": (1, 0),
             "build_fcn": (build_tanh, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         # Elementwise Binary Operators
         "add": {
             "op": Op.ADD,
@@ -1974,7 +2052,6 @@ class TosaTestGen:
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "arithmetic_right_shift": {
             "op": Op.ARITHMETIC_RIGHT_SHIFT,
             "operands": (2, 0),
@@ -1985,98 +2062,90 @@ class TosaTestGen:
             ),
             "types": TYPE_INT,
         },
-
         "bitwise_and": {
             "op": Op.BITWISE_AND,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-
         "bitwise_or": {
             "op": Op.BITWISE_OR,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-
         "bitwise_xor": {
             "op": Op.BITWISE_XOR,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-
+        "div": {
+            "op": Op.DIV,
+            "operands": (2, 0),
+            "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
+            "types": [DType.INT32],
+        },
         "logical_and": {
             "op": Op.LOGICAL_AND,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_BOOL,
         },
-
         "logical_left_shift": {
             "op": Op.LOGICAL_LEFT_SHIFT,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-
         "logical_right_shift": {
             "op": Op.LOGICAL_RIGHT_SHIFT,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-
         "logical_or": {
             "op": Op.LOGICAL_OR,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_BOOL,
         },
-
         "logical_xor": {
             "op": Op.LOGICAL_XOR,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_BOOL,
         },
-
         "maximum": {
             "op": Op.MAXIMUM,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "minimum": {
             "op": Op.MINIMUM,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "mul": {
             "op": Op.MUL,
             "operands": (2, 0),
             "build_fcn": (build_mul, TosaTensorGen.tgBroadcastFuzz, TosaArgGen.agMul),
             "types": TYPE_INT_FP,
         },
-
         "pow": {
             "op": Op.POW,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "sub": {
             "op": Op.SUB,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "table": {
             "op": Op.TABLE,
             # Use the automatic generation functions to create the input array
@@ -2086,7 +2155,6 @@ class TosaTestGen:
             "build_fcn": (build_table, TosaTensorGen.tgBasic, None),
             "types": [DType.INT16],
         },
-
         # Elementwise Unary operators
         "abs": {
             "op": Op.ABS,
@@ -2094,56 +2162,48 @@ class TosaTestGen:
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FI32,
         },
-
         "bitwise_not": {
             "op": Op.BITWISE_NOT,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_INT,
         },
-
         "ceil": {
             "op": Op.CEIL,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "clz": {
             "op": Op.CLZ,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": [DType.INT32],
         },
-
         "exp": {
             "op": Op.EXP,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "floor": {
             "op": Op.FLOOR,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "log": {
             "op": Op.LOG,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "logical_not": {
             "op": Op.LOGICAL_NOT,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_BOOL,
         },
-
         "negate": {
             "op": Op.NEGATE,
             "operands": (1, 0),
@@ -2151,21 +2211,18 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgUnary,
             "types": TYPE_INT_FP,
         },
-
         "reciprocal": {
             "op": Op.RECIPROCAL,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         "rsqrt": {
             "op": Op.RSQRT,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FP,
         },
-
         # Elementwise Ternary operators
         "select": {
             "op": Op.SELECT,
@@ -2173,7 +2230,6 @@ class TosaTestGen:
             "build_fcn": (build_select, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FIB,
         },
-
         # Comparison operators
         "equal": {
             "op": Op.EQUAL,
@@ -2181,21 +2237,18 @@ class TosaTestGen:
             "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "greater_equal": {
             "op": Op.GREATER_EQUAL,
             "operands": (2, 0),
             "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         "greater": {
             "op": Op.GREATER,
             "operands": (2, 0),
             "build_fcn": (build_comparison, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_FI32,
         },
-
         # Reduction operators
         "reduce_all": {
             "op": Op.REDUCE_ALL,
@@ -2203,42 +2256,36 @@ class TosaTestGen:
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_BOOL,
         },
-
         "reduce_any": {
             "op": Op.REDUCE_ANY,
             "operands": (1, 0),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_BOOL,
         },
-
         "reduce_max": {
             "op": Op.REDUCE_MAX,
             "operands": (1, 0),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_INT_FP,
         },
-
         "reduce_min": {
             "op": Op.REDUCE_MAX,
             "operands": (1, 0),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_INT_FP,
         },
-
         "reduce_product": {
             "op": Op.REDUCE_PRODUCT,
             "operands": (1, 0),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FP,
         },
-
         "reduce_sum": {
             "op": Op.REDUCE_SUM,
             "operands": (1, 0),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FI32,
         },
-
         # Data layout operators
         "concat": {
             "op": Op.CONCAT,
@@ -2246,7 +2293,6 @@ class TosaTestGen:
             "build_fcn": (build_concat, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FIB,
         },
-
         "pad": {
             "op": Op.PAD,
             "operands": (1, 0),
@@ -2254,35 +2300,30 @@ class TosaTestGen:
             "qgen": TosaQuantGen.qgPad,
             "types": TYPE_FIB,
         },
-
         "reshape": {
             "op": Op.RESHAPE,
             "operands": (1, 0),
             "build_fcn": (build_reshape, TosaTensorGen.tgBasic, TosaArgGen.agReshape),
             "types": TYPE_FIB,
         },
-
         "reverse": {
             "op": Op.REVERSE,
             "operands": (1, 0),
             "build_fcn": (build_reverse, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FIB,
         },
-
         "slice": {
             "op": Op.SLICE,
             "operands": (1, 0),
             "build_fcn": (build_slice, TosaTensorGen.tgBasic, TosaArgGen.agSlice),
             "types": TYPE_FIB,
         },
-
         "tile": {
             "op": Op.TILE,
             "operands": (1, 0),
             "build_fcn": (build_tile, TosaTensorGen.tgBasic, TosaArgGen.agTile),
             "types": TYPE_FIB,
         },
-
         "transpose": {
             "op": Op.TRANSPOSE,
             "operands": (1, 0),
@@ -2294,7 +2335,6 @@ class TosaTestGen:
             ),
             "types": TYPE_FIB,
         },
-
         # Data nodes
         "const": {
             "op": Op.CONST,
@@ -2302,28 +2342,12 @@ class TosaTestGen:
             "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
             "types": TYPE_FIB,
         },
-
         "identity": {
             "op": Op.IDENTITY,
             "operands": (1, 0),
             "build_fcn": (build_unary, TosaTensorGen.tgBasic, None),
             "types": TYPE_FIB,
         },
-
-        "identityn": {
-            "op": Op.IDENTITYN,
-            "operands": (2, 0),
-            "build_fcn": (build_identityn, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
-
-        "placeholder": {
-            "op": Op.PLACEHOLDER,
-            "operands": (1, 0),
-            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FIB,
-        },
-
         # Scatter/Gather
         "gather": {
             "op": Op.GATHER,
@@ -2333,7 +2357,6 @@ class TosaTestGen:
             "build_fcn": (build_gather, TosaTensorGen.tgBasic, None),
             "types": TYPE_INT_FP,
         },
-
         "scatter": {
             "op": Op.SCATTER,
             # Only specify 'values_in' tensor here.
@@ -2343,7 +2366,6 @@ class TosaTestGen:
             "build_fcn": (build_scatter, TosaTensorGen.tgScatter, None),
             "types": TYPE_INT_FP,
         },
-
         # Image operations
         "resize": {
             "op": Op.RESIZE,
@@ -2352,7 +2374,6 @@ class TosaTestGen:
             "build_fcn": (build_resize, TosaTensorGen.tgNHWC, TosaArgGen.agResize),
             "types": [DType.INT8, DType.INT16, DType.FLOAT],
         },
-
         # Type conversion
         "cast": {
             "op": Op.CAST,
@@ -2360,18 +2381,14 @@ class TosaTestGen:
             "build_fcn": (build_cast, TosaTensorGen.tgBasic, TosaArgGen.agCast),
             "types": [DType.FLOAT, DType.INT8, DType.INT16, DType.INT32, DType.BOOL],
         },
-
         "rescale": {
             "op": Op.RESCALE,
             "operands": (1, 0),
             "build_fcn": (build_rescale, TosaTensorGen.tgBasic, TosaArgGen.agRescale),
             "types": [DType.INT8, DType.INT16, DType.INT32, DType.INT48],
         },
-
         # Custom
         # Not implemented.
-
-
         # Control flow operators
         # Two varients of cond_if, one that generates one of two constant tensors (no
         # inputs to the basic blocks, one output) and another that either adds or subtracts two tensors

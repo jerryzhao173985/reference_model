@@ -548,8 +548,6 @@ class TosaSerializer:
         tens = self.currBasicBlock.addTensor(name, shape, dtype, None, filename)
         # This is always an input to the block
         self.currBasicBlock.addInput(name)
-        # Add the operator now
-        self.currBasicBlock.addOperator(tosa.Op.Op().PLACEHOLDER, [], name)
 
         if vals is not None:
             np.save(os.path.join(self.pathPrefix, filename), vals, False)
@@ -586,7 +584,6 @@ class TosaSerializer:
         return tens
 
     def addInputTensor(self, tensor):
-        self.currBasicBlock.addOperator(tosa.Op.Op().PLACEHOLDER, [], tensor.name)
         self.currBasicBlock.addTensor(tensor.name, tensor.shape, tensor.dtype)
         self.currBasicBlock.addInput(tensor.name)
 
@@ -606,10 +603,8 @@ class TosaSerializer:
 
     def addOperator(self, op, inputs, outputs, attributes=None, quant_info=None):
 
-        if op == tosa.Op.Op().PLACEHOLDER or op == tosa.Op.Op().CONST:
-            raise Exception(
-                "Use addPlaceholderTensor() or addConstTensor() to add PLACEHOLDER and CONST ops"
-            )
+        if op == tosa.Op.Op().CONST:
+            raise Exception("Use addConstTensor() to add CONST ops")
 
         return self.currBasicBlock.addOperator(
             op, inputs, outputs, attributes, quant_info

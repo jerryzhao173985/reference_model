@@ -31,16 +31,6 @@ public:
     virtual int eval();
 };
 
-class OpPlaceholder : public GraphNode
-{
-public:
-    OpPlaceholder(uint64_t id_);
-    virtual ~OpPlaceholder();
-
-    virtual int checkTensorAttributes();
-    virtual int eval();
-};
-
 template <int Rank, DType Dtype>
 class OpIdentity : public GraphNode
 {
@@ -59,26 +49,6 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-};
-
-template <int Rank, DType Dtype>
-class OpIdentityN : public GraphNode
-{
-public:
-    OpIdentityN(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
-    virtual ~OpIdentityN();
-
-    virtual int checkTensorAttributes();
-    virtual int eval();
-
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
-
-protected:
-    std::vector<TosaReference::TensorTemplate<TIn>*> ins;
-    std::vector<TosaReference::TensorTemplate<TOut>*> outs;
 };
 
 };    // namespace TosaReference

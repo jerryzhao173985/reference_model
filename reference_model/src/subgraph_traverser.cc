@@ -499,7 +499,6 @@ int SubgraphTraverser::linkTensorsAndNodes()
     // For each node, read this list, link up the tensors with their inputs/outputs
     for (GraphNode* currNode : nodes)
     {
-
         // Link inputs/consuming nodes
         for (std::string& name : currNode->getInputNames())
         {
@@ -566,35 +565,17 @@ int SubgraphTraverser::validateGraph()
     for (TosaReference::Tensor* currTensor : tensors)
     {
 
-        if (!currTensor->getProducer() && currTensor->getConsumers().empty())
+        // It's okay for block input tensor not being consumed by operators.
+        // This is common in control flow op execution.
+        if (!currTensor->getIsSubgraphInput())
         {
-            WARNING("Graph inconsistency: TosaReference::Tensor %s has no producers or consumers\n",
-                    currTensor->getName().c_str());
-            return 1;
-        }
-
-        if (currTensor->getIsSubgraphInput())
-        {
-            if (currTensor->getProducer() && currTensor->getProducer()->getOp() != Op_PLACEHOLDER)
+            if (!currTensor->getProducer() && currTensor->getConsumers().empty())
             {
-                WARNING("Graph inconsistency: TosaReference::Tensor %s is a subgraph input and has a producer\n",
+                WARNING("Graph inconsistency: TosaReference::Tensor %s has no producers or consumers\n",
                         currTensor->getName().c_str());
                 return 1;
             }
         }
-
-        // comment this check out as this is possible when graph have multiple output
-        // for example:
-        //   %0 = add(%arg0, %arg1)
-        //   %1 = mul(%arg0, %0)
-        //   yields(%0, %1)
-        //if (currTensor->getIsSubgraphOutput()) {
-        //    if (!currTensor->getConsumers().empty()) {
-        //        WARNING ("Graph inconsistency: TosaReference::Tensor %s is a subgraph output and has a consumer\n",
-        //                     currTensor->getName().c_str());
-        //        return 1;
-        //    }
-        //}
 
         if (g_func_config.tosa_profile == 0)
         {
