@@ -1723,7 +1723,7 @@ class TosaTestGen:
 
             # Two invalid cases for Op.DIV:
             # 1. divisor == 0
-            # 2. dividend == (1<<31) and divisor == -1
+            # 2. dividend == -(1<<31) and divisor == -1
             while True:
                 dividend_arr = self.getRandTensor(shapeList[0], dtypeList[0])
                 divisor_arr = self.getRandTensor(shapeList[1], dtypeList[1])
@@ -1731,7 +1731,7 @@ class TosaTestGen:
                 if (divisor_arr == 0).any():
                     continue
 
-                if (dividend_arr == (2 ** 31)).any() and (divisor_arr == -1).any():
+                if (dividend_arr == -(2 ** 31)).any() and (divisor_arr == -1).any():
                     continue
 
                 break
