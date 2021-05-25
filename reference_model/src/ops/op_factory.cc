@@ -178,7 +178,8 @@ GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSub, INT32);
             break;
         case Op_TABLE:
-            DEF_FACTORY_ONE_RANK_0_6(OpTable);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpTable, INT8);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpTable, INT16);
             break;
 
         // ewise_unary

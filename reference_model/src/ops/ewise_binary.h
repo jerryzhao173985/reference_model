@@ -176,7 +176,7 @@ protected:
     TosaMulAttribute* attribute;
 };
 
-template <int Rank>
+template <int Rank, DType InDtype>
 class OpTable : public GraphNode
 {
 public:
@@ -186,9 +186,8 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    static constexpr DType InDtype           = DType_INT16;
-    static constexpr DType TableDtype        = DType_INT16;
-    static constexpr DType OutDtype          = DType_INT32;
+    static constexpr DType TableDtype        = (InDtype == DType_INT8) ? DType_INT8 : DType_INT16;
+    static constexpr DType OutDtype          = (InDtype == DType_INT8) ? DType_INT8 : DType_INT32;
     using InEigenType                        = typename GetEigenType<InDtype>::type;
     using TableEigenType                     = typename GetEigenType<TableDtype>::type;
     using OutEigenType                       = typename GetEigenType<OutDtype>::type;

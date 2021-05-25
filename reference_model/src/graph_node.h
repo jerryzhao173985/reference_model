@@ -33,15 +33,6 @@
 #define DEF_INSTANTIATE_TWO_RANK_TWO_TYPE(OP, RANK1, RANK2, DTYPE1, DTYPE2)                                            \
     template class TosaReference::OP<RANK1, RANK2, DType_##DTYPE1, DType_##DTYPE2>;
 
-#define DEF_INSTANTIATE_ONE_RANK_0_6(OP)                                                                               \
-    template class TosaReference::OP<0>;                                                                               \
-    template class TosaReference::OP<1>;                                                                               \
-    template class TosaReference::OP<2>;                                                                               \
-    template class TosaReference::OP<3>;                                                                               \
-    template class TosaReference::OP<4>;                                                                               \
-    template class TosaReference::OP<5>;                                                                               \
-    template class TosaReference::OP<6>;
-
 #define DEF_INSTANTIATE_ONE_TYPE(OP, DTYPE) template class TosaReference::OP<DType_##DTYPE>;
 
 #define DEF_INSTANTIATE_TWO_TYPE(OP, DTYPE1, DTYPE2) template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2>;
