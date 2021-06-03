@@ -1,0 +1,16 @@
+{
+  "tosa_file": "test_conv2d_1x1_1x32x32x8_f32_st11_padSAME_dilat11.tosa",
+  "ifm_name": [
+    "InputTensor-tflite0"
+  ],
+  "ifm_file": [
+    "../placeholder_0.npy"
+  ],
+  "ofm_name": [
+    "Result0"
+  ],
+  "ofm_file": [
+    "ref_model_Result0.npy"
+  ],
+  "expected_failure": false
+}

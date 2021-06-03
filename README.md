@@ -29,8 +29,12 @@ tools:
 * GCC (tested with 7.5.0) or Clang C++ compiler (tested with clang-9)
   with C++17 support
 
-The model includes the TOSA Serialization Library and Eigen 3.3.7
-as git submodules.  The model is written using
+The model includes the following git submodules:
+* TOSA Serialization Library
+* JSON for Modern C++ - 3.8.0
+* Eigen 3.3.7
+
+The model is written using
 C++17 and has been primarily tested on Ubuntu x86_64 18.04 LTS Linux
 systems.
 
@@ -71,26 +75,61 @@ rebuilt simply using `make`.
 # Usage
 
 The inputs to the *TOSA Reference Model* consist of a FlatBuffers file
-containing the serialized subgraph, a sequence of placeholder node
-name/input tensor NumPy file pairs (produced by an external tool), and
-a prefix for output tensor NumPy files (produced by the reference model).
+containing the serialized subgraph, a JSON test descriptor that describes
+a sequence of name, shape and numpy file for each input and output tensor.
+
+The JSON test descriptor must have the following field:
+* tosa_file:
+    type: string.
+    TOSA flatbuffer file location.
+* ifm_name:
+    type: list(string).
+    Input placeholder tensor names.
+* ifm_file:
+    type: list(string).
+    Input numpy array file location.
+* ofm_name:
+    type: list(string).
+    Output placeholder tensor names.
+* ofm_file:
+    type: list(string).
+    Output numpy array file location.
+* expected_failure:
+    type: boolean.
+    Is this test expected to fail in runtime.
+
+Note by default, all the files specified by "tosa_file", "ifm_file",
+"ofm_file" are relative to desc.json. This could be overwritten by
+-Cflatbuffer_dir=, if desired.
 
 An example command is shown below:
 
 ``` bash
-$ mkdir -p examples_out/test_add_1x4x4x4_f32
 $ ./build/reference_model/tosa_reference_model \
-  -Csubgraph_dir=examples/test_add_1x4x4x4_f32/flatbuffer-tflite \
-  -Csubgraph_file=test_add_1x4x4x4_f32.tosa \
-  -Cinput_dir=examples/test_add_1x4x4x4_f32/ \
-  -Coutput_dir=examples_out/test_add_1x4x4x4_f32/ \
-  -Coutput_tensor_prefix=ref_model_tflite_ \
-  -Cinput_tensor=InputTensor-tflite0:InputTensor-tflite0.npy,InputTensor-tflite1:InputTensor-tflite1.npy
+  -Ctest_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
 ```
 
+Instead of drive model by JSON test descriptor, user can also drive model
+with -Ctosa_file=, -Cifm_name=, -Cifm_file=, -Cofm_name=, -Cofm_file=
+options directly.
+
+In case where -Ctest_desc= and other options are specified at the same time,
+JSON test descriptor will be initialized first. All other options
+(-Ctosa_file=, -Cifm_name=, -Cifm_file=, -Cofm_name=, -Cofm_file=) will
+overwrite whatever specified by JSON descriptor.
+
 On a successful execution, the output tensors will be written in NumPy
-format into output tensors in -Coutput_dir and prefixed with
--Coutput_tensor_prefix.
+format into output tensors specified by "ofm_file".
+
+For example, you can generate new output .npy by:
+``` bash
+$ ./build/reference_model/tosa_reference_model \
+  -Ctest_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
+  -Cofm_file=out.npy
+```
+
+In this case, the "ofm_file" field in desc.json will be ignored, and the
+one specified by -Cofm_file= will be picked.
 
 When using JSON-formatted FlatBuffers input (.json extension), the
 FlatBuffers schema file from the TOSA Serialization library must be

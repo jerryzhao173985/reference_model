@@ -70,7 +70,7 @@ node {
 }
 node {
   name: "result"
-  op: "Add"
+  op: "AddV2"
   input: "placeholder_0"
   input: "placeholder_1"
   attr {
@@ -92,5 +92,5 @@ node {
   }
 }
 versions {
-  producer: 714
+  producer: 772
 }

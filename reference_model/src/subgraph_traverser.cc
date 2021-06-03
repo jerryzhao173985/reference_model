@@ -235,7 +235,7 @@ int SubgraphTraverser::initializeGraph()
             }
 
             bzero(tensor_fullname, sizeof(tensor_fullname));
-            snprintf(tensor_fullname, sizeof(tensor_fullname), "%s/%s", g_func_config.subgraph_dir,
+            snprintf(tensor_fullname, sizeof(tensor_fullname), "%s/%s", g_func_config.flatbuffer_dir,
                      ts->GetNpyFilePtr().c_str());
             if (tensor->readFromNpyFile(tensor_fullname))
             {

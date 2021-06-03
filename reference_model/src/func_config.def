@@ -63,17 +63,18 @@
 // macro processing rules only allow stringification of macro parameters.  Unfortunately,
 // Other tokens that are NOT passed in as macro parameters cannot be stringified.
 
-DEF_OPTION_STR(operator_fbs, "Flat buffer syntax file", FOF_STR_LEN, "../serialization/tosa.fbs")
-DEF_OPTION_STR(subgraph_dir, "Subgraph directory to load", FOF_STR_LEN, ".")
-DEF_OPTION_STR(subgraph_file, "Subgraph file to load", FOF_STR_LEN, "")
-DEF_OPTION_STR(input_dir, "Input directory path for dumps/files", FOF_STR_LEN, ".")
-DEF_OPTION_STR(input_tensor, "A list of pairs <name0>:<npy0>,<name1>:<npy1>", FOF_STR_LEN, "")
-DEF_OPTION_STR(output_dir, "Output directory path for output dumps/files", FOF_STR_LEN, ".")
+DEF_OPTION_STR(operator_fbs, "Flat buffer syntax file", FOF_STR_LEN, "tosa.fbs")
+DEF_OPTION_STR(test_desc, "Json test descriptor", FOF_STR_LEN, "desc.json")
+DEF_OPTION_STR(flatbuffer_dir, "Flatbuffer directory to load. If not specified, it will be overwritten by dirname(test_desc)", FOF_STR_LEN, "")
+DEF_OPTION_STR(tosa_file, "Flatbuffer file. Support .json or .tosa. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
+DEF_OPTION_STR(ifm_name, "Input tensor name. Comma(,) seperated. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
+DEF_OPTION_STR(ifm_file, "Input tensor numpy Comma(,) seperated. file to initialize with placeholder. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
+DEF_OPTION_STR(ofm_name, "Output tensor name. Comma(,) seperated. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
+DEF_OPTION_STR(ofm_file, "Output tensor numpy file to be generated. Comma(,) seperated. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
 DEF_OPTION(eval, "Evaluate the network (0/1)", uint32_t, FOF_DEC, 1)
 DEF_OPTION(validate_only, "Validate the network, but do not read inputs or evaluate (0/1)", uint32_t, FOF_DEC, 0)
 DEF_OPTION(output_tensors, "Output tensors to a file (0/1)", uint32_t, FOF_DEC, 1)
 DEF_OPTION(tosa_profile, "Set TOSA profile (0 = Base Inference, 1 = Main Inference, 2 = Main Training)", uint32_t, FOF_DEC, 1)
-DEF_OPTION_STR(output_tensor_prefix, "Optional output tensor prefix", FOF_STR_LEN, "output_")
 DEF_OPTION(dump_intermediates, "Dump intermediate tensors (0/1)", uint32_t, FOF_DEC, 0)
 DEF_OPTION_STR(fp_format, "Floating-point number dump format string (printf-style format, e.g. 0.5)", FOF_STR_LEN, "0.5")
 // Example of a hierarchical option

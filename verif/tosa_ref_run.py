@@ -14,6 +14,7 @@ import os
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
+import os
 import json
 import shlex
 import subprocess
@@ -31,23 +32,8 @@ class TosaRefRunner(TosaTestRunner):
 
         ref_cmd = [
             args.ref_model_path,
-            "-Csubgraph_file={}".format(self.testDesc["tosa_file"]),
-            "-Csubgraph_dir={}".format(self.testDir),
-            "-Cinput_dir={}".format(self.testDir),
-            "-Coutput_dir={}".format(self.testDir),
-            "-Coutput_tensor_prefix=ref-",  # Naming agreement with TosaSerializer
+            "-Ctest_desc={}".format(os.path.join(self.testDir, "desc.json")),
         ]
-
-        # Build up input tensor_name/filename list
-        inputTensors = []
-        for i in range(len(self.testDesc["ifm_placeholder"])):
-            inputTensors.append(
-                "{}:{}".format(
-                    self.testDesc["ifm_placeholder"][i], self.testDesc["ifm_file"][i]
-                )
-            )
-
-        ref_cmd.append("-Cinput_tensor={}".format(",".join(inputTensors)))
 
         if args.ref_debug:
             ref_cmd.extend(["-dALL", "-l{}".format(args.ref_debug)])

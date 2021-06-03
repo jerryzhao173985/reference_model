@@ -645,30 +645,24 @@ class TosaSerializer:
 
         test_desc["tosa_file"] = tosa_filename
         ifm_name = []
-        ifm_shape = []
         ifm_file = []
         ofm_name = []
         ofm_file = []
-        ofm_shape = []
 
         for b in self.basicBlocks:
             if b.name == "main":
                 for i in b.inputs:
                     ifm_name.append(i)
-                    ifm_shape.append(b.tensors[i].shape)
                     ifm_file.append(b.tensors[i].placeholderFilename)
                 for o in b.outputs:
                     ofm_name.append(o)
-                    ofm_shape.append(b.tensors[o].shape)
                     # Make up an OFM filename here.  One isn't generated until the reference tool is
                     # run, so any name is a good name
                     ofm_file.append("ref-{}.npy".format(o))
 
-        test_desc["ifm_placeholder"] = ifm_name
+        test_desc["ifm_name"] = ifm_name
         test_desc["ifm_file"] = ifm_file
-        test_desc["ifm_shape"] = ifm_shape
         test_desc["ofm_name"] = ofm_name
-        test_desc["ofm_shape"] = ofm_shape
         test_desc["ofm_file"] = ofm_file
         test_desc["expected_failure"] = self.expectedFailure
         if self.expectedFailureDesc:
