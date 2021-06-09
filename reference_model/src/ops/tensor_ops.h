@@ -183,15 +183,21 @@ public:
     static constexpr DType AccDtype  = GetAccDType<Dtype, Dtype>::value;
     using InEigenType                = typename GetEigenType<Dtype>::type;
     using AccEigenType               = typename GetEigenType<AccDtype>::type;
-    using TIn                        = Eigen::Tensor<InEigenType, 2>;
-    using TAcc                       = Eigen::Tensor<AccEigenType, 2>;
+    using TIn                        = Eigen::Tensor<InEigenType, 3>;
+    using TAcc                       = Eigen::Tensor<AccEigenType, 3>;
+    using TInRank2                   = Eigen::Tensor<InEigenType, 2>;
+    using TAccRank2                  = Eigen::Tensor<AccEigenType, 2>;
     static constexpr int64_t AccQMin = GetQMin<AccDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<AccDtype>::value;
 
 protected:
     TosaReference::TensorTemplate<TIn>* a;
     TosaReference::TensorTemplate<TIn>* b;
-    TosaReference::TensorTemplate<TAcc>* c;
+    TosaReference::TensorTemplate<TAcc>* output;
+    int64_t N;
+    int64_t H;
+    int64_t W;
+    int64_t C;
     tosa::TosaMatMulQuantInfo* qinfo;
 };
 
