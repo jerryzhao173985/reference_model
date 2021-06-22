@@ -593,7 +593,7 @@ class TosaArgGen:
     def getFactors(val, start=1):
         factors = []
 
-        for i in range(start, int(np.sqrt(val))):
+        for i in range(start, int(np.sqrt(val)) + 1):
             if (val % i) == 0:
                 factors.append(i)
 
@@ -614,27 +614,44 @@ class TosaArgGen:
 
         for p in range(testGen.args.num_rand_permutations):
             newRank = testGen.randInt(1, 6)
-            newShape = []
             if len(factors) < newRank:
                 continue
 
-            remainingElements = totalElements
-            shuffledFactors = testGen.rng.permutation(factors)
-            for i in range(newRank):
-                # pick rank-1 factors
-                newShape.append(shuffledFactors[0])
-                remainingElements = remainingElements // shuffledFactors[0]
-                shuffledFactors = testGen.rng.permutation(
-                    TosaArgGen.getFactors(remainingElements)
-                )
-            newShape.append(remainingElements)
+            found = True
+            # escape_counter breaks while loop if it continues on for too long
+            escape_counter = 0
+            while found:
+                newShape = []
+                # Generate newShape ensuring it isn't a duplicate
+                remainingElements = totalElements
+                shuffledFactors = testGen.rng.permutation(factors)
+                for i in range(newRank):
+                    # pick rank-1 factors
+                    newShape.append(shuffledFactors[0])
+                    remainingElements = remainingElements // shuffledFactors[0]
+                    shuffledFactors = testGen.rng.permutation(
+                        TosaArgGen.getFactors(remainingElements)
+                    )
+                newShape.append(remainingElements)
 
-            # Toss in a -1 sometimes
-            minusOne = testGen.randInt(0, newRank * 4)
-            if minusOne < newRank:
-                newShape[minusOne] = -1
+                # Toss in a -1 sometimes
+                minusOne = testGen.randInt(0, newRank * 4)
+                if minusOne < newRank:
+                    newShape[minusOne] = -1
 
-            arg_list.append(("perm{}_rank{}".format(p, newRank), [newShape]))
+                # Check for duplicates
+                found = False
+                for name, other_shape in arg_list:
+                    if other_shape[0] == newShape:
+                        found = True
+                        break
+
+                escape_counter += 1
+                if escape_counter >= 100:
+                    break
+
+                if not found:
+                    arg_list.append(("perm{}_rank{}".format(p, newRank), [newShape]))
 
         return arg_list
 
