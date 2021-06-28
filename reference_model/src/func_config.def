@@ -66,6 +66,7 @@
 DEF_OPTION_STR(operator_fbs, "Flat buffer syntax file", FOF_STR_LEN, "tosa.fbs")
 DEF_OPTION_STR(test_desc, "Json test descriptor", FOF_STR_LEN, "desc.json")
 DEF_OPTION_STR(flatbuffer_dir, "Flatbuffer directory to load. If not specified, it will be overwritten by dirname(test_desc)", FOF_STR_LEN, "")
+DEF_OPTION_STR(output_dir, "Output directory to write. If not specified, it will be overwritten by dirname(test_desc)", FOF_STR_LEN, "")
 DEF_OPTION_STR(tosa_file, "Flatbuffer file. Support .json or .tosa. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
 DEF_OPTION_STR(ifm_name, "Input tensor name. Comma(,) seperated. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")
 DEF_OPTION_STR(ifm_file, "Input tensor numpy Comma(,) seperated. file to initialize with placeholder. Specifying this will overwrite the one initialized by -Ctest_desc.", FOF_STR_LEN, "")

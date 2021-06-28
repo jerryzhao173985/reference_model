@@ -285,7 +285,7 @@ int writeFinalTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.flatbuffer_dir,
+            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.output_dir,
                      test_desc["ofm_file"][i].get<std::string>().c_str());
 
             DEBUG_MED(GT, "Writing output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(), filename);
@@ -347,13 +347,21 @@ int initTestDesc(json& test_desc)
         }
     }
 
-    // Overwrite g_func_config.flatbuffer_dir with dirname(g_func_config.test_desc) if it's not specified.
+    // Overwrite flatbuffer_dir/output_dir with dirname(g_func_config.test_desc) if it's not specified.
     std::string flatbuffer_dir_str(g_func_config.flatbuffer_dir);
-    if (flatbuffer_dir_str.empty())
+    std::string output_dir_str(g_func_config.output_dir);
+    if (flatbuffer_dir_str.empty() || output_dir_str.empty())
     {
         std::string test_path(g_func_config.test_desc);
         std::string test_dir = test_path.substr(0, test_path.find_last_of("/\\"));
-        strncpy(g_func_config.flatbuffer_dir, test_dir.c_str(), 1024);
+        if (flatbuffer_dir_str.empty())
+        {
+            strncpy(g_func_config.flatbuffer_dir, test_dir.c_str(), FOF_STR_LEN);
+        }
+        if (output_dir_str.empty())
+        {
+            strncpy(g_func_config.output_dir, test_dir.c_str(), FOF_STR_LEN);
+        }
     }
 
     // Overwrite test_desc["tosa_file"] if -Ctosa_file= specified.
