@@ -28,7 +28,7 @@ template <int Rank, DType Dtype>
 class OpArgMax : public GraphNode
 {
 public:
-    OpArgMax(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpArgMax(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpArgMax();
 
     virtual int checkTensorAttributes();
@@ -49,7 +49,7 @@ template <DType Dtype>
 class OpAvgPool2d : public GraphNode
 {
 public:
-    OpAvgPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpAvgPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpAvgPool2d();
 
     virtual int checkTensorAttributes();
@@ -80,7 +80,7 @@ template <DType InDtype, DType WeightDtype>
 class OpConv2d : public GraphNode
 {
 public:
-    OpConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpConv2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpConv2d();
 
     virtual int checkTensorAttributes() final;
@@ -112,7 +112,7 @@ template <DType InDtype, DType WeightDtype>
 class OpDepthwiseConv2d : public GraphNode
 {
 public:
-    OpDepthwiseConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpDepthwiseConv2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpDepthwiseConv2d();
 
     virtual int checkTensorAttributes() final;
@@ -144,7 +144,7 @@ template <DType InDtype, DType WeightDtype>
 class OpFullyConnected : public GraphNode
 {
 public:
-    OpFullyConnected(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpFullyConnected(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpFullyConnected();
 
     virtual int checkTensorAttributes() final;
@@ -174,7 +174,7 @@ template <DType Dtype>
 class OpMatMul : public GraphNode
 {
 public:
-    OpMatMul(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpMatMul();
 
     virtual int checkTensorAttributes() final;
@@ -205,7 +205,7 @@ template <DType Dtype>
 class OpMaxPool2d : public GraphNode
 {
 public:
-    OpMaxPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpMaxPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpMaxPool2d();
 
     virtual int checkTensorAttributes();
@@ -226,7 +226,7 @@ template <DType InDtype, DType WeightDtype>
 class OpTransposeConv2d : public GraphNode
 {
 public:
-    OpTransposeConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpTransposeConv2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpTransposeConv2d();
 
     virtual int checkTensorAttributes() final;

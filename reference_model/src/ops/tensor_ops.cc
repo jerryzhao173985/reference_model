@@ -22,8 +22,11 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, DType Dtype>
-OpArgMax<Rank, Dtype>::OpArgMax(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_ARGMAX, id_)
+OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_,
+                                TosaAttributeBase* attribute_,
+                                TosaQuantInfoBase* qinfo_,
+                                uint64_t id_)
+    : GraphNode(sgt_, Op_ARGMAX, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
@@ -66,8 +69,11 @@ int OpArgMax<Rank, Dtype>::eval()
 }
 
 template <DType Dtype>
-OpAvgPool2d<Dtype>::OpAvgPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_AVG_POOL2D, id_)
+OpAvgPool2d<Dtype>::OpAvgPool2d(SubgraphTraverser* sgt_,
+                                TosaAttributeBase* attribute_,
+                                TosaQuantInfoBase* qinfo_,
+                                uint64_t id_)
+    : GraphNode(sgt_, Op_AVG_POOL2D, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(4);
@@ -142,9 +148,6 @@ ETensor1<int32_t> OpAvgPool2d<Dtype>::calculate_div_map_1d(int in_size, int out_
     int32_t left_index  = pad_left / stride;
     int32_t right_index = pad_right / stride;
 
-    // not handle ultra small activation yet
-    ASSERT_MSG_NODE((out_size - 1 - right_index) >= left_index, "AvgPool2d: Small activations not supported yet");
-
     // minus the number of pad bit this index cover
     while (left_index >= 0)
     {
@@ -176,7 +179,8 @@ int OpAvgPool2d<Dtype>::eval()
     int out_width    = this->out->getShape()[2];
     int out_channels = this->out->getShape()[3];
 
-    ASSERT_MSG_NODE(in_batch == out_batch, "OpAvgPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(in_batch != out_batch, "OpAvgPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(in_channels != out_channels, "OpAvgPool2d: tensor channel mismatch %d != %d", in_channels, out_channels);
 
     int padding_top    = this->attribute->padding()[0];
     int padding_bottom = this->attribute->padding()[1];
@@ -260,12 +264,19 @@ int OpAvgPool2d<Dtype>::eval()
 
     if (Dtype != DType_FLOAT)
     {
-        this->out->getTensor() = sum.binaryExpr(div_map, [](AccEigenType value, int32_t div) -> OutEigenType {
-            int32_t multiplier, shift;
-            TosaReference::QuantUtil::reciprocal_scale(div, multiplier, shift);
+        try
+        {
+            this->out->getTensor() = sum.binaryExpr(div_map, [](AccEigenType value, int32_t div) -> OutEigenType {
+                int32_t multiplier, shift;
+                TosaReference::QuantUtil::reciprocal_scale(div, multiplier, shift);
 
-            return (OutEigenType)TosaReference::QuantUtil::apply_scale_32(value, multiplier, shift, false);
-        });
+                return (OutEigenType)TosaReference::QuantUtil::apply_scale_32(value, multiplier, shift, false);
+            });
+        }
+        catch (std::string desc)
+        {
+            REQUIRE(false, "OpAvgPool2d apply_scale_32() fails: %s.", desc.c_str());
+        }
         this->out->getTensor() = this->out->getTensor() + (OutEigenType)(this->qinfo->output_zp());
         this->out->getTensor() = this->out->getTensor().cwiseMax((OutEigenType)QMin);
         this->out->getTensor() = this->out->getTensor().cwiseMin((OutEigenType)QMax);
@@ -279,8 +290,11 @@ int OpAvgPool2d<Dtype>::eval()
 }
 
 template <DType InDtype, DType WeightDtype>
-OpConv2d<InDtype, WeightDtype>::OpConv2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_CONV2D, id_)
+OpConv2d<InDtype, WeightDtype>::OpConv2d(SubgraphTraverser* sgt_,
+                                         TosaAttributeBase* attribute_,
+                                         TosaQuantInfoBase* qinfo_,
+                                         uint64_t id_)
+    : GraphNode(sgt_, Op_CONV2D, id_)
 {
     setRequiredOperands(3, 1);
     setRequiredRank(4);
@@ -361,13 +375,12 @@ int OpConv2d<InDtype, WeightDtype>::eval()
     int out_width    = this->output->getShape()[2];
     int out_channels = this->output->getShape()[3];
 
-    ASSERT_MSG_NODE(in_batch == out_batch, "OpConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ASSERT_MSG_NODE(f_in_channels == in_channels, "OpConv2d: tensor input channel mismatch %d != %d", f_in_channels,
-                    in_channels);
-    ASSERT_MSG_NODE(f_out_channels == out_channels, "OpConv2d: tensor output channel mismatch %d != %d", f_out_channels,
-                    out_channels);
-    ASSERT_MSG_NODE(b_out_channels == out_channels, "OpConv2d: tensor output channel mismatch %d != %d", b_out_channels,
-                    out_channels);
+    ERROR_IF(in_batch != out_batch, "OpConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(f_in_channels != in_channels, "OpConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+             in_channels);
+    ERROR_IF(f_out_channels != out_channels, "OpConv2d: tensor output channel mismatch %d != %d", f_out_channels,
+             out_channels);
+    ERROR_IF(b_out_channels != out_channels, "OpConv2d: bias channel mismatch %d != %d", b_out_channels, out_channels);
 
     int padding_top    = this->attribute->padding()[0];
     int padding_bottom = this->attribute->padding()[1];
@@ -469,10 +482,11 @@ int OpConv2d<InDtype, WeightDtype>::eval()
 }
 
 template <DType InDtype, DType WeightDtype>
-OpDepthwiseConv2d<InDtype, WeightDtype>::OpDepthwiseConv2d(TosaAttributeBase* attribute_,
+OpDepthwiseConv2d<InDtype, WeightDtype>::OpDepthwiseConv2d(SubgraphTraverser* sgt_,
+                                                           TosaAttributeBase* attribute_,
                                                            TosaQuantInfoBase* qinfo_,
                                                            uint64_t id_)
-    : GraphNode(Op_DEPTHWISE_CONV2D, id_)
+    : GraphNode(sgt_, Op_DEPTHWISE_CONV2D, id_)
 {
     setRequiredOperands(3, 1);
     setRequiredRank(4);
@@ -553,14 +567,13 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
     int out_width    = this->output->getShape()[2];
     int out_channels = this->output->getShape()[3];
 
-    ASSERT_MSG_NODE(in_batch == out_batch, "OpDepthwiseConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ASSERT_MSG_NODE(f_in_channels == in_channels, "OpDepthwiseConv2d: tensor input channel mismatch %d != %d",
-                    f_in_channels, in_channels);
-    ASSERT_MSG_NODE(in_channels * f_multiplier == out_channels,
-                    "OpDepthwiseConv2d: tensor output channel mismatch %d != %d", in_channels * f_multiplier,
-                    out_channels);
-    ASSERT_MSG_NODE(b_out_channels == out_channels, "OpDepthwiseConv2d: tensor b_out_channels mismatch %d != %d",
-                    b_out_channels, out_channels);
+    ERROR_IF(in_batch != out_batch, "OpDepthwiseConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(f_in_channels != in_channels, "OpDepthwiseConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+             in_channels);
+    ERROR_IF(in_channels * f_multiplier != out_channels, "OpDepthwiseConv2d: tensor output channel mismatch %d != %d",
+             in_channels * f_multiplier, out_channels);
+    ERROR_IF(b_out_channels != out_channels, "OpDepthwiseConv2d: bias channels mismatch %d != %d", b_out_channels,
+             out_channels);
 
     int padding_top    = this->attribute->padding()[0];
     int padding_bottom = this->attribute->padding()[1];
@@ -651,10 +664,11 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
 }
 
 template <DType InDtype, DType WeightDtype>
-OpFullyConnected<InDtype, WeightDtype>::OpFullyConnected(TosaAttributeBase* attribute_,
+OpFullyConnected<InDtype, WeightDtype>::OpFullyConnected(SubgraphTraverser* sgt_,
+                                                         TosaAttributeBase* attribute_,
                                                          TosaQuantInfoBase* qinfo_,
                                                          uint64_t id_)
-    : GraphNode(Op_FULLY_CONNECTED, id_)
+    : GraphNode(sgt_, Op_FULLY_CONNECTED, id_)
 {
     setRequiredOperands(3, 1);
     setRequiredRank(2);
@@ -738,8 +752,11 @@ int OpFullyConnected<InDtype, WeightDtype>::eval()
 }
 
 template <DType Dtype>
-OpMatMul<Dtype>::OpMatMul(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_MATMUL, id_)
+OpMatMul<Dtype>::OpMatMul(SubgraphTraverser* sgt_,
+                          TosaAttributeBase* attribute_,
+                          TosaQuantInfoBase* qinfo_,
+                          uint64_t id_)
+    : GraphNode(sgt_, Op_MATMUL, id_)
 {
     setRequiredOperands(2, 1);
     setRequiredRank(3);
@@ -866,8 +883,11 @@ int OpMatMul<Dtype>::eval()
 }
 
 template <DType Dtype>
-OpMaxPool2d<Dtype>::OpMaxPool2d(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_MAX_POOL2D, id_)
+OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_,
+                                TosaAttributeBase* attribute_,
+                                TosaQuantInfoBase* qinfo_,
+                                uint64_t id_)
+    : GraphNode(sgt_, Op_MAX_POOL2D, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(4);
@@ -936,7 +956,8 @@ int OpMaxPool2d<Dtype>::eval()
     int out_width    = this->out->getShape()[2];
     int out_channels = this->out->getShape()[3];
 
-    ASSERT_MSG_NODE(in_batch == out_batch, "OpMaxPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(in_batch != out_batch, "OpMaxPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(in_channels != out_channels, "OpMaxPool2d: tensor channel mismatch %d != %d", in_channels, out_channels);
 
     int padding_top    = this->attribute->padding()[0];
     int padding_bottom = this->attribute->padding()[1];
@@ -1004,10 +1025,11 @@ int OpMaxPool2d<Dtype>::eval()
 }
 
 template <DType InDtype, DType OutDtype>
-OpTransposeConv2d<InDtype, OutDtype>::OpTransposeConv2d(TosaAttributeBase* attribute_,
+OpTransposeConv2d<InDtype, OutDtype>::OpTransposeConv2d(SubgraphTraverser* sgt_,
+                                                        TosaAttributeBase* attribute_,
                                                         TosaQuantInfoBase* qinfo_,
                                                         uint64_t id_)
-    : GraphNode(Op_TRANSPOSE_CONV2D, id_)
+    : GraphNode(sgt_, Op_TRANSPOSE_CONV2D, id_)
 {
     setRequiredOperands(3, 1);
     setRequiredRank(4);
@@ -1104,13 +1126,13 @@ int OpTransposeConv2d<InDtype, OutDtype>::eval()
     int dilation_h   = this->attribute->dilation()[0];
     int dilation_w   = this->attribute->dilation()[1];
 
-    ASSERT_MSG_NODE(in_batch == out_batch, "OpTransposeConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ASSERT_MSG_NODE(f_in_channels == in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d",
-                    f_in_channels, in_channels);
-    ASSERT_MSG_NODE(f_out_channels == out_channels, "OpTransposeConv2d: tensor output channel mismatch %d != %d",
-                    f_out_channels, out_channels);
-    ASSERT_MSG_NODE(b_out_channels == out_channels, "OpDepthwiseConv2d: tensor b_out_channels mismatch %d != %d",
-                    b_out_channels, out_channels);
+    ERROR_IF(in_batch != out_batch, "OpTransposeConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
+    ERROR_IF(f_in_channels != in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+             in_channels);
+    ERROR_IF(f_out_channels != out_channels, "OpTransposeConv2d: tensor output channel mismatch %d != %d",
+             f_out_channels, out_channels);
+    ERROR_IF(b_out_channels != out_channels, "OpDepthwiseConv2d: bias channels mismatch %d != %d", b_out_channels,
+             out_channels);
 
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "

@@ -26,7 +26,7 @@ template <int Rank, DType InDtype, DType OutDtype>
 class OpRescale : public GraphNode
 {
 public:
-    OpRescale(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpRescale();
 
     virtual int checkTensorAttributes() final;
@@ -140,7 +140,7 @@ template <int Rank, DType InDtype, DType OutDtype>
 class OpCast : public GraphNode
 {
 public:
-    OpCast(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpCast(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpCast();
 
     virtual int checkTensorAttributes() final;

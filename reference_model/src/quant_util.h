@@ -44,9 +44,17 @@ public:
 
     static int32_t apply_scale_32(int32_t value, int32_t multiplier, int32_t shift, bool double_round = true)
     {
-        ASSERT_MSG(multiplier >= 0, "apply_scale_32() error: multiplier should >= 0 but is %d", multiplier);
-        ASSERT_MSG(shift >= 2 && shift <= 62, "apply_scale_32() error: shift should be within [2, 62] but is %d",
-                   shift);
+        if (multiplier < 0)
+        {
+            std::string desc = "apply_scale_32() error: multiplier should >= 0 but is " + std::to_string(multiplier);
+            throw desc;
+        }
+        if (shift < 2 || shift > 62)
+        {
+            std::string desc =
+                "apply_scale_32(): shift value should stay within [2, 62] but is " + std::to_string(shift);
+            throw desc;
+        }
         int64_t round = 1L << (shift - 1);
         if (double_round)
         {
@@ -57,21 +65,35 @@ public:
         }
         int64_t result = (int64_t)value * multiplier + round;
         result         = result >> shift;
-        ASSERT_MSG(result >= -(1L << 31) && result < (1L << 31),
-                   "apply_scale_32() error: scaled result exceed int32 numeric range");
+        if (result < -(1L << 31) || result >= (1L << 31))
+        {
+            std::string desc = "apply_scale_32() error: scaled result exceeds int32 numeric range";
+            throw desc;
+        }
         return static_cast<int32_t>(result);
     }
 
     static int32_t apply_scale_16(int64_t value, int16_t multiplier, int32_t shift)
     {
-        ASSERT_MSG(multiplier >= 0, "apply_scale_16() error: multiplier should >= 0 but is %d", multiplier);
-        ASSERT_MSG(shift >= 2 && shift <= 62, "apply_scale_16() error: shift should be within [2, 62] but is %d",
-                   shift);
+        if (multiplier < 0)
+        {
+            std::string desc = "apply_scale_16() error: multiplier should >= 0 but is " + std::to_string(multiplier);
+            throw desc;
+        }
+        if (shift < 2 || shift > 62)
+        {
+            std::string desc =
+                "apply_scale_16(): shift value should stay within [2, 62] but is " + std::to_string(shift);
+            throw desc;
+        }
         int64_t round  = 1L << (shift - 1);
         int64_t result = value * (int64_t)multiplier + round;
         result         = result >> shift;
-        ASSERT_MSG(result >= -(1L << 31) && result < (1L << 31),
-                   "apply_scale_16() error: scaled result exceed int32 numeric range");
+        if (result < -(1L << 31) || result >= (1L << 31))
+        {
+            std::string desc = "apply_scale_16() error: scaled result exceeds int32 numeric range";
+            throw desc;
+        }
         return static_cast<int32_t>(result);
     }
 };

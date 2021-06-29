@@ -44,7 +44,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
         }
         break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -69,7 +69,7 @@ int OpReluN<Rank, Dtype>::register_fcn()
         }
         break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -84,7 +84,7 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return (1.0 / (1.0 + (expf(-1.0 * a)))); };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -99,7 +99,7 @@ int OpTanh<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return tanhf(a); };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;

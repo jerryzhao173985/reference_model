@@ -1,5 +1,3 @@
-import os
-
 # Copyright (c) 2020-2021, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +16,15 @@ import os
 import json
 import shlex
 import subprocess
+from enum import Enum, IntEnum, unique
 from tosa_test_runner import TosaTestRunner, run_sh_command
+
+
+@unique
+class TosaReturnCode(IntEnum):
+    VALID = 0
+    UNPREDICTABLE = 1
+    ERROR = 2
 
 
 class TosaRefRunner(TosaTestRunner):
@@ -41,18 +47,29 @@ class TosaRefRunner(TosaTestRunner):
         if args.ref_intermediates:
             ref_cmd.extend(["-Ddump_intermediates=1"])
 
-        expectedFailure = self.testDesc["expected_failure"]
+        expectedReturnCode = self.testDesc["expected_return_code"]
 
         try:
-            run_sh_command(self.args, ref_cmd)
-            if expectedFailure:
-                result = TosaTestRunner.Result.UNEXPECTED_PASS
+            rc = run_sh_command(self.args, ref_cmd)
+            if rc == TosaReturnCode.VALID:
+                if expectedReturnCode == TosaReturnCode.VALID:
+                    result = TosaTestRunner.Result.EXPECTED_PASS
+                else:
+                    result = TosaTestRunner.Result.UNEXPECTED_PASS
+            elif rc == TosaReturnCode.ERROR:
+                if expectedReturnCode == TosaReturnCode.ERROR:
+                    result = TosaTestRunner.Result.EXPECTED_FAILURE
+                else:
+                    result = TosaTestRunner.Result.UNEXPECTED_FAILURE
+            elif rc == TosaReturnCode.UNPREDICTABLE:
+                if expectedReturnCode == TosaReturnCode.UNPREDICTABLE:
+                    result = TosaTestRunner.Result.EXPECTED_FAILURE
+                else:
+                    result = TosaTestRunner.Result.UNEXPECTED_FAILURE
             else:
-                result = TosaTestRunner.Result.EXPECTED_PASS
+                raise Exception("Return code unknown.")
+
         except Exception as e:
-            if expectedFailure:
-                result = TosaTestRunner.Result.EXPECTED_FAILURE
-            else:
-                result = TosaTestRunner.Result.UNEXPECTED_FAILURE
+            raise Exception("Runtime Error when running: {}".format(" ".join(ref_cmd)))
 
         return result

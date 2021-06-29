@@ -97,16 +97,31 @@ struct func_debug_t
     }
 #endif
 
-#ifndef ASSERT_MSG_NODE
-#define ASSERT_MSG_NODE(COND, fmt, ...)                                                                                \
+#ifndef REQUIRE
+#define REQUIRE(COND, fmt, ...)                                                                                        \
     if (!(COND))                                                                                                       \
     {                                                                                                                  \
-        fprintf(g_func_debug.func_debug_file, COL_FATAL("ASSERTION AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__,        \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL("REQUIRE() fails AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__,  \
+                __func__, #COND);                                                                                      \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                     \
+        this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                             \
+    }
+#endif
+
+#ifndef ERROR_IF
+#define ERROR_IF(COND, fmt, ...)                                                                                       \
+    if ((COND))                                                                                                        \
+    {                                                                                                                  \
+        if (this->parent_sgt->getGraphStatus() != GraphStatus::TOSA_UNPREDICTABLE)                                     \
+        {                                                                                                              \
+            this->parent_sgt->setGraphStatus(GraphStatus::TOSA_ERROR);                                                 \
+        }                                                                                                              \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL("ERROR_IF() fails AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__, \
                 __func__, #COND);                                                                                      \
         fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                     \
         this->dumpNode(g_func_debug.func_debug_file);                                                                  \
         func_print_backtrace(g_func_debug.func_debug_file);                                                            \
-        assert(COND);                                                                                                  \
+        return 1;                                                                                                      \
     }
 #endif
 
@@ -130,14 +145,6 @@ struct func_debug_t
     abort();
 #endif
 
-#ifndef FATAL_ERROR_NODE
-#define FATAL_ERROR_NODE(fmt, ...)                                                                                     \
-    fprintf(g_func_debug.func_debug_file, COL_FATAL("FATAL ERROR AT %s:%d %s():\n"), __FILE__, __LINE__, __func__);    \
-    fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                         \
-    this->dumpNode(g_func_debug.func_debug_file);                                                                      \
-    func_print_backtrace(g_func_debug.func_debug_file);                                                                \
-    abort();
-#endif
 #ifndef SIMPLE_FATAL_ERROR
 #define SIMPLE_FATAL_ERROR(fmt, ...)                                                                                   \
     fprintf(stderr, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                                               \

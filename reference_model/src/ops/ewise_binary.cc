@@ -23,8 +23,11 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, DType InDtype, DType OutDtype>
-BinaryNodeBase<Rank, InDtype, OutDtype>::BinaryNodeBase(const Op& op_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(op_, id_)
+BinaryNodeBase<Rank, InDtype, OutDtype>::BinaryNodeBase(SubgraphTraverser* sgt_,
+                                                        const Op& op_,
+                                                        TosaQuantInfoBase* qinfo_,
+                                                        uint64_t id_)
+    : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(2, 1);
     setRequiredRank(0, 6);
@@ -203,7 +206,7 @@ int OpAdd<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a + b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[InDtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
     }
 
     return 0;
@@ -226,12 +229,12 @@ int OpArithmeticRightShift<Rank, Dtype>::register_fcn()
             num_bits = 32;
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     this->fcn = [this, round, num_bits](InEigenType a, InEigenType b) -> OutEigenType {
-        ASSERT_MSG_NODE(b >= 0 && b < num_bits, "OpArithmeticRightShift: shift value %d is out of valid range [0, %d]",
-                        (int32_t)b, num_bits);
+        REQUIRE(b >= 0 && b < num_bits, "OpArithmeticRightShift: shift value %d is out of valid range [0, %d]",
+                (int32_t)b, num_bits);
 
         InEigenType acc = a >> b;
 
@@ -257,7 +260,7 @@ int OpBitwiseAnd<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a & b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -274,7 +277,7 @@ int OpBitwiseOr<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a | b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -291,7 +294,7 @@ int OpBitwiseXor<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a ^ b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -304,15 +307,15 @@ int OpDiv<Rank, Dtype>::register_fcn()
     {
         case DType_INT32:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                ASSERT_MSG_NODE(b != 0, "OpDiv: divisor must be non-zero value");
+                REQUIRE(b != 0, "OpDiv: divisor must be non-zero value");
                 int64_t res_in_64     = static_cast<int64_t>(a) / b;
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::max());
-                ASSERT_MSG_NODE(a <= i32_max_in_64, "OpDiv: result not in i32 range");
+                REQUIRE(a <= i32_max_in_64, "OpDiv: result not in i32 range");
                 return static_cast<InEigenType>(res_in_64);
             };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[InDtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
     }
 
     return 0;
@@ -327,7 +330,7 @@ int OpLogicalAnd<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a && b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -344,7 +347,7 @@ int OpLogicalLeftShift<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a << b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -366,7 +369,7 @@ int OpLogicalRightShift<Rank, Dtype>::register_fcn()
             num_bits = 32;
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     this->fcn = [num_bits](InEigenType a, InEigenType b) -> OutEigenType {
@@ -386,7 +389,7 @@ int OpLogicalOr<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a || b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -401,7 +404,7 @@ int OpLogicalXor<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a ^ b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -417,7 +420,7 @@ int OpMaximum<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b ? a : b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -433,7 +436,7 @@ int OpMinimum<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a < b ? a : b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -443,8 +446,6 @@ template <int Rank, DType InDtype, DType OutDtype>
 int OpMul<Rank, InDtype, OutDtype>::register_fcn()
 {
     int32_t shift = attribute->shift();
-    ASSERT_MSG_NODE(InDtype == DType_INT32 || shift == 0, "OpMul: shift needs to be 0 but is %d if input is %s", shift,
-                    EnumNamesDType()[InDtype]);
 
     switch (InDtype)
     {
@@ -460,8 +461,8 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
                     result        = static_cast<int64_t>(a) * static_cast<int64_t>(b) + round;
                     result        = result >> shift;
 
-                    ASSERT_MSG_NODE(result >= QMin && result <= QMax,
-                                    "OpMul: result %ld exceeds valid range [%ld, %ld]", result, QMin, QMax);
+                    REQUIRE(result >= QMin && result <= QMax, "OpMul: result %ld exceeds valid range [%ld, %ld]",
+                            result, QMin, QMax);
                 }
                 else
                 {
@@ -482,7 +483,7 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
             };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[InDtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
     }
 
     return 0;
@@ -497,7 +498,7 @@ int OpPow<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return powf(a, b); };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -513,15 +514,18 @@ int OpSub<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a - b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[InDtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
     }
 
     return 0;
 }
 
 template <int Rank, DType InDtype>
-OpTable<Rank, InDtype>::OpTable(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_TABLE, id_)
+OpTable<Rank, InDtype>::OpTable(SubgraphTraverser* sgt_,
+                                TosaAttributeBase* attribute_,
+                                TosaQuantInfoBase* qinfo_,
+                                uint64_t id_)
+    : GraphNode(sgt_, Op_TABLE, id_)
 {
     setRequiredOperands(2, 1);
     setRequiredRank(0, 6);
@@ -607,7 +611,7 @@ int OpTable<Rank, InDtype>::eval()
             });
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[InDtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
     }
 
     return GraphNode::eval();

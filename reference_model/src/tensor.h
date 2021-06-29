@@ -604,13 +604,6 @@ class TensorFactory
 public:
     static Tensor* newTensor(std::string tensorName_, DType tensorDtype_, std::vector<int> shape_, const uint32_t rank)
     {
-        // Bail out if any dimension is invalid.
-        for (auto& dim : shape_)
-        {
-            if (dim <= 0)
-                goto done;
-        }
-
         switch (tensorDtype_)
         {
             case DType_FLOAT:
@@ -697,7 +690,6 @@ public:
                 break;
         }
 
-    done:
         std::string shape_str("[");
         for (auto& dim : shape_)
         {

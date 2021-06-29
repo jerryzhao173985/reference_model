@@ -28,8 +28,8 @@ template <int Rank, DType Dtype>
 class OpEqual : public BinaryNode<Rank, Dtype, DType_BOOL>
 {
 public:
-    OpEqual(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(Op_EQUAL, qinfo_, id_)
+    OpEqual(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_EQUAL, qinfo_, id_)
     {
         register_fcn();
     }
@@ -42,8 +42,8 @@ template <int Rank, DType Dtype>
 class OpGreater : public BinaryNode<Rank, Dtype, DType_BOOL>
 {
 public:
-    OpGreater(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(Op_GREATER, qinfo_, id_)
+    OpGreater(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_GREATER, qinfo_, id_)
     {
         register_fcn();
     }
@@ -56,8 +56,8 @@ template <int Rank, DType Dtype>
 class OpGreaterEqual : public BinaryNode<Rank, Dtype, DType_BOOL>
 {
 public:
-    OpGreaterEqual(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(Op_EQUAL, qinfo_, id_)
+    OpGreaterEqual(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_EQUAL, qinfo_, id_)
     {
         register_fcn();
     }

@@ -27,7 +27,7 @@ template <int Rank, DType Dtype>
 class OpConcat : public GraphNode
 {
 public:
-    OpConcat(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpConcat(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpConcat();
 
     virtual int checkTensorAttributes();
@@ -49,7 +49,7 @@ template <int Rank, DType Dtype>
 class OpPad : public GraphNode
 {
 public:
-    OpPad(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpPad(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpPad();
     virtual int checkTensorAttributes();
     virtual int eval();
@@ -70,7 +70,7 @@ template <int InRank, int OutRank, DType Dtype>
 class OpReshape : public GraphNode
 {
 public:
-    OpReshape(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpReshape(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpReshape();
 
     virtual int checkTensorAttributes();
@@ -94,7 +94,7 @@ template <int Rank, DType Dtype>
 class OpReverse : public GraphNode
 {
 public:
-    OpReverse(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpReverse(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpReverse();
 
     virtual int checkTensorAttributes();
@@ -116,7 +116,7 @@ template <int Rank, DType Dtype>
 class OpSlice : public GraphNode
 {
 public:
-    OpSlice(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpSlice(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpSlice();
 
     virtual int checkTensorAttributes();
@@ -139,7 +139,7 @@ template <int Rank, DType Dtype>
 class OpTileBase : public GraphNode
 {
 public:
-    OpTileBase(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpTileBase(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpTileBase();
 
     virtual int checkTensorAttributes();
@@ -160,8 +160,8 @@ template <int Rank, DType Dtype>
 class OpTile : public OpTileBase<Rank, Dtype>
 {
 public:
-    OpTile(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : OpTileBase<Rank, Dtype>(attribute_, qinfo_, id_)
+    OpTile(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : OpTileBase<Rank, Dtype>(sgt_, attribute_, qinfo_, id_)
     {}
 
 protected:
@@ -174,8 +174,8 @@ protected:
     class OpTile<N, Dtype> : public OpTileBase<N, Dtype>                                                               \
     {                                                                                                                  \
     public:                                                                                                            \
-        OpTile(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)                                 \
-            : OpTileBase<N, Dtype>(attribute_, qinfo_, id_)                                                            \
+        OpTile(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)        \
+            : OpTileBase<N, Dtype>(sgt_, attribute_, qinfo_, id_)                                                      \
         {}                                                                                                             \
                                                                                                                        \
     protected:                                                                                                         \
@@ -193,7 +193,7 @@ template <int Rank, DType Dtype>
 class OpTranspose : public GraphNode
 {
 public:
-    OpTranspose(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpTranspose(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpTranspose();
 
     virtual int checkTensorAttributes();

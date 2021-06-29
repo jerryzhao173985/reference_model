@@ -32,7 +32,7 @@ int OpEqual<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a == b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -48,7 +48,7 @@ int OpGreater<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;
@@ -64,7 +64,7 @@ int OpGreaterEqual<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a >= b; };
             break;
         default:
-            FATAL_ERROR_NODE("unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
     return 0;

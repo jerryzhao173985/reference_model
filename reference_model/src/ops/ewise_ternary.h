@@ -33,7 +33,7 @@ template <int Rank, DType Dtype>
 class OpSelectBase : public GraphNode
 {
 public:
-    OpSelectBase(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpSelectBase(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpSelectBase();
 
     virtual int checkTensorAttributes();
@@ -59,8 +59,8 @@ template <int Rank, DType Dtype>
 class OpSelect : public OpSelectBase<Rank, Dtype>
 {
 public:
-    OpSelect(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : OpSelectBase<Rank, Dtype>(attribute_, qinfo_, id_)
+    OpSelect(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : OpSelectBase<Rank, Dtype>(sgt_, attribute_, qinfo_, id_)
     {}
     virtual int eval();
     int broadcast();
@@ -73,8 +73,8 @@ template <DType Dtype>
 class OpSelect<0, Dtype> : public OpSelectBase<0, Dtype>
 {
 public:
-    OpSelect(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : OpSelectBase<0, Dtype>(attribute_, qinfo_, id_)
+    OpSelect(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : OpSelectBase<0, Dtype>(sgt_, attribute_, qinfo_, id_)
     {}
     virtual int eval();
 };

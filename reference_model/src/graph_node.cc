@@ -19,10 +19,11 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-GraphNode::GraphNode(const Op& nodeType_, const uint64_t id_)
+GraphNode::GraphNode(SubgraphTraverser* parent_sgt_, const Op& nodeType_, const uint64_t id_)
 {
-    nodeType = nodeType_;
-    nodeId   = id_;
+    parent_sgt = parent_sgt_;
+    nodeType   = nodeType_;
+    nodeId     = id_;
     inputs.clear();
     outputs.clear();
     inputNames.clear();

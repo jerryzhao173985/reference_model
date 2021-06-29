@@ -25,7 +25,7 @@ namespace TosaReference
 class OpControlFlow : public GraphNode
 {
 public:
-    OpControlFlow(TosaSerializationHandler* tsh_, Op op_, uint64_t id_);
+    OpControlFlow(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, Op op_, uint64_t id_);
     ~OpControlFlow();
 
     virtual int evalBlock(TosaSerializationBasicBlock* block,
@@ -39,7 +39,7 @@ protected:
 class OpCondIf : public OpControlFlow
 {
 public:
-    OpCondIf(TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_);
+    OpCondIf(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpCondIf();
 
     virtual int checkTensorAttributes();
@@ -55,7 +55,7 @@ protected:
 class OpWhileLoop : public OpControlFlow
 {
 public:
-    OpWhileLoop(TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_);
+    OpWhileLoop(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpWhileLoop();
 
     virtual int checkTensorAttributes();

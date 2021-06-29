@@ -32,7 +32,8 @@
 using namespace TosaReference;
 using namespace tosa;
 
-GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
+GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
+                            TosaSerializationHandler* tsh,
                             Op opType,
                             TosaAttributeBase* attribute,
                             TosaQuantInfoBase* qinfo,
@@ -349,7 +350,7 @@ GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
 
         // data_nodes
         case Op_CONST:
-            return new OpConst(id);
+            return new OpConst(sgt, id);
         case Op_IDENTITY:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, FLOAT);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT32);
@@ -398,13 +399,13 @@ GraphNode* OpFactory::newOp(TosaSerializationHandler* tsh,
 
         // custom
         case Op_CUSTOM:
-            return new OpCustom(id);
+            return new OpCustom(sgt, id);
 
         // control_flow
         case Op_COND_IF:
-            return new OpCondIf(tsh, attribute, id);
+            return new OpCondIf(sgt, tsh, attribute, id);
         case Op_WHILE_LOOP:
-            return new OpWhileLoop(tsh, attribute, id);
+            return new OpWhileLoop(sgt, tsh, attribute, id);
 
         // Ops not recognized
         default:

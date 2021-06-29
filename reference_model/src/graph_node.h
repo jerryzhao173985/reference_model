@@ -18,6 +18,7 @@
 
 #include "attribute.h"
 #include "quant_info.h"
+#include "subgraph_traverser.h"
 #include "tensor.h"
 #include "tosa_generated.h"
 #include <iostream>
@@ -139,12 +140,14 @@
 namespace TosaReference
 {
 
+class SubgraphTraverser;
+
 // Nodes in the graph (e.g., tosa operators) are defined with this base
 // class.
 class GraphNode
 {
 public:
-    GraphNode(const tosa::Op& nodeType, const uint64_t id_);
+    GraphNode(SubgraphTraverser* parent_sgt_, const tosa::Op& nodeType_, const uint64_t id_);
     virtual ~GraphNode();
 
     int addInputName(std::string& name);
@@ -273,6 +276,9 @@ protected:
 
     int validateRequiredOperands();
     int validateRequiredRank(const Tensor* t);
+
+    // Parent SubgraphTraverser
+    SubgraphTraverser* parent_sgt;
 
     // Description of the node type (e.g., CONST, CONV2D, etc...)
     tosa::Op nodeType;

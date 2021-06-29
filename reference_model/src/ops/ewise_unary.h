@@ -26,7 +26,7 @@ template <int Rank, DType Dtype>
 class UnaryNode : public GraphNode
 {
 public:
-    UnaryNode(const Op& nodeType, const uint64_t id_);
+    UnaryNode(SubgraphTraverser* sgt_, const Op& nodeType, const uint64_t id_);
     virtual ~UnaryNode();
 
     virtual int checkTensorAttributes() final;
@@ -49,8 +49,8 @@ protected:
     class Op##Opname : public UnaryNode<Rank, Dtype>                                                                   \
     {                                                                                                                  \
     public:                                                                                                            \
-        Op##Opname(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)                             \
-            : UnaryNode<Rank, Dtype>(Op_##OPNAME, id_)                                                                 \
+        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)    \
+            : UnaryNode<Rank, Dtype>(sgt_, Op_##OPNAME, id_)                                                           \
         {                                                                                                              \
             register_fcn();                                                                                            \
         }                                                                                                              \
@@ -66,8 +66,8 @@ protected:
     class Op##Opname : public UnaryNode<Rank, Dtype>                                                                   \
     {                                                                                                                  \
     public:                                                                                                            \
-        Op##Opname(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)                             \
-            : UnaryNode<Rank, Dtype>(Op_##OPNAME, id_)                                                                 \
+        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)    \
+            : UnaryNode<Rank, Dtype>(sgt_, Op_##OPNAME, id_)                                                           \
         {                                                                                                              \
             INIT_QINFO(Unary);                                                                                         \
             register_fcn();                                                                                            \

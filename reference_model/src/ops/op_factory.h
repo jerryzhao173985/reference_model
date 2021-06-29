@@ -24,55 +24,55 @@
 
 #define DEF_FACTORY_ONE_RANK_ONE_TYPE(OP, RANK, DTYPE)                                                                 \
     case RANK:                                                                                                         \
-        return new OP<RANK, DType_##DTYPE>(attribute, qinfo, id);
+        return new OP<RANK, DType_##DTYPE>(sgt, attribute, qinfo, id);
 
 #define DEF_FACTORY_ONE_RANK_TWO_TYPE(OP, RANK, DTYPE1, DTYPE2)                                                        \
     case RANK:                                                                                                         \
-        return new OP<RANK, DType_##DTYPE1, DType_##DTYPE2>(attribute, qinfo, id);
+        return new OP<RANK, DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, qinfo, id);
 
 #define DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, RANK1, RANK2, DTYPE)                                                         \
     case RANK2:                                                                                                        \
-        return new OP<RANK1, RANK2, DType_##DTYPE>(attribute, qinfo, id);
+        return new OP<RANK1, RANK2, DType_##DTYPE>(sgt, attribute, qinfo, id);
 
 #define DEF_FACTORY_TWO_RANK_TWO_TYPE(OP, RANK1, RANK2, DTYPE1, DTYPE2)                                                \
     case RANK2:                                                                                                        \
-        return new OP<RANK1, RANK2, DType_##DTYPE1, DType_##DTYPE2>(attribute, qinfo, id);
+        return new OP<RANK1, RANK2, DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, qinfo, id);
 
 #define DEF_FACTORY_ONE_RANK_0_6(OP)                                                                                   \
     switch (inputRank)                                                                                                 \
     {                                                                                                                  \
         case 0:                                                                                                        \
-            return new OP<0>(attribute, qinfo, id);                                                                    \
+            return new OP<0>(sgt, attribute, qinfo, id);                                                               \
         case 1:                                                                                                        \
-            return new OP<1>(attribute, qinfo, id);                                                                    \
+            return new OP<1>(sgt, attribute, qinfo, id);                                                               \
         case 2:                                                                                                        \
-            return new OP<2>(attribute, qinfo, id);                                                                    \
+            return new OP<2>(sgt, attribute, qinfo, id);                                                               \
         case 3:                                                                                                        \
-            return new OP<3>(attribute, qinfo, id);                                                                    \
+            return new OP<3>(sgt, attribute, qinfo, id);                                                               \
         case 4:                                                                                                        \
-            return new OP<4>(attribute, qinfo, id);                                                                    \
+            return new OP<4>(sgt, attribute, qinfo, id);                                                               \
         case 5:                                                                                                        \
-            return new OP<5>(attribute, qinfo, id);                                                                    \
+            return new OP<5>(sgt, attribute, qinfo, id);                                                               \
         case 6:                                                                                                        \
-            return new OP<6>(attribute, qinfo, id);                                                                    \
+            return new OP<6>(sgt, attribute, qinfo, id);                                                               \
     }
 
 #define DEF_FACTORY_ONE_TYPE(OP, DTYPE)                                                                                \
     if (inputDType == DType_##DTYPE)                                                                                   \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE>(attribute, qinfo, id);                                                            \
+        return new OP<DType_##DTYPE>(sgt, attribute, qinfo, id);                                                       \
     }
 
 #define DEF_FACTORY_TWO_TYPE(OP, DTYPE1, DTYPE2)                                                                       \
     if (inputDType == DType_##DTYPE1 && weightDType == DType_##DTYPE2)                                                 \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE1, DType_##DTYPE2>(attribute, qinfo, id);                                           \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, qinfo, id);                                      \
     }
 
 #define DEF_FACTORY_TWO_TYPE_RESIZE(OP, DTYPE1, DTYPE2)                                                                \
     if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE1, DType_##DTYPE2>(attribute, qinfo, id);                                           \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, qinfo, id);                                      \
     }
 
 #define DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OP, DTYPE)                                                               \
@@ -221,10 +221,14 @@
 namespace TosaReference
 {
 
+class SubgraphTraverser;
+class GraphNode;
+
 class OpFactory
 {
 public:
-    static GraphNode* newOp(tosa::TosaSerializationHandler* tsh,
+    static GraphNode* newOp(SubgraphTraverser* sgt,
+                            tosa::TosaSerializationHandler* tsh,
                             tosa::Op opType,
                             tosa::TosaAttributeBase* attribute,
                             tosa::TosaQuantInfoBase* qinfo,

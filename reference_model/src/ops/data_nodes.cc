@@ -19,8 +19,8 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-OpConst::OpConst(uint64_t id_)
-    : GraphNode(Op_CONST, id_)
+OpConst::OpConst(SubgraphTraverser* sgt_, uint64_t id_)
+    : GraphNode(sgt_, Op_CONST, id_)
 {
     setRequiredOperands(0, 1);
 }
@@ -43,8 +43,11 @@ int OpConst::eval()
 }
 
 template <int Rank, DType Dtype>
-OpIdentity<Rank, Dtype>::OpIdentity(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_IDENTITY, id_)
+OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_,
+                                    TosaAttributeBase* attribute_,
+                                    TosaQuantInfoBase* qinfo_,
+                                    uint64_t id_)
+    : GraphNode(sgt_, Op_IDENTITY, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);

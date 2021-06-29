@@ -20,15 +20,13 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-TosaReference::Tensor::Tensor(std::string tensorName_,
-                              DType tensorDtype_,
-                              std::vector<int> shape_)
+TosaReference::Tensor::Tensor(std::string tensorName_, DType tensorDtype_, std::vector<int> shape_)
 {
-    tensorName   = std::string(tensorName_);
-    tensorDtype  = tensorDtype_;
-    shape        = std::vector<int>(shape_);
-    producer     = nullptr;
-    isValid      = false;
+    tensorName  = std::string(tensorName_);
+    tensorDtype = tensorDtype_;
+    shape       = std::vector<int>(shape_);
+    producer    = nullptr;
+    isValid     = false;
     consumers.clear();
     isSubgraphInput  = false;
     isSubgraphOutput = false;

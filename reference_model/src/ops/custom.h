@@ -26,7 +26,7 @@ namespace TosaReference
 class OpCustom : public GraphNode
 {
 public:
-    OpCustom(uint64_t id_);
+    OpCustom(SubgraphTraverser* sgt_, uint64_t id_);
     virtual ~OpCustom();
 
     virtual int checkTensorAttributes();

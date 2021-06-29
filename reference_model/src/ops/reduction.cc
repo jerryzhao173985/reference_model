@@ -21,8 +21,8 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, DType Dtype>
-ReduceNode<Rank, Dtype>::ReduceNode(const Op& op_, TosaAttributeBase* attribute_, uint64_t id_)
-    : GraphNode(op_, id_)
+ReduceNode<Rank, Dtype>::ReduceNode(SubgraphTraverser* sgt_, const Op& op_, TosaAttributeBase* attribute_, uint64_t id_)
+    : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 4);

@@ -19,8 +19,8 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-OpCustom::OpCustom(uint64_t id_)
-    : GraphNode(Op_CUSTOM, id_)
+OpCustom::OpCustom(SubgraphTraverser* sgt_, uint64_t id_)
+    : GraphNode(sgt_, Op_CUSTOM, id_)
 {}
 
 OpCustom::~OpCustom()
@@ -33,7 +33,7 @@ int OpCustom::checkTensorAttributes()
 
 int OpCustom::eval()
 {
-    FATAL_ERROR_NODE("not supported yet");
+    FATAL_ERROR("not supported yet");
 
     // Evaluation is trivial for constants
     return GraphNode::eval();

@@ -27,7 +27,7 @@ template <int Rank, DType Dtype>
 class ReduceNode : public GraphNode
 {
 public:
-    ReduceNode(const Op& nodeType, TosaAttributeBase* attribute_, const uint64_t id_);
+    ReduceNode(SubgraphTraverser* sgt_, const Op& nodeType, TosaAttributeBase* attribute_, const uint64_t id_);
     virtual ~ReduceNode();
     virtual int checkTensorAttributes();
     virtual int eval() = 0;
@@ -48,8 +48,8 @@ template <int Rank, DType Dtype>
 class OpReduceAll : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceAll(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_ALL, attribute_, id_)
+    OpReduceAll(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_ALL, attribute_, id_)
     {}
     virtual int eval();
 };
@@ -58,8 +58,8 @@ template <int Rank, DType Dtype>
 class OpReduceAny : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceAny(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_ALL, attribute_, id_)
+    OpReduceAny(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_ALL, attribute_, id_)
     {}
     virtual int eval();
 };
@@ -68,8 +68,8 @@ template <int Rank, DType Dtype>
 class OpReduceMax : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceMax(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_MAX, attribute_, id_)
+    OpReduceMax(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MAX, attribute_, id_)
     {}
     virtual int eval();
 };
@@ -78,8 +78,8 @@ template <int Rank, DType Dtype>
 class OpReduceMin : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceMin(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_MIN, attribute_, id_)
+    OpReduceMin(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MIN, attribute_, id_)
     {}
     virtual int eval();
 };
@@ -88,8 +88,8 @@ template <int Rank, DType Dtype>
 class OpReduceProduct : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceProduct(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_PRODUCT, attribute_, id_)
+    OpReduceProduct(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_PRODUCT, attribute_, id_)
     {}
     virtual int eval();
 };
@@ -98,8 +98,8 @@ template <int Rank, DType Dtype>
 class OpReduceSum : public ReduceNode<Rank, Dtype>
 {
 public:
-    OpReduceSum(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(Op_REDUCE_SUM, attribute_, id_)
+    OpReduceSum(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
     {}
     virtual int eval();
 };

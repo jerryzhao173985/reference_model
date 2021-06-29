@@ -20,8 +20,8 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-OpControlFlow::OpControlFlow(TosaSerializationHandler* tsh_, Op op_, uint64_t id_)
-    : GraphNode(op_, id_)
+OpControlFlow::OpControlFlow(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, Op op_, uint64_t id_)
+    : GraphNode(sgt_, op_, id_)
 {
     tsh = tsh_;
 }
@@ -148,8 +148,8 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     return 0;
 }
 
-OpCondIf::OpCondIf(TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_)
-    : OpControlFlow(tsh_, Op_COND_IF, id_)
+OpCondIf::OpCondIf(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_)
+    : OpControlFlow(sgt_, tsh_, Op_COND_IF, id_)
 {
     INIT_ATTRIBUTE(CondIf);
 }
@@ -221,8 +221,11 @@ int OpCondIf::eval()
     return GraphNode::eval();
 }
 
-OpWhileLoop::OpWhileLoop(TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_)
-    : OpControlFlow(tsh_, Op_WHILE_LOOP, id_)
+OpWhileLoop::OpWhileLoop(SubgraphTraverser* sgt_,
+                         TosaSerializationHandler* tsh_,
+                         TosaAttributeBase* attribute_,
+                         uint64_t id_)
+    : OpControlFlow(sgt_, tsh_, Op_WHILE_LOOP, id_)
 {
     INIT_ATTRIBUTE(WhileLoop);
 }

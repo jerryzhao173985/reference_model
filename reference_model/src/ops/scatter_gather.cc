@@ -21,8 +21,11 @@ using namespace Eigen;
 using namespace tosa;
 
 template <DType Dtype>
-OpGather<Dtype>::OpGather(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_GATHER, id_)
+OpGather<Dtype>::OpGather(SubgraphTraverser* sgt_,
+                          TosaAttributeBase* attribute_,
+                          TosaQuantInfoBase* qinfo_,
+                          uint64_t id_)
+    : GraphNode(sgt_, Op_GATHER, id_)
 {
     setRequiredOperands(2, 1);
 }
@@ -102,7 +105,7 @@ int OpGather<Dtype>::eval()
         for (int32_t w = 0; w < W; w++)
         {
             int32_t k = this->indices->getTensor()(n, w);
-            ASSERT_MSG_NODE(k >= 0 && k < K, "OpGather: index(%d, %d)=%d exceed valid range [0, %d]", n, w, k, K);
+            REQUIRE(k >= 0 && k < K, "OpGather: index(%d, %d)=%d exceed valid range [0, %d]", n, w, k, K);
             for (int32_t c = 0; c < C; c++)
             {
                 EigenType value                    = this->values->getTensor()(n, k, c);
@@ -115,8 +118,11 @@ int OpGather<Dtype>::eval()
 }
 
 template <DType Dtype>
-OpScatter<Dtype>::OpScatter(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_SCATTER, id_)
+OpScatter<Dtype>::OpScatter(SubgraphTraverser* sgt_,
+                            TosaAttributeBase* attribute_,
+                            TosaQuantInfoBase* qinfo_,
+                            uint64_t id_)
+    : GraphNode(sgt_, Op_SCATTER, id_)
 {
     setRequiredOperands(3, 1);
 }
@@ -206,7 +212,7 @@ int OpScatter<Dtype>::eval()
         for (int w = 0; w < W; w++)
         {
             int32_t k = this->indices->getTensor()(n, w);
-            ASSERT_MSG_NODE(k >= 0 && k < K, "OpScatter: index(%d, %d)=%d exceed valid range [0, %d]", n, w, k, K);
+            REQUIRE(k >= 0 && k < K, "OpScatter: index(%d, %d)=%d exceed valid range [0, %d]", n, w, k, K);
             for (int c = 0; c < C; c++)
             {
                 EigenType value                        = this->input->getTensor()(n, w, c);

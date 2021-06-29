@@ -16,14 +16,21 @@
 #ifndef SUBGRAPH_TRAVERSER_H
 #define SUBGRAPH_TRAVERSER_H
 
-#include "model_common.h"
-
 #include "graph_node.h"
+#include "model_common.h"
 #include "ops/op_factory.h"
+#include "tensor.h"
 #include "tosa_serialization_handler.h"
 
 namespace TosaReference
 {
+
+enum class GraphStatus : int
+{
+    TOSA_VALID         = 0,
+    TOSA_UNPREDICTABLE = 1,
+    TOSA_ERROR         = 2,
+};
 
 class SubgraphTraverser
 {
@@ -35,6 +42,15 @@ public:
     int isFullyEvaluated() const;
     int evaluateNextNode();
     int evaluateAll();
+
+    GraphStatus getGraphStatus() const
+    {
+        return graph_status;
+    }
+    void setGraphStatus(GraphStatus status)
+    {
+        graph_status = status;
+    }
 
     int linkTensorsAndNodes();
     int validateGraph();
@@ -58,6 +74,8 @@ private:
     Tensor* findTensorByName(const std::string& name) const;
 
     GraphNode* getNextNode();
+
+    GraphStatus graph_status;
 
     // pointer to serialization library and corresponding basic block
     TosaSerializationBasicBlock* block;

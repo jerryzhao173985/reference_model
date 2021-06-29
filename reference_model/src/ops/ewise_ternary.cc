@@ -20,8 +20,11 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, DType Dtype>
-OpSelectBase<Rank, Dtype>::OpSelectBase(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_SELECT, id_)
+OpSelectBase<Rank, Dtype>::OpSelectBase(SubgraphTraverser* sgt_,
+                                        TosaAttributeBase* attribute_,
+                                        TosaQuantInfoBase* qinfo_,
+                                        uint64_t id_)
+    : GraphNode(sgt_, Op_SELECT, id_)
 {
     setRequiredOperands(3, 1);
     setRequiredRank(0, 6);
@@ -62,7 +65,7 @@ int OpSelectBase<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, DType Dtype>
 int OpSelectBase<Rank, Dtype>::eval()
 {
-    FATAL_ERROR_NODE("shouldn't be called");
+    FATAL_ERROR("shouldn't be called");
 }
 
 template <int Rank, DType Dtype>
@@ -78,9 +81,9 @@ int OpSelect<Rank, Dtype>::broadcast()
         this->bcast_cond[i] = (cond_shape[i] == 1) ? std::max(then_shape[i], else_shape[i]) : 1;
         this->bcast_then[i] = (then_shape[i] == 1) ? std::max(cond_shape[i], else_shape[i]) : 1;
         this->bcast_else[i] = (else_shape[i] == 1) ? std::max(then_shape[i], cond_shape[i]) : 1;
-        ASSERT_MSG_NODE((this->bcast_cond[i] * cond_shape[i]) == out_shape[i], "SELECT broadcast invariant failed");
-        ASSERT_MSG_NODE((this->bcast_then[i] * then_shape[i]) == out_shape[i], "SELECT broadcast invariant failed");
-        ASSERT_MSG_NODE((this->bcast_else[i] * else_shape[i]) == out_shape[i], "SELECT broadcast invariant failed");
+        ERROR_IF((this->bcast_cond[i] * cond_shape[i]) != out_shape[i], "SELECT broadcast invariant failed");
+        ERROR_IF((this->bcast_then[i] * then_shape[i]) != out_shape[i], "SELECT broadcast invariant failed");
+        ERROR_IF((this->bcast_else[i] * else_shape[i]) != out_shape[i], "SELECT broadcast invariant failed");
     }
 
     return 0;

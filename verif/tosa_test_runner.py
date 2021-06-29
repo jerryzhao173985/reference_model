@@ -42,8 +42,8 @@ def run_sh_command(args, full_cmd, capture_output=False):
         return (rc.stdout, rc.stderr)
     else:
         rc = subprocess.run(full_cmd)
-    if rc.returncode != 0:
-        raise Exception("Error running command: {}".format(" ".join(full_cmd_esc)))
+
+    return rc.returncode
 
 
 class TosaTestRunner:

@@ -21,8 +21,11 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, DType Dtype>
-OpConcat<Rank, Dtype>::OpConcat(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_CONCAT, id_)
+OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_,
+                                TosaAttributeBase* attribute_,
+                                TosaQuantInfoBase* qinfo_,
+                                uint64_t id_)
+    : GraphNode(sgt_, Op_CONCAT, id_)
 {
     setRequiredOperands(-1, 1);
     setRequiredRank(1, 6);
@@ -95,8 +98,11 @@ int OpConcat<Rank, Dtype>::eval()
 }
 
 template <int Rank, DType Dtype>
-OpPad<Rank, Dtype>::OpPad(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_PAD, id_)
+OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
+                          TosaAttributeBase* attribute_,
+                          TosaQuantInfoBase* qinfo_,
+                          uint64_t id_)
+    : GraphNode(sgt_, Op_PAD, id_)
 {
     setRequiredOperands(2, 1);
     setRequiredRank(0, 6);
@@ -157,8 +163,11 @@ int OpPad<Rank, Dtype>::eval()
 }
 
 template <int InRank, int OutRank, DType Dtype>
-OpReshape<InRank, OutRank, Dtype>::OpReshape(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_RESHAPE, id_)
+OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_,
+                                             TosaAttributeBase* attribute_,
+                                             TosaQuantInfoBase* qinfo_,
+                                             uint64_t id_)
+    : GraphNode(sgt_, Op_RESHAPE, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
@@ -274,8 +283,11 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 }
 
 template <int Rank, DType Dtype>
-OpReverse<Rank, Dtype>::OpReverse(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_REVERSE, id_)
+OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_,
+                                  TosaAttributeBase* attribute_,
+                                  TosaQuantInfoBase* qinfo_,
+                                  uint64_t id_)
+    : GraphNode(sgt_, Op_REVERSE, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(1, 6);
@@ -339,8 +351,11 @@ int OpReverse<Rank, Dtype>::eval()
 }
 
 template <int Rank, DType Dtype>
-OpSlice<Rank, Dtype>::OpSlice(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_SLICE, id_)
+OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_,
+                              TosaAttributeBase* attribute_,
+                              TosaQuantInfoBase* qinfo_,
+                              uint64_t id_)
+    : GraphNode(sgt_, Op_SLICE, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
@@ -407,8 +422,11 @@ int OpSlice<Rank, Dtype>::eval()
 }
 
 template <int Rank, DType Dtype>
-OpTileBase<Rank, Dtype>::OpTileBase(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_TILE, id_)
+OpTileBase<Rank, Dtype>::OpTileBase(SubgraphTraverser* sgt_,
+                                    TosaAttributeBase* attribute_,
+                                    TosaQuantInfoBase* qinfo_,
+                                    uint64_t id_)
+    : GraphNode(sgt_, Op_TILE, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
@@ -466,7 +484,7 @@ template <int Rank, DType Dtype>
 int OpTile<Rank, Dtype>::eval()
 {
     // primary template shouldn't be called
-    FATAL_ERROR_NODE("OpTile rank=%i, dtype=%s: not implemented yet", Rank, EnumNamesDType()[Dtype]);
+    FATAL_ERROR("OpTile rank=%i, dtype=%s: not implemented yet", Rank, EnumNamesDType()[Dtype]);
 }
 
 template <DType Dtype>
@@ -542,8 +560,11 @@ int OpTile<4, Dtype>::eval()
 }
 
 template <int Rank, DType Dtype>
-OpTranspose<Rank, Dtype>::OpTranspose(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-    : GraphNode(Op_TRANSPOSE, id_)
+OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
+                                      TosaAttributeBase* attribute_,
+                                      TosaQuantInfoBase* qinfo_,
+                                      uint64_t id_)
+    : GraphNode(sgt_, Op_TRANSPOSE, id_)
 {
     setRequiredOperands(2, 1);
     setRequiredRank(0, 6);

@@ -24,7 +24,7 @@ namespace TosaReference
 class OpConst : public GraphNode
 {
 public:
-    OpConst(uint64_t id_);
+    OpConst(SubgraphTraverser* sgt_, uint64_t id_);
     virtual ~OpConst();
 
     virtual int checkTensorAttributes();
@@ -35,7 +35,7 @@ template <int Rank, DType Dtype>
 class OpIdentity : public GraphNode
 {
 public:
-    OpIdentity(TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpIdentity(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
     virtual ~OpIdentity();
 
     virtual int checkTensorAttributes();
