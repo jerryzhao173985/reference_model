@@ -613,7 +613,7 @@ class TosaArgGen:
         factors = TosaArgGen.getFactors(totalElements)
 
         for p in range(testGen.args.num_rand_permutations):
-            newRank = testGen.randInt(1, 6)
+            newRank = testGen.randInt(1, 7)
             if len(factors) < newRank:
                 continue
 
@@ -625,7 +625,7 @@ class TosaArgGen:
                 # Generate newShape ensuring it isn't a duplicate
                 remainingElements = totalElements
                 shuffledFactors = testGen.rng.permutation(factors)
-                for i in range(newRank):
+                for i in range(1, newRank):
                     # pick rank-1 factors
                     newShape.append(shuffledFactors[0])
                     remainingElements = remainingElements // shuffledFactors[0]
