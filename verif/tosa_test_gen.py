@@ -872,6 +872,9 @@ class TosaArgGen:
 
 
 class TosaTestGen:
+    # Maximum rank of tensor supported by test generator.
+    TOSA_TENSOR_MAX_RANK = 6
+
     def __init__(self, args):
         self.args = args
         self.basePath = args.output_dir
@@ -1617,6 +1620,9 @@ class TosaTestGen:
         # Generate the lists of arguments
         rmin, rmax = op["rank"]
 
+        # Create a default testing rank range, 1-4 inclusive to keep test sizes reasonably small.
+        default_test_rank_range = range(1, 5)
+
         # Test list consists of a tuple of:
         # (opName, testNameStr, dtype, shapeList, argumentsList)
         testList = []
@@ -1628,6 +1634,8 @@ class TosaTestGen:
 
             # Filter out the rank?
             if rankFilter is not None and r not in rankFilter:
+                continue
+            if rankFilter is None and shapeFilter[0] is None and r not in default_test_rank_range:
                 continue
 
             for t in op["types"]:
@@ -1954,7 +1962,7 @@ class TosaTestGen:
         DType.FLOAT,
     ]
 
-    DEFAULT_RANK_RANGE = (1, 4)
+    DEFAULT_RANK_RANGE = (1, TOSA_TENSOR_MAX_RANK)
 
     TOSA_OP_LIST = {
         # Tensor operators
