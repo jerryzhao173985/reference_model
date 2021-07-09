@@ -348,7 +348,7 @@ class TosaArgGen:
         shape = shapeList[0]
 
         for a in range(0, len(shape)):
-            axes.append(("axis_{}".format(a), [a]))
+            axes.append(("axis{}".format(a), [a]))
         return axes
 
     @staticmethod
@@ -575,7 +575,7 @@ class TosaArgGen:
 
                 arg_list.append(("perm{}_shift{}".format(p, shift), [shift]))
         else:
-            arg_list.append(("shift0", [0]))
+            arg_list.append(("perm0_shift0", [0]))
 
         return arg_list
 
