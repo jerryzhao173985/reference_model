@@ -201,6 +201,14 @@ def parseArgs():
         help="Allow constant input tensors for concat operator",
     )
 
+    parser.add_argument(
+        "--test-type",
+        dest="test_type",
+        choices=['positive', 'negative', 'both'],
+        default="positive",
+        type=str,
+        help="type of tests produced, postive, negative, or both",
+    )
     args = parser.parse_args()
 
     return args
@@ -221,15 +229,19 @@ def main():
                     shapeFilter=args.target_shapes,
                     rankFilter=args.target_ranks,
                     dtypeFilter=args.target_dtypes,
+                    testType=args.test_type
                 )
             )
 
     print("{} matching tests".format(len(testList)))
+    results = []
     for opName, testStr, dtype, shapeList, testArgs in testList:
         if args.verbose:
             print(testStr)
-        ttg.serializeTest(opName, testStr, dtype, shapeList, testArgs)
-    print("Done creating {} tests".format(len(testList)))
+        results.append(ttg.serializeTest(opName, testStr, dtype, shapeList, testArgs))
+
+    print(f"Done creating {len(results)} tests")
+
 
 
 if __name__ == "__main__":
