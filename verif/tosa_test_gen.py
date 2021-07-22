@@ -907,16 +907,15 @@ class TosaTestGen:
             fd.write(self.ser.writeJson("{}.tosa".format(testName)))
 
     def getRandTensor(self, shape, dtype):
-        RAND_SHIFT_FACTOR = 0.5
-        RAND_SCALE_FACTOR = 4.0
-
         if dtype == DType.BOOL:
             np_dt = np.bool
             return np.bool_(self.rng.choice(a=[False, True], size=shape))
         elif dtype == DType.INT4:
-            return np.int32(self.rng.integers(low=-7, high=8, size=shape))
+            return np.int32(self.rng.integers(low=-8, high=8, size=shape))
         elif dtype == DType.INT8:
-            return np.int32(self.rng.integers(low=-127, high=128, size=shape))
+            return np.int32(self.rng.integers(low=-128, high=128, size=shape))
+        elif dtype == DType.UINT8:
+            return np.int32(self.rng.integers(low=0, high=256, size=shape))
         elif dtype == DType.INT16:
             return np.int32(self.rng.integers(low=-32768, high=32768, size=shape))
         elif dtype == DType.INT32:
@@ -928,9 +927,7 @@ class TosaTestGen:
                 self.rng.integers(low=-(1 << 47), high=(1 << 47), size=shape)
             )
         elif dtype == DType.FLOAT:
-            return np.float32(
-                self.rng.random(size=shape) - RAND_SHIFT_FACTOR * RAND_SCALE_FACTOR
-            )
+            return np.float32(self.rng.random(size=shape))
         else:
             raise Exception("Unrecognized Dtype: {}".format(dtype))
 
@@ -979,9 +976,9 @@ class TosaTestGen:
         elif dtype == DType.BOOL:
             return self.rng.choice([False, True])
         elif dtype == DType.INT4:
-            low, high = (-7, 8)
+            low, high = (-8, 8)
         elif dtype == DType.INT8:
-            low, high = (-127, 128)
+            low, high = (-128, 128)
         elif dtype == DType.INT16:
             low, high = (-32768, 32768)
         elif dtype == DType.INT32:
@@ -1202,9 +1199,7 @@ class TosaTestGen:
         result_tens = OutputShaper.unaryOp(self.ser, a)
 
         attr = ts.TosaSerializerAttribute()
-
-        # Get two random ints
-        v = [self.randInt(), self.randInt()]
+        v = [self.getRandNumberDType(a.dtype), self.getRandNumberDType(a.dtype)]
 
         if a.dtype == DType.FLOAT:
             attr.ClampAttribute(0, 0, min(v), max(v))
@@ -1488,8 +1483,8 @@ class TosaTestGen:
 
         # Make then/else tensors
         out_shape = then_tens.shape
-        then_arr = np.int32(self.rng.integers(0, 255, size=out_shape))
-        else_arr = np.int32(self.rng.integers(0, 255, size=out_shape))
+        then_arr = np.int32(self.rng.integers(0, 256, size=out_shape))
+        else_arr = np.int32(self.rng.integers(0, 256, size=out_shape))
 
         # And the result tensor based on any of the outputs
         result_tens = self.ser.addOutput(out_shape, DType.INT32)
