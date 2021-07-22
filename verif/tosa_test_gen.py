@@ -547,13 +547,23 @@ class TosaArgGen:
         arg_list = []
 
         # Enumerate the output types here
-        for dtype in [DType.INT8, DType.INT16, DType.INT32]:
+        for dtype in [DType.UINT8, DType.INT8, DType.INT16, DType.INT32]:
+            if inDtype == DType.UINT8 and dtype != DType.INT8:
+                # The only output dtype for UINT8 is INT8, skip all other combinations
+                continue
+            if inDtype != DType.INT8 and dtype == DType.UINT8:
+                # The only input dtype for UINT8 is INT8, skip all other combinations
+                continue
+
             for scale32 in [False, True]:
                 for double_round in [False, True]:
                     for per_channel in [False, True]:
 
                         if inDtype == DType.INT48 and scale32:
                             # Illegal condition.  Must be scale32=False
+                            continue
+                        if double_round and not scale32:
+                            # Illegal condition.  ERROR_IF(!scale32 && double_round)
                             continue
 
                         arg_list.append(
@@ -1426,13 +1436,19 @@ class TosaTestGen:
         out_type_width = self.typeWidth(out_dtype)
 
         if val.dtype == DType.INT8:
-            input_zp = self.randInt(-128, 127)
+            input_zp = self.randInt(-128, 128)
+            in_type_width = in_type_width + 1
+        elif  val.dtype == DType.UINT8:
+            input_zp = self.randInt(0, 256)
             in_type_width = in_type_width + 1
         else:
             input_zp = 0
 
         if out_dtype == DType.INT8:
-            output_zp = self.randInt(-128, 127)
+            output_zp = self.randInt(-128, 128)
+            out_type_width = out_type_width + 1
+        elif out_dtype == DType.UINT8:
+            output_zp = self.randInt(0, 256)
             out_type_width = out_type_width + 1
         else:
             output_zp = 0
@@ -2415,7 +2431,7 @@ class TosaTestGen:
             "op": Op.RESCALE,
             "operands": (1, 0),
             "build_fcn": (build_rescale, TosaTensorGen.tgBasic, TosaArgGen.agRescale),
-            "types": [DType.INT8, DType.INT16, DType.INT32, DType.INT48],
+            "types": [DType.UINT8, DType.INT8, DType.INT16, DType.INT32, DType.INT48],
         },
         # Custom
         # Not implemented.
