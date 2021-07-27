@@ -192,6 +192,15 @@ def parseArgs():
         help="Create test with a particular DType (may be repeated)",
     )
 
+    parser.add_argument(
+        "--num-const-inputs-concat",
+        dest="num_const_inputs_concat",
+        default=0,
+        choices=[0, 1, 2, 3],
+        type=int,
+        help="Allow constant input tensors for concat operator",
+    )
+
     args = parser.parse_args()
 
     return args
