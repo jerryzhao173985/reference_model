@@ -1106,15 +1106,8 @@ class TosaTestGen:
         return result_tens
 
     def build_select(self, op, cond, a, b):
-
-        # Replace the cond tensor with a boolean tensor since it probably
-        # has the wrong dtype
-        t = self.buildPlaceholderTensors([cond.shape], [DType.BOOL])
-        cond = t[0]
-
         result_tens = OutputShaper.selectOp(self.ser, cond, a, b)
         self.ser.addOperator(op, [cond.name, a.name, b.name], [result_tens.name])
-
         return result_tens
 
     def build_comparison(self, op, a, b):
@@ -1743,6 +1736,13 @@ class TosaTestGen:
                 placeholders.append(self.ser.addPlaceholder(shape, dtypeList[idx], arr))
 
             tens.extend(placeholders)
+        elif op["op"] == Op.SELECT:
+            # Set datatype of condition tensor to boolean
+            dtypeList[0] = DType.BOOL
+            tens.extend(
+                self.buildPlaceholderTensors(shapeList[0:pCount], dtypeList[0:pCount])
+            )
+            tens.extend(self.buildConstTensors(shapeList[pCount:], dtypeList[pCount:]))
         elif op["op"] == Op.DIV:
             assert (
                 pCount == 2 and cCount == 0
