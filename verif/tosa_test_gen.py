@@ -466,23 +466,20 @@ class TosaArgGen:
         arg_list = []
         rank = len(shapeList[0])
 
-        # Exhaustively test combinations of 0/1 padding on each side of each dimension
-        # This process might need some revision for >1 padding, but use rank**2 as a bitmask
-        # for now
-        for v in range(rank ** 2):
+        # Exhaustively test combinations of padding on each side of each dimension
+        # - the range of padding values is defined by pad_min and pad_max
+        # - for padding >9, the name format needs to be more distinctive
+        pad_min, pad_max = 0, 1
+        pad_values = [x for x in range(pad_min, pad_max + 1)]
+        axis_pad_values = [x for x in itertools.product(pad_values, pad_values)]
+        shape_pad_values = itertools.product(*([axis_pad_values] * rank))
 
-            # Create a flat arraypadding4D
-            paddings = np.zeros((rank * 2), dtype=np.int32)
-
-            # Fill in the 1's
-            for r in range(rank * 2):
-                if (v >> r) & 1:
-                    paddings[r] = 1
-
-            # Reshape back to a 2D array
-            paddings = paddings.reshape((rank, 2))
-
-            arg_list.append(("pad{0:b}".format(v), [paddings]))
+        for paddings in shape_pad_values:
+            name = "pad"
+            for r in range(rank):
+                before, after = paddings[r]
+                name = f"{name}{before}{after}"
+            arg_list.append((name, [np.array(paddings)]))
 
         return arg_list
 
