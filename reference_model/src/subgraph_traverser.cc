@@ -225,7 +225,6 @@ int SubgraphTraverser::initializeGraph()
         DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
         TosaReference::Tensor* tensor =
             TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(), ts->GetShape().size());
-
         if (!ts->GetData().empty())
         {
             if (tensor->allocate())
@@ -236,6 +235,14 @@ int SubgraphTraverser::initializeGraph()
 
             switch (ts->GetDtype())
             {
+                case DType_INT4:
+                {
+                    std::vector<int8_t> i4_data;
+                    TosaSerializationHandler::ConvertU8toI4(ts->GetData(), tensor->getElementCount(), i4_data);
+                    std::vector<int32_t> i32_data(i4_data.begin(), i4_data.end());
+                    tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
+                }
+                break;
                 case DType_INT8:
                 {
                     std::vector<int8_t> i8_data;

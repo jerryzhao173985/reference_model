@@ -386,6 +386,18 @@ class TosaSerializerTensor:
                 for val in self.data:
                     val_u8 = np.uint8(val)
                     u8_data.append(val_u8)
+            elif self.dtype == DType.INT4:
+                in_size = len(self.data)
+                out_size = (in_size + 1) // 2
+                for i in range(out_size):
+                    val_0 = self.data[2 * i]
+                    if (2 * i + 1) < in_size:
+                        val_1 = self.data[2 * i + 1]
+                    else:
+                        val_1 = 0
+                    val_i8 = (val_0 & 0xF) | ((val_1 & 0xF) << 4)
+                    val_u8 = np.uint8(val_i8)
+                    u8_data.append(val_u8)
             elif self.dtype == DType.INT8:
                 for val in self.data:
                     val_u8 = np.uint8(val)
