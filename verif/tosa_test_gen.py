@@ -733,11 +733,11 @@ class TosaArgGen:
 
             # Exclude illegal {mode, type} configurations.  Pick legal output types
             if m == ResizeMode.NEAREST and dtype == DType.INT8:
-                outputDTypeList = [DType.INT32]
+                outputDTypeList = [DType.INT8]
             elif m == ResizeMode.NEAREST and dtype == DType.INT16:
                 outputDTypeList = [DType.INT16]
             elif m == ResizeMode.BILINEAR and dtype == DType.INT8:
-                outputDTypeList = [DType.INT8]
+                outputDTypeList = [DType.INT32]
             elif m == ResizeMode.BILINEAR and dtype == DType.INT16:
                 outputDTypeList = [DType.INT48]
             elif dtype == DType.FLOAT:
@@ -770,7 +770,7 @@ class TosaArgGen:
                         arg_list.append(
                             (
                                 "mode{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}".format(
-                                    m,
+                                    "N" if m == ResizeMode.NEAREST else "B",
                                     output_dims[0],
                                     output_dims[1],
                                     testGen.typeStr(outputDType),
@@ -824,7 +824,7 @@ class TosaArgGen:
                         arg_list.append(
                             (
                                 "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}".format(
-                                    m,
+                                    "N" if m == ResizeMode.NEAREST else "B",
                                     shift,
                                     output_dims[0],
                                     output_dims[1],
