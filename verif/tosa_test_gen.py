@@ -325,9 +325,19 @@ class TosaTensorGen:
         assert pl == 2 and const == 0
 
         a_shape = testGen.makeShape(rank)
-        b_oc = testGen.makeShape(1)[0]
-        b_shape = np.asarray([a_shape[0], a_shape[2], b_oc])
+        # Get a random number for b_oc even if target shape is defined
+        b_oc = np.int32(
+            testGen.rng.integers(
+                low=testGen.args.tensor_shape_range[0],
+                high=testGen.args.tensor_shape_range[1],
+                size=1,
+            )
+        )[0]
+        # If N or H is large let b_oc be 1 to reduce output tensor size
+        if max(a_shape) > 1000:
+            b_oc = 1
 
+        b_shape = np.asarray([a_shape[0], a_shape[2], b_oc])
         return [a_shape, b_shape]
 
     @staticmethod
