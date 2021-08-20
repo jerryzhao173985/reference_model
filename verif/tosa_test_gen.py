@@ -784,8 +784,13 @@ class TosaArgGen:
             # enormous tensors
             multiples = []
             for i in range(rank):
-                multiples.append(testGen.randInt(1, 4))
-
+                if ifm_shape[i] > 1000:
+                    # Multiple of 1 if ifm_shape dimension is large to reduce tensor size
+                    multiples.append(1)
+                elif max(ifm_shape) > 1000:
+                    multiples.append(2)
+                else:
+                    multiples.append(testGen.randInt(1, 4))
             arg_list.append(("perm{}".format(p), [multiples]))
 
         return arg_list
