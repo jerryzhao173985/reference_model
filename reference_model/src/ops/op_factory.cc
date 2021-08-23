@@ -135,8 +135,8 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT16);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT32);
             break;
-        case Op_DIV:
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpDiv, INT32);
+        case Op_INTDIV:
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpIntdiv, INT32);
             break;
         case Op_LOGICAL_AND:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalAnd, BOOL);

@@ -1840,14 +1840,14 @@ class TosaTestGen:
                 self.buildPlaceholderTensors(shapeList[0:pCount], dtypeList[0:pCount])
             )
             tens.extend(self.buildConstTensors(shapeList[pCount:], dtypeList[pCount:]))
-        elif op["op"] == Op.DIV:
+        elif op["op"] == Op.INTDIV:
             assert (
                 pCount == 2 and cCount == 0
-            ), "Op.Div must have 2 placeholders, 0 consts"
+            ), "Op.INTDIV must have 2 placeholders, 0 consts"
 
             placeholders = []
 
-            # Two invalid cases for Op.DIV:
+            # Two invalid cases for Op.INTDIV:
             # 1. divisor == 0
             # 2. dividend == -(1<<31) and divisor == -1
             while True:
@@ -2219,8 +2219,8 @@ class TosaTestGen:
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": TYPE_INT,
         },
-        "div": {
-            "op": Op.DIV,
+        "intdiv": {
+            "op": Op.INTDIV,
             "operands": (2, 0),
             "build_fcn": (build_binary_broadcast, TosaTensorGen.tgBroadcastFuzz, None),
             "types": [DType.INT32],

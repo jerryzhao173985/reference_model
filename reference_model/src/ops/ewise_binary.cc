@@ -301,16 +301,16 @@ int OpBitwiseXor<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, DType Dtype>
-int OpDiv<Rank, Dtype>::register_fcn()
+int OpIntdiv<Rank, Dtype>::register_fcn()
 {
     switch (InDtype)
     {
         case DType_INT32:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                REQUIRE(b != 0, "OpDiv: divisor must be non-zero value");
+                REQUIRE(b != 0, "OpIntDiv: divisor must be non-zero value");
                 int64_t res_in_64     = static_cast<int64_t>(a) / b;
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::max());
-                REQUIRE(a <= i32_max_in_64, "OpDiv: result not in i32 range");
+                REQUIRE(a <= i32_max_in_64, "OpIntDiv: result not in i32 range");
                 return static_cast<InEigenType>(res_in_64);
             };
             break;
@@ -637,7 +637,7 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseXor, INT32);
 
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpDiv, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIntdiv, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalAnd, BOOL);
 
