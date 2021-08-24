@@ -97,7 +97,11 @@ The JSON test descriptor must have the following field:
 * expected_failure:
     type: boolean.
     Is this test expected to fail in runtime.
-
+* expected_return_code:
+    type: int
+    The expected return code of the reference model i
+    (0 = VALID, 1 = ERROR, 2 = UNPREDICTABLE)
+   
 Note by default, all the files specified by "tosa_file", "ifm_file",
 "ofm_file" are relative to desc.json. This could be overwritten by
 -Cflatbuffer_dir=, if desired.

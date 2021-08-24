@@ -591,6 +591,7 @@ class TosaSerializer:
 
         # Is this an illegal test that is expected to fail?
         self.expectedReturnCode = TosaReturnCode.VALID
+        self.expectedFailure = False
         self.expectedFailureDesc = ""
 
     def __str__(self):
@@ -674,6 +675,13 @@ class TosaSerializer:
         self.expectedReturnCode = val
         self.expectedFailureDesc = desc
 
+        if val == TosaReturnCode.VALID:
+            self.expectedFailure = False
+        else:
+            # Unpredictable or error results are considered expected failures
+            # for conformance
+            self.expectedFailure = True
+
     def serialize(self):
 
         builder = self.builder
@@ -724,6 +732,7 @@ class TosaSerializer:
         test_desc["ofm_name"] = ofm_name
         test_desc["ofm_file"] = ofm_file
         test_desc["expected_return_code"] = self.expectedReturnCode
+        test_desc["expected_failure"] = self.expectedFailure
         if self.expectedFailureDesc:
             test_desc["expected_failure_desc"] = self.expectedFailureDesc
 

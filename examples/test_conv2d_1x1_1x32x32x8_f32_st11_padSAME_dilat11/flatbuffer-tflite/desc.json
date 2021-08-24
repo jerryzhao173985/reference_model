@@ -10,7 +10,7 @@
     "TosaOutput_0"
   ],
   "ofm_file": [
-    "ref_model_Result0.npy"
+    "ref_model_output_0.npy"
   ],
   "expected_failure": false
 }
