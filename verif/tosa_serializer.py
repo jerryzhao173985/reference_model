@@ -135,36 +135,36 @@ class TosaSerializerAttribute(TosaSerializerUnion):
     def __init__(self):
         super().__init__()
 
-    def Pool2dAttribute(self, kernel, stride, padding):
-        from tosa import Pool2dAttribute as a, Attribute
+    def PoolAttribute(self, kernel, stride, padding):
+        from tosa import PoolAttribute as a, Attribute
 
-        self.utype = Attribute.Attribute().Pool2dAttribute
+        self.utype = Attribute.Attribute().PoolAttribute
 
-        self.optFcns = (a.Pool2dAttributeStart, a.Pool2dAttributeEnd)
-        self.intvecs.append((a.Pool2dAttributeAddPadding, padding))
-        self.intvecs.append((a.Pool2dAttributeAddKernel, kernel))
-        self.intvecs.append((a.Pool2dAttributeAddStride, stride))
+        self.optFcns = (a.PoolAttributeStart, a.PoolAttributeEnd)
+        self.intvecs.append((a.PoolAttributeAddPadding, padding))
+        self.intvecs.append((a.PoolAttributeAddKernel, kernel))
+        self.intvecs.append((a.PoolAttributeAddStride, stride))
 
-    def Conv2dAttribute(self, padding, stride, dilation):
-        from tosa import Conv2dAttribute as a, Attribute
+    def ConvAttribute(self, padding, stride, dilation):
+        from tosa import ConvAttribute as a, Attribute
 
-        self.utype = Attribute.Attribute().Conv2dAttribute
-        self.optFcns = (a.Conv2dAttributeStart, a.Conv2dAttributeEnd)
+        self.utype = Attribute.Attribute().ConvAttribute
+        self.optFcns = (a.ConvAttributeStart, a.ConvAttributeEnd)
 
-        self.intvecs.append((a.Conv2dAttributeAddPadding, padding))
-        self.intvecs.append((a.Conv2dAttributeAddStride, stride))
-        self.intvecs.append((a.Conv2dAttributeAddDilation, dilation))
+        self.intvecs.append((a.ConvAttributeAddPadding, padding))
+        self.intvecs.append((a.ConvAttributeAddStride, stride))
+        self.intvecs.append((a.ConvAttributeAddDilation, dilation))
 
-    def TransposeConv2DAttribute(self, outpad, stride, dilation, output_shape):
-        from tosa import TransposeConv2dAttribute as a, Attribute
+    def TransposeConvAttribute(self, outpad, stride, dilation, output_shape):
+        from tosa import TransposeConvAttribute as a, Attribute
 
-        self.utype = Attribute.Attribute().TransposeConv2dAttribute
-        self.optFcns = (a.TransposeConv2dAttributeStart, a.TransposeConv2dAttributeEnd)
+        self.utype = Attribute.Attribute().TransposeConvAttribute
+        self.optFcns = (a.TransposeConvAttributeStart, a.TransposeConvAttributeEnd)
 
-        self.intvecs.append((a.TransposeConv2dAttributeAddOutpad, outpad))
-        self.intvecs.append((a.TransposeConv2dAttributeAddStride, stride))
-        self.intvecs.append((a.TransposeConv2dAttributeAddDilation, dilation))
-        self.intvecs.append((a.TransposeConv2dAttributeAddOutputShape, output_shape))
+        self.intvecs.append((a.TransposeConvAttributeAddOutpad, outpad))
+        self.intvecs.append((a.TransposeConvAttributeAddStride, stride))
+        self.intvecs.append((a.TransposeConvAttributeAddDilation, dilation))
+        self.intvecs.append((a.TransposeConvAttributeAddOutputShape, output_shape))
 
     def ReluNAttribute(self, maxint, maxfp):
         from tosa import ReluNAttribute as a, Attribute

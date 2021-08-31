@@ -78,7 +78,7 @@ OpAvgPool2d<Dtype>::OpAvgPool2d(SubgraphTraverser* sgt_,
     setRequiredOperands(1, 1);
     setRequiredRank(4);
 
-    INIT_ATTRIBUTE(Pool2d);
+    INIT_ATTRIBUTE(Pool);
     INIT_QINFO(Unary);
 }
 
@@ -299,7 +299,7 @@ OpConv2d<InDtype, WeightDtype>::OpConv2d(SubgraphTraverser* sgt_,
     setRequiredOperands(3, 1);
     setRequiredRank(4);
 
-    INIT_ATTRIBUTE(Conv2d);
+    INIT_ATTRIBUTE(Conv);
     INIT_QINFO(Conv);
 }
 
@@ -491,7 +491,7 @@ OpDepthwiseConv2d<InDtype, WeightDtype>::OpDepthwiseConv2d(SubgraphTraverser* sg
     setRequiredOperands(3, 1);
     setRequiredRank(4);
 
-    INIT_ATTRIBUTE(Conv2d);
+    INIT_ATTRIBUTE(Conv);
     INIT_QINFO(Conv);
 }
 
@@ -892,7 +892,7 @@ OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_,
     setRequiredOperands(1, 1);
     setRequiredRank(4);
 
-    INIT_ATTRIBUTE(Pool2d);
+    INIT_ATTRIBUTE(Pool);
 }
 
 template <DType Dtype>
@@ -1034,7 +1034,7 @@ OpTransposeConv2d<InDtype, OutDtype>::OpTransposeConv2d(SubgraphTraverser* sgt_,
     setRequiredOperands(3, 1);
     setRequiredRank(4);
 
-    INIT_ATTRIBUTE(TransposeConv2d);
+    INIT_ATTRIBUTE(TransposeConv);
     INIT_QINFO(Conv);
 }
 

@@ -68,7 +68,7 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    tosa::TosaPool2dAttribute* attribute;
+    tosa::TosaPoolAttribute* attribute;
     tosa::TosaUnaryQuantInfo* qinfo;
 
 protected:
@@ -104,7 +104,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TAcc>* output;
-    tosa::TosaConv2dAttribute* attribute;
+    tosa::TosaConvAttribute* attribute;
     tosa::TosaConvQuantInfo* qinfo;
 };
 
@@ -136,7 +136,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TAcc>* output;
-    tosa::TosaConv2dAttribute* attribute;
+    tosa::TosaConvAttribute* attribute;
     tosa::TosaConvQuantInfo* qinfo;
 };
 
@@ -219,7 +219,7 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    tosa::TosaPool2dAttribute* attribute;
+    tosa::TosaPoolAttribute* attribute;
 };
 
 template <DType InDtype, DType WeightDtype>
@@ -250,7 +250,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TAcc>* output;
-    TosaTransposeConv2dAttribute* attribute;
+    TosaTransposeConvAttribute* attribute;
     TosaConvQuantInfo* qinfo;
 };
 
