@@ -116,6 +116,7 @@ int SubgraphTraverser::initializeGraph()
         switch (op->GetOp())
         {
             case Op_CONV2D:
+            case Op_CONV3D:
             case Op_DEPTHWISE_CONV2D:
             case Op_TRANSPOSE_CONV2D:
             case Op_FULLY_CONNECTED:

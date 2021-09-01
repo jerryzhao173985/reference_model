@@ -64,6 +64,12 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_TWO_TYPE(OpConv2d, INT8, INT8);
             DEF_FACTORY_TWO_TYPE(OpConv2d, INT16, INT8);
             break;
+        case Op_CONV3D:
+            DEF_FACTORY_TWO_TYPE(OpConv3d, FLOAT, FLOAT);
+            DEF_FACTORY_TWO_TYPE(OpConv3d, INT8, INT4);
+            DEF_FACTORY_TWO_TYPE(OpConv3d, INT8, INT8);
+            DEF_FACTORY_TWO_TYPE(OpConv3d, INT16, INT8);
+            break;
         case Op_DEPTHWISE_CONV2D:
             DEF_FACTORY_TWO_TYPE(OpDepthwiseConv2d, FLOAT, FLOAT);
             DEF_FACTORY_TWO_TYPE(OpDepthwiseConv2d, INT8, INT4);

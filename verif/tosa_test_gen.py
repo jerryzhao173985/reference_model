@@ -257,6 +257,35 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
+    def tgConv3D(testGen, op, rank):
+        pl, const = op["operands"]
+
+        assert rank == 5
+
+        # IFM dimensions are NDHWC
+        ifm_shape = testGen.makeShape(rank)
+
+        # Constrict the batch size?
+        if testGen.args.max_batch_size:
+            ifm_shape[0] = (ifm_shape[0] % testGen.args.max_batch_size) + 1
+
+        # Get the filter depth/height/width from the operator parameters
+        filter_dhw = op["filter"]
+
+        # Generate a random OFM channel
+        ofm_channel = testGen.makeShape(1)[0]
+
+        # The filter dimensions are ODHWI
+        filter_shape = np.asarray(
+            [ofm_channel, filter_dhw[0], filter_dhw[1], filter_dhw[2], ifm_shape[4]]
+        )
+
+        # The bias is OC
+        bias_shape = np.asarray([ofm_channel])
+
+        return [ifm_shape, filter_shape, bias_shape]
+
+    @staticmethod
     def tgTransposeConv2D(testGen, op, rank):
         pl, const = op["operands"]
 
@@ -460,6 +489,43 @@ class TosaArgGen:
                             [s, p, d],
                         )
                     )
+        return arg_list
+
+    @staticmethod
+    def agConv3D(testGen, opName, shapeList, dtype):
+        arg_list = []
+
+        ifm_shape = shapeList[0]
+        filter_shape = shapeList[1]
+
+        # Must be rank 5
+        assert len(ifm_shape) == 5
+        assert len(filter_shape) == 5
+
+        # Generate basic argument list now
+        # TODO: increase coverage
+        s = [1, 1, 1]
+        p = [0, 0, 0, 0, 0, 0]
+        d = [1, 1, 1]
+        arg_list.append(
+            (
+                "st{}{}{}_pad{}{}{}{}{}{}_dilat{}{}{}".format(
+                    s[0],
+                    s[1],
+                    s[2],
+                    p[0],
+                    p[1],
+                    p[2],
+                    p[3],
+                    p[4],
+                    p[5],
+                    d[0],
+                    d[1],
+                    d[2],
+                ),
+                [s, p, d],
+            )
+        )
         return arg_list
 
     @staticmethod
@@ -1357,6 +1423,20 @@ class TosaTestGen:
         )
         return result_tens
 
+    def build_conv3d(self, op, ifm, filter, bias, strides, padding, dilations, qinfo):
+        assert len(padding) == 6
+        result_tens = OutputShaper.conv3dOp(
+            self.ser, ifm, filter, strides, padding, dilations
+        )
+
+        attr = ts.TosaSerializerAttribute()
+        attr.ConvAttribute(padding, strides, dilations)
+
+        self.ser.addOperator(
+            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+        )
+        return result_tens
+
     def build_transpose_conv2d(
         self, op, ifm, filter, bias, stride, outpad, dilation, output_shape, qinfo
     ):
@@ -1859,7 +1939,9 @@ class TosaTestGen:
                 # Filter out the rank?
                 if rankFilter is not None and r not in rankFilter:
                     continue
-                if (
+                if opName.startswith("conv3d"):
+                    assert r == 5, "conv3d test must have input rank == 5"
+                elif (
                     rankFilter is None
                     and shapeFilter[0] is None
                     and r not in default_test_rank_range
@@ -2188,9 +2270,9 @@ class TosaTestGen:
     def createDynamicOpLists(self):
 
         # Dynamically create op lists for convolutions with a list of kernel sizes
-        KERNELS = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
+        KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
 
-        for k in KERNELS:
+        for k in KERNELS_2D:
             testName = "conv2d_{}x{}".format(k[0], k[1])
             self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv2d_TEMPLATE"].copy()
             self.TOSA_OP_LIST[testName]["filter"] = k
@@ -2207,6 +2289,13 @@ class TosaTestGen:
             self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST[
                 "transpose_conv2d_TEMPLATE"
             ].copy()
+            self.TOSA_OP_LIST[testName]["filter"] = k
+            self.TOSA_OP_LIST[testName]["template"] = False
+
+        KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
+        for k in KERNELS_3D:
+            testName = "conv3d_{}x{}x{}".format(k[0], k[1], k[2])
+            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv3d_TEMPLATE"].copy()
             self.TOSA_OP_LIST[testName]["filter"] = k
             self.TOSA_OP_LIST[testName]["template"] = False
 
@@ -2286,7 +2375,7 @@ class TosaTestGen:
 
     TYPE_NARROW_INT_FP = [DType.INT8, DType.INT16, DType.FLOAT]
 
-    TYPE_CONV2D = [
+    TYPE_CONV = [
         [DType.INT8, DType.INT4, DType.INT32],
         [DType.INT8, DType.INT8, DType.INT32],
         [DType.INT16, DType.INT8, DType.INT48],
@@ -2319,11 +2408,20 @@ class TosaTestGen:
             "rank": (4, 4),
             "build_fcn": (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv2D),
             "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV2D,
+            "types": TYPE_CONV,
             "invalid_test_validators": (TosaInvalidValidator.ivHeightWidthSmallerZero,),
             "template": True,
         },
-        # Conv3d TBD
+        # Templated operator.  Filled in by createDynamicOpLists
+        "conv3d_TEMPLATE": {
+            "op": Op.CONV3D,
+            "operands": (1, 2),
+            "rank": (5, 5),
+            "build_fcn": (build_conv3d, TosaTensorGen.tgConv3D, TosaArgGen.agConv3D),
+            "qgen": TosaQuantGen.qgConv,
+            "types": TYPE_CONV,
+            "template": True,
+        },
         # Templated operator.  Filled in by createDynamicOpLists
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
@@ -2336,7 +2434,7 @@ class TosaTestGen:
                 TosaArgGen.agConv2D,
             ),
             "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV2D,
+            "types": TYPE_CONV,
             "invalid_test_validators": (TosaInvalidValidator.ivHeightWidthSmallerZero,),
             "template": True,
         },
@@ -2346,7 +2444,7 @@ class TosaTestGen:
             "rank": (2, 2),
             "build_fcn": (build_fully_connected, TosaTensorGen.tgFullyConnected, None),
             "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV2D,
+            "types": TYPE_CONV,
         },
         "matmul": {
             "op": Op.MATMUL,
@@ -2375,7 +2473,7 @@ class TosaTestGen:
                 TosaArgGen.agTransposeConv2D,
             ),
             "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV2D,
+            "types": TYPE_CONV,
             "invalid_test_validators": (TosaInvalidValidator.ivNonPositiveOutputShape,),
             "template": True,
         },
@@ -2896,6 +2994,50 @@ class OutputShaper:
         ) // strides[1] + 1
 
         ofm_shape = [ifm.shape[0], h, w, filter.shape[0]]
+
+        if ifm.dtype == DType.INT8:
+            out_dtype = DType.INT32
+        elif ifm.dtype == DType.INT16:
+            out_dtype = DType.INT48
+        elif ifm.dtype == DType.FLOAT:
+            out_dtype = DType.FLOAT
+        else:
+            raise Exception("Unsupported input dtype: {}".format(ifm.dtype))
+
+        return ser.addOutput(ofm_shape, out_dtype)
+
+    @staticmethod
+    def conv3dOp(ser, ifm, filter, strides, padding, dilations):
+
+        # IFM:    NDHWC
+        # Filter: ODHWI
+        # OFM:    NDHWC
+
+        d = (
+            ifm.shape[1]
+            - filter.shape[1]
+            - (filter.shape[1] - 1) * (dilations[0] - 1)
+            + padding[0]
+            + padding[1]
+        ) // strides[0] + 1
+
+        h = (
+            ifm.shape[2]
+            - filter.shape[2]
+            - (filter.shape[2] - 1) * (dilations[1] - 1)
+            + padding[2]
+            + padding[3]
+        ) // strides[1] + 1
+
+        w = (
+            ifm.shape[3]
+            - filter.shape[3]
+            - (filter.shape[3] - 1) * (dilations[2] - 1)
+            + padding[4]
+            + padding[5]
+        ) // strides[2] + 1
+
+        ofm_shape = [ifm.shape[0], d, h, w, filter.shape[0]]
 
         if ifm.dtype == DType.INT8:
             out_dtype = DType.INT32
