@@ -358,6 +358,9 @@ class TosaSerializerTensor:
             data = data.flatten().astype(int).tolist()
             data = list(map(int, data))
             self.data = data
+        elif isinstance(data, list):
+            data = list(map(int, data))
+            self.data = data
         else:
             self.data = None
 

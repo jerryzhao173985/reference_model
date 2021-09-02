@@ -1798,6 +1798,7 @@ class TosaTestGen:
             [iter_out.name, a_out.name, acc_out.name],
             attr,
         )
+        self.ser.addOutputTensor(acc_out)
 
         # COND block (input: iter, output: cond_tens )
         self.ser.startBasicBlock(cond_block)
