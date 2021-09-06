@@ -67,7 +67,7 @@ class TosaRefRunner(TosaTestRunner):
                 else:
                     result = TosaTestRunner.Result.UNEXPECTED_FAILURE
             else:
-                raise Exception("Return code unknown.")
+                raise Exception(f"Return code ({rc}) unknown.")
 
         except Exception as e:
             raise Exception("Runtime Error when running: {}".format(" ".join(ref_cmd)))

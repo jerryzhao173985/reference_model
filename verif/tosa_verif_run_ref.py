@@ -153,6 +153,14 @@ def workerThread(task_queue, runnerList, args, result_queue):
                     rc = runner.runModel()
                 except Exception as e:
                     rc = TosaTestRunner.Result.INTERNAL_ERROR
+                    print(f"runner.runModel Exception: {e}")
+                    print(
+                        "".join(
+                            traceback.format_exception(
+                                etype=type(e), value=e, tb=e.__traceback__
+                            )
+                        )
+                    )
         except Exception as e:
             print("Internal regression error: {}".format(e))
             print(
