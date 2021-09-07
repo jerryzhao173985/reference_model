@@ -1969,8 +1969,66 @@ class TosaTestGen:
         # Build the random tensor operands and the test
         tens = []
 
-        # If test is ArithmeticRightShift, force value of operand[1] to be within [0, num_bits]
-        if op["op"] == Op.ARITHMETIC_RIGHT_SHIFT:
+        if (op["op"] == Op.ADD or op["op"] == Op.SUB) and dtypeList[0] == DType.INT32:
+            # Make sure the operation does not cause value saturation - where
+            # the number wraps due to limited number of bits to store the answer
+            assert (
+                pCount == 2 and cCount == 0
+            ), "Op.ADD / Op.SUB must have 2 placeholders, 0 consts"
+
+            placeholders = []
+            add = (op["op"] == Op.ADD)
+            a_arr = self.getRandTensor(shapeList[0], dtypeList[0])
+            b_arr = self.getRandTensor(shapeList[1], dtypeList[1])
+            if add:
+                res_arr = np.add(a_arr, b_arr, dtype=np.int64)
+            else:
+                res_arr = np.subtract(a_arr, b_arr, dtype=np.int64)
+
+            # Work out the saturation limits
+            max_i32 = (1 << 31)-1
+            min_i32 = -(1 << 31)
+            max_arr = np.full(shapeList[1], max_i32)
+            min_arr = np.full(shapeList[1], min_i32)
+
+            # Find how much values exceed the maximum/minimums
+            sat_max_arr = np.maximum(res_arr - max_arr, 0)
+            sat_min_arr = np.minimum(res_arr - min_arr, 0)
+
+            if not add:
+                # Swap saturation values and negate values as we need to perform opposite operations
+                sat_max_arr, sat_min_arr = -sat_min_arr, -sat_max_arr
+
+            # Create new array of unsaturated values by clipping values as needed
+            b_unsat_arr = b_arr
+            if (sat_max_arr != 0).any():
+                # Clip values that cause saturation
+                b_unsat_arr = np.subtract(b_unsat_arr, sat_max_arr, dtype=np.int32)
+                # Reduce axes in unsaturated tensor to match original tensor
+                for axis, dim in enumerate(b_arr.shape):
+                    if dim != b_unsat_arr.shape[axis]:
+                        assert ( dim == 1 ), "Op.ADD / SUB dimension must be 1 or matching to be broadcastable"
+                        b_unsat_arr = np.amin(b_unsat_arr, axis=axis, keepdims=True)
+
+            if (sat_min_arr != 0).any():
+                # Clip values that cause saturation
+                b_unsat_arr = np.subtract(b_unsat_arr, sat_min_arr, dtype=np.int32)
+                # Reduce axes in unsaturated tensor to match original tensor
+                for axis, dim in enumerate(b_arr.shape):
+                    if dim != b_unsat_arr.shape[axis]:
+                        assert ( dim == 1 ), "Op.ADD / SUB dimension must be 1 or matching to be broadcastable"
+                        b_unsat_arr = np.amax(b_unsat_arr, axis=axis, keepdims=True)
+
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
+            )
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[1], dtypeList[1], b_unsat_arr)
+            )
+
+            tens.extend(placeholders)
+        elif op["op"] == Op.ARITHMETIC_RIGHT_SHIFT:
+            # Force value of operand[1] to be within [0, num_bits]
             assert (
                 pCount == 2 and cCount == 0
             ), "Op.ArithmeticRightShift must have 2 placeholders, 0 consts"
