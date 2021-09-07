@@ -235,10 +235,10 @@ def main():
 
     print("{} matching tests".format(len(testList)))
     results = []
-    for opName, testStr, dtype, shapeList, testArgs in testList:
+    for opName, testStr, dtype, error, shapeList, testArgs in testList:
         if args.verbose:
             print(testStr)
-        results.append(ttg.serializeTest(opName, testStr, dtype, shapeList, testArgs))
+        results.append(ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs))
 
     print(f"Done creating {len(results)} tests")
 
