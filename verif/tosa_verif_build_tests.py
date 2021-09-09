@@ -235,7 +235,14 @@ def main():
 
     print("{} matching tests".format(len(testList)))
     results = []
+    testStrings = []
     for opName, testStr, dtype, error, shapeList, testArgs in testList:
+        # Check for and skip duplicate tests
+        if testStr in testStrings:
+            continue
+        else:
+            testStrings.append(testStr)
+
         if args.verbose:
             print(testStr)
         results.append(ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs))

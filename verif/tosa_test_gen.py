@@ -49,7 +49,6 @@ DType = tosa.DType.DType()
 Op = tosa.Op.Op()
 ResizeMode = tosa.ResizeMode.ResizeMode()
 
-
 class TosaQuantGen:
     """QuantizedInfo random generator helper functions.  Specify with 'qgen': in the operator defintion"""
 
@@ -165,7 +164,8 @@ class TosaTensorGen:
     def tgNHWC(testGen, opName, rank, error_name=None):
         pl, const = opName["operands"]
 
-        assert rank == 4
+        if error_name != ErrorIf.WrongRank:
+            assert rank == 4
 
         shape = testGen.makeShape(rank)
 
@@ -897,26 +897,28 @@ class TosaArgGen:
         arg_list = []
 
         ifm_shape = shapeList[0]
-
-        for m in [ResizeMode.NEAREST, ResizeMode.BILINEAR]:
+        for mode in [ResizeMode.NEAREST, ResizeMode.BILINEAR]:
 
             # Exclude illegal {mode, type} configurations.  Pick legal output types
-            if m == ResizeMode.NEAREST and dtype == DType.INT8:
+            if mode == ResizeMode.NEAREST and dtype == DType.INT8:
                 outputDTypeList = [DType.INT8]
-            elif m == ResizeMode.NEAREST and dtype == DType.INT16:
+            elif mode == ResizeMode.NEAREST and dtype == DType.INT16:
                 outputDTypeList = [DType.INT16]
-            elif m == ResizeMode.BILINEAR and dtype == DType.INT8:
+            elif mode == ResizeMode.BILINEAR and dtype == DType.INT8:
                 outputDTypeList = [DType.INT32]
-            elif m == ResizeMode.BILINEAR and dtype == DType.INT16:
+            elif mode == ResizeMode.BILINEAR and dtype == DType.INT16:
                 outputDTypeList = [DType.INT48]
             elif dtype == DType.FLOAT:
                 outputDTypeList = [DType.FLOAT]
+            elif error_name == ErrorIf.WrongInputType:
+                # If an incorrect input type is used then we set a 'correct'
+                # output type to avoid other errors
+                outputDTypeList = [DType.INT8, DType.INT16, DType.INT32]
             else:
                 continue
 
             for outputDType in outputDTypeList:
                 for perm in range(testGen.args.num_rand_permutations):
-
                     # Randomly generate legal output dimensions and shift
                     # and then compute the stride and offset based on them
                     # A output_dim of 1 will cause offset to exceed allowed range
@@ -945,9 +947,11 @@ class TosaArgGen:
                         offset_fp = [fp_offset_y, fp_offset_x]
 
                         if error_name is not None:
-                            shift, stride, stride_fp, offset, offset_fp = TosaErrorIfArgGen.eiResizeErrorIf(
+                            shift, stride, stride_fp, offset, offset_fp, outputDTypeNew = TosaErrorIfArgGen.eiResizeErrorIf(
                                 testGen,
                                 error_name,
+                                mode,
+                                dtype,
                                 shapeList,
                                 outputDType,
                                 shift,
@@ -956,21 +960,23 @@ class TosaArgGen:
                                 offset,
                                 offset_fp
                             )
+                        else:
+                            outputDTypeNew = outputDType
 
                         arg_list.append(
                             (
                                 "mode{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}".format(
-                                    "N" if m == ResizeMode.NEAREST else "B",
+                                    "N" if mode == ResizeMode.NEAREST else "B",
                                     output_dims[0],
                                     output_dims[1],
-                                    testGen.typeStr(outputDType),
+                                    testGen.typeStr(outputDTypeNew),
                                     stride_fp[0],
                                     stride_fp[1],
                                     offset_fp[0],
                                     offset_fp[1],
                                 ),
                                 [
-                                    m,
+                                    mode,
                                     stride,
                                     offset,
                                     shift,
@@ -978,7 +984,7 @@ class TosaArgGen:
                                     offset_fp,
                                     output_dims,
                                     dtype,
-                                    outputDType,
+                                    outputDTypeNew,
                                 ],
                             )
                         )
@@ -1012,9 +1018,11 @@ class TosaArgGen:
                         offset_fp = [0.0, 0.0]
 
                         if error_name is not None:
-                            shift, stride, stride_fp, offset, offset_fp = TosaErrorIfArgGen.eiResizeErrorIf(
+                            shift, stride, stride_fp, offset, offset_fp, outputDTypeNew = TosaErrorIfArgGen.eiResizeErrorIf(
                                 testGen,
                                 error_name,
+                                mode,
+                                dtype,
                                 shapeList,
                                 outputDType,
                                 shift,
@@ -1023,22 +1031,24 @@ class TosaArgGen:
                                 offset,
                                 offset_fp
                             )
+                        else:
+                            outputDTypeNew = outputDType
 
                         arg_list.append(
                             (
                                 "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}".format(
-                                    "N" if m == ResizeMode.NEAREST else "B",
+                                    "N" if mode == ResizeMode.NEAREST else "B",
                                     shift,
                                     output_dims[0],
                                     output_dims[1],
-                                    testGen.typeStr(outputDType),
+                                    testGen.typeStr(outputDTypeNew),
                                     stride[0],
                                     stride[1],
                                     offset[0],
                                     offset[1],
                                 ),
                                 [
-                                    m,
+                                    mode,
                                     stride,
                                     offset,
                                     shift,
@@ -1046,7 +1056,7 @@ class TosaArgGen:
                                     offset_fp,
                                     output_dims,
                                     dtype,
-                                    outputDType,
+                                    outputDTypeNew,
                                 ],
                             )
                         )
@@ -1076,7 +1086,7 @@ class TosaArgGen:
 class TosaErrorIfArgGen:
 
     @staticmethod
-    def eiResizeErrorIf(testGen, error_name, shapeList, outputDType, shift, stride, stride_fp, offset, offset_fp):
+    def eiResizeErrorIf(testGen, error_name, mode, dtype, shapeList, outputDType, shift, stride, stride_fp, offset, offset_fp):
 
         if outputDType == DType.FLOAT:
             if error_name == ErrorIf.StrideSmallerEqualZero:
@@ -1117,16 +1127,202 @@ class TosaErrorIfArgGen:
             elif error_name == ErrorIf.OffsetSmallerEqualMin:
                 offset = [(-16 << shift) - 1, (-16 << shift) - 1]
 
-        return shift, stride, stride_fp, offset, offset_fp
+        if error_name == ErrorIf.WrongOutputType:
+            if mode == ResizeMode.NEAREST and dtype == DType.INT8:
+                incorrect_types = (DType.INT4, DType.INT16, DType.INT32, DType.INT48, DType.FLOAT)
+            elif mode == ResizeMode.NEAREST and dtype == DType.INT16:
+                incorrect_types = (DType.INT4, DType.INT8, DType.INT32, DType.INT48, DType.FLOAT)
+            elif mode == ResizeMode.BILINEAR and dtype == DType.INT8:
+                incorrect_types = (DType.INT4, DType.INT8, DType.INT16, DType.INT48, DType.FLOAT)
+            elif mode == ResizeMode.BILINEAR and dtype == DType.INT16:
+                incorrect_types = (DType.INT4, DType.INT8, DType.INT16, DType.INT32, DType.FLOAT)
+            elif dtype == DType.FLOAT:
+                incorrect_types = (DType.INT4, DType.INT8, DType.INT16, DType.INT32, DType.INT48)
+            outputDType = testGen.rng.choice(a=incorrect_types)
 
+        return shift, stride, stride_fp, offset, offset_fp, outputDType
+
+    @staticmethod
+    def eiInvalidateInputOutputList(testGen, error_name, input_list, output_list):
+        # Mess up input/output tensors for ERROR_IF checks
+        if error_name == "WrongInputList":
+            add_input = testGen.rng.choice([True, False])
+            if add_input:
+                input_list.append('eiDummyInput')
+            else:
+                input_list = input_list[:-1]
+        if error_name == "WrongOutputList":
+            add_output = testGen.rng.choice([True, False])
+            if add_output:
+                output_list.append('eiDummyOutput')
+            else:
+                output_list = []
+        return input_list, output_list
 
 class TosaErrorValidator:
 
+    @staticmethod
+    def evValidateErrorIfs(serializer, validator_fcns, error_name, **kwargs):
+        # Check ERROR_IF statements
+
+        for val_fcn in validator_fcns:
+            val_result = val_fcn(True, **kwargs)
+
+            validator_name = val_result['error_name']
+            error_result = val_result['error_result']
+            error_reason = val_result['error_reason']
+
+            if error_result:
+                if error_name == validator_name:
+                    serializer.setExpectedReturnCode(2, error_reason)
+                else:
+                    print(f"Multiple ERROR_IF checks hit \nError required: {error_name}, Error_produced: {validator_name}")
+                    return None # Return None to delete test if wrong ERROR_IF is hit
+            else:
+                if error_name == validator_name:
+                    print(f"No ERROR_IF hit for {error_name}")
+                    return None
+
+    @staticmethod
+    def evWrongInputType(check=False, **kwargs):
+        all_dtypes = (DType.BOOL, DType.INT4, DType.INT8, DType.INT16, DType.INT32, DType.INT48, DType.FLOAT)
+
+        # Find the unsupported input data types
+        assert 'op' in kwargs
+        op = kwargs['op']
+        input_dtypes = op['types']
+        wrong_input_dtypes = list(set(all_dtypes) - set(input_dtypes))
+
+        error_name = ErrorIf.WrongInputType
+        param_reqs = {"rank": None, "dtype": wrong_input_dtypes, "shape": None}
+        error_result = False
+        error_reason = "Input data type not supported for this operator"
+
+        if check:
+            input_dtype = kwargs['input_dtype']
+            if input_dtype not in input_dtypes:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs
+        }
+        return info_dict
+
+    @staticmethod
+    def evWrongOutputType(check=False, **kwargs):
+        error_name = ErrorIf.WrongOutputType
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Output data type not supported for this configuration of operator"
+
+        if check:
+            input_dtype = kwargs['input_dtype']
+            output_dtype = kwargs['output_dtype']
+            mode = kwargs['mode']
+
+            if (
+                (mode == ResizeMode.NEAREST and input_dtype == DType.INT8 and output_dtype != DType.INT8) or
+                (mode == ResizeMode.NEAREST and input_dtype == DType.INT16 and output_dtype != DType.INT16) or
+                (mode == ResizeMode.BILINEAR and input_dtype == DType.INT8 and output_dtype != DType.INT32) or
+                (mode == ResizeMode.BILINEAR and input_dtype == DType.INT16 and output_dtype != DType.INT48) or
+                (input_dtype == DType.FLOAT and output_dtype != DType.FLOAT)
+            ):
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs
+        }
+        return info_dict
+
+    @staticmethod
+    def evWrongRank(check=False, **kwargs):
+        all_ranks = (1, 2, 3, 4, 5)
+
+        # Make a list of incorrect ranks
+        assert 'op' in kwargs
+        op = kwargs['op']
+        rmin, rmax = op['rank']
+        rank_range = range(rmin, rmax + 1)
+        incorrect_ranks = list(set(all_ranks) - set(rank_range))
+        # Set minimum incorrect rank to 3 to avoid index error
+        if op['op'] == Op.RESIZE:
+            incorrect_ranks = [3, 5]
+
+        error_name = ErrorIf.WrongRank
+        param_reqs = {"rank": incorrect_ranks, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Rank not supported for this operator"
+
+        if check:
+            input_shape = kwargs['input_shape']
+            if op['op'] == Op.RESIZE and len(input_shape.shape) != 4:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs
+        }
+        return info_dict
+
+    @staticmethod
+    def evWrongInputList(check=False, **kwargs):
+        error_name = ErrorIf.WrongInputList
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Op input list does not match expected input"
+
+        if check:
+            op = kwargs['op']
+            input_list = kwargs['input_list']
+            num_operands = kwargs['num_operands']
+            if len(input_list) != num_operands:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs
+        }
+        return info_dict
+
+    @staticmethod
+    def evWrongOutputList(check=False, **kwargs):
+        error_name = ErrorIf.WrongOutputList
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Op output list does not match expected output"
+
+        if check:
+            output_list = kwargs['output_list']
+            # Note this will be incorrect if an operator returns more than one output
+            if len(output_list) != 1:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs
+        }
+        return info_dict
 
     @staticmethod
     def evMaxDimExceeded(check=False, **kwargs):
         error_name = ErrorIf.MaxDimExceeded
-        param_reqs = {"rank": [4,4], "dtype": [DType.INT8], "shape": [[1, 16584, 5, 1]]}
+        param_reqs = {
+            "rank": [4,4],
+            "dtype": [DType.INT8],
+            "shape": [[1, 16584, 5, 1], [1, 2, 16499, 4]]
+            }
         error_result = False
         error_reason = "At least one maximum dimension is larger than 16384"
 
@@ -1156,8 +1352,13 @@ class TosaErrorValidator:
 
         if check:
             input_dtype = kwargs['input_dtype']
-            if input_dtype == DType.FLOAT:
+            output_dtype = kwargs['output_dtype']
+            if input_dtype != DType.FLOAT and output_dtype == DType.FLOAT:
+                stride = kwargs['stride'] # Work around wrong input/output type tests
+            elif output_dtype == DType.FLOAT:
                 stride = kwargs['stride_fp']
+            elif input_dtype == DType.FLOAT and output_dtype != DType.FLOAT:
+                stride = kwargs['stride_fp'] # Work around wrong input/output type tests
             else:
                 stride = kwargs['stride']
 
@@ -1231,8 +1432,8 @@ class TosaErrorValidator:
 
         if check:
             shift = kwargs['shift']
-            input_dtype = kwargs['input_dtype']
-            if input_dtype == DType.FLOAT:
+            output_dtype = kwargs['output_dtype']
+            if output_dtype == DType.FLOAT:
                 offset = kwargs['offset_fp']
             else:
                 offset = kwargs['offset']
@@ -1259,8 +1460,8 @@ class TosaErrorValidator:
 
         if check:
             shift = kwargs['shift']
-            input_dtype = kwargs['input_dtype']
-            if input_dtype == DType.FLOAT:
+            output_dtype = kwargs['output_dtype']
+            if output_dtype == DType.FLOAT:
                 offset = kwargs['offset_fp']
             else:
                 offset = kwargs['offset']
@@ -1292,7 +1493,8 @@ class TosaErrorValidator:
         if check:
             shift = kwargs['shift']
             input_dtype = kwargs['input_dtype']
-            if input_dtype == DType.FLOAT and shift != 0:
+            output_dtype = kwargs['output_dtype']
+            if input_dtype == DType.FLOAT and output_dtype == DType.FLOAT and shift != 0:
                 error_result = True
 
         info_dict = {
@@ -1314,7 +1516,8 @@ class TosaErrorValidator:
         if check:
             shift = kwargs['shift']
             input_dtype = kwargs['input_dtype']
-            if shift < 1 and input_dtype != DType.FLOAT:
+            output_dtype = kwargs['output_dtype']
+            if shift < 1 and input_dtype != DType.FLOAT and output_dtype != DType.FLOAT:
                 error_result = True
 
         info_dict = {
@@ -1393,8 +1596,6 @@ class TosaInvalidValidator:
                 # Negative or zero stride
                 return True
         return False
-
-
 
 
     @staticmethod
@@ -1653,17 +1854,21 @@ class TosaTestGen:
 
     def build_unary(self, op, a, qinfo=None):
         result_tens = OutputShaper.unaryOp(self.ser, a)
-        self.ser.addOperator(op, [a.name], [result_tens.name], None, qinfo)
+        # build_placeholder returns an int, ABS/other ops does not
+        if isinstance(op, int):
+            self.ser.addOperator(op, [a.name], [result_tens.name], None, qinfo)
+        else:
+            self.ser.addOperator(op['op'], [a.name], [result_tens.name], None, qinfo)
         return result_tens
 
     def build_binary_broadcast(self, op, a, b):
         result_tens = OutputShaper.binaryBroadcastOp(self.ser, a, b)
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name])
         return result_tens
 
     def build_binary_nonbroadcast(self, op, a, b):
         result_tens = OutputShaper.binaryNonBroadcastOp(self.ser, a, b)
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name])
         return result_tens
 
     def build_arithmetic_right_shift(self, op, a, b, round):
@@ -1672,7 +1877,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.ArithmeticRightShiftAttribute(round)
 
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name], attr)
         return result_tens
 
     def build_mul(self, op, a, b, shift):
@@ -1686,7 +1891,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.MulAttribute(shift)
 
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name], attr)
         return result_tens
 
     def build_table(self, op, a):
@@ -1701,18 +1906,18 @@ class TosaTestGen:
 
         table_tens = self.ser.addConst(table_arr.shape, table_dtype, table_arr)
         result_tens = OutputShaper.tableOp(self.ser, a, table_dtype)
-        self.ser.addOperator(op, [a.name, table_tens.name], [result_tens.name], None)
+        self.ser.addOperator(op['op'], [a.name, table_tens.name], [result_tens.name], None)
 
         return result_tens
 
     def build_select(self, op, cond, a, b):
         result_tens = OutputShaper.selectOp(self.ser, cond, a, b)
-        self.ser.addOperator(op, [cond.name, a.name, b.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [cond.name, a.name, b.name], [result_tens.name])
         return result_tens
 
     def build_comparison(self, op, a, b):
         result_tens = OutputShaper.binaryComparisonOp(self.ser, a, b)
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name])
         return result_tens
 
     def build_argmax(self, op, a, axis):
@@ -1721,7 +1926,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.AxisAttribute(axis)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_pool2d(self, op, input, stride, pad, kernel, qinfo=None):
@@ -1730,7 +1935,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.PoolAttribute(kernel, stride, pad)
 
-        self.ser.addOperator(op, [input.name], [result_tens.name], attr, qinfo)
+        self.ser.addOperator(op['op'], [input.name], [result_tens.name], attr, qinfo)
         return result_tens
 
     def build_conv2d(self, op, ifm, filter, bias, strides, padding, dilations, qinfo):
@@ -1743,7 +1948,7 @@ class TosaTestGen:
         attr.ConvAttribute(padding, strides, dilations)
 
         self.ser.addOperator(
-            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+            op['op'], [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
         )
         return result_tens
 
@@ -1757,7 +1962,7 @@ class TosaTestGen:
         attr.ConvAttribute(padding, strides, dilations)
 
         self.ser.addOperator(
-            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+            op['op'], [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
         )
         return result_tens
 
@@ -1771,7 +1976,7 @@ class TosaTestGen:
         attr.TransposeConvAttribute(outpad, stride, dilation, output_shape)
 
         self.ser.addOperator(
-            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+            op['op'], [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
         )
         return result_tens
 
@@ -1786,7 +1991,7 @@ class TosaTestGen:
         attr.ConvAttribute(padding, strides, dilations)
 
         self.ser.addOperator(
-            op, [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
+            op['op'], [ifm.name, filter.name, bias.name], [result_tens.name], attr, qinfo
         )
         return result_tens
 
@@ -1794,13 +1999,13 @@ class TosaTestGen:
         result_tens = OutputShaper.fullyConnectedOp(self.ser, ifm, filter)
 
         self.ser.addOperator(
-            op, [ifm.name, filter.name, bias.name], [result_tens.name], None, qinfo
+            op['op'], [ifm.name, filter.name, bias.name], [result_tens.name], None, qinfo
         )
         return result_tens
 
     def build_matmul(self, op, a, b, qinfo):
         result_tens = OutputShaper.matmulOp(self.ser, a, b)
-        self.ser.addOperator(op, [a.name, b.name], [result_tens.name], None, qinfo)
+        self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name], None, qinfo)
         return result_tens
 
     def build_reduce(self, op, a, axis):
@@ -1809,7 +2014,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.AxisAttribute(axis)
 
-        self.ser.addOperator(op, [a.name], result_tens.name, attr)
+        self.ser.addOperator(op['op'], [a.name], result_tens.name, attr)
         return result_tens
 
     def build_clamp(self, op, a):
@@ -1823,7 +2028,7 @@ class TosaTestGen:
         else:
             attr.ClampAttribute(min(v), max(v), 0, 0)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_leaky_relu(self, op, a):
@@ -1832,24 +2037,24 @@ class TosaTestGen:
 
         attr.LeakyReluAttribute(self.getRandNumberDType(DType.FLOAT))
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     # Needs an additional type/input
     def build_prelu(self, op, a):
         result_tens = OutputShaper.unaryOp(self.ser, a)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name])
         return result_tens
 
     def build_sigmoid(self, op, a):
         result_tens = OutputShaper.unaryOp(self.ser, a)
-        self.ser.addOperator(op, [a.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name])
         return result_tens
 
     def build_tanh(self, op, a):
         result_tens = OutputShaper.unaryOp(self.ser, a)
-        self.ser.addOperator(op, [a.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name])
         return result_tens
 
     def build_concat(self, op, *a):
@@ -1868,7 +2073,8 @@ class TosaTestGen:
         for tensor in a:
             input_tensor_names.append(tensor.name)
 
-        self.ser.addOperator(op, input_tensor_names, [result_tens.name], attr)
+        self.ser.addOperator(op['op'], input_tensor_names, [result_tens.name], attr)
+        return result_tens
 
     def build_pad(self, op, a, padding, qinfo):
         result_tens = OutputShaper.padOp(self.ser, a, padding)
@@ -1879,7 +2085,7 @@ class TosaTestGen:
         padding_tens = self.ser.addConst(padding.shape, DType.INT32, padding)
 
         self.ser.addOperator(
-            op, [a.name, padding_tens.name], [result_tens.name], None, qinfo
+            op['op'], [a.name, padding_tens.name], [result_tens.name], None, qinfo
         )
         return result_tens
 
@@ -1889,7 +2095,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.ReshapeAttribute(newShape)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_reverse(self, op, a, axis):
@@ -1898,7 +2104,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.AxisAttribute(axis)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_transpose(self, op, a, perms):
@@ -1906,7 +2112,7 @@ class TosaTestGen:
 
         perms_tens = self.ser.addConst([len(perms)], DType.INT32, np.int32(perms))
 
-        self.ser.addOperator(op, [a.name, perms_tens.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [a.name, perms_tens.name], [result_tens.name])
         return result_tens
 
     def build_slice(self, op, a, begin, size):
@@ -1915,7 +2121,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.SliceAttribute(begin, size)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_tile(self, op, a, multiples):
@@ -1924,7 +2130,7 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.TileAttribute(multiples)
 
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
         return result_tens
 
     def build_gather(self, op, values):
@@ -1943,7 +2149,7 @@ class TosaTestGen:
 
         result_tens = OutputShaper.gatherOp(self.ser, values, indicies)
 
-        self.ser.addOperator(op, [values.name, indicies.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [values.name, indicies.name], [result_tens.name])
 
         return result_tens
 
@@ -1962,10 +2168,11 @@ class TosaTestGen:
         result_tens = OutputShaper.scatterOp(self.ser, values_in, indicies, input)
 
         self.ser.addOperator(
-            op, [values_in.name, indicies.name, input.name], [result_tens.name]
+            op['op'], [values_in.name, indicies.name, input.name], [result_tens.name]
         )
 
         return result_tens
+
 
     def build_resize(
         self,
@@ -1998,30 +2205,32 @@ class TosaTestGen:
             error_name
         )
 
-        # Check ERROR_IF statements
-        for val_fcn in validator_fcns:
-            val_result = val_fcn(
-                check=True,
-                shift=shift,
-                input_dtype=input_dtype,
-                input_shape=input,
-                output_shape=output_dims,
-                offset=offset,
-                offset_fp=offset_fp,
-                stride=stride,
-                stride_fp=stride_fp)
+        # Invalidate Input/Output list for error if checks.
+        input_list = [input.name]
+        output_list = [result_tens.name]
+        pCount, cCount = op["operands"]
+        num_operands = pCount + cCount
+        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(self, error_name, input_list, output_list)
 
-            validator_name = val_result['error_name']
-            error_result = val_result['error_result']
-            error_reason = val_result['error_reason']
-
-            if error_result:
-                if error_name == validator_name:
-                    self.ser.setExpectedReturnCode(2, error_reason)
-                else:
-                    print(f"Multiple ERROR_IF checks hit \nError required: {error_name}, Error_produced: {validator_name}")
-                    return None # Return None to delete test if wrong ERROR_IF is hit
-
+        TosaErrorValidator.evValidateErrorIfs(
+            self.ser,
+            validator_fcns,
+            error_name,
+            op=op,
+            mode=mode,
+            shift=shift,
+            input_dtype=input_dtype,
+            output_dtype=output_dtype,
+            input_shape=input,
+            output_shape=output_dims,
+            offset=offset,
+            offset_fp=offset_fp,
+            stride=stride,
+            stride_fp=stride_fp,
+            input_list=input_list,
+            output_list=output_list,
+            num_operands=num_operands,
+        )
 
         attr = ts.TosaSerializerAttribute()
 
@@ -2029,7 +2238,7 @@ class TosaTestGen:
             output_dims, stride, offset, shift, stride_fp, offset_fp, mode
         )
 
-        self.ser.addOperator(op, [input.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], input_list, output_list, attr)
         return result_tens
 
     def build_identityn(self, op, val, val2):
@@ -2048,7 +2257,7 @@ class TosaTestGen:
     # Type Conversion
     def build_cast(self, op, val, out_dtype):
         result_tens = OutputShaper.typeConversionOp(self.ser, val, out_dtype)
-        self.ser.addOperator(op, [val.name], [result_tens.name])
+        self.ser.addOperator(op['op'], [val.name], [result_tens.name])
         return result_tens
 
     def build_rescale(self, op, val, out_dtype, scale32, double_round, per_channel):
@@ -2117,7 +2326,7 @@ class TosaTestGen:
             per_channel,
         )
 
-        self.ser.addOperator(op, [val.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [val.name], [result_tens.name], attr)
         return result_tens
 
     def build_cond_if_const(self, op, then_tens, else_tens, cond):
@@ -2143,7 +2352,7 @@ class TosaTestGen:
         attr.CondIfAttribute(then_block, else_block)
 
         # Finally, build the op and the two blocks
-        self.ser.addOperator(op, [cond_tens.name], [result_tens.name], attr)
+        self.ser.addOperator(op['op'], [cond_tens.name], [result_tens.name], attr)
 
         self.ser.startBasicBlock(then_block)
         # Build the actual then/else tensors inside their blocks
@@ -2173,7 +2382,7 @@ class TosaTestGen:
 
         # Finally, build the op and the two blocks
         self.ser.addOperator(
-            op, [cond_tens.name, a.name, b.name], [result_tens.name], attr
+            op['op'], [cond_tens.name, a.name, b.name], [result_tens.name], attr
         )
 
         self.ser.startBasicBlock(then_block)
@@ -2211,7 +2420,7 @@ class TosaTestGen:
 
         # While_loop operator
         self.ser.addOperator(
-            op,
+            op['op'],
             [iter.name, a.name, acc.name],
             [iter_out.name, a_out.name, acc_out.name],
             attr,
@@ -2358,14 +2567,13 @@ class TosaTestGen:
         if testType in ['negative', 'both'] and "error_if_validators" in op:
             error_if_validators = op["error_if_validators"]
             for validator in error_if_validators:
-                validator_info = validator()
+                validator_info = validator(check=False, op=op)
                 error_name = validator_info['error_name']
                 error_arguments = validator_info['param_reqs']
 
                 #Set parameters as required
                 if error_arguments['rank'] != None:
-                    rmin, rmax = error_arguments['rank']
-                    rankFilter = range(rmin, rmax + 1)
+                    rankFilter = error_arguments['rank']
                 else:
                     rankFilter = base_rankFilter
                 if error_arguments['dtype'] != None:
@@ -2377,7 +2585,7 @@ class TosaTestGen:
                 else:
                     shapes = base_shapeFilter[:2] # Reduce number of shapes to keep test numbers small
 
-                for r in range(rmin, rmax + 1):
+                for r in rankFilter:
                     for t in dtypeFilter:
                         # Create the placeholder and const tensors
                         for shape in shapes:
@@ -2656,14 +2864,14 @@ class TosaTestGen:
         try:
             if error_if_validators is None:
                 if qinfo is not None:
-                    resultName = build_fcn(self, op["op"], *tens, *testArgs, qinfo)
+                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo)
                 else:
-                    resultName = build_fcn(self, op["op"], *tens, *testArgs)
+                    resultName = build_fcn(self, op, *tens, *testArgs)
             else:
                 if qinfo is not None:
-                    resultName = build_fcn(self, op["op"], *tens, *testArgs, qinfo, error_if_validators, error_name)
+                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo, error_if_validators, error_name)
                 else:
-                    resultName = build_fcn(self, op["op"], *tens, *testArgs, error_if_validators, error_name)
+                    resultName = build_fcn(self, op, *tens, *testArgs, error_if_validators, error_name)
         except TypeError as e:
             print(
                 "build_fcn: {}\nTensors: {}\nArgs: {}\n".format(
@@ -3238,7 +3446,8 @@ class TosaTestGen:
             "invalid_test_validators": (TosaInvalidValidator.ivWrongDataTypeOrModeResize, TosaInvalidValidator.ivBadStride),
             "error_if_validators": (TosaErrorValidator.evMaxDimExceeded, TosaErrorValidator.evStrideSmallerEqualZero, TosaErrorValidator.evStrideLargerDimension,
             TosaErrorValidator.evStrideLargerEqualMax, TosaErrorValidator.evOffsetSmallerEqualMin, TosaErrorValidator.evOffsetLargerEqualMax,
-            TosaErrorValidator.evShiftNotZero, TosaErrorValidator.evShiftSmallerOne, TosaErrorValidator.evShiftLargerEleven)
+            TosaErrorValidator.evShiftNotZero, TosaErrorValidator.evShiftSmallerOne, TosaErrorValidator.evShiftLargerEleven, TosaErrorValidator.evWrongInputType,
+            TosaErrorValidator.evWrongOutputType, TosaErrorValidator.evWrongRank, TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList)
         },
         # Type conversion
         "cast": {
@@ -3656,8 +3865,10 @@ class OutputShaper:
         output_dtype,
         error_name = None
     ):
-
-        output_dims = [input.shape[0], output_dims[0], output_dims[1], input.shape[3]]
+        if error_name == ErrorIf.WrongRank:
+            output_dims = [input.shape[0], output_dims[0], output_dims[0], input.shape[0]]
+        else:
+            output_dims = [input.shape[0], output_dims[0], output_dims[1], input.shape[3]]
 
         return ser.addOutput(output_dims, output_dtype)
 

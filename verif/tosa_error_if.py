@@ -22,4 +22,9 @@ class ErrorIf(object):
     ShiftNotZero = "ShiftNotZero"
     ShiftSmallerOne = "ShiftSmallerOne"
     ShiftLargerEleven = "ShiftLargerEleven"
+    WrongInputType = "WrongInputType"
+    WrongOutputType = "WrongOutputType"
+    WrongInputList = "WrongInputList"
+    WrongOutputList = "WrongOutputList"
+    WrongRank = "WrongRank"
 
