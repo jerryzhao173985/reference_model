@@ -105,6 +105,8 @@ int OpResize<InDtype, OutDtype>::eval()
     int out_width    = out->getShape()[2];
     int out_channels = out->getShape()[3];
 
+    ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
+             "OpResize: exceeds maximum dimension");
     ERROR_IF(shift < 1 || shift > 11, "OpResize: attribute shift should be within [1, 11]");
     ERROR_IF(stride[0] <= 0 || stride[0] >= (16 << shift), "OpResize: invalid attribute stride_x");
     ERROR_IF(stride[1] <= 0 || stride[1] >= (16 << shift), "OpResize: invalid attribute stride_y");
@@ -173,6 +175,8 @@ int OpResize<DType_FLOAT, DType_FLOAT>::eval()
     int out_width    = out->getShape()[2];
     int out_channels = out->getShape()[3];
 
+    ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
+             "OpResize: exceeds maximum dimension");
     ERROR_IF(shift != 0, "OpResize: float mode must have 0 shift");
     ERROR_IF(stride_fp[0] <= 0.0f || stride_fp[1] <= 0.0f, "OpResize: invalid attribute stride");
     ERROR_IF(in_batch != out_batch, "OpResize: output tensor batch mismatch");
