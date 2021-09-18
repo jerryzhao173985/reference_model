@@ -751,28 +751,43 @@ class TosaSerializer:
         start_fcn(builder, len(fb_strs))
         for s in fb_strs[::-1]:
             builder.PrependUOffsetTRelative(s)
-        return builder.EndVector(len(fb_strs))
+        # This try/except block supports both the Flatbuffers 2.x and 1.x APIs,
+        # defaulting to 2.x.  If/when Flatbuffers 1.x support is deprecated, the
+        # try block and builder.EndVector(len) function calls can be removed.
+        try:
+            return builder.EndVector()
+        except TypeError:
+            return builder.EndVector(len(fb_strs))
 
     @staticmethod
     def serializeUint8Vec(builder, vec):
         builder.StartVector(1, len(vec), 8)
         for v in vec[::-1]:
             builder.PrependUint8(v)
-        return builder.EndVector(len(vec))
+        try:
+            return builder.EndVector()
+        except TypeError:
+            return builder.EndVector(len(vec))
 
     @staticmethod
     def serializeInt32Vec(builder, vec):
         builder.StartVector(4, len(vec), 4)
         for v in vec[::-1]:
             builder.PrependInt32(v)
-        return builder.EndVector(len(vec))
+        try:
+            return builder.EndVector()
+        except TypeError:
+            return builder.EndVector(len(vec))
 
     @staticmethod
     def serializeFpVec(builder, vec):
         builder.StartVector(4, len(vec), 4)
         for v in vec[::-1]:
             builder.PrependFloat32(v)
-        return builder.EndVector(len(vec))
+        try:
+            return builder.EndVector()
+        except TypeError:
+            return builder.EndVector(len(vec))
 
     @staticmethod
     def serializeObjVec(builder, vec, start_fcn):
@@ -783,7 +798,10 @@ class TosaSerializer:
         start_fcn(builder, len(vec))
         for v in serialized_vec:
             builder.PrependUOffsetTRelative(v)
-        return builder.EndVector(len(vec))
+        try:
+            return builder.EndVector()
+        except TypeError:
+            return builder.EndVector(len(vec))
 
     @staticmethod
     def toList(val):
