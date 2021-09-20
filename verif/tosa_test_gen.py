@@ -452,74 +452,61 @@ class TosaArgGen:
         return axes
 
     @staticmethod
-    def agConv2D(testGen, opName, shapeList, dtype):
+    def agConv(testGen, opName, shapeList, dtype):
         arg_list = []
 
         ifm_shape = shapeList[0]
         filter_shape = shapeList[1]
+        # determine the kernel shape from the operator name (e.g. "conv2d_3x3" => [3,3])
+        k = [int(x) for x in opName.split("_")[-1].split("x")]
 
-        # Must be rank 4
-        assert len(ifm_shape) == 4
-        assert len(filter_shape) == 4
+        # Check the rank
+        rank = 5 if opName.startswith("conv3d") else 4
+        assert len(ifm_shape) == rank
+        assert len(filter_shape) == rank
 
-        maxStride = testGen.args.max_conv_stride
-        maxPadding = testGen.args.max_conv_padding + 1
-        maxDilation = testGen.args.max_conv_dilation
+        # kernel rank omits batch and channels
+        k_rank = rank - 2
 
-        # Strides, padding, dilations
-        for stride in range(0, maxStride ** 2):
-            for padding in range(0, (maxPadding) ** 4):
-                for dilation in range(0, maxDilation ** 2):
+        # Generate comprehensive argument lists
+        p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
+        paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
+        s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
+        strides = {x for x in itertools.product(*([s_vals] * k_rank))}
+        d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
+        dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
 
-                    s = [stride // maxStride + 1, stride % maxStride + 1]
-                    p = [
-                        (padding // (maxPadding * 4)) % maxPadding,
-                        (padding // (maxPadding * 2)) % maxPadding,
-                        (padding // (maxPadding * 1)) % maxPadding,
-                        padding % maxPadding,
-                    ]
-                    d = [dilation // maxDilation + 1, dilation % maxDilation + 1]
-
-                    # 4 padding parameters for regular conv2d
-                    arg_list.append(
-                        (
-                            "st{}{}_pad{}{}{}{}_dilat{}{}".format(
-                                s[0], s[1], p[0], p[1], p[2], p[3], d[0], d[1]
-                            ),
-                            [s, p, d],
-                        )
-                    )
-        return arg_list
-
-    @staticmethod
-    def agConv3D(testGen, opName, shapeList, dtype):
-        arg_list = []
-
-        ifm_shape = shapeList[0]
-        filter_shape = shapeList[1]
-
-        # Must be rank 5
-        assert len(ifm_shape) == 5
-        assert len(filter_shape) == 5
-
-        # Generate comprehensive argument list
-        p_range = [x for x in range(0, testGen.args.max_conv_padding + 1)]
-        paddings = [x for x in itertools.product(*([p_range] * 6))]
-        s_range = [x for x in range(1, testGen.args.max_conv_stride + 1)]
-        strides = [x for x in itertools.product(*([s_range] * 3))]
-        d_range = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
-        dilations = [x for x in itertools.product(*([d_range] * 3))]
+        # add some oversize argument values
+        if max(ifm_shape) < 64:
+            bigPadding = 9
+            paddings.update({x for x in itertools.product(*([[0, bigPadding]] * (k_rank * 2)))})
+        bigStride = 8
+        strides.update({x for x in itertools.product(*([[1, bigStride]] * k_rank))})
+        bigDilation = 7
+        dilations.update({x for x in itertools.product(*([[1, bigDilation]] * k_rank))})
 
         # There are too many parameter combinations, so generate them sparsely
-        # To get a variety of parameter combinations sparsity should not be a multiple of 2, or 3
-        # TODO: make sparsity a CLI option
-        sparsity = 37
+        # To get a variety of parameter combinations sparsity should not be a multiple of 2, 3 or 5
+        sparsity = len(paddings) * len(strides) * len(dilations) // 100 + 1
+        if sparsity < 13:
+            sparsity = 1
+        while sparsity % 2 == 0 or sparsity % 3 == 0 or sparsity % 5 == 0:
+            sparsity += 1
         n = 0
-
-        for s in strides:
-            for p in paddings:
-                for d in dilations:
-                    if n % sparsity == 0:
+        for s in sorted(list(strides)):
+            for p in sorted(list(paddings)):
+                for d in sorted(list(dilations)):
+                    if (n % sparsity == 0
+                        # padding must not exceed the kernel size ?
+                        # and p[0] < k[0] and p[1] < k[0] and p[2] < k[1] and p[3] < k[1]
+                        # and (k_rank < 3 or (p[4] < k[2] and p[5] < k[2]))
+                        # the padded shape must exceed the kernel size
+                        and (ifm_shape[1] + p[0] + p[1]) > k[0] and (ifm_shape[2] + p[2] + p[3]) > k[1]
+                        and (k_rank < 3 or ((ifm_shape[3] + p[4] + p[5]) > k[2]))
+                        # the padded shape must exceed the dilation
+                        and (ifm_shape[1] + p[0] + p[1]) > d[0] and (ifm_shape[2] + p[2] + p[3]) > d[1]
+                        and (k_rank < 3 or ((ifm_shape[3] + p[4] + p[5]) > d[2]))
+                    ):
                         arg_list.append(
                             (
                                 "st{}_pad{}_dilat{}".format(
@@ -545,56 +532,61 @@ class TosaArgGen:
         assert len(ifm_shape) == 4
         assert len(filter_shape) == 4
 
-        maxStride = testGen.args.max_conv_stride
-        maxPadding = testGen.args.max_conv_padding + 1
-        maxDilation = testGen.args.max_conv_dilation
+        # Generate comprehensive argument lists
+        p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
+        paddings = {x for x in itertools.product(*([p_vals] * 2))}
+        s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
+        strides = {x for x in itertools.product(*([s_vals] * 2))}
+        d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
+        dilations = {x for x in itertools.product(*([d_vals] * 2))}
 
-        # Strides, padding, dilations
-        for stride in range(0, maxStride ** 2):
-            for out_padding in range(0, (maxPadding) ** 2):
-                for dilation in range(0, maxDilation ** 2):
+        # add some oversize argument values
+        if max(ifm_shape) < 64:
+            bigPadding = 9
+            paddings.update({x for x in itertools.product(*([[0, bigPadding]] * 2))})
+        bigStride = 8
+        strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
+        bigDilation = 7
+        dilations.update({x for x in itertools.product(*([[1, bigDilation]] * 2))})
 
-                    s = [stride // maxStride + 1, stride % maxStride + 1]
-                    p = [
-                        (out_padding // (maxPadding * 1)) % maxPadding,
-                        out_padding % maxPadding,
-                    ]
-                    d = [dilation // maxDilation + 1, dilation % maxDilation + 1]
-
-                    oh = (
-                        ifm_shape[1]
-                        - filter_shape[1]
-                        - (filter_shape[1] - 1) * (d[0] - 1)
-                        + 2 * p[0]
-                    ) // s[0] + 1
-
-                    ow = (
-                        ifm_shape[2]
-                        - filter_shape[2]
-                        - (filter_shape[2] - 1) * (d[1] - 1)
-                        + 2 * p[1]
-                    ) // s[1] + 1
-
-                    # Output shape
-                    os = [ifm_shape[0], oh, ow, filter_shape[0]]
-
-                    arg_list.append(
-                        (
-                            "st{}{}_outpad{}{}_dilat{}{}_os{}x{}x{}x{}".format(
-                                s[0],
-                                s[1],
-                                p[0],
-                                p[1],
-                                d[0],
-                                d[1],
-                                os[0],
-                                os[1],
-                                os[2],
-                                os[3],
-                            ),
-                            [s, p, d, os],
+        # There are too many parameter combinations, so generate them sparsely
+        # To get a variety of parameter combinations sparsity should not be a multiple of 2, 3 or 5
+        sparsity = len(paddings) * len(strides) * len(dilations) // 100 + 1
+        if sparsity < 13:
+            sparsity = 1
+        while sparsity % 2 == 0 or sparsity % 3 == 0 or sparsity % 5 == 0:
+            sparsity += 1
+        n = 0
+        for s in sorted(list(strides)):
+            for p in sorted(list(paddings)):
+                for d in sorted(list(dilations)):
+                    if n % sparsity == 0:
+                        # Determine the output shape
+                        oh = (
+                            ifm_shape[1]
+                            - filter_shape[1]
+                            - (filter_shape[1] - 1) * (d[0] - 1)
+                            + 2 * p[0]
+                        ) // s[0] + 1
+                        ow = (
+                            ifm_shape[2]
+                            - filter_shape[2]
+                            - (filter_shape[2] - 1) * (d[1] - 1)
+                            + 2 * p[1]
+                        ) // s[1] + 1
+                        os = [ifm_shape[0], oh, ow, filter_shape[0]]
+                        arg_list.append(
+                            (
+                                "st{}_pad{}_dilat{}_os{}".format(
+                                    "".join([str(x) for x in s]),
+                                    "".join([str(x) for x in p]),
+                                    "".join([str(x) for x in d]),
+                                    "x".join([str(x) for x in os]),
+                                ),
+                                [s, p, d, os],
+                            )
                         )
-                    )
+                    n += 1
 
         return arg_list
 
@@ -627,30 +619,48 @@ class TosaArgGen:
         shape = shapeList[0]
         assert len(shape) == 4
 
-        maxStride = testGen.args.max_pooling_stride
-        maxKernel = testGen.args.max_pooling_kernel
-        maxPadding = testGen.args.max_pooling_padding + 1
+        # Generate comprehensive argument lists
+        p_vals = [x for x in range(0, testGen.args.max_pooling_padding + 1)]
+        paddings = {x for x in itertools.product(*([p_vals] * 4))}
+        s_vals = [x for x in range(1, testGen.args.max_pooling_stride + 1)]
+        strides = {x for x in itertools.product(*([s_vals] * 2))}
+        k_vals = [x for x in range(2, testGen.args.max_pooling_kernel + 2)]
+        kernels = {x for x in itertools.product(*([k_vals] * 2))}
 
-        for kernel in range(0, maxKernel ** 2):
-            for stride in range(0, maxStride ** 2):
-                for padding in range(0, maxPadding ** 4):
-                    s = [stride // maxStride + 1, stride % maxStride + 1]
-                    k = [(kernel // maxKernel) + 2, (kernel % maxKernel) + 2]
-                    p = [
-                        (padding // (maxPadding * 4)) % maxPadding,
-                        (padding // (maxPadding * 2)) % maxPadding,
-                        (padding // (maxPadding * 1)) % maxPadding,
-                        padding % maxPadding,
-                    ]
+        # add some oversize argument values
+        bigStride = 7
+        strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
+        bigKernel = 6
+        kernels.update({x for x in itertools.product(*([[2, bigKernel]] * 2))})
+        if max(shape) < 64:
+            # padding must be less than the kernel size
+            bigPadding = bigKernel - 1
+            paddings.update({x for x in itertools.product(*([[0, bigPadding]] * 4))})
 
-                    arg_list.append(
-                        (
-                            "st{}{}_kern{}{}_pad{}{}{}{}".format(
-                                s[0], s[1], k[0], k[1], p[0], p[1], p[2], p[3]
-                            ),
-                            [s, p, k],
+        # There are too many parameter combinations, so generate them sparsely
+        sparsity = len(paddings) * len(strides) * len(kernels) // 500 + 1
+        n = 0
+        for s in sorted(list(strides)):
+            for p in sorted(list(paddings)):
+                for k in sorted(list(kernels)):
+                    if (n % sparsity == 0
+                        # padding must not exceed the kernel size
+                        and p[0] < k[0] and p[1] < k[0] and p[2] < k[1] and p[3] < k[1]
+                        # the padded shape must exceed the kernel size
+                        and (shape[1] + p[0] + p[1]) > k[0] and (shape[2] + p[2] + p[3]) > k[1]
+                    ):
+                        arg_list.append(
+                            (
+                                "st{}_kern{}_pad{}".format(
+                                    "".join([str(x) for x in s]),
+                                    "".join([str(x) for x in k]),
+                                    "".join([str(x) for x in p]),
+                                ),
+                                [s, p, k],
+                            )
                         )
-                    )
+                    n += 1
+
         return arg_list
 
     @staticmethod
@@ -2412,7 +2422,7 @@ class TosaTestGen:
             "op": Op.CONV2D,
             "operands": (1, 2),
             "rank": (4, 4),
-            "build_fcn": (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv2D),
+            "build_fcn": (build_conv2d, TosaTensorGen.tgConv2D, TosaArgGen.agConv),
             "qgen": TosaQuantGen.qgConv,
             "types": TYPE_CONV,
             "invalid_test_validators": (TosaInvalidValidator.ivHeightWidthSmallerZero,),
@@ -2423,7 +2433,7 @@ class TosaTestGen:
             "op": Op.CONV3D,
             "operands": (1, 2),
             "rank": (5, 5),
-            "build_fcn": (build_conv3d, TosaTensorGen.tgConv3D, TosaArgGen.agConv3D),
+            "build_fcn": (build_conv3d, TosaTensorGen.tgConv3D, TosaArgGen.agConv),
             "qgen": TosaQuantGen.qgConv,
             "types": TYPE_CONV,
             "template": True,
@@ -2437,7 +2447,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_depthwise_conv2d,
                 TosaTensorGen.tgDepthwiseConv2D,
-                TosaArgGen.agConv2D,
+                TosaArgGen.agConv,
             ),
             "qgen": TosaQuantGen.qgConv,
             "types": TYPE_CONV,
