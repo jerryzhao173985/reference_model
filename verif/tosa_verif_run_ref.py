@@ -57,7 +57,13 @@ def parseArgs():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-t", "--test", dest="test", type=str, nargs="+", help="Test(s) to run"
+        "-t",
+        "--test",
+        dest="test",
+        type=str,
+        nargs="+",
+        help="Test(s) to run",
+        required=True,
     )
     parser.add_argument(
         "--seed",

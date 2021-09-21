@@ -66,6 +66,9 @@ class TosaRefRunner(TosaTestRunner):
                     result = TosaTestRunner.Result.EXPECTED_FAILURE
                 else:
                     result = TosaTestRunner.Result.UNEXPECTED_FAILURE
+            elif rc < 0:
+                # Unix signal caught (e.g., SIGABRT, SIGSEGV, SIGFPE, etc)
+                result = TosaTestRunner.Result.INTERNAL_ERROR
             else:
                 raise Exception(f"Return code ({rc}) unknown.")
 
