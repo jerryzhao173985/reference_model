@@ -179,6 +179,7 @@ int OpResize<DType_FLOAT, DType_FLOAT>::eval()
              "OpResize: exceeds maximum dimension");
     ERROR_IF(shift != 0, "OpResize: float mode must have 0 shift");
     ERROR_IF(stride_fp[0] <= 0.0f || stride_fp[1] <= 0.0f, "OpResize: invalid attribute stride");
+    ERROR_IF(stride_fp[0] > in_height || stride_fp[1] > in_width, "OpResize: stride larger than dimension");
     ERROR_IF(in_batch != out_batch, "OpResize: output tensor batch mismatch");
     ERROR_IF(in_channels != out_channels, "OpResize: output tensor channel mismatch");
 
