@@ -27,4 +27,6 @@ class ErrorIf(object):
     WrongInputList = "WrongInputList"
     WrongOutputList = "WrongOutputList"
     WrongRank = "WrongRank"
+    BatchMismatch = "BatchMismatch"
+    ChannelMismatch = "ChannelMismatch"
 
