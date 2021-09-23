@@ -198,29 +198,23 @@ int GraphNode::validateRequiredRank(const Tensor* t)
 {
     if (requiredRankMin >= 0 && requiredRankMax >= 0)
     {
-        if (t->checkRequiredRank(requiredRankMin, requiredRankMax))
-        {
-            printNodeValidationError(std::string(EnumNamesOp()[nodeType]) +
-                                     " operand has illegal rank=" + std::to_string(t->getRank()) + " not in range [" +
-                                     std::to_string(requiredRankMin) + "," + std::to_string(requiredRankMax) +
-                                     "]. tensorName: " + t->getName());
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
+        std::string err_message = std::string(EnumNamesOp()[nodeType]) +
+                                  " operand has illegal rank=" + std::to_string(t->getRank()) + " not in range [" +
+                                  std::to_string(requiredRankMin) + "," + std::to_string(requiredRankMax) +
+                                  "]. tensorName: " + t->getName();
+        ERROR_IF(t->checkRequiredRank(requiredRankMin, requiredRankMax), "%s", err_message.c_str());
+
+        return 0;
     }
 
     if (requiredRankMin >= 0)
     {
-        if (t->checkRequiredRank(requiredRankMin))
-        {
-            printNodeValidationError(std::string(EnumNamesOp()[nodeType]) +
-                                     " operand has illegal rank=" + std::to_string(t->getRank()) + " not equal to " +
-                                     std::to_string(requiredRankMin) + ". tensorName: " + t->getName());
-            return 1;
-        }
+        std::string err_message = std::string(EnumNamesOp()[nodeType]) +
+                                  " operand has illegal rank=" + std::to_string(t->getRank()) + " not equal to " +
+                                  std::to_string(requiredRankMin) + ". tensorName: " + t->getName();
+        ERROR_IF(t->checkRequiredRank(requiredRankMin), "%s", err_message.c_str());
+
+        return 0;
     }
 
     return 0;

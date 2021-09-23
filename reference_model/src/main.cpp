@@ -79,7 +79,11 @@ int main(int argc, const char** argv)
 
     if (main_gt.validateGraph())
     {
-        SIMPLE_FATAL_ERROR("Failed to validate graph");
+        WARNING("Failed to validate graph. Evaluation aborted.");
+        ASSERT_MSG(main_gt.getGraphStatus() == GraphStatus::TOSA_ERROR ||
+                       main_gt.getGraphStatus() == GraphStatus::TOSA_UNPREDICTABLE,
+                   "Upon validateGraph() returning 1, graph can only be ERROR/UNPREDICTABLE.");
+        goto done;
     }
 
     if (g_func_config.validate_only)
