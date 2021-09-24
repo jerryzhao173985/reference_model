@@ -29,4 +29,5 @@ class ErrorIf(object):
     WrongRank = "WrongRank"
     BatchMismatch = "BatchMismatch"
     ChannelMismatch = "ChannelMismatch"
+    RankMismatch = "RankMismatch"
 
