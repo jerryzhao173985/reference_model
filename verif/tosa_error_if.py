@@ -30,4 +30,6 @@ class ErrorIf(object):
     BatchMismatch = "BatchMismatch"
     ChannelMismatch = "ChannelMismatch"
     RankMismatch = "RankMismatch"
+    InputZeroPointNotZero = "InputZeroPointNotZero"
+    OutputZeroPointNotZero = "OutputZeroPointNotZero"
 
