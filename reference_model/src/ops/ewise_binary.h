@@ -63,12 +63,7 @@ protected:
     Eigen::array<int, Rank> bcast_b;
     TosaReference::TensorTemplate<TIn>* a;
     TosaReference::TensorTemplate<TIn>* b;
-    TosaReference::TensorTemplate<ETensor0<InEigenType>>* a_rank0;
-    TosaReference::TensorTemplate<ETensor0<InEigenType>>* b_rank0;
     TosaReference::TensorTemplate<TOut>* result;
-    int a_rank;
-    int b_rank;
-    int max_input_rank;
 };
 
 // primary class
