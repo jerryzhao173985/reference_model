@@ -105,10 +105,6 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT8);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT16);
             break;
-        case Op_RELUN:
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpReluN, FLOAT);
-            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpReluN, INT32);
-            break;
         case Op_SIGMOID:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FLOAT);
             break;

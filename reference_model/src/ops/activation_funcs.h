@@ -45,26 +45,6 @@ protected:
 };
 
 template <int Rank, DType Dtype>
-class OpReluN : public UnaryNode<Rank, Dtype>
-{
-public:
-    OpReluN(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : UnaryNode<Rank, Dtype>(sgt_, Op_RELUN, id_)
-    {
-        INIT_ATTRIBUTE(ReluN);
-        register_fcn();
-    }
-    static constexpr int32_t QMin = GetQMin<Dtype>::value;
-    static constexpr int32_t QMax = GetQMax<Dtype>::value;
-    using InEigenType             = typename GetEigenType<Dtype>::type;
-    using OutEigenType            = typename GetEigenType<Dtype>::type;
-    virtual int register_fcn();
-
-protected:
-    TosaReluNAttribute* attribute;
-};
-
-template <int Rank, DType Dtype>
 class OpSigmoid : public UnaryNode<Rank, Dtype>
 {
 public:

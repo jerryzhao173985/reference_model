@@ -1842,19 +1842,6 @@ class TosaTestGen:
         self.ser.addOperator(op, [a.name], [result_tens.name])
         return result_tens
 
-    def build_relun(self, op, a):
-        result_tens = OutputShaper.unaryOp(self.ser, a)
-
-        attr = ts.TosaSerializerAttribute()
-
-        if a.dtype == DType.FLOAT:
-            attr.ReluNAttribute(0, self.getRandNumberDType(a.dtype))
-        else:
-            attr.ReluNAttribute(self.getRandNumberDType(a.dtype), 0)
-
-        self.ser.addOperator(op, [a.name], [result_tens.name], attr)
-        return result_tens
-
     def build_sigmoid(self, op, a):
         result_tens = OutputShaper.unaryOp(self.ser, a)
         self.ser.addOperator(op, [a.name], [result_tens.name])
@@ -2908,12 +2895,6 @@ class TosaTestGen:
             "operands": (1, 0),
             "build_fcn": (build_clamp, TosaTensorGen.tgBasic, None),
             "types": TYPE_NARROW_INT_FP,
-        },
-        "relun": {
-            "op": Op.RELUN,
-            "operands": (1, 0),
-            "build_fcn": (build_relun, TosaTensorGen.tgBasic, None),
-            "types": TYPE_FI32,
         },
         "sigmoid": {
             "op": Op.SIGMOID,

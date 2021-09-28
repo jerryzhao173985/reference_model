@@ -51,31 +51,6 @@ int OpClamp<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, DType Dtype>
-int OpReluN<Rank, Dtype>::register_fcn()
-{
-
-    switch (Dtype)
-    {
-        case DType_FLOAT:
-        {
-            InEigenType N = (InEigenType)attribute->max_fp();
-            this->fcn     = [N](InEigenType a) -> OutEigenType { return a >= 0 ? (a <= N ? a : N) : 0; };
-        }
-        break;
-        case DType_INT32:
-        {
-            InEigenType N = (InEigenType)attribute->max_int();
-            this->fcn     = [N](InEigenType a) -> OutEigenType { return a >= 0 ? (a <= N ? a : N) : 0; };
-        }
-        break;
-        default:
-            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
-    }
-
-    return 0;
-}
-
-template <int Rank, DType Dtype>
 int OpSigmoid<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
@@ -109,9 +84,6 @@ int OpTanh<Rank, Dtype>::register_fcn()
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT16);
-
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReluN, FLOAT);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReluN, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FLOAT);
 
