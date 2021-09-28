@@ -33,7 +33,7 @@ int OpCustom::checkTensorAttributes()
 
 int OpCustom::eval()
 {
-    FATAL_ERROR("not supported yet");
+    ERROR_IF(true, "not supported yet");
 
     // Evaluation is trivial for constants
     return GraphNode::eval();

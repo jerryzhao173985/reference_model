@@ -689,16 +689,7 @@ public:
             default:
                 break;
         }
-
-        std::string shape_str("[");
-        for (auto& dim : shape_)
-        {
-            shape_str += (std::to_string(dim) + ", ");
-        }
-        shape_str.append("]");
-
-        FATAL_ERROR("Unsupported tensor name=%s, type=%s, rank=%d, shape=%s", tensorName_.c_str(),
-                    EnumNamesDType()[tensorDtype_], rank, shape_str.c_str());
+        return nullptr;
     }
 
     static Tensor* newTensor(DType type, const std::vector<int> shape);

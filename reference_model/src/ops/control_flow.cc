@@ -39,20 +39,11 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
 
     SubgraphTraverser gt(block, tsh);
 
-    if (gt.initializeGraph())
-    {
-        FATAL_ERROR("Unable to initialize graph traverser for block %s", block_name.c_str());
-    }
+    ERROR_IF(gt.initializeGraph(), "Unable to initialize graph traverser for block %s", block_name.c_str());
 
-    if (gt.linkTensorsAndNodes())
-    {
-        FATAL_ERROR("Failed to link tensors and nodes for block %s", block_name.c_str());
-    }
+    ERROR_IF(gt.linkTensorsAndNodes(), "Failed to link tensors and nodes for block %s", block_name.c_str());
 
-    if (gt.validateGraph())
-    {
-        FATAL_ERROR("Failed to validate subgraph for block %s", block_name.c_str());
-    }
+    ERROR_IF(gt.validateGraph(), "Failed to validate subgraph for block %s", block_name.c_str());
 
     int num_input_tensors  = gt.getNumInputTensors();
     int num_output_tensors = gt.getNumOutputTensors();
@@ -105,10 +96,7 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
         }
     }
 
-    if (gt.evaluateAll())
-    {
-        FATAL_ERROR("Error evaluating network.  Giving up.");
-    }
+    ERROR_IF(gt.evaluateAll(), "Error evaluating network.  Giving up.");
 
     // make sure output tensor is evaluated and show its value
     bool all_output_valid = true;
@@ -129,8 +117,8 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     if (!all_output_valid)
     {
         gt.dumpGraph(g_func_debug.func_debug_file);
-        FATAL_ERROR("SubgraphTraverser \"%s\" error: Output tensors are not all valid at the end of evaluation.",
-                    block_name.c_str());
+        ERROR_IF(true, "SubgraphTraverser \"%s\" error: Output tensors are not all valid at the end of evaluation.",
+                 block_name.c_str());
     }
 
     // set basic block's output = subgraph_traverser's output

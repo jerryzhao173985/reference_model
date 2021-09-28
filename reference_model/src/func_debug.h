@@ -145,12 +145,6 @@ struct func_debug_t
     abort();
 #endif
 
-#ifndef SIMPLE_FATAL_ERROR
-#define SIMPLE_FATAL_ERROR(fmt, ...)                                                                                   \
-    fprintf(stderr, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                                               \
-    exit(1);
-#endif
-
 void func_debug_warning(
     func_debug_t* func_debug, const char* file, const char* func, const int line, const char* fmt, ...);
 #ifndef WARNING

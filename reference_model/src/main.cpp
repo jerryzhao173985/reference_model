@@ -56,12 +56,12 @@ int main(int argc, const char** argv)
     // Initialize test descriptor
     if (initTestDesc(test_desc))
     {
-        SIMPLE_FATAL_ERROR("Unable to load test json");
+        FATAL_ERROR("Unable to load test json");
     }
 
     if (loadGraph(tsh, test_desc))
     {
-        SIMPLE_FATAL_ERROR("Unable to load graph");
+        FATAL_ERROR("Unable to load graph");
     }
 
     SubgraphTraverser main_gt(tsh.GetMainBlock(), &tsh);
@@ -74,15 +74,13 @@ int main(int argc, const char** argv)
 
     if (main_gt.linkTensorsAndNodes())
     {
-        SIMPLE_FATAL_ERROR("Failed to link tensors and nodes");
+        WARNING("Failed to link tensors and nodes");
+        goto done;
     }
 
     if (main_gt.validateGraph())
     {
         WARNING("Failed to validate graph. Evaluation aborted.");
-        ASSERT_MSG(main_gt.getGraphStatus() == GraphStatus::TOSA_ERROR ||
-                       main_gt.getGraphStatus() == GraphStatus::TOSA_UNPREDICTABLE,
-                   "Upon validateGraph() returning 1, graph can only be ERROR/UNPREDICTABLE.");
         goto done;
     }
 
@@ -93,7 +91,7 @@ int main(int argc, const char** argv)
 
     if (readInputTensors(main_gt, test_desc))
     {
-        SIMPLE_FATAL_ERROR("Unable to read input tensors");
+        FATAL_ERROR("Unable to read input tensors");
     }
 
     if (g_func_config.eval)
@@ -135,7 +133,7 @@ int main(int argc, const char** argv)
             if (!all_output_valid)
             {
                 main_gt.dumpGraph(g_func_debug.func_debug_file);
-                SIMPLE_FATAL_ERROR(
+                FATAL_ERROR(
                     "SubgraphTraverser \"main\" error: Output tensors are not all valid at the end of evaluation.");
             }
 
@@ -181,7 +179,7 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
     if (strlen(graph_fullname) <= 2)
     {
         func_model_print_help(stderr);
-        SIMPLE_FATAL_ERROR("Missing required argument: Check \"tosa_file\" in .json specified by -Ctosa_desc=");
+        FATAL_ERROR("Missing required argument: Check \"tosa_file\" in .json specified by -Ctosa_desc=");
     }
 
     const char JSON_EXT[] = ".json";
@@ -201,23 +199,21 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
     {
         if (tsh.LoadFileSchema(g_func_config.operator_fbs))
         {
-            SIMPLE_FATAL_ERROR(
-                "\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck -Coperator_fbs=",
-                g_func_config.operator_fbs);
+            FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck -Coperator_fbs=",
+                        g_func_config.operator_fbs);
         }
 
         if (tsh.LoadFileJson(graph_fullname))
         {
-            SIMPLE_FATAL_ERROR(
-                "\nError loading JSON graph file: %s\nCheck -Ctest_desc=, -Ctosa_file= and -Cflatbuffer_dir=",
-                graph_fullname);
+            FATAL_ERROR("\nError loading JSON graph file: %s\nCheck -Ctest_desc=, -Ctosa_file= and -Cflatbuffer_dir=",
+                        graph_fullname);
         }
     }
     else
     {
         if (tsh.LoadFileTosaFlatbuffer(graph_fullname))
         {
-            SIMPLE_FATAL_ERROR(
+            FATAL_ERROR(
                 "\nError loading TOSA flatbuffer file: %s\nCheck -Ctest_desc=, -Ctosa_file= and -Cflatbuffer_dir=",
                 graph_fullname);
         }
