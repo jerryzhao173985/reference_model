@@ -32,4 +32,8 @@ class ErrorIf(object):
     RankMismatch = "RankMismatch"
     InputZeroPointNotZero = "InputZeroPointNotZero"
     OutputZeroPointNotZero = "OutputZeroPointNotZero"
+    AxisSmallerZero = "AxisSmallerZero"
+    AxisLargerRank = "AxisLargerRank"
+    ShapeOfAxisNotOne = "ShapeOfAxisNotOne"
+
 
