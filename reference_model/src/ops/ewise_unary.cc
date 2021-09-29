@@ -48,9 +48,9 @@ int UnaryNode<Rank, Dtype>::checkTensorAttributes()
     }
 
     // output and input must be the same types
-    if (inputs[0]->matchRankSize(*outputs[0]))
+    if (inputs[0]->matchRankTypeShape(*outputs[0]))
     {
-        printNodeValidationError("UnaryNode: input and output rank must match");
+        printNodeValidationError("UnaryNode: input and output rank/type/shape must match");
         return 1;
     }
 
