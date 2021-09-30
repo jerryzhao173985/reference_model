@@ -2164,7 +2164,6 @@ class TosaTestGen:
         cond_tens = self.ser.addConst([], DType.BOOL, [cond])
 
         result_tens = self.ser.addOutput(a.shape, a.dtype)
-        self.ser.currBasicBlock.addOutput(result_tens.name)
 
         # Create the attribute with the names of the then/else blocks
         then_block = "THEN_BLOCK"
