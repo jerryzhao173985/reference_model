@@ -2041,9 +2041,9 @@ class TosaTestGen:
         )
         return result_tens
 
-    def build_placeholder(self, op, val):
-        # Add an identity op to avoid warning in the reference model
-        return self.build_unary(Op.IDENTITY, val)
+    def build_const(self, op, val):
+        self.ser.addOutputTensor(val)
+        return val
 
     # Type Conversion
     def build_cast(self, op, val, out_dtype):
@@ -3200,8 +3200,8 @@ class TosaTestGen:
         # Data nodes
         "const": {
             "op": Op.CONST,
-            "operands": (1, 0),
-            "build_fcn": (build_placeholder, TosaTensorGen.tgBasic, None),
+            "operands": (0, 1),
+            "build_fcn": (build_const, TosaTensorGen.tgBasic, None),
             "types": TYPE_FIB,
         },
         "identity": {
