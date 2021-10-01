@@ -220,32 +220,38 @@ def main():
 
     ttg = TosaTestGen(args)
 
-    testList = []
-    for op in ttg.TOSA_OP_LIST:
-        if re.match(args.filter + ".*", op):
-            testList.extend(
-                ttg.genOpTestList(
-                    op,
-                    shapeFilter=args.target_shapes,
-                    rankFilter=args.target_ranks,
-                    dtypeFilter=args.target_dtypes,
-                    testType=args.test_type
-                )
-            )
-
-    print("{} matching tests".format(len(testList)))
+    if args.test_type == 'both':
+        testType = ['positive', 'negative']
+    else:
+        testType = [args.test_type]
     results = []
-    testStrings = []
-    for opName, testStr, dtype, error, shapeList, testArgs in testList:
-        # Check for and skip duplicate tests
-        if testStr in testStrings:
-            continue
-        else:
-            testStrings.append(testStr)
+    for test_type in testType:
+        testList = []
+        for op in ttg.TOSA_OP_LIST:
+            if re.match(args.filter + ".*", op):
+                testList.extend(
+                    ttg.genOpTestList(
+                        op,
+                        shapeFilter=args.target_shapes,
+                        rankFilter=args.target_ranks,
+                        dtypeFilter=args.target_dtypes,
+                        testType=test_type
+                    )
+                )
 
-        if args.verbose:
-            print(testStr)
-        results.append(ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs))
+        print("{} matching {} tests".format(len(testList), test_type))
+
+        testStrings = []
+        for opName, testStr, dtype, error, shapeList, testArgs in testList:
+            # Check for and skip duplicate tests
+            if testStr in testStrings:
+                continue
+            else:
+                testStrings.append(testStr)
+
+            if args.verbose:
+                print(testStr)
+            results.append(ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs))
 
     print(f"Done creating {len(results)} tests")
 

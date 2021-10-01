@@ -150,7 +150,7 @@ class TosaTensorGen:
         pass
 
     @staticmethod
-    def tgBasic(testGen, opName, rank):
+    def tgBasic(testGen, opName, rank, error_name=None):
         pl, const = opName["operands"]
         shape = testGen.makeShape(rank)
 
@@ -180,7 +180,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgScatter(testGen, opName, rank):
+    def tgScatter(testGen, opName, rank, error_name=None):
         pl, const = opName["operands"]
 
         assert pl == 2
@@ -209,7 +209,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgBroadcastFuzz(testGen, op, rank):
+    def tgBroadcastFuzz(testGen, op, rank, error_name=None):
         shape = testGen.makeShape(rank)
 
         pl, const = op["operands"]
@@ -231,7 +231,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgConv2D(testGen, op, rank):
+    def tgConv2D(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 4
@@ -258,7 +258,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgConv3D(testGen, op, rank):
+    def tgConv3D(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 5
@@ -287,7 +287,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgTransposeConv2D(testGen, op, rank):
+    def tgTransposeConv2D(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 4
@@ -314,7 +314,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgDepthwiseConv2D(testGen, op, rank):
+    def tgDepthwiseConv2D(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 4
@@ -346,7 +346,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgFullyConnected(testGen, op, rank):
+    def tgFullyConnected(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 2
@@ -364,7 +364,7 @@ class TosaTensorGen:
         return [input_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgMatmul(testGen, op, rank):
+    def tgMatmul(testGen, op, rank, error_name=None):
         pl, const = op["operands"]
 
         assert rank == 3
@@ -387,7 +387,7 @@ class TosaTensorGen:
         return [a_shape, b_shape]
 
     @staticmethod
-    def tgConcat(testGen, opName, rank):
+    def tgConcat(testGen, opName, rank, error_name=None):
         pl, const = opName["operands"]
         shape = testGen.makeShape(rank)
 
@@ -401,7 +401,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgConcatConstInput(testGen, shapeList, axis):
+    def tgConcatConstInput(testGen, shapeList, axis, error_name=None):
         # Split concat shape along axis to allow for multiple const inputs
         # without making too many large tensors
         if len(shapeList) == 2 or shapeList[0][axis] < len(shapeList):
@@ -438,13 +438,13 @@ class TosaArgGen:
         pass
 
     @staticmethod
-    def agNone(testGen, opName, shapeList, dtype):
+    def agNone(testGen, opName, shapeList, dtype, error_name=None):
         """A trivial argument generator for operators that don't take any
         non-tensor arguments"""
         return [("", [])]
 
     @staticmethod
-    def agAxis(testGen, opName, shapeList, dtype):
+    def agAxis(testGen, opName, shapeList, dtype, error_name=None):
         """Build the axis argument for operators that take a single axis"""
         axes = []
 
@@ -455,7 +455,7 @@ class TosaArgGen:
         return axes
 
     @staticmethod
-    def agConv(testGen, opName, shapeList, dtype):
+    def agConv(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -525,7 +525,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTransposeConv2D(testGen, opName, shapeList, dtype):
+    def agTransposeConv2D(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -594,7 +594,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agPad(testGen, opName, shapeList, dtype):
+    def agPad(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
         rank = len(shapeList[0])
 
@@ -616,7 +616,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agPooling(testGen, opName, shapeList, dtype):
+    def agPooling(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         shape = shapeList[0]
@@ -667,7 +667,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agCast(testGen, opName, shapeList, inDtype):
+    def agCast(testGen, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
         # Enumerate the output types here
@@ -690,7 +690,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agRescale(testGen, opName, shapeList, inDtype):
+    def agRescale(testGen, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
         # Enumerate the output types here
@@ -728,7 +728,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMul(testGen, opName, shapeList, dtype):
+    def agMul(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         if dtype is DType.INT32:
@@ -743,7 +743,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agArithmeticRightShift(testGen, opName, shapeList, dtype):
+    def agArithmeticRightShift(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         arg_list.append(("roundTrue", [True]))
@@ -763,7 +763,7 @@ class TosaArgGen:
         return factors
 
     @staticmethod
-    def agReshape(testGen, opName, shapeList, dtype):
+    def agReshape(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         origShape = shapeList[0]
@@ -819,7 +819,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTranspose(testGen, opName, shapeList, dtype):
+    def agTranspose(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -841,7 +841,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agSlice(testGen, opName, shapeList, dtype):
+    def agSlice(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -870,7 +870,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTile(testGen, opName, shapeList, dtype):
+    def agTile(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -1065,7 +1065,7 @@ class TosaArgGen:
 
         return arg_list
 
-    def agCondIf(testGen, opName, shapeList, dtype):
+    def agCondIf(testGen, opName, shapeList, dtype, error_name=None):
         # CondIf generates the condition values here.
         # Convert to tensors in the build function, along with the
         # then and else blocks
@@ -1076,7 +1076,7 @@ class TosaArgGen:
 
         return arg_list
 
-    def agWhileLoop(testGen, opName, shapeList, dtype):
+    def agWhileLoop(testGen, opName, shapeList, dtype, error_name=None):
         # While loop: 0 iterations, 1, more than 1
         arg_list = []
 
@@ -1128,6 +1128,7 @@ class TosaErrorIfArgGen:
                 offset = [(16 << shift) + 1, (16 << shift) + 1]
             elif error_name == ErrorIf.OffsetSmallerEqualMin:
                 offset = [(-16 << shift) - 1, (-16 << shift) - 1]
+
 
         if error_name == ErrorIf.WrongOutputType:
             if mode == ResizeMode.NEAREST and dtype == DType.INT8:
@@ -2455,6 +2456,75 @@ class TosaTestGen:
 
         return acc_out
 
+    def create_filter_lists(self, op, shapeFilter, rankFilter, dtypeFilter, testType, validator=None):
+        # Create a default testing rank range, 1-4 inclusive to keep test sizes reasonably small.
+        default_test_rank_range = range(1, 5)
+        if not shapeFilter:
+            shapeFilter = [None]
+
+        # Calculate the filters based on what is requested and what the operator allows
+        rmin, rmax = op["rank"]
+        if rankFilter is not None:
+            cleanRankFilter = []
+            # Ensure rankFilter values are allowed by operator
+            for rank in rankFilter:
+                if rank >= rmin and rank <= rmax:
+                    cleanRankFilter.append(rank)
+        elif rankFilter is None and shapeFilter[0] is None:
+            cleanRankFilter = []
+            # Ensure default behaviour is bounded by default range or by operator, whichever is smaller.
+            rankRange = range(rmin, rmax + 1)
+            for rank in rankRange:
+                if rank >= min(default_test_rank_range) and rank <= max(default_test_rank_range):
+                    cleanRankFilter.append(rank)
+        else:
+            cleanRankFilter = range(rmin, rmax + 1)
+
+        dtypes = op["types"]
+        if dtypeFilter is not None:
+            cleanDtypeFilter = []
+            # Ensure filtered dtypes are allowed by operator
+            for dtype in dtypeFilter:
+                if dtype in dtypes:
+                    cleanDtypeFilter.append(dtype)
+        else:
+            cleanDtypeFilter = dtypes
+
+        if testType == 'positive':
+            filterDict = {
+                'shapeFilter': shapeFilter,
+                'rankFilter': cleanRankFilter,
+                'dtypeFilter': cleanDtypeFilter
+            }
+            return filterDict
+        elif testType == 'negative':
+            validator_info = validator(check=False, op=op)
+            error_arguments = validator_info['param_reqs']
+
+            #Set parameters as required
+            if error_arguments['rank'] != None:
+                rankFilter = error_arguments['rank']
+            else:
+                rankFilter = cleanRankFilter
+
+            if error_arguments['dtype'] != None:
+                dtypeFilter = error_arguments['dtype']
+            else:
+                dtypeFilter = cleanDtypeFilter
+
+            if error_arguments['shape'] != None:
+                shapeFilter = error_arguments['shape']
+            else:
+                shapeFilter = shapeFilter[:2] # Reduce number of shapes to keep test numbers small
+
+            filterDict = {
+                'shapeFilter': shapeFilter,
+                'rankFilter': rankFilter,
+                'dtypeFilter': dtypeFilter
+            }
+            return filterDict
+
+
     def genOpTestList(
         self, opName, shapeFilter=[None], rankFilter=None, dtypeFilter=None, testType='positive'
     ):
@@ -2469,61 +2539,37 @@ class TosaTestGen:
 
         build_fcn, tgen_fcn, agen_fcn = op["build_fcn"]
 
-        # Create a default testing rank range, 1-4 inclusive to keep test sizes reasonably small.
-        default_test_rank_range = range(1, 5)
-        if not shapeFilter:
-            shapeFilter = [None]
-
-        # Generate the lists of arguments
-        rmin, rmax = op["rank"]
-        if rankFilter is not None:
-            cleanRankFilter = []
-            # Ensure rankFilter values are allowed by operator
-            for rank in rankFilter:
-                if rank >= rmin and rank <= rmax:
-                    cleanRankFilter.append(rank)
-            rankFilter = cleanRankFilter
-        elif rankFilter is None and shapeFilter[0] is None:
-            cleanRankFilter = []
-            # Ensure default behaviour is bounded by default range or by operator, whichever is smaller.
-            rankRange = range(rmin, rmax + 1)
-            for rank in rankRange:
-                if rank >= min(default_test_rank_range) and rank <= max(default_test_rank_range):
-                    cleanRankFilter.append(rank)
-            rankFilter = cleanRankFilter
-        else:
-            rankFilter = range(rmin, rmax + 1)
-
-        dtypes = op["types"]
-        if dtypeFilter is not None:
-            cleanDtypeFilter = []
-            # Ensure filtered dtypes are allowed by operator
-            for dtype in dtypeFilter:
-                if dtype in dtypes:
-                    cleanDtypeFilter.append(dtype)
-            dtypeFilter = cleanDtypeFilter
-        else:
-            dtypeFilter = dtypes
-
         # Test list consists of a tuple of:
         # (opName, testNameStr, dtype, shapeList, argumentsList)
         testList = []
+        if testType == 'negative' and "error_if_validators" in op:
+            error_if_validators = op["error_if_validators"]
+        else:
+            error_if_validators = [None]
 
-        # Positive test loop
-        if testType in ['positive', 'both']:
-            for r in rankFilter:
+        for validator in error_if_validators:
+            if validator is not None:
+                error_name = validator(check=False, op=op)['error_name']
+                #print("error_name: ", error_name)
+            else:
+                error_name = None
+
+            filterDict = self.create_filter_lists(op, shapeFilter, rankFilter, dtypeFilter, testType, validator)
+            cleanRankFilter = filterDict['rankFilter']
+            cleanDtypeFilter = filterDict['dtypeFilter']
+            cleanShapeFilter = filterDict['shapeFilter']
+            #print(f"Filters: S {shapeFilter}, R {cleanRankFilter}, T {cleanDtypeFilter}")
+
+            for r in cleanRankFilter:
                 if opName.startswith("conv3d"):
                     assert r == 5, "conv3d test must have input rank == 5"
-                for t in dtypeFilter:
-                    # Create the placeholder and const tensors
-                    for shape in shapeFilter:
-                        # A None shape chooses a random shape of a given rank
-
+                for t in cleanDtypeFilter:
+                    for shape in cleanShapeFilter:
                         # Filter out by rank
                         if shape is not None and len(shape) != r:
                             continue
                         self.setTargetShape(shape)
-                        shapeList = tgen_fcn(self, op, r)
+                        shapeList = tgen_fcn(self, op, r, error_name)
 
                         shapeStr = self.shapeStr(shapeList[0])
                         typeStr = self.typeStr(t)
@@ -2531,88 +2577,41 @@ class TosaTestGen:
                         # Argument lists consists of tuples of the (str, []) string representation and the build function argument list
                         argList = []
                         if agen_fcn:
-                            argList = agen_fcn(self, opName, shapeList, t)
+                            argList = agen_fcn(self, opName, shapeList, t, error_name)
                         else:
                             argList = [("", [])]
 
                         for argStr, args in argList:
-                            if argStr:
-                                testStr = "{}_{}_{}_{}".format(
-                                    opName, shapeStr, typeStr, argStr
-                                )
-                            else:
-                                testStr = "{}_{}_{}".format(opName, shapeStr, typeStr)
-
-                            testList.append((opName, testStr, t, None, shapeList, args))
-
-        # Remove tests which are expected to fail but don't correlate to a ERROR_IF statement
-        if "invalid_test_validators" in op:
-            invalid_test_validators = op["invalid_test_validators"]
-            clean_testList = []
-            for test in testList:
-                for validator_fcn in invalid_test_validators:
-                    remove_test = False
-                    if validator_fcn(opName=test[0], input_dtype=test[2], shapeList=test[4], args=test[5]):
-                        remove_test = True
-                if not remove_test:
-                    clean_testList.append(test)
-            testList = clean_testList
-
-        # Store the original filters so they can be reused if required
-        base_rankFilter = rankFilter
-        base_dtypeFilter = dtypeFilter
-        base_shapeFilter = shapeFilter
-        # Reset RNG so both positive and negative tests are reproducible
-        self.resetRNG()
-
-        # Negative test loop
-        if testType in ['negative', 'both'] and "error_if_validators" in op:
-            error_if_validators = op["error_if_validators"]
-            for validator in error_if_validators:
-                validator_info = validator(check=False, op=op)
-                error_name = validator_info['error_name']
-                error_arguments = validator_info['param_reqs']
-
-                #Set parameters as required
-                if error_arguments['rank'] != None:
-                    rankFilter = error_arguments['rank']
-                else:
-                    rankFilter = base_rankFilter
-                if error_arguments['dtype'] != None:
-                    dtypeFilter = error_arguments['dtype']
-                else:
-                    dtypeFilter = base_dtypeFilter
-                if error_arguments['shape'] != None:
-                    shapes = error_arguments['shape']
-                else:
-                    shapes = base_shapeFilter[:2] # Reduce number of shapes to keep test numbers small
-
-                for r in rankFilter:
-                    for t in dtypeFilter:
-                        # Create the placeholder and const tensors
-                        for shape in shapes:
-                            # A None shape chooses a random shape of a given rank
-                            # Filter out by rank
-                            if shape is not None and len(shape) != r:
-                                continue
-                            self.setTargetShape(shape)
-                            shapeList = tgen_fcn(self, op, r, error_name)
-                            shapeStr = self.shapeStr(shapeList[0])
-                            typeStr = self.typeStr(t)
-                            # Argument lists consists of tuples of the (str, []) string representation and the build function argument list
-                            argList = []
-                            if agen_fcn:
-                                argList = agen_fcn(self, opName, shapeList, t, error_name)
-                            else:
-                                argList = [("", [])]
-                            for argStr, args in argList:
+                            if testType == 'positive':
+                                if argStr:
+                                    testStr = "{}_{}_{}_{}".format(
+                                        opName, shapeStr, typeStr, argStr
+                                    )
+                                else:
+                                    testStr = "{}_{}_{}".format(opName, shapeStr, typeStr)
+                            elif testType == 'negative':
                                 if argStr:
                                     testStr = "{}_ERRORIF_{}_{}_{}_{}".format(
                                         opName, error_name, shapeStr, typeStr, argStr
                                     )
                                 else:
                                     testStr = "{}_ERRORIF_{}_{}_{}".format(opName, error_name, shapeStr, typeStr)
-                                testList.append((opName, testStr, t, error_name, shapeList, args))
+
+                            testList.append((opName, testStr, t, error_name, shapeList, args))
+
+        if testType == 'positive':
+            # Remove tests which are expected to fail but don't correlate to a ERROR_IF statement
+            if "invalid_test_validators" in op:
+                invalid_test_validators = op["invalid_test_validators"]
+                clean_testList = []
+                for test in testList:
+                    for validator_fcn in invalid_test_validators:
+                        remove_test = False
+                        if validator_fcn(opName=test[0], input_dtype=test[2], shapeList=test[4], args=test[5]):
+                            remove_test = True
+                    if not remove_test:
+                        clean_testList.append(test)
+                testList = clean_testList
 
         return testList
 
@@ -2662,6 +2661,43 @@ class TosaTestGen:
         # Build the random tensor operands and the test
         tens = []
 
+        tens = self.generate_tensors(op, dtypeList, shapeList, testArgs)
+
+        if qgen is not None:
+            qinfo = qgen(self, op, dtype_or_dtypeList)
+        else:
+            qinfo = None
+
+        try:
+            if error_if_validators is None:
+                if qinfo is not None:
+                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo)
+                else:
+                    resultName = build_fcn(self, op, *tens, *testArgs)
+            else:
+                if qinfo is not None:
+                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo, error_if_validators, error_name)
+                else:
+                    resultName = build_fcn(self, op, *tens, *testArgs, error_if_validators, error_name)
+        except TypeError as e:
+            print(
+                "build_fcn: {}\nTensors: {}\nArgs: {}\n".format(
+                    build_fcn, tens, testArgs
+                )
+            )
+            raise e
+
+        if resultName is None:
+            print("Invalid ERROR_IF tests created")
+
+        # Save the serialized test
+        self.serialize("test")
+
+
+    def generate_tensors(self, op, dtypeList, shapeList, testArgs):
+        pCount, cCount = op["operands"]
+
+        tens = []
         if (op["op"] == Op.ADD or op["op"] == Op.SUB) and dtypeList[0] == DType.INT32:
             # Make sure the operation does not cause value saturation - where
             # the number wraps due to limited number of bits to store the answer
@@ -2858,35 +2894,7 @@ class TosaTestGen:
             )
             tens.extend(self.buildConstTensors(shapeList[pCount:], dtypeList[pCount:]))
 
-        if qgen is not None:
-            qinfo = qgen(self, op, dtype_or_dtypeList)
-        else:
-            qinfo = None
-
-        try:
-            if error_if_validators is None:
-                if qinfo is not None:
-                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo)
-                else:
-                    resultName = build_fcn(self, op, *tens, *testArgs)
-            else:
-                if qinfo is not None:
-                    resultName = build_fcn(self, op, *tens, *testArgs, qinfo, error_if_validators, error_name)
-                else:
-                    resultName = build_fcn(self, op, *tens, *testArgs, error_if_validators, error_name)
-        except TypeError as e:
-            print(
-                "build_fcn: {}\nTensors: {}\nArgs: {}\n".format(
-                    build_fcn, tens, testArgs
-                )
-            )
-            raise e
-
-        if resultName is None:
-            print("Invalid ERROR_IF tests created")
-
-        # Save the serialized test
-        self.serialize("test")
+        return tens
 
     def createDynamicOpLists(self):
 
