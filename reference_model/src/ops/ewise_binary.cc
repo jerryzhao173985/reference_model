@@ -60,23 +60,24 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    // Input and output rank must match
-    // If it's not MUL, type also needs to match as well.
-    if (nodeType != Op_MUL)
-    {
-        if (inputs[0]->matchRankType(*outputs[0]))
-        {
-            printNodeValidationError("Binary operators (except MUL) input and output rank and type must match");
-            return 1;
-        }
-    }
-    else
+    // In some ops, only rank of input and output tensor needs to match
+    if (nodeType == Op_MUL || nodeType == Op_GREATER || nodeType == Op_EQUAL || nodeType == Op_GREATER_EQUAL)
     {
         if (inputs[0]->matchRank(*outputs[0]))
         {
-            printNodeValidationError("MUL operator input and output rank must match");
+            std::string err =
+                "Binary operators " + std::string(EnumNamesOp()[nodeType]) + " input and output rank must match";
+            printNodeValidationError(err.c_str());
             return 1;
         }
+    }
+    // Otherwise both rand/type of input and output must match
+    else if (inputs[0]->matchRankType(*outputs[0]))
+    {
+        std::string err =
+            "Binary operators " + std::string(EnumNamesOp()[nodeType]) + " input and output rank and type must match";
+        printNodeValidationError(err.c_str());
+        return 1;
     }
 
     a      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);

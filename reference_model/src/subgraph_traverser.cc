@@ -186,6 +186,9 @@ int SubgraphTraverser::initializeGraph()
             weight_rank  = weight_tensor->GetShape().size();
         }
 
+        SUBGRAPH_ERROR_IF(op->GetOutputTensorNames().size() == 0,
+                          "SubgraphTraverser::initializeGraph(): Op=%s must have at least one output tensor.",
+                          EnumNamesOp()[op->GetOp()]);
         std::string output_name                = op->GetOutputTensorNames()[0];
         TosaSerializationTensor* output_tensor = block->GetTensorByName(output_name);
         SUBGRAPH_ERROR_IF(
