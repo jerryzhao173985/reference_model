@@ -50,20 +50,30 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
 
     if (attribute->axis() < 0 || attribute->axis() >= inputs[0]->getRank())
     {
-        printNodeValidationError("Reduce axis must between [0, input_rank - 1]");
+        printNodeValidationError("ReduceOp: axis must between [0, input_rank - 1]");
         return 1;
     }
 
-    if (inputs[0]->matchRank(*outputs[0]))
+    if (inputs[0]->matchRankType(*outputs[0]))
     {
-        printNodeValidationError("Input and output tensor ranks must match");
+        printNodeValidationError("ReduceOp: Input and output tensor ranks must match");
+        return 1;
+    }
+
+    if (outputs[0]->getShape()[attribute->axis()] != 1)
+    {
+        printNodeValidationError("ReduceOp: Output tensor shape[axis] needs to be 1.");
         return 1;
     }
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    ASSERT_MEM(in && out);
+    if ((!in) || (!out))
+    {
+        printNodeValidationError("ReduceOp: Input or output fail to cast to Eigen tensor since rank/type not expected");
+        return 1;
+    }
 
     dims[0] = this->attribute->axis();
 
