@@ -2694,21 +2694,19 @@ class TosaTestGen:
                 if rank >= rmin and rank <= rmax:
                     cleanRankFilter.append(rank)
         elif rankFilter is None and shapeFilter[0] is None:
-            cleanRankFilter = []
-            # Ensure default behaviour is bounded by default range or by operator, whichever is smaller.
-            rankRange = range(rmin, rmax + 1)
-            for rank in rankRange:
-                if rank >= min(default_test_rank_range) and rank <= max(default_test_rank_range):
-                    cleanRankFilter.append(rank)
+            # Ensure default behaviour is bounded by default range or by operator,
+            # whichever is the smaller range of ranks.
+            opRankRange = range(rmin, rmax + 1)
+            cleanRankFilter = opRankRange if len(opRankRange) <= len(default_test_rank_range) else default_test_rank_range
         else:
             cleanRankFilter = range(rmin, rmax + 1)
 
         dtypes = op["types"]
         if dtypeFilter is not None:
             cleanDtypeFilter = []
-            # Ensure filtered dtypes are allowed by operator
-            for dtype in dtypeFilter:
-                if dtype in dtypes:
+            # Create list of operator dtypes filtered by requested dtypes
+            for dtype in dtypes:
+                if dtype in dtypeFilter or (isinstance(dtype, list) and dtype[0] in dtypeFilter):
                     cleanDtypeFilter.append(dtype)
         else:
             cleanDtypeFilter = dtypes
