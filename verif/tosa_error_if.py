@@ -35,5 +35,10 @@ class ErrorIf(object):
     AxisSmallerZero = "AxisSmallerZero"
     AxisLargerRank = "AxisLargerRank"
     ShapeOfAxisNotOne = "ShapeOfAxisNotOne"
+    KernelSmallerOne = "KernelSmallerOne"
+    StrideSmallerOne = "StrideSmallerOne"
+    PadSmallerZero = "PadSmallerZero"
+    PadLargerEqualKernel = "PadLargerEqualKernel"
+    PoolingOutputShapeMismatch = "PoolingOutputShapeMismatch"
 
 
