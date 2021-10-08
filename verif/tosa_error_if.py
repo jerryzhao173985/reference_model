@@ -40,5 +40,7 @@ class ErrorIf(object):
     PadSmallerZero = "PadSmallerZero"
     PadLargerEqualKernel = "PadLargerEqualKernel"
     PoolingOutputShapeMismatch = "PoolingOutputShapeMismatch"
+    ScaleNotTrue = "ScaleNotTrue"
+    ScaleTrue = "ScaleTrue"
 
 
