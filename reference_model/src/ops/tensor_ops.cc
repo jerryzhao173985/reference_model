@@ -21,6 +21,92 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
+int check_pool2d_attribute_common(tosa::TosaPoolAttribute* attribute,
+                                  std::vector<int32_t> input_shape,
+                                  std::vector<int32_t> output_shape,
+                                  std::string& msg)
+{
+    if (attribute->padding().size() != 4)
+    {
+        msg = "illegal size for attribute padding";
+        return 1;
+    }
+
+    if (attribute->kernel().size() != 2)
+    {
+        msg = "illegal size for attribute kernel";
+        return 1;
+    }
+
+    if (attribute->stride().size() != 2)
+    {
+        msg = "illegal size for attribute stride";
+        return 1;
+    }
+
+    for (int32_t i : attribute->padding())
+    {
+        if (i < 0)
+        {
+            msg = "At least one pad is smaller than zero";
+            return 1;
+        }
+    }
+
+    for (int32_t i : attribute->kernel())
+    {
+        if (i < 1)
+        {
+            msg = "At least one kernel dimension is smaller than zero";
+            return 1;
+        }
+    }
+
+    for (int32_t i : attribute->stride())
+    {
+        if (i < 1)
+        {
+            msg = "At least one stride dimension is smaller than zero";
+            return 1;
+        }
+    }
+
+    int32_t IH = input_shape[1];
+    int32_t IW = input_shape[2];
+    int32_t OH = output_shape[1];
+    int32_t OW = output_shape[2];
+
+    int32_t pad_top    = attribute->padding()[0];
+    int32_t pad_bottom = attribute->padding()[1];
+    int32_t pad_left   = attribute->padding()[2];
+    int32_t pad_right  = attribute->padding()[3];
+
+    int32_t stride_y = attribute->stride()[0];
+    int32_t stride_x = attribute->stride()[1];
+    int32_t kernel_y = attribute->kernel()[0];
+    int32_t kernel_x = attribute->kernel()[1];
+
+    if (pad_top >= kernel_y || pad_bottom >= kernel_y || pad_left >= kernel_x || pad_right >= kernel_x)
+    {
+        msg = "At least one pad is >= kernel dimension";
+        return 1;
+    }
+
+    int32_t allowed_min_input_height = (OH * stride_y) - pad_top - pad_bottom - stride_y + kernel_y;
+    int32_t allowed_min_input_width  = (OW * stride_x) - pad_left - pad_right - stride_x + kernel_x;
+
+    int32_t d_height = IH - allowed_min_input_height;
+    int32_t d_width  = IW - allowed_min_input_width;
+
+    if (d_height < 0 || d_height > stride_y || d_width < 0 || d_width > stride_x)
+    {
+        msg = "Mismatch between output shape provided and expected output shape";
+        return 1;
+    }
+
+    return 0;
+}
+
 template <int Rank, DType Dtype>
 OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_,
                                 TosaAttributeBase* attribute_,
@@ -109,21 +195,17 @@ int OpAvgPool2d<Dtype>::checkTensorAttributes()
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    if (attribute->padding().size() != 4)
+    if (Dtype != DType_INT8 && this->qinfo)
     {
-        printNodeValidationError("OpAvgPool2d: illegal size for attribute padding");
-        return 1;
+        ERROR_IF(this->qinfo->input_zp() != 0, "OpAvgPool2d: zeropoint only for int8_t");
+        ERROR_IF(this->qinfo->output_zp() != 0, "OpAvgPool2d: zeropoint only for int8_t");
     }
 
-    if (attribute->kernel().size() != 2)
+    std::string msg;
+    if (check_pool2d_attribute_common(attribute, in->getShape(), out->getShape(), msg))
     {
-        printNodeValidationError("OpAvgPool2d: illegal size for attribute kernel");
-        return 1;
-    }
-
-    if (attribute->stride().size() != 2)
-    {
-        printNodeValidationError("OpAvgPool2d: illegal size for attribute stride");
+        msg = "OpAvgPool2d: " + msg;
+        printNodeValidationError(msg.c_str());
         return 1;
     }
 
@@ -1117,21 +1199,11 @@ int OpMaxPool2d<Dtype>::checkTensorAttributes()
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    if (attribute->padding().size() != 4)
+    std::string msg;
+    if (check_pool2d_attribute_common(attribute, in->getShape(), out->getShape(), msg))
     {
-        printNodeValidationError("OpMaxPool2d: illegal size for attribute padding");
-        return 1;
-    }
-
-    if (attribute->kernel().size() != 2)
-    {
-        printNodeValidationError("OpMaxPool2d: illegal size for attribute kernel");
-        return 1;
-    }
-
-    if (attribute->stride().size() != 2)
-    {
-        printNodeValidationError("OpMaxPool2d: illegal size for attribute stride");
+        msg = "OpMaxPool2d: " + msg;
+        printNodeValidationError(msg.c_str());
         return 1;
     }
 
