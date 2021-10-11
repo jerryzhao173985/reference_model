@@ -45,5 +45,13 @@ class ErrorIf(object):
     PoolingOutputShapeMismatch = "PoolingOutputShapeMismatch"
     ScaleNotTrue = "ScaleNotTrue"
     ScaleTrue = "ScaleTrue"
+    TensorSizeInputOutputMismatch = "TensorSizeInputOutputMismatch"
+    StartSmallerZero = "StartSmallerZero"
+    SizeSmallerEqualZero = "SizeSmallerEqualZero"
+    StartSizeOutsideBounds = "StartSizeOutsideBounds"
+    SizeOutputShapeMismatch = "SizeOutputShapeMismatch"
+    InputSizeStartLengthMismatch = "InputSizeStartLengthMismatch"
+    IndexOutsideBounds = "IndexOutsideBounds"
+    IndexUsedTwice = "IndexUsedTwice"
 
 
