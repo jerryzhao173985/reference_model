@@ -53,5 +53,8 @@ class ErrorIf(object):
     InputSizeStartLengthMismatch = "InputSizeStartLengthMismatch"
     IndexOutsideBounds = "IndexOutsideBounds"
     IndexUsedTwice = "IndexUsedTwice"
+    MaxSmallerMin = "MaxSmallerMin"
+    ConcatInputRankMismatch = "ConcatInputRankMismatch"
+    ConcatInputDimMismatch = "ConcatInputDimMismatch"
 
 
