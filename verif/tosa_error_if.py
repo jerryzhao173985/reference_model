@@ -56,5 +56,14 @@ class ErrorIf(object):
     MaxSmallerMin = "MaxSmallerMin"
     ConcatInputRankMismatch = "ConcatInputRankMismatch"
     ConcatInputDimMismatch = "ConcatInputDimMismatch"
+    CondIfInputListThenGraphMismatch = "CondIfInputListThenGraphMismatch"
+    CondIfInputListElseGraphMismatch = "CondIfInputListElseGraphMismatch"
+    CondIfOutputListThenGraphMismatch = "CondIfOutputListThenGraphMismatch"
+    CondIfOutputListElseGraphMismatch = "CondIfOutputListElseGraphMismatch"
+    InputListOutputListMismatch = "InputListOutputListMismatch"
+    InputListCondGraphMismatch = "InputListCondGraphMismatch"
+    InputListBodyGraphInputMismatch = "InputListBodyGraphInputMismatch"
+    InputListBodyGraphOutputMismatch = "InputListBodyGraphOutputMismatch"
+    CondGraphOutputNotMatchingBool = "CondGraphOutputNotMatchingBool"
 
 
