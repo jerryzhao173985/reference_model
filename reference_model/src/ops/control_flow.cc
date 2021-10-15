@@ -37,16 +37,17 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
 
     DEBUG_MED(OP, "Evaluating block %s", block_name.c_str());
 
-    SubgraphTraverser gt(block, tsh);
+    SubgraphTraverser block_sgt(block, tsh);
 
-    ERROR_IF(gt.initializeGraph(), "Unable to initialize graph traverser for block %s", block_name.c_str());
+    ERROR_IF(block_sgt.initializeGraph(), "evalBlock(): Unable to initialize graph traverser for %s",
+             block_name.c_str());
+    ERROR_IF(block_sgt.linkTensorsAndNodes(), "evalBlock(): Failed to link tensors and nodes for %s",
+             block_name.c_str());
+    ERROR_IF(block_sgt.validateGraph(), "evalBlock(): Failed to validate subgraph for %s", block_name.c_str());
+    ERROR_IF(block_sgt.allocateTensor(), "evalBlock(): Failed to allocate tensor for %s", block_name.c_str());
 
-    ERROR_IF(gt.linkTensorsAndNodes(), "Failed to link tensors and nodes for block %s", block_name.c_str());
-
-    ERROR_IF(gt.validateGraph(), "Failed to validate subgraph for block %s", block_name.c_str());
-
-    int num_input_tensors  = gt.getNumInputTensors();
-    int num_output_tensors = gt.getNumOutputTensors();
+    int num_input_tensors  = block_sgt.getNumInputTensors();
+    int num_output_tensors = block_sgt.getNumOutputTensors();
 
     for (size_t i = 0; i < block_inputs.size(); i++)
     {
@@ -67,15 +68,9 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     // set graph traverser's input = basic block's input
     for (int i = 0; i < num_input_tensors; i++)
     {
-        TosaReference::Tensor* tensor = gt.getInputTensor(i);
-        ASSERT_MSG(!tensor->is_allocated(), "block %s input tensors are unexpectedly initialized before",
-                   block_name.c_str());
-
-        if (tensor->allocate())
-        {
-            WARNING("Fail to allocate tensor %s", tensor->getName().c_str());
-            return 1;
-        }
+        TosaReference::Tensor* tensor = block_sgt.getInputTensor(i);
+        ERROR_IF(!tensor->is_allocated(), "block %s input tensor %s are not initialized before use", block_name.c_str(),
+                 tensor->getName().c_str());
 
         if (tensor->copyValueFrom(block_inputs[i]))
         {
@@ -91,18 +86,45 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
         {
             if (gn->hasAllInputsReady() && !gn->getOnNextNodeList())
             {
-                gt.addToNextNodeList(gn);
+                block_sgt.addToNextNodeList(gn);
             }
         }
     }
 
-    ERROR_IF(gt.evaluateAll(), "Error evaluating network.  Giving up.");
+    ERROR_IF(block_sgt.evaluateAll(), "Error evaluating network.  Giving up.");
+
+    // pass block status back
+    switch (block_sgt.getGraphStatus())
+    {
+        case GraphStatus::TOSA_VALID:
+        {
+            DEBUG_MED(OP, "Successfully evaluating block %s", block_name.c_str());
+            break;
+        }
+        case GraphStatus::TOSA_UNPREDICTABLE:
+        {
+            DEBUG_MED(OP, "Finish evaluating block %s but result is UNPREDICTABLE", block_name.c_str());
+            DEBUG_MED(OP, "Setting parent graph status to UNPREDICTABLE");
+            parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
+            break;
+        }
+        case GraphStatus::TOSA_ERROR:
+        {
+            DEBUG_MED(OP, "Fail evaluating block %s. Result is ERROR", block_name.c_str());
+            if (parent_sgt->getGraphStatus() != GraphStatus::TOSA_UNPREDICTABLE)
+            {
+                DEBUG_MED(OP, "Setting parent graph status to ERROR");
+                parent_sgt->setGraphStatus(GraphStatus::TOSA_ERROR);
+                return 1;
+            }
+        }
+    }
 
     // make sure output tensor is evaluated and show its value
     bool all_output_valid = true;
     for (int i = 0; i < num_output_tensors; i++)
     {
-        const TosaReference::Tensor* ct = gt.getOutputTensor(i);
+        const TosaReference::Tensor* ct = block_sgt.getOutputTensor(i);
         ASSERT_MEM(ct);
         if (!ct->getIsValid())
         {
@@ -116,7 +138,7 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     }
     if (!all_output_valid)
     {
-        gt.dumpGraph(g_func_debug.func_debug_file);
+        block_sgt.dumpGraph(g_func_debug.func_debug_file);
         ERROR_IF(true, "SubgraphTraverser \"%s\" error: Output tensors are not all valid at the end of evaluation.",
                  block_name.c_str());
     }
@@ -124,8 +146,9 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     // set basic block's output = subgraph_traverser's output
     for (int i = 0; i < num_output_tensors; i++)
     {
-        TosaReference::Tensor* tensor = gt.getOutputTensor(i);
-        ASSERT_MSG(tensor->is_allocated(), "tensor %s is not allocated", tensor->getName().c_str());
+        TosaReference::Tensor* tensor = block_sgt.getOutputTensor(i);
+        ERROR_IF(!tensor->is_allocated(), "block %s input tensor %s are not initialized before use", block_name.c_str(),
+                 tensor->getName().c_str());
 
         if (block_outputs[i]->copyValueFrom(tensor))
         {
@@ -150,18 +173,11 @@ OpCondIf::~OpCondIf()
 
 int OpCondIf::checkTensorAttributes()
 {
-    if (getInputs().size() < 1)
-    {
-        WARNING("OpCondIf: must have at least 1 operand");
-        return 1;
-    }
+    ERROR_IF(getInputs().size() < 1, "OpCondIf: must have at least 1 operand");
 
-    if (inputs[0]->getDtype() != DType_BOOL || inputs[0]->getRank() != 0)
-    {
-        WARNING("OpCondIf: invalid tensor dtype=%s, rank=%d", EnumNamesDType()[inputs[0]->getDtype()],
-                inputs[0]->getRank());
-        return 1;
-    }
+    ERROR_IF(inputs[0]->getDtype() != DType_BOOL || inputs[0]->getRank() != 0,
+             "OpCondIf: invalid tensor dtype=%s, rank=%d", EnumNamesDType()[inputs[0]->getDtype()],
+             inputs[0]->getRank());
 
     cond = dynamic_cast<TosaReference::Tensor0<bool>*>(inputs[0]);
     ASSERT_MEM(cond);
@@ -169,16 +185,69 @@ int OpCondIf::checkTensorAttributes()
     then_block = tsh->GetBlockByName(attribute->then_branch());
     else_block = tsh->GetBlockByName(attribute->else_branch());
 
-    if (!then_block)
+    ERROR_IF(!then_block, "OpCondIf: fail to resolve then_branch %s", attribute->then_branch().c_str());
+
+    ERROR_IF(!else_block, "OpCondIf: fail to resolve else_branch %s", attribute->else_branch().c_str());
+
+    // Make sure operator input/output matches block input/output
+    // Skip the first rank 0 bool tensor on input list
+    int32_t num_input_tensor  = getInputs().size() - 1;
+    int32_t num_output_tensor = getOutputs().size();
+    ERROR_IF((int32_t)then_block->GetInputs().size() != num_input_tensor,
+             "OpCondIf: then_block has unexpected number of input");
+    ERROR_IF((int32_t)else_block->GetInputs().size() != num_input_tensor,
+             "OpCondIf: else_block has unexpected number of input");
+    ERROR_IF((int32_t)then_block->GetOutputs().size() != num_output_tensor,
+             "OpCondIf: then_block has unexpected number of output");
+    ERROR_IF((int32_t)else_block->GetOutputs().size() != num_output_tensor,
+             "OpCondIf: else_block has unexpected number of output");
+
+    for (int32_t i = 0; i < num_input_tensor; i++)
     {
-        WARNING("OpCondIf: fail to resolve then_branch %s", attribute->then_branch().c_str());
-        return 1;
+        Tensor* operator_input                    = getInputs()[i + 1];
+        std::string then_block_input_name         = then_block->GetInputs()[i];
+        std::string else_block_input_name         = else_block->GetInputs()[i];
+        TosaSerializationTensor* then_block_input = then_block->GetTensorByName(then_block_input_name);
+        TosaSerializationTensor* else_block_input = else_block->GetTensorByName(else_block_input_name);
+        ERROR_IF(operator_input->getDtype() != then_block_input->GetDtype(),
+                 "OpCondIf: input tensor type mismatch with then_block input type");
+        ERROR_IF(operator_input->getDtype() != else_block_input->GetDtype(),
+                 "OpCondIf: input tensor type mismatch with else_block input type");
+        ERROR_IF(operator_input->getRank() != (int32_t)then_block_input->GetShape().size(),
+                 "OpCondIf: input tensor rank mismatch with then_block input rank");
+        ERROR_IF(operator_input->getRank() != (int32_t)else_block_input->GetShape().size(),
+                 "OpCondIf: input tensor rank mismatch with else_block input rank");
+        for (int32_t d = 0; d < operator_input->getRank(); d++)
+        {
+            ERROR_IF(operator_input->getShape()[d] != then_block_input->GetShape()[d],
+                     "OpCondIf: input tensor dimension mismatch with then_block input dimension");
+            ERROR_IF(operator_input->getShape()[d] != else_block_input->GetShape()[d],
+                     "OpCondIf: input tensor dimension mismatch with else_block input dimension");
+        }
     }
 
-    if (!else_block)
+    for (int32_t i = 0; i < num_output_tensor; i++)
     {
-        WARNING("OpCondIf: fail to resolve else_branch %s", attribute->else_branch().c_str());
-        return 1;
+        Tensor* operator_output                    = getOutputs()[i];
+        std::string then_block_output_name         = then_block->GetOutputs()[i];
+        std::string else_block_output_name         = else_block->GetOutputs()[i];
+        TosaSerializationTensor* then_block_output = then_block->GetTensorByName(then_block_output_name);
+        TosaSerializationTensor* else_block_output = else_block->GetTensorByName(else_block_output_name);
+        ERROR_IF(operator_output->getDtype() != then_block_output->GetDtype(),
+                 "OpCondIf: output tensor type mismatch with then_block output type");
+        ERROR_IF(operator_output->getDtype() != else_block_output->GetDtype(),
+                 "OpCondIf: output tensor type mismatch with else_block output type");
+        ERROR_IF(operator_output->getRank() != (int32_t)then_block_output->GetShape().size(),
+                 "OpCondIf: output tensor rank mismatch with then_block output rank");
+        ERROR_IF(operator_output->getRank() != (int32_t)else_block_output->GetShape().size(),
+                 "OpCondIf: output tensor rank mismatch with else_block output rank");
+        for (int32_t d = 0; d < operator_output->getRank(); d++)
+        {
+            ERROR_IF(operator_output->getShape()[d] != then_block_output->GetShape()[d],
+                     "OpCondIf: output tensor dimension mismatch with then_block output dimension");
+            ERROR_IF(operator_output->getShape()[d] != else_block_output->GetShape()[d],
+                     "OpCondIf: output tensor dimension mismatch with else_block output dimension");
+        }
     }
 
     return 0;
@@ -241,43 +310,62 @@ int OpWhileLoop::checkTensorAttributes()
     cond_block = tsh->GetBlockByName(attribute->cond_branch());
     body_block = tsh->GetBlockByName(attribute->body_branch());
 
-    if (!cond_block)
+    ERROR_IF(!cond_block, "OpWhileLoop: fail to resolve cond_branch %s", attribute->cond_branch().c_str());
+    ERROR_IF(!body_block, "OpWhileLoop: fail to resolve body_branch %s", attribute->body_branch().c_str());
+
+    // Make sure operator input/output matches block input/output
+    int32_t num_block_tensor = getInputs().size();
+    ERROR_IF((int32_t)getOutputs().size() != num_block_tensor,
+             "OpWhileLoop: operator input tensor doesn't match output");
+    ERROR_IF((int32_t)cond_block->GetInputs().size() != num_block_tensor,
+             "OpWhileLoop: cond_block has unexpected number of input");
+    ERROR_IF((int32_t)body_block->GetInputs().size() != num_block_tensor,
+             "OpWhileLoop: body_block has unexpected number of input");
+    ERROR_IF((int32_t)body_block->GetOutputs().size() != num_block_tensor,
+             "OpWhileLoop: body_block has unexpected number of output");
+    for (int32_t i = 0; i < num_block_tensor; i++)
     {
-        WARNING("OpWhileLoop: fail to resolve cond_branch %s", attribute->cond_branch().c_str());
-        return 1;
+        Tensor* operator_input  = getInputs()[i];
+        Tensor* operator_output = getOutputs()[i];
+        ERROR_IF(operator_input->matchRankTypeShape(*operator_output),
+                 "OpWhileLoop: operator input tensor mismatch operator output tensor");
+
+        std::string cond_block_input_name          = cond_block->GetInputs()[i];
+        std::string body_block_input_name          = body_block->GetInputs()[i];
+        std::string body_block_output_name         = body_block->GetOutputs()[i];
+        TosaSerializationTensor* cond_block_input  = cond_block->GetTensorByName(cond_block_input_name);
+        TosaSerializationTensor* body_block_input  = body_block->GetTensorByName(body_block_input_name);
+        TosaSerializationTensor* body_block_output = body_block->GetTensorByName(body_block_output_name);
+
+        ERROR_IF(operator_input->getDtype() != cond_block_input->GetDtype(),
+                 "OpWhileLoop: input tensor type mismatch with cond_block input type");
+        ERROR_IF(operator_input->getDtype() != body_block_input->GetDtype(),
+                 "OpWhileLoop: input tensor type mismatch with body_block input type");
+        ERROR_IF(operator_input->getDtype() != body_block_output->GetDtype(),
+                 "OpWhileLoop: input tensor type mismatch with body_block output type");
+        ERROR_IF(operator_input->getRank() != (int32_t)cond_block_input->GetShape().size(),
+                 "OpWhileLoop: input tensor rank mismatch with cond_block input rank");
+        ERROR_IF(operator_input->getRank() != (int32_t)body_block_input->GetShape().size(),
+                 "OpWhileLoop: input tensor rank mismatch with body_block input rank");
+        ERROR_IF(operator_input->getRank() != (int32_t)body_block_output->GetShape().size(),
+                 "OpWhileLoop: input tensor rank mismatch with body_block output rank");
+
+        for (int32_t d = 0; d < operator_input->getRank(); d++)
+        {
+            ERROR_IF(operator_input->getShape()[d] != cond_block_input->GetShape()[d],
+                     "OpWhileLoop: input tensor dimension mismatch with cond_block input dimension");
+            ERROR_IF(operator_input->getShape()[d] != body_block_input->GetShape()[d],
+                     "OpWhileLoop: input tensor dimension mismatch with body_block input dimension");
+            ERROR_IF(operator_input->getShape()[d] != body_block_output->GetShape()[d],
+                     "OpWhileLoop: input tensor dimension mismatch with body_block output dimension");
+        }
     }
 
-    if (!body_block)
-    {
-        WARNING("OpWhileLoop: fail to resolve body_branch %s", attribute->body_branch().c_str());
-        return 1;
-    }
-
-    if (cond_block->GetOutputs().size() != 1)
-    {
-        WARNING("OpWhileLoop: invalid cond_block output size %lu", cond_block->GetOutputs().size());
-        return 1;
-    }
-
-    TosaSerializationTensor* cond_output_tensor = cond_block->GetTensorByName(cond_block->GetOutputs()[0]);
-
-    if (!cond_output_tensor)
-    {
-        WARNING("OpWhileLoop: fail to resolve cond_block's output tensor %s", cond_block->GetOutputs()[0].c_str());
-        return 1;
-    }
-
-    if (cond_output_tensor->GetDtype() != DType_BOOL)
-    {
-        WARNING("OpWhileLoop: invalid cond_block's output tensor data type %s",
-                EnumNamesDType()[cond_output_tensor->GetDtype()]);
-        return 1;
-    }
-    if (cond_output_tensor->GetShape().size() != 0)
-    {
-        WARNING("OpWhileLoop: invalid cond_block's output rank %lu", cond_output_tensor->GetShape().size());
-        return 1;
-    }
+    ERROR_IF(cond_block->GetOutputs().size() != 1, "OpWhileLoop: cond_block can only have 1 output tensor");
+    std::string cond_block_output_name         = cond_block->GetOutputs()[0];
+    TosaSerializationTensor* cond_block_output = cond_block->GetTensorByName(cond_block_output_name);
+    ERROR_IF(cond_block_output->GetDtype() != DType_BOOL, "OpWhileLoop: cond_block output can only be bool type");
+    ERROR_IF(cond_block_output->GetShape().size() != 0, "OpWhileLoop: cond_block output can only be rank 0");
 
     return 0;
 }

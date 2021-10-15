@@ -61,6 +61,10 @@ public:
     int dumpNextNodeList(FILE* out) const;
     int clearAllNodeMarkings();
 
+    std::string getBlockName() const
+    {
+        return block->GetName();
+    }
     int getNumInputTensors() const;
     Tensor* getInputTensor(const unsigned int idx) const;
     Tensor* getInputTensorByName(const std::string name) const;
