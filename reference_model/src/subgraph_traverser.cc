@@ -14,7 +14,6 @@
 //    limitations under the License.
 
 #include "subgraph_traverser.h"
-#include <unordered_set>
 
 #ifndef SUBGRAPH_ERROR_IF
 #define SUBGRAPH_ERROR_IF(COND, fmt, ...)                                                                              \
@@ -118,9 +117,6 @@ TosaReference::Tensor* SubgraphTraverser::getOutputTensorByName(const std::strin
 int SubgraphTraverser::initializeGraph()
 {
     int idx = 0;
-
-    // tensor name set which contains all the name used by operator
-    std::unordered_set<std::string> used_tensor_name_set;
 
     for (auto op : block->GetOperators())
     {
@@ -266,6 +262,63 @@ int SubgraphTraverser::initializeGraph()
 
     for (auto ts : block->GetTensors())
     {
+        DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
+        TosaReference::Tensor* tensor =
+            TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(), ts->GetShape().size());
+
+        SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::initializeGraph(): Unsupported tensor name=%s, type=%s, rank=%d",
+                          ts->GetName().c_str(), EnumNamesDType()[ts->GetDtype()], (int)ts->GetShape().size());
+
+        // update this->tensors
+        addTensor(tensor);
+    }
+
+    DEBUG_INFO(GT, "Enumerating block %s graph inputs", block->GetName().c_str());
+    for (auto& input_name : block->GetInputs())
+    {
+        TosaReference::Tensor* tensor = findTensorByName(input_name);
+        DEBUG_INFO(GT, "input tensor name=%s", input_name.c_str());
+        if (tensor)
+        {
+            tensor->setIsSubgraphInput();
+            inputTensors.push_back(tensor);
+        }
+        else
+        {
+            SUBGRAPH_ERROR_IF(true, "SubgraphTraverser::initializeGraph(): Failed to find input tensor by name %s",
+                              input_name.c_str());
+        }
+    }
+
+    DEBUG_INFO(GT, "Enumerating block %s graph outputs", block->GetName().c_str());
+    for (auto& output_name : block->GetOutputs())
+    {
+        TosaReference::Tensor* tensor = findTensorByName(output_name);
+        DEBUG_INFO(GT, "output tensor name=%s\n", output_name.c_str());
+        if (tensor)
+        {
+            tensor->setIsSubgraphOutput();
+            outputTensors.push_back(tensor);
+        }
+        else
+        {
+            SUBGRAPH_ERROR_IF(true, "SubgraphTraverser::initializeGraph(): Failed to find output tensor by name %s",
+                              output_name.c_str());
+        }
+    }
+
+    if (DEBUG_ENABLED(DEBUG_VERB_HIGH, GT))
+    {
+        dumpNextNodeList(g_func_debug.func_debug_file);
+    }
+
+    return 0;
+}
+
+int SubgraphTraverser::allocateTensor()
+{
+    for (auto ts : block->GetTensors())
+    {
         // Bail out if tensor is used and any of its dimension is invalid.
         auto got = used_tensor_name_set.find(ts->GetName());
         if (got != used_tensor_name_set.end())
@@ -280,20 +333,18 @@ int SubgraphTraverser::initializeGraph()
             }
         }
 
-        DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
-        TosaReference::Tensor* tensor =
-            TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(), ts->GetShape().size());
+        TosaReference::Tensor* tensor = findTensorByName(ts->GetName());
+        SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::allocateTensor(): can't find tensor %s.", ts->GetName().c_str());
 
-        SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::initializeGraph(): Unsupported tensor name=%s, type=%s, rank=%d",
-                          ts->GetName().c_str(), EnumNamesDType()[ts->GetDtype()], (int)ts->GetShape().size());
+        DEBUG_INFO(GT, "Allocating tensor %s", tensor->getName().c_str());
+        if (tensor->allocate())
+        {
+            FATAL_ERROR("Failed to allocate tensor %s", tensor->getName().c_str());
+        }
 
         if (!ts->GetData().empty())
         {
-            if (tensor->allocate())
-            {
-                FATAL_ERROR("Failed to allocate tensor %s", tensor->getName().c_str());
-            }
-
+            DEBUG_INFO(GT, "Allocating tensor %s", tensor->getName().c_str());
             switch (ts->GetDtype())
             {
                 case DType_INT4:
@@ -361,48 +412,6 @@ int SubgraphTraverser::initializeGraph()
                                       EnumNamesDType()[ts->GetDtype()]);
             }
         }
-
-        // update this->tensors
-        addTensor(tensor);
-    }
-
-    DEBUG_INFO(GT, "Enumerating block %s graph inputs", block->GetName().c_str());
-    for (auto& input_name : block->GetInputs())
-    {
-        TosaReference::Tensor* tensor = findTensorByName(input_name);
-        DEBUG_INFO(GT, "input tensor name=%s", input_name.c_str());
-        if (tensor)
-        {
-            tensor->setIsSubgraphInput();
-            inputTensors.push_back(tensor);
-        }
-        else
-        {
-            SUBGRAPH_ERROR_IF(true, "SubgraphTraverser::initializeGraph(): Failed to find input tensor by name %s",
-                              input_name.c_str());
-        }
-    }
-
-    DEBUG_INFO(GT, "Enumerating block %s graph outputs", block->GetName().c_str());
-    for (auto& output_name : block->GetOutputs())
-    {
-        TosaReference::Tensor* tensor = findTensorByName(output_name);
-        DEBUG_INFO(GT, "output tensor name=%s\n", output_name.c_str());
-        if (tensor)
-        {
-            tensor->setIsSubgraphOutput();
-            outputTensors.push_back(tensor);
-        }
-        else
-        {
-            SUBGRAPH_ERROR_IF(true, "SubgraphTraverser::initializeGraph(): Failed to find output tensor by name %s",
-                              output_name.c_str());
-        }
-    }
-
-    if (DEBUG_ENABLED(DEBUG_VERB_HIGH, GT))
-    {
-        dumpNextNodeList(g_func_debug.func_debug_file);
     }
 
     return 0;

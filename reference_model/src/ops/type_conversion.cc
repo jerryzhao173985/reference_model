@@ -30,7 +30,7 @@ OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 6);
+    setRequiredRank(0, 4);
     INIT_ATTRIBUTE(Rescale);
 }
 
@@ -63,6 +63,30 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(in && out);
+
+    if ((InDtype != DType_INT8) && (InDtype != DType_UINT8) && (attribute->input_zp() != 0))
+    {
+        printNodeValidationError("OpRescale: Input DType not INT8/UINT8 and zero point not 0");
+        return 1;
+    }
+
+    if ((OutDtype != DType_INT8) && (OutDtype != DType_UINT8) && (attribute->output_zp() != 0))
+    {
+        printNodeValidationError("OpRescale: Output DType not INT8/UINT8 and zero point not 0");
+        return 1;
+    }
+
+    if (attribute->scale32() && (InDtype == DType_INT48))
+    {
+        printNodeValidationError("OpRescale: Scale set to true but input type is INT48");
+        return 1;
+    }
+
+    if ((!attribute->scale32()) && attribute->double_round())
+    {
+        printNodeValidationError("OpRescale: Scale set to false but double round set to true");
+        return 1;
+    }
 
     return 0;
 }

@@ -25,14 +25,15 @@ using namespace tosa;
 template <int Rank, DType Dtype>
 int OpClamp<Rank, Dtype>::register_fcn()
 {
-
     switch (Dtype)
     {
         case DType_FLOAT:
         {
             InEigenType min = (InEigenType)attribute->min_fp();
             InEigenType max = (InEigenType)attribute->max_fp();
-            this->fcn       = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
+            ERROR_IF(max < min, "OpClamp: max smaller than min");
+
+            this->fcn = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
         }
         break;
         case DType_INT8:
@@ -40,7 +41,8 @@ int OpClamp<Rank, Dtype>::register_fcn()
         {
             InEigenType min = (InEigenType)attribute->min_int();
             InEigenType max = (InEigenType)attribute->max_int();
-            this->fcn       = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
+            ERROR_IF(max < min, "OpClamp: max smaller than min");
+            this->fcn = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
         }
         break;
         default:

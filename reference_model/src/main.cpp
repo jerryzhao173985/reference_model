@@ -84,6 +84,12 @@ int main(int argc, const char** argv)
         goto done;
     }
 
+    if (main_gt.allocateTensor())
+    {
+        WARNING("Failed to allocate tensor. Evaluation aborted.");
+        goto done;
+    }
+
     if (g_func_config.validate_only)
     {
         goto done;
@@ -251,9 +257,9 @@ int readInputTensors(SubgraphTraverser& gt, json test_desc)
 
             DEBUG_MED(GT, "Loading input tensor %s from filename: %s", tensor->getName().c_str(), filename);
 
-            if (tensor->allocate())
+            if (!tensor->is_allocated())
             {
-                WARNING("Fail to allocate tensor %s", tensor->getName().c_str());
+                WARNING("Tensor %s is not allocated before being initialized", tensor->getName().c_str());
                 return 1;
             }
 

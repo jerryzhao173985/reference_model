@@ -21,6 +21,7 @@
 #include "ops/op_factory.h"
 #include "tensor.h"
 #include "tosa_serialization_handler.h"
+#include <unordered_set>
 
 namespace TosaReference
 {
@@ -54,6 +55,7 @@ public:
 
     int linkTensorsAndNodes();
     int validateGraph();
+    int allocateTensor();
 
     int dumpGraph(FILE* out) const;
     int dumpNextNodeList(FILE* out) const;
@@ -98,6 +100,9 @@ private:
     // With control flow, a node may appear on this list more than once during its
     // lifetime, although the list itself should only contain unique nodes.
     std::list<GraphNode*> nextNodeList;
+
+    // tensor name set which contains all the name used by operator
+    std::unordered_set<std::string> used_tensor_name_set;
 
     // Maximum number of times to evalute a node before
     // warning.

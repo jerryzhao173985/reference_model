@@ -51,24 +51,48 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
         printNodeValidationError("Concat operator must have at least one input tensor");
         return 1;
     }
+
+    int32_t num_inputs = inputs.size();
+
     // output and input must be the same types and rank
-    for (size_t i = 0; i < inputs.size(); i++)
+    for (int32_t i = 0; i < num_inputs; i++)
     {
         if (inputs[i]->matchRankType(*outputs[0]))
         {
-            printNodeValidationError("Concat operator input ranks and types must match");
+            printNodeValidationError("OpConcat: input ranks and types must match");
             return 1;
         }
         ins.push_back(dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[i]));
     }
 
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-
-    if (attribute->axis() < 0 || (size_t)attribute->axis() >= inputs[0]->getShape().size())
+    if (attribute->axis() < 0 || (size_t)attribute->axis() >= Rank)
     {
-        printNodeValidationError("Axis is beyond input tensor rank");
+        printNodeValidationError("OpConcat: axis is beyond output tensor rank");
         return 1;
     }
+
+    int32_t output_dim_on_axis = 0;
+    for (int32_t j = 0; j < num_inputs; j++)
+    {
+        for (int32_t i = 0; i < Rank; i++)
+        {
+            int32_t input_dim = inputs[j]->getShape()[i];
+            if (i == attribute->axis())
+            {
+                output_dim_on_axis += input_dim;
+            }
+            else if (input_dim != outputs[0]->getShape()[i])
+            {
+                printNodeValidationError("OpConcat: input dimension not matching output dimension");
+                return 1;
+            }
+        }
+    }
+
+    ERROR_IF(output_dim_on_axis == outputs[0]->getShape()[attribute->axis()],
+             "OpConcat: sum of input dimension on axis not equal to output dimension on axis");
+
+    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     return 0;
 }
@@ -135,14 +159,13 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-    TosaReference::TensorTemplate<ETensor2<int32_t>>* paddings =
-        dynamic_cast<TosaReference::TensorTemplate<ETensor2<int32_t>>*>(inputs[1]);
+    in       = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    out      = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    paddings = dynamic_cast<TosaReference::TensorTemplate<ETensor2<int32_t>>*>(inputs[1]);
 
-    for (int i = 0; i < Rank; i++)
+    if (this->qinfo && Dtype != DType_INT8)
     {
-        paddings_array[i] = std::make_pair(paddings->getTensor()(i, 0), paddings->getTensor()(i, 1));
+        ERROR_IF(this->qinfo->input_zp() != 0, "OpPad: zeropoint should be 0");
     }
 
     return 0;
@@ -151,6 +174,14 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, DType Dtype>
 int OpPad<Rank, Dtype>::eval()
 {
+    // Move this to
+    for (int i = 0; i < Rank; i++)
+    {
+        ERROR_IF((paddings->getTensor()(i, 0) < 0) || (paddings->getTensor()(i, 1) < 0),
+                 "OpPad: padding can't be smaller than 0");
+        paddings_array[i] = std::make_pair(paddings->getTensor()(i, 0), paddings->getTensor()(i, 1));
+    }
+
     InEigenType pad_value = 0;
     if (this->qinfo)
     {
@@ -202,11 +233,19 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
+    ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
+             "Input tensor size does not match output tensor size");
+
     for (uint32_t d = 0; d < OutRank; d++)
     {
         if (attribute->shape()[d] == -1)
         {
             minusOneCount++;
+        }
+        else
+        {
+            ERROR_IF(attribute->shape()[d] != outputs[0]->getShape()[d],
+                     "OpReshape: new_shape doesn't match output shape");
         }
     }
 
@@ -358,7 +397,7 @@ OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_SLICE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 6);
+    setRequiredRank(1, 4);
 
     INIT_ATTRIBUTE(Slice);
 }
@@ -391,23 +430,20 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    for (size_t i = 0; i < attribute->begin().size(); i++)
-    {
-        begin_array[i] = attribute->begin()[i];
-    }
+    ERROR_IF((int32_t)attribute->begin().size() != in->getRank(),
+             "OpSlice: begin array length needs to be rank(input)");
+    ERROR_IF((int32_t)attribute->size().size() != in->getRank(), "OpSlice: size array length needs to be rank(input)");
 
-    for (size_t i = 0; i < attribute->size().size(); i++)
+    for (int32_t i = 0; i < in->getRank(); i++)
     {
-        if (attribute->size()[i] != 0)
-        {
-            size_array[i] = attribute->size()[i];
-        }
-        else
-        {
-            // Tensorflow assigns a zero size to dimensions that are kept
-            // Eigen expects size to be the full size of the dimension
-            size_array[i] = in->getTensor().dimension(0);
-        }
+        int32_t b = attribute->begin()[i];
+        int32_t s = attribute->size()[i];
+        ERROR_IF(b < 0 || b >= in->getShape()[i], "OpSlice: start out of boundary");
+        ERROR_IF((b + s) < 0 || (b + s) > in->getShape()[i], "OpSlice: (start+size) out of boundary");
+        ERROR_IF(s <= 0, "OpSlice: output must be positive");
+        ERROR_IF(s != out->getShape()[i], "OpSlice: size doesn't match output tensor dimension");
+        begin_array[i] = b;
+        size_array[i]  = s;
     }
 
     return 0;
@@ -611,6 +647,7 @@ int OpTranspose<Rank, Dtype>::eval()
     for (int32_t d = 0; d < Rank; d++)
     {
         perm_array[d] = this->perm_tensor->getTensor().data()[d];
+        ERROR_IF(perm_array[d] < 0 or perm_array[d] >= Rank, "OpTranspose: index out of boundary");
     }
 
     out->getTensor() = in->getTensor().shuffle(perm_array);

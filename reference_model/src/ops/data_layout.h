@@ -63,6 +63,7 @@ protected:
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, Rank> paddings_array;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
+    TosaReference::TensorTemplate<Eigen::Tensor<int32_t, 2>>* paddings;
     TosaPadQuantInfo* qinfo;
 };
 
