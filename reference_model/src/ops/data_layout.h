@@ -63,8 +63,8 @@ protected:
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, Rank> paddings_array;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    TosaReference::TensorTemplate<Eigen::Tensor<int32_t, 2>>* paddings;
     TosaPadQuantInfo* qinfo;
+    TosaPadAttribute* attribute;
 };
 
 template <int InRank, int OutRank, DType Dtype>
@@ -207,8 +207,8 @@ public:
 
 protected:
     Eigen::array<int, Rank> perm_array;
+    TosaTransposeAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
-    TosaReference::TensorTemplate<ETensor1<int32_t>>* perm_tensor;
     TosaReference::TensorTemplate<TOut>* out;
 };
 };    // namespace TosaReference

@@ -676,12 +676,21 @@ class TosaArgGen:
         axis_pad_values = [x for x in itertools.product(pad_values, pad_values)]
         shape_pad_values = itertools.product(*([axis_pad_values] * rank))
 
+        if dtype in [DType.BOOL, DType.INT8, DType.INT16, DType.INT32]:
+            pad_const_int = testGen.getRandNumberDType(dtype)
+            pad_const_fp = 0
+        elif dtype == DType.FLOAT:
+            pad_const_int = 0
+            pad_const_fp = testGen.getRandNumberDType(dtype)
+        else:
+            return []
+
         for paddings in shape_pad_values:
             name = "pad"
             for r in range(rank):
                 before, after = paddings[r]
                 name = f"{name}{before}{after}"
-            arg_list.append((name, [np.array(paddings)]))
+            arg_list.append((name, [np.array(paddings), pad_const_int, pad_const_fp]))
 
         return arg_list
 
@@ -1176,6 +1185,27 @@ class TosaArgGen:
 
         return arg_list
 
+    @staticmethod
+    def agTable(testGen, opName, shapeList, dtype, error_name=None):
+        arg_list = []
+
+        if dtype == DType.INT8:
+            table = np.int32(
+                testGen.rng.integers(low=-128, high=128, size=[256])
+            ).tolist()
+        else:  # INT16
+            table = np.int32(
+                testGen.rng.integers(low=-32768, high=32768, size=[513])
+            ).tolist()
+
+        arg_list.append(
+            (
+                "",
+                [table],
+            )
+        )
+        return arg_list
+
     def agCondIf(testGen, opName, shapeList, dtype, error_name=None):
         # CondIf generates the condition values here.
         # Convert to tensors in the build function, along with the
@@ -1527,13 +1557,8 @@ class TosaErrorValidator:
             op = kwargs['op']
             input_list = kwargs['input_list']
             num_operands = kwargs['num_operands']
-            # both PAD, TRANSPOSE add an extra const layer in the build function
-            if op['op'] in [Op.PAD, Op.TRANSPOSE]:
-                if len(input_list) != num_operands + 1:
-                    error_result = True
-            else:
-                if len(input_list) != num_operands:
-                    error_result = True
+            if len(input_list) != num_operands:
+                error_result = True
 
         info_dict = {
             "error_name": error_name,
@@ -2907,19 +2932,13 @@ class TosaTestGen:
         self.ser.addOperator(op['op'], [a.name, b.name], [result_tens.name], attr)
         return result_tens
 
-    def build_table(self, op, a):
-        # Constant size depending on type, random values
-        if a.dtype == DType.INT16:
-            table_dtype = DType.INT16
-            table_arr = self.getRandTensor([513], table_dtype)
-        else:
-            assert a.dtype == DType.INT8
-            table_dtype = DType.INT8
-            table_arr = self.getRandTensor([256], table_dtype)
+    def build_table(self, op, a, table):
+        result_tens = OutputShaper.tableOp(self.ser, a)
 
-        table_tens = self.ser.addConst(table_arr.shape, table_dtype, table_arr)
-        result_tens = OutputShaper.tableOp(self.ser, a, table_dtype)
-        self.ser.addOperator(op['op'], [a.name, table_tens.name], [result_tens.name], None)
+        attr = ts.TosaSerializerAttribute()
+        attr.TableAttribute(table)
+
+        self.ser.addOperator(op['op'], [a.name], [result_tens.name], attr)
 
         return result_tens
 
@@ -3219,16 +3238,14 @@ class TosaTestGen:
         self.ser.addOperator(op['op'], input_tensor_names, [result_tens.name], attr)
         return result_tens
 
-    def build_pad(self, op, a, padding, validator_fcns=None, error_name=None, qinfo=None):
+    def build_pad(self, op, a, padding, pad_const_int, pad_const_float, validator_fcns=None, error_name=None, qinfo=None):
         result_tens = OutputShaper.padOp(self.ser, self.rng, a, padding, error_name)
 
-        # Need to turn the padding array into a TOSA tensor here.
-        # This is one of the few tensor operands that does not get
-        # randomly generated
-        padding_tens = self.ser.addConst(padding.shape, DType.INT32, padding)
+        attr = ts.TosaSerializerAttribute()
+        attr.PadAttribute(padding.flatten(), pad_const_int, pad_const_float)
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, padding_tens.name]
+        input_list = [a.name]
         output_list = [result_tens.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -3252,7 +3269,7 @@ class TosaTestGen:
         )
 
         self.ser.addOperator(
-            op['op'], input_list, output_list, None, qinfo
+            op['op'], input_list, output_list, attr, qinfo
         )
         return result_tens
 
@@ -3299,10 +3316,11 @@ class TosaTestGen:
     def build_transpose(self, op, a, perms, validator_fcns=None, error_name=None):
         result_tens = OutputShaper.transposeOp(self.ser, self.rng, a, perms, error_name)
 
-        perms_tens = self.ser.addConst([len(perms)], DType.INT32, np.int32(perms))
+        attr = ts.TosaSerializerAttribute()
+        attr.TransposeAttribute(perms)
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, perms_tens.name]
+        input_list = [a.name]
         output_list = [result_tens.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -3325,7 +3343,7 @@ class TosaTestGen:
         )
 
 
-        self.ser.addOperator(op['op'], input_list, output_list)
+        self.ser.addOperator(op['op'], input_list, output_list, attr)
         return result_tens
 
     def build_slice(self, op, a, start, size, validator_fcns=None, error_name=None):
@@ -4564,7 +4582,7 @@ class TosaTestGen:
             # but create the table tensor in the build function, as it may be
             # a different type from the input
             "operands": (1, 0),
-            "build_fcn": (build_table, TosaTensorGen.tgBasic, None),
+            "build_fcn": (build_table, TosaTensorGen.tgBasic, TosaArgGen.agTable),
             "types": [DType.INT8, DType.INT16],
         },
         # Elementwise Unary operators
@@ -5376,10 +5394,10 @@ class OutputShaper:
         return ser.addOutput(output_shape, values_in.dtype)
 
     @staticmethod
-    def tableOp(ser, input, table_dtype):
+    def tableOp(ser, input):
         # Same shape as the input, but dtype dependent on table dtype
-        assert table_dtype == DType.INT16 or table_dtype == DType.INT8
-        output_dtype = DType.INT32 if table_dtype == DType.INT16 else DType.INT8
+        assert input.dtype == DType.INT16 or input.dtype == DType.INT8
+        output_dtype = DType.INT32 if input.dtype == DType.INT16 else DType.INT8
         return ser.addOutput(input.shape, output_dtype)
 
     @staticmethod

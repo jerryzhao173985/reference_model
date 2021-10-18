@@ -128,10 +128,11 @@ OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
                           uint64_t id_)
     : GraphNode(sgt_, Op_PAD, id_)
 {
-    setRequiredOperands(2, 1);
+    setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
 
     INIT_QINFO(Pad);
+    INIT_ATTRIBUTE(Pad);
 }
 
 template <int Rank, DType Dtype>
@@ -159,9 +160,22 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in       = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out      = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-    paddings = dynamic_cast<TosaReference::TensorTemplate<ETensor2<int32_t>>*>(inputs[1]);
+    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    ASSERT_MEM(in && out);
+
+    // padding in spec is 2D array in shape of [Rank, 2]
+    // Reference model implement this as 1D array of [Rank * 2], with ordering:
+    // [Rank0_front, Rank0_back, Rank1_front, Rank1_back, ..., Rank(N-1)_front, Rank(N-1)_back]
+    ERROR_IF(attribute->padding().size() != (Rank * 2), "OpPad: padding length needs to be (rank(input1) * 2)");
+
+    for (int i = 0; i < Rank; i++)
+    {
+        int32_t pad_front = attribute->padding()[2 * i];
+        int32_t pad_back  = attribute->padding()[2 * i + 1];
+        ERROR_IF((pad_front < 0) || (pad_back < 0), "OpPad: padding can't be smaller than 0");
+        paddings_array[i] = std::make_pair(pad_front, pad_back);
+    }
 
     if (this->qinfo && Dtype != DType_INT8)
     {
@@ -174,18 +188,24 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, DType Dtype>
 int OpPad<Rank, Dtype>::eval()
 {
-    // Move this to
-    for (int i = 0; i < Rank; i++)
+    InEigenType pad_value = 0;
+
+    switch (Dtype)
     {
-        ERROR_IF((paddings->getTensor()(i, 0) < 0) || (paddings->getTensor()(i, 1) < 0),
-                 "OpPad: padding can't be smaller than 0");
-        paddings_array[i] = std::make_pair(paddings->getTensor()(i, 0), paddings->getTensor()(i, 1));
+        case DType_BOOL:
+        case DType_INT8:
+        case DType_INT16:
+        case DType_INT32:
+            pad_value = (InEigenType)attribute->pad_const_int();
+            break;
+        case DType_FLOAT:
+            pad_value = (InEigenType)attribute->pad_const_fp();
+            break;
     }
 
-    InEigenType pad_value = 0;
-    if (this->qinfo)
+    if (this->qinfo && Dtype == DType_INT8)
     {
-        pad_value = (InEigenType)this->qinfo->input_zp();
+        pad_value += (InEigenType)this->qinfo->input_zp();
     }
 
     this->out->getTensor() = this->in->getTensor().pad(this->paddings_array, pad_value);
@@ -602,8 +622,10 @@ OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
                                       uint64_t id_)
     : GraphNode(sgt_, Op_TRANSPOSE, id_)
 {
-    setRequiredOperands(2, 1);
+    setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
+
+    INIT_ATTRIBUTE(Transpose);
 }
 
 template <int Rank, DType Dtype>
@@ -634,9 +656,10 @@ int OpTranspose<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in          = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out         = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-    perm_tensor = dynamic_cast<TosaReference::TensorTemplate<ETensor1<int32_t>>*>(inputs[1]);
+    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+
+    ASSERT_MEM(in && out);
 
     return 0;
 }
@@ -646,7 +669,7 @@ int OpTranspose<Rank, Dtype>::eval()
 {
     for (int32_t d = 0; d < Rank; d++)
     {
-        perm_array[d] = this->perm_tensor->getTensor().data()[d];
+        perm_array[d] = attribute->perm()[d];
         ERROR_IF(perm_array[d] < 0 or perm_array[d] >= Rank, "OpTranspose: index out of boundary");
     }
 
