@@ -717,12 +717,6 @@ class TosaArgGen:
         for s in sorted(list(strides)):
             for p in sorted(list(paddings)):
                 for k in sorted(list(kernels)):
-                    # Calculate output height to test for error_if conditions
-                    oh = (shape[1] + p[0] + p[1] + s[0] - k[0]) // s[0]
-                    ow = (shape[2] + p[2] + p[3] + s[1] - k[1]) // s[1]
-                    y = (oh * s[0]) - p[0] - p[1] - s[0] + k[0]
-                    x = (ow * s[1]) - p[2] - p[3] - s[1] + k[1]
-
                     if error_name in [ErrorIf.StrideSmallerOne, ErrorIf.KernelSmallerOne, ErrorIf.PadSmallerZero, ErrorIf.PadLargerEqualKernel]:
                         sNew, pNew, kNew = TosaErrorIfArgGen.eiPoolingErrorIf(testGen, error_name, s, p, k)
                         if None not in [sNew, pNew, kNew] and n % sparsity == 0:
@@ -741,7 +735,6 @@ class TosaArgGen:
                         and p[0] < k[0] and p[1] < k[0] and p[2] < k[1] and p[3] < k[1]
                         # the padded shape must exceed the kernel size
                         and (shape[1] + p[0] + p[1]) > k[0] and (shape[2] + p[2] + p[3]) > k[1]
-                        and y < shape[1] and x < shape[2]
                     ):
                         arg_list.append(
                             (
