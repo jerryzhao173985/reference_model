@@ -45,7 +45,7 @@ int func_model_init_config();
 int func_model_set_default_config(func_config_t*);
 int func_model_config_set_option(func_config_t*, const char* name, const char* value);
 int func_model_print_config(func_config_t*, FILE* out);
-int func_model_parse_cmd_line(func_config_t*, func_debug_t* func_debug, const int argc, const char** argv);
+int func_model_parse_cmd_line(func_config_t*, func_debug_t* func_debug, const int argc, const char** argv, const char* version);
 int func_model_parse_flat_config_file(func_config_t*, const char* filename);
 int func_model_config_cleanup();
 int func_model_config_get_str_option_by_name(func_config_t*, const char* name, char* value, const uint32_t len);

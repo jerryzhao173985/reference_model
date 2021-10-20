@@ -25,6 +25,11 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 
+#define MODEL_VERSION_MAJOR 0
+#define MODEL_VERSION_MINOR 23
+#define MODEL_VERSION_PATCH 0
+#define MODEL_VERSION_DRAFT true
+
 using namespace TosaReference;
 using namespace tosa;
 using json = nlohmann::json;
@@ -40,15 +45,32 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc);
 
 int main(int argc, const char** argv)
 {
+    TosaVersion model_version(MODEL_VERSION_MAJOR, MODEL_VERSION_MINOR, MODEL_VERSION_PATCH, MODEL_VERSION_DRAFT);
+
     // Initialize configuration and debug subsystems
     func_model_init_config();
     func_model_set_default_config(&g_func_config);
     func_init_debug(&g_func_debug, 0);
-    TosaSerializationHandler tsh;
 
-    if (func_model_parse_cmd_line(&g_func_config, &g_func_debug, argc, argv))
+    if (func_model_parse_cmd_line(&g_func_config, &g_func_debug, argc, argv, model_version.to_string().c_str()))
     {
         return 1;
+    }
+
+    TosaSerializationHandler tsh;
+    TosaVersion::compat_t is_compat = model_version.is_compatible(tsh.GetVersion());
+    switch (is_compat)
+    {
+        case TosaVersion::compat_t::COMPLETELY_COMPATIBLE:
+            break;
+        case TosaVersion::compat_t::PARTIALLY_COMPATIBLE:
+            printf("WARNING: Reference model version %s is partially compatible with serializer version %s\n",
+                   model_version.to_string().c_str(), tsh.GetVersion().to_string().c_str());
+            break;
+        case TosaVersion::compat_t::NOT_COMPATIBLE:
+            printf("ERROR: Reference model version %s is not compatible with serializer version %s\n",
+                   model_version.to_string().c_str(), tsh.GetVersion().to_string().c_str());
+            return TOSA_VERSION_MISMATCH;
     }
 
     json test_desc;

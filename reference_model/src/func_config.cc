@@ -428,6 +428,7 @@ int func_model_print_help(FILE* out)
     fprintf(out, "\t-d <Debug Mask - set component debug mask\n");
     func_model_print_debug_masks(out);
     fprintf(out, "\t-F <flatconfig> - parse <flatconfig> as file of config options\n");
+    fprintf(out, "\t-v - Print refererence model version\n");
     fprintf(out, "\t-h - show this help message and exit\n");
     fprintf(
         out,
@@ -459,7 +460,8 @@ static const char* get_arg_text(int& index, const int argc, const char** argv)
 }
 
 // Read the command line arguments
-int func_model_parse_cmd_line(func_config_t* func_config, func_debug_t* func_debug, const int argc, const char** argv)
+int func_model_parse_cmd_line(
+    func_config_t* func_config, func_debug_t* func_debug, const int argc, const char** argv, const char* version)
 {
     int i;
     programname = argv[0];
@@ -541,6 +543,11 @@ int func_model_parse_cmd_line(func_config_t* func_config, func_debug_t* func_deb
             {
                 func_debug_set_file(func_debug, get_arg_text(i, argc, argv));
                 break;
+            }
+            case 'v':
+            {
+                fprintf(stdout, "Model Version %s\n", version);
+                return 1;
             }
             default:
                 func_model_print_help(stderr);
