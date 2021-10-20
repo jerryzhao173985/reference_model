@@ -89,7 +89,7 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
         }
     }
 
-    ERROR_IF(output_dim_on_axis == outputs[0]->getShape()[attribute->axis()],
+    ERROR_IF(output_dim_on_axis != outputs[0]->getShape()[attribute->axis()],
              "OpConcat: sum of input dimension on axis not equal to output dimension on axis");
 
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
