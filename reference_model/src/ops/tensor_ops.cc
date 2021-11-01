@@ -92,8 +92,8 @@ int check_pool2d_attribute_common(tosa::TosaPoolAttribute* attribute,
         return 1;
     }
 
-    if ( OH != (IH + pad_top + pad_bottom + stride_y - kernel_y) / stride_y ||
-         OW != (IW + pad_left + pad_right + stride_x - kernel_x) / stride_x )
+    if ((OH != (IH + pad_top + pad_bottom + stride_y - kernel_y) / stride_y) ||
+        (OW != (IW + pad_left + pad_right + stride_x - kernel_x) / stride_x))
     {
         msg = "Mismatch between output shape provided and expected output shape";
         return 1;
@@ -453,7 +453,7 @@ int OpConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != AccDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -660,7 +660,7 @@ int OpConv3d<InDtype, WeightDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != AccDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpConv3d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -870,7 +870,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != AccDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpDepthwiseConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -1161,7 +1161,7 @@ int OpMatMul<Dtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != AccDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpMatMul: Output data type not supported for this configuration of operator");
 
     a      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     b      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[1]);
@@ -1205,7 +1205,7 @@ int OpMatMul<Dtype>::checkTensorAttributes()
     }
     W = b->getShape()[2];
 
-    if (Dtype != DType_INT8)
+    if (Dtype != DType_INT8 && this->qinfo)
     {
         ERROR_IF(this->qinfo->a_zp() != 0, "OpMatMul: zeropoint only for int8_t");
         ERROR_IF(this->qinfo->b_zp() != 0, "OpMatMul: zeropoint only for int8_t");
@@ -1436,7 +1436,7 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != AccDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpTransposeConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
