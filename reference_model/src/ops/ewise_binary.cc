@@ -512,6 +512,7 @@ int OpTable<Rank, InDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(inputs[0]->getDtype() != InDtype, "OpTable: Unexpected input type");
+    ERROR_IF(outputs[0]->getDtype() != OutDtype, "OpTable: Unexpected output type");
     ERROR_IF(attribute->table().size() != TableNumEntries, "OpTable: table attribute size must be %u", TableNumEntries);
 
     for (uint32_t i = 0; i < TableNumEntries; i++)
