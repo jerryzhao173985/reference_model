@@ -70,7 +70,6 @@ target_include_directories(tosa_reference_model
 target_link_libraries(tosa_reference_model
   PRIVATE
     tosa_serialization_lib
-    flatbuffers
     nlohmann_json::nlohmann_json
 )
 
