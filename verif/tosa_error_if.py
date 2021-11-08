@@ -30,6 +30,7 @@ class ErrorIf(object):
     BatchMismatch = "BatchMismatch"
     ChannelMismatch = "ChannelMismatch"
     RankMismatch = "RankMismatch"
+    DimensionMismatch = "DimensionMismatch"
     InputZeroPointNotZero = "InputZeroPointNotZero"
     WeightZeroPointNotZero = "WeightZeroPointNotZero"
     OutputZeroPointNotZero = "OutputZeroPointNotZero"
