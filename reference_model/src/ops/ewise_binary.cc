@@ -60,10 +60,18 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (inputs[0]->matchRank(*outputs[0]))
+    if (inputs[0]->matchRankShape(*outputs[0], true /* broadcastOk */))
     {
         std::string err =
-            "Binary operators " + std::string(EnumNamesOp()[nodeType]) + " input and output rank must match";
+            "Binary operators " + std::string(EnumNamesOp()[nodeType]) + " lhs input and output rank/shape must match";
+        printNodeValidationError(err.c_str());
+        return 1;
+    }
+
+    if (inputs[1]->matchRankShape(*outputs[0], true /* broadcastOk */))
+    {
+        std::string err =
+            "Binary operators " + std::string(EnumNamesOp()[nodeType]) + " rhs input and output rank/shape must match";
         printNodeValidationError(err.c_str());
         return 1;
     }
@@ -82,31 +90,14 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
 template <int Rank, DType InDtype, DType OutDtype>
 int BinaryNodeBase<Rank, InDtype, OutDtype>::broadcast()
 {
-    auto output_shape = result->getTensor().dimensions();
+    const std::vector<int>& a_shape      = a->getShape();
+    const std::vector<int>& b_shape      = b->getShape();
+    const std::vector<int>& output_shape = result->getShape();
 
-    std::vector<int> a_shape, b_shape;
-
-    a_shape = a->getShape();
-    b_shape = b->getShape();
-
-    for (int i = 0; i < (int)a_shape.size(); i++)
+    for (int i = 0; i < Rank; i++)
     {
-        if (a_shape[i] != output_shape[i] && a_shape[i] == 1)
-        {
-            bcast_a[i] = output_shape[i];
-        }
-        else
-        {
-            bcast_a[i] = 1;
-        }
-        if (b_shape[i] != output_shape[i] && b_shape[i] == 1)
-        {
-            bcast_b[i] = output_shape[i];
-        }
-        else
-        {
-            bcast_b[i] = 1;
-        }
+        bcast_a[i] = (a_shape[i] != output_shape[i] && a_shape[i] == 1) ? output_shape[i] : 1;
+        bcast_b[i] = (b_shape[i] != output_shape[i] && b_shape[i] == 1) ? output_shape[i] : 1;
     }
 
     return 0;

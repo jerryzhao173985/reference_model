@@ -148,6 +148,28 @@ public:
         return 0;
     }
 
+    const int matchRankShape(const Tensor& ref, const bool broadcastOk = false) const
+    {
+        if (matchRank(ref))
+            return 1;
+
+        for (size_t i = 0; i < shape.size(); i++)
+        {
+            if (shape[i] != ref.shape[i])
+            {
+                if (!broadcastOk ||
+                    // For broadcasts, at least one operand must have size 1
+                    // if they don't both match
+                    (broadcastOk && (shape[i] != 1 && ref.shape[i] != 1)))
+                {
+                    return 1;
+                }
+            }
+        }
+
+        return 0;
+    }
+
     // Sometimes we might want to match several semi-compatible types,
     // so just check rank and size here
     const int matchRankSize(const Tensor& ref) const
