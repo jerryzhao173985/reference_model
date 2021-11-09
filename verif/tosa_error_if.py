@@ -41,6 +41,7 @@ class ErrorIf(object):
     ShapeOfAxisNotOne = "ShapeOfAxisNotOne"
     KernelSmallerOne = "KernelSmallerOne"
     StrideSmallerOne = "StrideSmallerOne"
+    DilationSmallerOne = "DilationSmallerOne"
     PadSmallerZero = "PadSmallerZero"
     PadLargerEqualKernel = "PadLargerEqualKernel"
     PoolingOutputShapeMismatch = "PoolingOutputShapeMismatch"
@@ -67,5 +68,4 @@ class ErrorIf(object):
     InputListBodyGraphInputMismatch = "InputListBodyGraphInputMismatch"
     InputListBodyGraphOutputMismatch = "InputListBodyGraphOutputMismatch"
     CondGraphOutputNotMatchingBool = "CondGraphOutputNotMatchingBool"
-
 
