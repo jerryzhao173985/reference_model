@@ -288,7 +288,7 @@ class TosaTensorGen:
             shape[0] = (shape[0] % testGen.args.max_batch_size) + 1
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
-        if error_name:
+        if error_name and error_name != ErrorIf.MaxDimExceeded:
             shape = TosaErrorIfArgGen.eiRestrictDimensions(shape)
 
         shape_list = []
@@ -1233,55 +1233,17 @@ class TosaArgGen:
                     fp_offset_x = in_center_w - fp_stride_x * out_center_w
 
                     if outputDType == DType.FLOAT:
+                        float_op = True
+                        arg_str = "mode{}_shift{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}"
                         shift = 0
                         stride = [0, 0]
                         offset = [0, 0]
                         stride_fp = [fp_stride_y, fp_stride_x]
                         offset_fp = [fp_offset_y, fp_offset_x]
 
-                        if error_name is not None:
-                            shift, stride, stride_fp, offset, offset_fp, outputDTypeNew = TosaErrorIfArgGen.eiResizeErrorIf(
-                                testGen,
-                                error_name,
-                                mode,
-                                dtype,
-                                shapeList,
-                                outputDType,
-                                shift,
-                                stride,
-                                stride_fp,
-                                offset,
-                                offset_fp
-                            )
-                        else:
-                            outputDTypeNew = outputDType
-
-                        arg_list.append(
-                            (
-                                "mode{}_odim{}x{}_out{}_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}".format(
-                                    "N" if mode == ResizeMode.NEAREST else "B",
-                                    output_dims[0],
-                                    output_dims[1],
-                                    testGen.typeStr(outputDTypeNew),
-                                    stride_fp[0],
-                                    stride_fp[1],
-                                    offset_fp[0],
-                                    offset_fp[1],
-                                ),
-                                [
-                                    mode,
-                                    stride,
-                                    offset,
-                                    shift,
-                                    stride_fp,
-                                    offset_fp,
-                                    output_dims,
-                                    dtype,
-                                    outputDTypeNew,
-                                ],
-                            )
-                        )
                     else:
+                        float_op = False
+                        arg_str = "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}"
                         shift = testGen.randInt(1,12)
                         # Now search for a shift value (1 to 11) that will produce
                         # a valid and predictable resize operation
@@ -1294,7 +1256,9 @@ class TosaArgGen:
                             offset_x = int(round(fp_offset_x * unit))
 
                             if (
-                                stride_y >= (16 << shift)
+                                stride_y <= 0
+                                or stride_x <= 0
+                                or stride_y >= (16 << shift)
                                 or stride_x >= (16 << shift)
                                 or offset_y >= (16 << shift)
                                 or offset_x >= (16 << shift)
@@ -1337,49 +1301,50 @@ class TosaArgGen:
                         stride_fp = [0.0, 0.0]
                         offset_fp = [0.0, 0.0]
 
-                        if error_name is not None:
-                            shift, stride, stride_fp, offset, offset_fp, outputDTypeNew = TosaErrorIfArgGen.eiResizeErrorIf(
-                                testGen,
-                                error_name,
-                                mode,
-                                dtype,
-                                shapeList,
-                                outputDType,
-                                shift,
-                                stride,
-                                stride_fp,
-                                offset,
-                                offset_fp
-                            )
-                        else:
-                            outputDTypeNew = outputDType
-
-                        arg_list.append(
-                            (
-                                "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}".format(
-                                    "N" if mode == ResizeMode.NEAREST else "B",
-                                    shift,
-                                    output_dims[0],
-                                    output_dims[1],
-                                    testGen.typeStr(outputDTypeNew),
-                                    stride[0],
-                                    stride[1],
-                                    offset[0],
-                                    offset[1],
-                                ),
-                                [
-                                    mode,
-                                    stride,
-                                    offset,
-                                    shift,
-                                    stride_fp,
-                                    offset_fp,
-                                    output_dims,
-                                    dtype,
-                                    outputDTypeNew,
-                                ],
-                            )
+                    # Common for all data types
+                    if error_name is not None:
+                        shift, stride, stride_fp, offset, offset_fp, outputDTypeNew = TosaErrorIfArgGen.eiResizeErrorIf(
+                            testGen,
+                            error_name,
+                            mode,
+                            dtype,
+                            shapeList,
+                            outputDType,
+                            shift,
+                            stride,
+                            stride_fp,
+                            offset,
+                            offset_fp
                         )
+                    else:
+                        outputDTypeNew = outputDType
+
+                    arg_list.append(
+                        (
+                            arg_str.format(
+                                "N" if mode == ResizeMode.NEAREST else "B",
+                                shift,
+                                output_dims[0],
+                                output_dims[1],
+                                testGen.typeStr(outputDTypeNew),
+                                stride_fp[0] if float_op else stride[0],
+                                stride_fp[1] if float_op else stride[1],
+                                offset_fp[0] if float_op else offset[0],
+                                offset_fp[1] if float_op else offset[1]
+                            ),
+                            [
+                                mode,
+                                stride,
+                                offset,
+                                shift,
+                                stride_fp,
+                                offset_fp,
+                                output_dims,
+                                dtype,
+                                outputDTypeNew,
+                            ],
+                        )
+                    )
 
         return arg_list
 
@@ -1845,15 +1810,15 @@ class TosaErrorValidator:
             "shape": [[1, 16584, 5, 1], [1, 2, 16499, 4]]
             }
         error_result = False
-        error_reason = "At least one maximum dimension is larger than 16384"
+        error_reason = "At least one maximum dimension is greater than or equal to 16384"
 
         if check:
             input_shape = kwargs['input_shape']
             output_shape = kwargs['output_shape'] # Note this is just (OH, OW)
-            if ((input_shape[1] > 16384) or
-                (input_shape[2] > 16384) or
-                (output_shape[0] > 16384) or
-                (output_shape[1] > 16384)):
+            if ((input_shape[1] >= 16384) or
+                (input_shape[2] >= 16384) or
+                (output_shape[0] >= 16384) or
+                (output_shape[1] >= 16384)):
                 error_result = True
 
         info_dict = {
@@ -5067,7 +5032,7 @@ class TosaTestGen:
             cleanRankFilter = filterDict['rankFilter']
             cleanDtypeFilter = filterDict['dtypeFilter']
             cleanShapeFilter = filterDict['shapeFilter']
-            #print(f"Filters: S {shapeFilter}, R {cleanRankFilter}, T {cleanDtypeFilter}")
+            #print(f"Filters: S {cleanShapeFilter}, R {cleanRankFilter}, T {cleanDtypeFilter}")
 
             for r in cleanRankFilter:
                 for t in cleanDtypeFilter:
@@ -6063,7 +6028,7 @@ class TosaTestGen:
             "build_fcn": (build_pad, TosaTensorGen.tgBasic, TosaArgGen.agPad),
             "qgen": TosaQuantGen.qgPad,
             "types": TYPE_FIB,
-            "error_if_validators": (TosaErrorValidator.evInputZeroPointNotZero, TosaErrorValidator.evWrongInputType, TosaErrorValidator.evPadSmallerZero,
+            "error_if_validators": (TosaErrorValidator.evWrongInputType, TosaErrorValidator.evPadSmallerZero,
             TosaErrorValidator.evWrongOutputType, TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList)
         },
         "reshape": {
@@ -6110,7 +6075,7 @@ class TosaTestGen:
                 TosaArgGen.agTranspose,
             ),
             "types": TYPE_FIB,
-            "error_if_validators": (TosaErrorValidator.evIndexOutsideBounds, TosaErrorValidator.evIndexUsedTwice, TosaErrorValidator.evWrongRank,
+            "error_if_validators": (TosaErrorValidator.evIndexOutsideBounds, TosaErrorValidator.evIndexUsedTwice,
             TosaErrorValidator.evWrongInputType, TosaErrorValidator.evWrongOutputType, TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList)
         },
         # Data nodes
