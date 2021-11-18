@@ -303,7 +303,8 @@ class TosaTensorGen:
 
         assert pl == 2
         assert const == 0
-        assert rank == 3
+        if error_name != ErrorIf.WrongRank:
+            assert rank == 3
 
         values_in_shape = testGen.makeShape(rank)
 
@@ -4472,9 +4473,9 @@ class TosaTestGen:
             validator_fcns,
             error_name,
             op=op,
-            input_shape = input.shape,
+            input_shape = values_in.shape,
             output_shape = result_tens.shape,
-            input_dtype = input.dtype,
+            input_dtype = values_in.dtype,
             output_dtype = result_tens.dtype,
             result_tensor = result_tens,
             input_list=input_list,
@@ -5032,7 +5033,7 @@ class TosaTestGen:
             cleanRankFilter = filterDict['rankFilter']
             cleanDtypeFilter = filterDict['dtypeFilter']
             cleanShapeFilter = filterDict['shapeFilter']
-            #print(f"Filters: S {cleanShapeFilter}, R {cleanRankFilter}, T {cleanDtypeFilter}")
+            #print(f"Error: {error_name}, Filters: S {cleanShapeFilter}, R {cleanRankFilter}, T {cleanDtypeFilter}")
 
             for r in cleanRankFilter:
                 for t in cleanDtypeFilter:
@@ -5960,6 +5961,7 @@ class TosaTestGen:
         "reduce_all": {
             "op": Op.REDUCE_ALL,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_BOOL,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -5969,6 +5971,7 @@ class TosaTestGen:
         "reduce_any": {
             "op": Op.REDUCE_ANY,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_BOOL,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -5978,6 +5981,7 @@ class TosaTestGen:
         "reduce_max": {
             "op": Op.REDUCE_MAX,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_INT_FP,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -5987,6 +5991,7 @@ class TosaTestGen:
         "reduce_min": {
             "op": Op.REDUCE_MAX,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_INT_FP,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -5996,6 +6001,7 @@ class TosaTestGen:
         "reduce_product": {
             "op": Op.REDUCE_PRODUCT,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FP,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -6005,6 +6011,7 @@ class TosaTestGen:
         "reduce_sum": {
             "op": Op.REDUCE_SUM,
             "operands": (1, 0),
+            "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
             "types": TYPE_FI32,
             "error_if_validators": (TosaErrorValidator.evAxisLargerRank, TosaErrorValidator.evAxisSmallerZero, TosaErrorValidator.evShapeOfAxisNotOne,
@@ -6100,7 +6107,7 @@ class TosaTestGen:
             "build_fcn": (build_gather, TosaTensorGen.tgBasic, None),
             "types": TYPE_INT_FP,
             "error_if_validators": (TosaErrorValidator.evWrongInputType, TosaErrorValidator.evWrongOutputType,
-            TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList)
+            TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList, TosaErrorValidator.evWrongRank)
         },
         "scatter": {
             "op": Op.SCATTER,
@@ -6111,7 +6118,7 @@ class TosaTestGen:
             "build_fcn": (build_scatter, TosaTensorGen.tgScatter, None),
             "types": TYPE_INT_FP,
             "error_if_validators": (TosaErrorValidator.evWrongInputType, TosaErrorValidator.evWrongOutputType,
-            TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList)
+            TosaErrorValidator.evWrongInputList, TosaErrorValidator.evWrongOutputList, TosaErrorValidator.evWrongRank)
         },
         # Image operations
         "resize": {
@@ -6717,7 +6724,8 @@ class OutputShaper:
 
     @staticmethod
     def gatherOp(ser, rng, values, indices, error_name=None):
-        assert len(values.shape) == 3
+        if error_name != ErrorIf.WrongRank:
+            assert len(values.shape) == 3
         assert len(indices.shape) == 2
         assert values.shape[0] == indices.shape[0]
 
@@ -6734,7 +6742,8 @@ class OutputShaper:
 
     @staticmethod
     def scatterOp(ser, rng, values_in, indices, input, error_name=None):
-        assert len(values_in.shape) == 3
+        if error_name != ErrorIf.WrongRank:
+            assert len(values_in.shape) == 3
         assert len(indices.shape) == 2
         assert len(input.shape) == 3
         assert values_in.shape[0] == indices.shape[0]  # N
