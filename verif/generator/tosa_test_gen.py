@@ -32,17 +32,11 @@ import itertools
 from copy import deepcopy
 
 from enum import IntEnum, Enum, unique
-from tosa_ref_run import TosaReturnCode
 
-# Include the ../thirdparty/serialization_lib/python directory in PYTHONPATH
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(
-    os.path.join(parent_dir, "..", "thirdparty", "serialization_lib", "python")
-)
-import tosa_serializer as ts
-from tosa_serializer import *
+import serializer.tosa_serializer as ts
+from serializer.tosa_serializer import *
 import tosa
-from tosa_error_if import ErrorIf
+from generator.tosa_error_if import ErrorIf
 
 # Convenience variables to the flatc-generated types that should be enums, but aren't
 from tosa.DType import DType
@@ -1587,7 +1581,7 @@ class TosaErrorValidator:
             overall_result &= expected_result
 
             if expected_result and error_result:
-                serializer.setExpectedReturnCode(2, error_reason)
+                serializer.setExpectedReturnCode(2, True, desc=error_reason)
             elif error_result:  # and not expected_result
                 print(f"Unexpected ERROR_IF: Op: {valueToName(Op, kwargs['op']['op'])}"
                       f" Expected: {error_name}, Got: {validator_name}")

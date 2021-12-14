@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2020, ARM Limited.
+# Copyright (c) 2020-2021, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -32,21 +30,8 @@ import traceback
 from enum import IntEnum, Enum, unique
 from datetime import datetime
 
-# Include the ../scripts and ../scripts/xunit directory in PYTHONPATH
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(parent_dir, "..", "scripts"))
-sys.path.append(os.path.join(parent_dir, "..", "scripts", "xunit"))
-
-import xunit
-
-# Include the ../thirdparty/serialization_lib/python directory in PYTHONPATH
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(
-    os.path.join(parent_dir, "..", "thirdparty", "serialization_lib", "python")
-)
-from tosa_serializer import *
-from tosa_test_gen import TosaTestGen
-import tosa
+from generator.tosa_test_gen import TosaTestGen
+from serializer.tosa_serializer import dtype_str_to_val
 
 # Used for parsing a comma-separated list of integers in a string
 # to an actual list of integers

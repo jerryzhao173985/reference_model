@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
-
-# Copyright (c) 2020, ARM Limited.
+# Copyright (c) 2020-2021, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -33,21 +31,9 @@ import importlib
 from enum import IntEnum, Enum, unique
 from datetime import datetime
 
-# Include the ../scripts and ../scripts/xunit directory in PYTHONPATH
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(parent_dir, "..", "scripts"))
-sys.path.append(os.path.join(parent_dir, "..", "scripts", "xunit"))
+from xunit import xunit
 
-import xunit
-
-# Include the ../thirdparty/serialization_lib/python directory in PYTHONPATH
-parent_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(
-    os.path.join(parent_dir, "..", "thirdparty", "serialization_lib", "python")
-)
-import tosa
-from tosa_test_gen import TosaTestGen
-from tosa_test_runner import TosaTestRunner
+from runner.tosa_test_runner import TosaTestRunner
 
 no_color_printing = False
 # from run_tf_unit_test import LogColors, print_color, run_sh_command
@@ -105,7 +91,7 @@ def parseArgs():
         dest="sut_module",
         type=str,
         nargs="+",
-        default=["tosa_ref_run"],
+        default=["runner.tosa_ref_run"],
         help="System under test module to load (derives from TosaTestRunner).  May be repeated",
     )
     parser.add_argument(

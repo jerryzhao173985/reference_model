@@ -17,7 +17,7 @@ import json
 import shlex
 import subprocess
 from enum import Enum, IntEnum, unique
-from tosa_test_runner import TosaTestRunner, run_sh_command
+from runner.tosa_test_runner import TosaTestRunner, run_sh_command
 
 
 @unique
