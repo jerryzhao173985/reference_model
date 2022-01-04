@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2020-2021, ARM Limited.
+# Copyright (c) 2020-2022, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -6331,7 +6331,7 @@ class OutputShaper:
         # Do broadcast
         shape = []
         for i in range(len(a.shape)):
-            if a.shape[i] == 1:
+            if a.shape[i] == 1 and len(b.shape) > i:
                 shape.append(b.shape[i])
             else:
                 shape.append(a.shape[i])
