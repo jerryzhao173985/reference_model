@@ -383,6 +383,7 @@ Included in this repository are some support utilities used by the test runner:
     binary format or the reverse operation. This is dependent on the FlatBuffers
     command `flatc` - see the section on the FlatBuffers compiler below.
 * `tosa_verif_result_check` - compares two results files.
+* `convert2conformance` - converts a unit test into a conformance suitable test.
 
 Please see the respective `--help` of each utility for more information on using
 them standalone.
