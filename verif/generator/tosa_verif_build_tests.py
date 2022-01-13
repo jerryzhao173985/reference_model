@@ -1,37 +1,11 @@
-# Copyright (c) 2020-2021, ARM Limited.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-
-
+# Copyright (c) 2020-2022, ARM Limited.
+# SPDX-License-Identifier: Apache-2.0
 import argparse
-import sys
 import re
-import os
-import subprocess
-import shlex
-import json
-import glob
-import math
-import queue
-import threading
-import traceback
-
-
-from enum import IntEnum, Enum, unique
-from datetime import datetime
 
 from generator.tosa_test_gen import TosaTestGen
 from serializer.tosa_serializer import dtype_str_to_val
+
 
 # Used for parsing a comma-separated list of integers in a string
 # to an actual list of integers
@@ -189,7 +163,7 @@ def parseArgs():
     parser.add_argument(
         "--test-type",
         dest="test_type",
-        choices=['positive', 'negative', 'both'],
+        choices=["positive", "negative", "both"],
         default="positive",
         type=str,
         help="type of tests produced, postive, negative, or both",
@@ -205,8 +179,8 @@ def main():
 
     ttg = TosaTestGen(args)
 
-    if args.test_type == 'both':
-        testType = ['positive', 'negative']
+    if args.test_type == "both":
+        testType = ["positive", "negative"]
     else:
         testType = [args.test_type]
     results = []
@@ -220,7 +194,7 @@ def main():
                         shapeFilter=args.target_shapes,
                         rankFilter=args.target_ranks,
                         dtypeFilter=args.target_dtypes,
-                        testType=test_type
+                        testType=test_type,
                     )
                 )
 
@@ -236,10 +210,11 @@ def main():
 
             if args.verbose:
                 print(testStr)
-            results.append(ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs))
+            results.append(
+                ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs)
+            )
 
     print(f"Done creating {len(results)} tests")
-
 
 
 if __name__ == "__main__":

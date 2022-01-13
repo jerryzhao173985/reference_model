@@ -6,7 +6,6 @@ import os
 
 import numpy as np
 import pytest
-
 from json2numpy.json2numpy import main
 
 

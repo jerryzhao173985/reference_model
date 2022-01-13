@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
 
+import checker.tosa_result_checker as trc
 import numpy as np
 import pytest
-
-import checker.tosa_result_checker as trc
 
 
 def _create_data_file(name, npy_data):

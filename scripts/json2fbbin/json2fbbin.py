@@ -4,7 +4,8 @@
 from pathlib import Path
 from typing import Optional
 
-from runner.run_command import run_sh_command, RunShCommandError
+from runner.run_command import run_sh_command
+from runner.run_command import RunShCommandError
 
 
 def fbbin_to_json(flatc: Path, fbs: Path, t_path: Path, o_path: Optional[Path] = None):
@@ -63,7 +64,10 @@ def main(argv=None):
     parser.add_argument(
         "--flatc",
         type=Path,
-        default="reference_model/build/thirdparty/serialization_lib/third_party/flatbuffers/flatc",
+        default=(
+            "reference_model/build/thirdparty/serialization_lib/"
+            "third_party/flatbuffers/flatc"
+        ),
         help="the path to the flatc compiler program",
     )
     parser.add_argument(

@@ -7,7 +7,6 @@ from pathlib import Path
 from xml.dom import minidom
 
 import pytest
-
 from runner.tosa_verif_run_tests import main
 
 
