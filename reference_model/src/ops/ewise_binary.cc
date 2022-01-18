@@ -281,16 +281,27 @@ int OpLogicalAnd<Rank, Dtype>::register_fcn()
 template <int Rank, DType Dtype>
 int OpLogicalLeftShift<Rank, Dtype>::register_fcn()
 {
+    int32_t num_bits = 0;
     switch (Dtype)
     {
         case DType_INT8:
+            num_bits = 8;
+            break;
         case DType_INT16:
+            num_bits = 16;
+            break;
         case DType_INT32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a << b; };
+            num_bits = 32;
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
+    this->fcn = [this, num_bits](InEigenType a, InEigenType b) -> OutEigenType {
+        uint32_t mask = ONES_MASK(num_bits);
+        REQUIRE(b >= 0 && b <= 31, "OpLogicalLeftShift: shift value %d is out of valid range [0, 31]",
+        (int32_t)b);
+        return (a << b) & mask;
+    };
 
     return 0;
 }
@@ -314,8 +325,10 @@ int OpLogicalRightShift<Rank, Dtype>::register_fcn()
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
     }
 
-    this->fcn = [num_bits](InEigenType a, InEigenType b) -> OutEigenType {
+    this->fcn = [this, num_bits](InEigenType a, InEigenType b) -> OutEigenType {
         uint32_t mask = ONES_MASK(num_bits) >> b;
+        REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
+        (int32_t)b);
         return (a >> b) & mask;
     };
 

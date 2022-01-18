@@ -5952,6 +5952,20 @@ class TosaTestGen:
                 self.buildPlaceholderTensors(shapeList[0:count], dtypeList[0:count])
             )
             tens.extend(self.buildConstTensors(shapeList[count:], dtypeList[count:]))
+        elif op["op"] == Op.LOGICAL_LEFT_SHIFT or op["op"] == Op.LOGICAL_RIGHT_SHIFT:
+            assert (
+                pCount == 2 and cCount == 0
+            ), "Op.LOGICAL_LEFT_SHIFT or Op.LOGICAL_RIGHT_SHIFT must have 2 placeholders, 0 consts"
+            values_arr = self.getRandTensor(shapeList[0], dtypeList[0])
+            shift_arr = np.int32(self.rng.integers(low=0, high=32, size=shapeList[1]))
+            placeholders = []
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
+            )
+            placeholders.append(
+                self.ser.addPlaceholder(shapeList[1], dtypeList[1], shift_arr)
+            )
+            tens.extend(placeholders)
         else:
             tens.extend(
                 self.buildPlaceholderTensors(shapeList[0:pCount], dtypeList[0:pCount])
