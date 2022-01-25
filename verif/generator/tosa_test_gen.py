@@ -696,7 +696,7 @@ class TosaArgGen:
             d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
         dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
 
-        if not error_name:
+        if not error_name and testGen.args.oversize:
             # add some oversize argument values
             if max(ifm_shape) < 64:
                 bigPadding = 9
@@ -890,18 +890,19 @@ class TosaArgGen:
         paddings = {x for x in itertools.product(*([p_vals] * 4))}
         s_vals = [x for x in range(1, testGen.args.max_pooling_stride + 1)]
         strides = {x for x in itertools.product(*([s_vals] * 2))}
-        k_vals = [x for x in range(2, testGen.args.max_pooling_kernel + 2)]
+        k_vals = [x for x in range(2, testGen.args.max_pooling_kernel + 1)]
         kernels = {x for x in itertools.product(*([k_vals] * 2))}
 
-        # add some oversize argument values
-        bigStride = 7
-        strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
-        bigKernel = 6
-        kernels.update({x for x in itertools.product(*([[2, bigKernel]] * 2))})
-        if max(shape) < 64:
-            # padding must be less than the kernel size
-            bigPadding = bigKernel - 1
-            paddings.update({x for x in itertools.product(*([[0, bigPadding]] * 4))})
+        if testGen.args.oversize:
+            # add some oversize argument values
+            bigStride = 7
+            strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
+            bigKernel = 6
+            kernels.update({x for x in itertools.product(*([[2, bigKernel]] * 2))})
+            if max(shape) < 64:
+                # padding must be less than the kernel size
+                bigPadding = bigKernel - 1
+                paddings.update({x for x in itertools.product(*([[0, bigPadding]] * 4))})
 
         # There are too many parameter combinations, so generate them sparsely,
         # very sparse for negative tests

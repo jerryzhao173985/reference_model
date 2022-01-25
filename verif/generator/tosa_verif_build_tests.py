@@ -110,9 +110,9 @@ def parseArgs():
     parser.add_argument(
         "--max-pooling-kernel",
         dest="max_pooling_kernel",
-        default=2,
+        default=3,
         type=int,
-        help="Maximum padding for pooling tests",
+        help="Maximum kernel for pooling tests",
     )
 
     parser.add_argument(
@@ -166,8 +166,16 @@ def parseArgs():
         choices=["positive", "negative", "both"],
         default="positive",
         type=str,
-        help="type of tests produced, postive, negative, or both",
+        help="type of tests produced, positive, negative, or both",
     )
+
+    parser.add_argument(
+        "--allow-pooling-and-conv-oversizes",
+        dest="oversize",
+        action='store_true',
+        help="allow oversize padding, stride and kernel tests",
+    )
+
     args = parser.parse_args()
 
     return args
