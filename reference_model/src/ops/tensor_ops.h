@@ -73,7 +73,7 @@ protected:
 
 protected:
     // return a 1D [N] tensor that describes a how many valid elements covered in the input space
-    ETensor1<int32_t> calculate_div_map_1d(int in_size, int out_size, int kernel_size, int stride);
+    ETensor1<int32_t> calculate_div_map_1d(int in_size, int out_size, int kernel_size, int stride, int32_t padding_left, int32_t padding_right);
 };
 
 template <DType InDtype, DType WeightDtype>
