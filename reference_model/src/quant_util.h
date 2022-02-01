@@ -55,6 +55,16 @@ public:
                 "apply_scale_32(): shift value should stay within [2, 62] but is " + std::to_string(shift);
             throw desc;
         }
+        int64_t low_val = -1L << (shift-2);
+        int64_t high_val = 1L << (shift-2);
+        if (value < low_val || value >= high_val)
+        {
+            std::string desc =
+                "apply_scale_32(): value should stay within [" +
+                std::to_string(low_val) + ", " + std::to_string(high_val-1) +
+                "] but is " + std::to_string(value) + " using shift of " + std::to_string(shift);
+            throw desc;
+        }
         int64_t round = 1L << (shift - 1);
         if (double_round)
         {
