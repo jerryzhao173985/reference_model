@@ -407,7 +407,7 @@ ETensor1<int32_t> OpAvgPool2d<Dtype>::calculate_div_map_1d(int in_size, int out_
     // adjust divisors on the left side for padding
     // We start at the leftmost output element, and remove pad_left - (index * stride) elements
     // until we have no more padding being used
-    for(int index = 0; (index < pad_left / stride) && (index < out_size); index++) {
+    for(int index = 0; (index <= pad_left / stride) && (index < out_size); index++) {
         int32_t adjust = pad_left - (index * stride);
         result(index) -= adjust;
     }
