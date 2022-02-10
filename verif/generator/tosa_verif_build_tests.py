@@ -172,7 +172,7 @@ def parseArgs():
     parser.add_argument(
         "--allow-pooling-and-conv-oversizes",
         dest="oversize",
-        action='store_true',
+        action="store_true",
         help="allow oversize padding, stride and kernel tests",
     )
 

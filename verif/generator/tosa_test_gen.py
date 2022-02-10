@@ -902,7 +902,9 @@ class TosaArgGen:
             if max(shape) < 64:
                 # padding must be less than the kernel size
                 bigPadding = bigKernel - 1
-                paddings.update({x for x in itertools.product(*([[0, bigPadding]] * 4))})
+                paddings.update(
+                    {x for x in itertools.product(*([[0, bigPadding]] * 4))}
+                )
 
         # There are too many parameter combinations, so generate them sparsely,
         # very sparse for negative tests
