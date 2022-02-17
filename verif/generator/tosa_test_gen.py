@@ -5146,17 +5146,17 @@ class TosaTestGen:
             max_shift_value_arr[i] = (1 << (shift_arr[i] - 2)) - 1
 
         # print('multiplier {} shift {} inzp {} outzp {}'.format(multiplier_arr, shift_arr, input_zp, output_zp))
-        if error_name is None:
-            # Make sure random values are within speicification
+        if scale32 and error_name is None:
+            # Make sure random values are within apply_scale_32 speicification
             # REQUIRES(value >= (-1<<(shift-2)) && value < (1<<(shift-2))
             assert val.placeholderFilename
             values = np.load(
                 os.path.join(self.basePath, self.testPath, val.placeholderFilename)
             )
-            val_adj = np.subtract(values, input_zp)
-            val_adj = np.maximum(val_adj, min_shift_value_arr, dtype=values.dtype)
-            val_adj = np.minimum(val_adj, max_shift_value_arr, dtype=values.dtype)
-            val_adj = np.add(val_adj, input_zp)
+            val_adj = np.subtract(values, input_zp, dtype=np.int64)
+            val_adj = np.maximum(val_adj, min_shift_value_arr, dtype=np.int64)
+            val_adj = np.minimum(val_adj, max_shift_value_arr, dtype=np.int64)
+            val_adj = np.add(val_adj, input_zp, dtype=values.dtype)
             if not np.all(np.array_equal(values, val_adj)):
                 # Values changed so overwrite file with new values
                 np.save(
