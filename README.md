@@ -179,7 +179,7 @@ file using the `-o` switch.
 
 ## TOSA Unit Test Infrastructure
 
-The TOSA Unit Test infrastruture builds and runs self-contained tests
+The TOSA Unit Test infrastructure builds and runs self-contained tests
 for implementations of the *Tensor Operator Set Architecture (TOSA)
 Specification*.  These tools directly generate TOSA operators for
 verification of the TOSA reference model against existing frameworks
@@ -373,6 +373,45 @@ You can repeat this switch multiple times to pass multiple different arguments.
 For an example of how to read these arguments in your SUT module, please see the
 `tosa_mock_sut_run.py` file.
 
+
+### TOSA Framework Unit Tests
+
+Included in the TOSA Unit Test infrastructure are scripts to enable the creation
+of TOSA unit tests for example frameworks. Included at the moment is support for
+TensorFlow and TensorFlow Lite.
+
+#### Setup
+
+Installation (via `pip install`) of the following python package is required to
+generate the tests:
+
+* `tensorflow`
+
+A built copy of the tensorflow framework from source is required to compile the
+tests to TOSA - see the online documentation <https://www.tensorflow.org/install/source>
+on how to do this.
+The following tools are used from this build:
+
+* `tensorflow/basel-bin/tensorflow/compiler/mlir/lite/flatbuffer_translate`
+* `tensorflow/basel-bin/tensorflow/compiler/mlir/tf-opt`
+
+#### Usage
+
+The command to generate the unit test framework models:
+
+```bash
+tosa_verif_framework_generator -o tests
+```
+
+Next to convert these models to TOSA and then run them on the reference model:
+
+```bash
+tosa_verif_framework_compiler_runner \
+  --tf-base-dir tensorflow           \
+  --tools-base-dir reference_model   \
+  --recursive                        \
+  --test tests
+```
 
 ## Other tools
 

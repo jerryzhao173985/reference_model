@@ -58,12 +58,8 @@ class TosaSUTRunner(TosaTestRunner):
                 graphResult = TosaTestRunner.TosaGraphResult.TOSA_UNPREDICTABLE
             else:
                 graphResult = TosaTestRunner.TosaGraphResult.OTHER_ERROR
-            if (
-                self.args.verbose
-                or graphResult == TosaTestRunner.TosaGraphResult.OTHER_ERROR
-            ):
-                print(e)
-
+                if not self.args.verbose:
+                    print(e)
         except Exception as e:
             print(e)
             graphMessage = str(e)

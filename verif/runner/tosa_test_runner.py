@@ -7,6 +7,7 @@ from pathlib import Path
 
 from checker.tosa_result_checker import LogColors
 from checker.tosa_result_checker import print_color
+from checker.tosa_result_checker import set_print_in_color
 from checker.tosa_result_checker import test_check
 from json2fbbin import json2fbbin
 
@@ -38,6 +39,8 @@ class TosaTestRunner:
         self.runnerArgs = runnerArgs
         self.testDir = testDir
         self.testName = Path(self.testDir).name
+
+        set_print_in_color(not args.no_color)
 
         # Check if we want to run binary and if its already converted
         descFilePath = Path(testDir, "desc.json")
@@ -165,9 +168,11 @@ class TosaTestRunner:
                 result == TosaTestRunner.Result.EXPECTED_FAILURE
                 or result == TosaTestRunner.Result.EXPECTED_PASS
             ):
-                print_color(LogColors.GREEN, "Results PASS {}".format(self.testName))
+                print_color(
+                    LogColors.GREEN, "Result code PASS {}".format(self.testName)
+                )
             else:
-                print_color(LogColors.RED, "Results FAIL {}".format(self.testName))
+                print_color(LogColors.RED, "Result code FAIL {}".format(self.testName))
 
         return result, resultMessage
 

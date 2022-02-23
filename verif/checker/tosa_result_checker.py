@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 ##################################
-no_color_printing = False
+color_printing = True
 
 
 @unique
@@ -25,9 +25,16 @@ class LogColors(Enum):
     BOLD_WHITE = "\u001b[1m"
 
 
+def set_print_in_color(enabled):
+    """Set color printing to enabled or disabled."""
+    global color_printing
+    color_printing = enabled
+
+
 def print_color(color, msg):
     """Print color status messages if enabled."""
-    if no_color_printing:
+    global color_printing
+    if not color_printing:
         print(msg)
     else:
         print("{}{}{}".format(color.value, msg, LogColors.NONE.value))

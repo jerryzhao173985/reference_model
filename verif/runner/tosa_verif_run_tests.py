@@ -119,6 +119,13 @@ def parseArgs(argv):
         choices=["positive", "negative", "both"],
         help="Filter tests based on expected failure status (positive, negative or both)",
     )
+    parser.add_argument(
+        "--no-color",
+        "--no-colour",
+        dest="no_color",
+        action="store_true",
+        help="Disable color output",
+    )
 
     args = parser.parse_args(argv)
 
