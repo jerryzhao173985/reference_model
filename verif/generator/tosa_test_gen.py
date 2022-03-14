@@ -6853,7 +6853,7 @@ class TosaTestGen:
             ),
         },
         "reduce_min": {
-            "op": Op.REDUCE_MAX,
+            "op": Op.REDUCE_MIN,
             "operands": (1, 0),
             "rank": (1, 4),
             "build_fcn": (build_reduce, TosaTensorGen.tgBasic, TosaArgGen.agAxis),
