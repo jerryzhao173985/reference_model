@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -400,6 +400,11 @@ int initTestDesc(json& test_desc)
             WARNING("Error parsing test descriptor json: %s", e.what());
             return 1;
         }
+    }
+    else
+    {
+        WARNING("Cannot open input file: %s", g_func_config.test_desc);
+        return 1;
     }
 
     // Overwrite flatbuffer_dir/output_dir with dirname(g_func_config.test_desc) if it's not specified.

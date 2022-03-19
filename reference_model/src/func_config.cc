@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -420,7 +420,7 @@ int func_model_print_help(FILE* out)
     fprintf(out, "TOSA Reference Model help\n\n");
 
     fprintf(out,
-            "Usage: %s [-c] [-C <name=value>] [-d <Debug Mask>] [-h] [-i <uscriptfile>] [-l <verbosity>] [-F "
+            "Usage: %s [-c] [-C <name=value>] [-d <Debug Mask>] [-h] [-l <verbosity>] [-F "
             "<flatconfig>]\n",
             programname);
     fprintf(out, "\t-c - Print list of config options\n");
