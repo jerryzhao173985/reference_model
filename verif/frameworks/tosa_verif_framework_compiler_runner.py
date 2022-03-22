@@ -27,7 +27,13 @@ from xunit.xunit import xunit_test
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-t", "--test", dest="test", type=str, nargs="+", help="Test(s) to run"
+        "-t",
+        "--test",
+        dest="test",
+        default=[],
+        type=str,
+        nargs="+",
+        help="Test(s) to run",
     )
     parser.add_argument(
         "-r",
@@ -368,7 +374,16 @@ def run_test(args, test, framework):
 
             assert test_desc["ifm_file"][i].endswith(".npy")
             ifm_np = np.load(os.path.join(test, test_desc["ifm_file"][i]))
-            # Make sure input numpy and input shape from descriptor match
+
+            # We sometimes encounter input shape/expected input shape mismatches
+            # due to a missing batch dimension on the input (e.g. a single 3D image).
+            #
+            # Make sure input numpy and input shape from descriptor match,
+            # expand_dims on the outer dimensions until the rank matches,
+            # then do the shape comparison.
+            while len(list(ifm_np.shape)) < len(test_desc["ifm_shape"][i]):
+                ifm_np = np.expand_dims(ifm_np, axis=0)
+
             assert list(ifm_np.shape) == test_desc["ifm_shape"][i]
 
             reference_runner_ifm_name.append(ifm_tensor_name)
@@ -523,31 +538,31 @@ def run_test(args, test, framework):
     except FileNotFoundError:
         pass
 
-    if not args.no_ref:
-        try:
-            ref_model_stdout, ref_model_stderr = run_sh_command(
-                ref_model_cmd, args.verbose, True
-            )
-            ref_model_rc = parse_reference_model_output(
-                ref_model_stdout, ref_model_stderr
-            )
-            if ref_model_rc != TestResult.PASS:
-                return (ref_model_rc, 0.0, "")
-        except Exception as e:
-            ref_model_rc = parse_reference_model_output("", str(e))
-            if ref_model_rc != TestResult.PASS:
-                print_color(
-                    LogColors.RED,
-                    "Results {} {}: {}".format(
-                        TestResultErrorStr[ref_model_rc], test_name, e
-                    ),
-                )
-                return (ref_model_rc, 0.0, "")
+    if args.no_ref:
+        return (TestResult.PASS, 0.0, msg)
+
+    try:
+        ref_model_stdout, ref_model_stderr = run_sh_command(
+            ref_model_cmd, args.verbose, True
+        )
+        ref_model_rc = parse_reference_model_output(ref_model_stdout, ref_model_stderr)
+        if ref_model_rc != TestResult.PASS:
+            return (ref_model_rc, 0.0, "")
+    except Exception as e:
+        ref_model_rc = parse_reference_model_output("", str(e))
+        if ref_model_rc != TestResult.PASS:
             print_color(
                 LogColors.RED,
-                "Results REF_MODEL_RUNTIME_ERROR {}: {}".format(test_name, e),
+                "Results {} {}: {}".format(
+                    TestResultErrorStr[ref_model_rc], test_name, e
+                ),
             )
-            return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e)
+            return (ref_model_rc, 0.0, "")
+        print_color(
+            LogColors.RED,
+            "Results REF_MODEL_RUNTIME_ERROR {}: {}".format(test_name, e),
+        )
+        return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e)
 
     if tf_result.dtype == np.float16:
         tf_result = tf_result.astype(np.float32)
