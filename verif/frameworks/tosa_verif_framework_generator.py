@@ -23,7 +23,7 @@ from frameworks.write_test_json import write_test_json  # noqa: E402
 from frameworks.arg_gen import ArgGen  # noqa: E402
 from frameworks.tensor_gen import TGen  # noqa: E402
 from frameworks.test_builder import TBuilder  # noqa: E402
-from frameworks.test_gen_utils import (
+from frameworks.test_gen_utils import (  # noqa: E402
     QuantType,
     get_tf_dtype,
     get_shape_str,

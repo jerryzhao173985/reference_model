@@ -3702,7 +3702,7 @@ class TosaTestGen:
                 raise Exception("Unknown dtype, cannot convert to string: {}".format(t))
 
     def typeWidth(self, t):
-        """ Get the datatype width for integer types"""
+        """Get the datatype width for integer types"""
         if t == DType.INT4:
             return 4
         elif t == DType.INT8:
@@ -5921,7 +5921,7 @@ class TosaTestGen:
                 if (divisor_arr == 0).any():
                     continue
 
-                if (dividend_arr == -(2 ** 31)).any() and (divisor_arr == -1).any():
+                if (dividend_arr == -(2**31)).any() and (divisor_arr == -1).any():
                     continue
 
                 break
@@ -5980,8 +5980,8 @@ class TosaTestGen:
                     else:
                         result_arr = a_arr_64 * b_arr_64
 
-                    if (result_arr > -(2 ** 31)).all() and (
-                        result_arr <= ((2 ** 31) - 1)
+                    if (result_arr > -(2**31)).all() and (
+                        result_arr <= ((2**31) - 1)
                     ).all():
                         break
 
