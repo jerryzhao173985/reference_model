@@ -273,7 +273,7 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             break;
         case Op_REDUCE_SUM:
             DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpReduceSum, FLOAT);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpReduceSum, INT32);
+            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpReduceSumInt, INT32);
             break;
 
         // data layout

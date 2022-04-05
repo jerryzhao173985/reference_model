@@ -104,6 +104,16 @@ public:
     virtual int eval();
 };
 
+template <int Rank, DType Dtype>
+class OpReduceSumInt : public ReduceNode<Rank, Dtype>
+{
+public:
+    OpReduceSumInt(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
+    {}
+    virtual int eval();
+};
+
 };    // namespace TosaReference
 
 #endif
