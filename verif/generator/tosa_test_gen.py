@@ -5762,9 +5762,11 @@ class TosaTestGen:
             ), "Op.NEGATE must have 1 placeholders, 0 consts"
             # Must create tensors with values within negatable ranges
             if dtypeList[0] == DType.INT8:
+                # Must be within int8, adjustable by input_zp and then negatable
+                # and be within int8
                 # For use: qinfo.ints[0][1] = input_zp, qinfo.ints[1][1] = output_zp
-                max_val = 127 + qinfo.ints[0][1]
-                min_val = -127 + qinfo.ints[0][1]
+                max_val = min(127, 127 + qinfo.ints[0][1])
+                min_val = max(-127, -127 + qinfo.ints[0][1])
             elif dtypeList[0] == DType.INT16:
                 max_val = 32767
                 min_val = -max_val
