@@ -92,10 +92,22 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
         return 1;
     }
 
-    if ((OH != (IH + pad_top + pad_bottom + stride_y - kernel_y) / stride_y) ||
-        (OW != (IW + pad_left + pad_right + stride_x - kernel_x) / stride_x))
+    int32_t full_H = IH + pad_top + pad_bottom - kernel_y;
+    int32_t full_W = IW + pad_left + pad_right - kernel_x;
+
+    if ((full_H % stride_y != 0) ||
+        (full_W % stride_x != 0))
     {
-        msg = "Mismatch between output shape provided and expected output shape";
+        msg = "Parameters must yield exact integer output dimensions";
+        return 1;
+    }
+
+    if ((OH != (full_H / stride_y) + 1) ||
+        (OW != (full_W / stride_x) + 1))
+    {
+        msg = "Mismatch between output shape provided and expected output shape (" +
+            std::to_string((full_H / stride_y) + 1) + "," +
+            std::to_string((full_W / stride_x) + 1) + ")";
         return 1;
     }
 
@@ -107,6 +119,8 @@ int check_conv_attribute_qinfo(tosa::TosaConvAttribute* attribute,
                                uint32_t conv_dimension,
                                std::vector<int32_t> input_shape,
                                std::vector<int32_t> output_shape,
+                               std::vector<int32_t> weights,
+                               uint32_t offset_kernel,
                                DType InDtype,
                                DType WeightDtype,
                                std::string& msg)
@@ -154,6 +168,62 @@ int check_conv_attribute_qinfo(tosa::TosaConvAttribute* attribute,
             msg = "At least one dilation dimension is smaller than one";
             return 1;
         }
+    }
+
+    ASSERT_MSG(conv_dimension == 2 || conv_dimension == 3, "Unsupported convolution dimension")
+
+    int32_t offset_d = 1 ? conv_dimension == 3 : 0;
+    int32_t ID = conv_dimension == 3 ? input_shape[1] : 1;
+    int32_t IH = input_shape[1 + offset_d];
+    int32_t IW = input_shape[2 + offset_d];
+    int32_t OD = conv_dimension == 3 ? output_shape[1] : 1;
+    int32_t OH = output_shape[1 + offset_d];
+    int32_t OW = output_shape[2 + offset_d];
+
+    int32_t stride_d = conv_dimension == 3 ? attribute->stride()[0] : 1;
+    int32_t stride_y = attribute->stride()[0 + offset_d];
+    int32_t stride_x = attribute->stride()[1 + offset_d];
+    int32_t kernel_d = conv_dimension == 3 ? weights[offset_kernel] : 1;
+    int32_t kernel_h = weights[offset_kernel + offset_d];
+    int32_t kernel_w = weights[offset_kernel + 1 + offset_d];
+    int32_t dilation_d = conv_dimension == 3 ? attribute->dilation()[0] : 1;
+    int32_t dilation_y = attribute->dilation()[0 + offset_d];
+    int32_t dilation_x = attribute->dilation()[1 + offset_d];
+
+    offset_d *= 2;
+    int32_t pad_d0     = conv_dimension == 3 ? attribute->padding()[0] : 0;
+    int32_t pad_d1     = conv_dimension == 3 ? attribute->padding()[1] : 0;
+    int32_t pad_top    = attribute->padding()[0 + offset_d];
+    int32_t pad_bottom = attribute->padding()[1 + offset_d];
+    int32_t pad_left   = attribute->padding()[2 + offset_d];
+    int32_t pad_right  = attribute->padding()[3 + offset_d];
+
+    int32_t full_D = ID - 1 + pad_d0 + pad_d1 - (kernel_d - 1) * dilation_d;
+    int32_t full_H = IH - 1 + pad_top + pad_bottom - (kernel_h - 1) * dilation_y;
+    int32_t full_W = IW - 1 + pad_left + pad_right - (kernel_w - 1) * dilation_x;
+
+    if ((full_H % stride_y != 0) ||
+        (full_W % stride_x != 0) ||
+        (full_D % stride_d != 0))
+    {
+        msg = "Parameters must yield exact integer output dimensions";
+        return 1;
+    }
+
+    if ((OH != (full_H / stride_y) + 1) ||
+        (OW != (full_W / stride_x) + 1) ||
+        (OD != (full_D / stride_d) + 1))
+    {
+        std::string msg_d = "";
+        if (conv_dimension == 3)
+        {
+            msg_d += std::to_string((full_D / stride_d) + 1) + ",";
+        }
+        msg = "Mismatch between output shape provided and expected output shape (" +
+            msg_d +
+            std::to_string((full_H / stride_y) + 1) + "," +
+            std::to_string((full_W / stride_x) + 1) + ")";
+        return 1;
     }
 
     if (qinfo)
@@ -529,7 +599,7 @@ int OpConv2d<InDtype, WeightDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute_qinfo(attribute, qinfo, 2 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   InDtype, WeightDtype, msg))
+                                   weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpConv2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -715,7 +785,7 @@ int OpConv3d<InDtype, WeightDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute_qinfo(attribute, qinfo, 3 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   InDtype, WeightDtype, msg))
+                                   weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpConv3d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -904,7 +974,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute_qinfo(attribute, qinfo, 2 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   InDtype, WeightDtype, msg))
+                                   weight->getShape(), 0 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpDepthwiseConv2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -1447,7 +1517,7 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
     output = dynamic_cast<TosaReference::TensorTemplate<TAcc>*>(outputs[0]);
 
-    if (attribute->outpad().size() != 2)
+    if (attribute->outpad().size() != 4)
     {
         printNodeValidationError("OpTransposeConv2d: illegal size for attribute outpad");
         return 1;
@@ -1489,11 +1559,12 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         }
     }
 
+    // TODO: Remove dilation once schema updated
     for (int32_t i : attribute->dilation())
     {
-        if (i < 1)
+        if (i != 1)
         {
-            printNodeValidationError("OpTransposeConv2d: At least one dilation is smaller than one");
+            printNodeValidationError("OpTransposeConv2d: Dilation is deprecated and must be set to one");
             return 1;
         }
     }
@@ -1505,6 +1576,33 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
             printNodeValidationError("OpTransposeConv2d: illegal size for attribute output_shape");
             return 1;
         }
+    }
+
+    int32_t IH = input->getShape()[1];
+    int32_t IW = input->getShape()[2];
+    int32_t OH = output->getShape()[1];
+    int32_t OW = output->getShape()[2];
+
+    int32_t stride_y = attribute->stride()[0];
+    int32_t stride_x = attribute->stride()[1];
+    int32_t kernel_h = weight->getShape()[1];
+    int32_t kernel_w = weight->getShape()[2];
+
+    int32_t outpad_top    = attribute->outpad()[0];
+    int32_t outpad_bottom = attribute->outpad()[1];
+    int32_t outpad_left   = attribute->outpad()[2];
+    int32_t outpad_right  = attribute->outpad()[3];
+
+    int32_t H = (IH - 1) * stride_y - outpad_top - outpad_bottom + kernel_h;
+    int32_t W = (IW - 1) * stride_x - outpad_left - outpad_right + kernel_w;
+
+    if ((OH != H) || (OW != W))
+    {
+        std::string msg = "OpTransposeConv2d: Mismatch between output shape provided and expected output shape (" +
+            std::to_string(H) + "," +
+            std::to_string(W) + ")";
+        printNodeValidationError(msg.c_str());
+        return 1;
     }
 
     if (this->qinfo)
@@ -1542,12 +1640,13 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
     int out_width    = this->output->getShape()[2];
     int out_channels = this->output->getShape()[3];
 
-    int padding_top  = this->attribute->outpad()[0];
-    int padding_left = this->attribute->outpad()[1];
-    int stride_h     = this->attribute->stride()[0];
-    int stride_w     = this->attribute->stride()[1];
-    int dilation_h   = this->attribute->dilation()[0];
-    int dilation_w   = this->attribute->dilation()[1];
+    int outpad_top    = this->attribute->outpad()[0];
+    int outpad_bottom = this->attribute->outpad()[1];
+    int outpad_left   = this->attribute->outpad()[2];
+    int outpad_right  = this->attribute->outpad()[3];
+
+    int stride_h = this->attribute->stride()[0];
+    int stride_w = this->attribute->stride()[1];
 
     ERROR_IF(in_batch != out_batch, "OpTransposeConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
     ERROR_IF(f_in_channels != in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d", f_in_channels,
@@ -1559,10 +1658,10 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
 
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
-               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], padding=[%d,%d]",
-               in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels, out_batch,
-               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, padding_top,
-               padding_left);
+               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], outpad=[%d,%d,%d,%d]",
+               in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels,
+               out_batch, out_height, out_width, out_channels, stride_h, stride_w, outpad_top,
+               outpad_bottom, outpad_left, outpad_right);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -1595,16 +1694,16 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
         {
             for (int iw = 0; iw < in_width; iw++)
             {
-                out_x_origin = iw * stride_w - padding_left;
-                out_y_origin = ih * stride_h - padding_top;
+                out_x_origin = iw * stride_w - outpad_left;
+                out_y_origin = ih * stride_h - outpad_top;
                 for (int ic = 0; ic < in_channels; ic++)
                 {
                     for (int fh = 0; fh < f_height; fh++)
                     {
                         for (int fw = 0; fw < f_width; fw++)
                         {
-                            out_x = out_x_origin + fw * dilation_w;
-                            out_y = out_y_origin + fh * dilation_h;
+                            out_x = out_x_origin + fw;
+                            out_y = out_y_origin + fh;
                             for (int oc = 0; oc < out_channels; oc++)
                             {
                                 if ((out_x >= 0 && out_x < out_width) && (out_y >= 0 && out_y < out_height))
