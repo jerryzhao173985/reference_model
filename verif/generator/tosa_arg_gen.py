@@ -1151,7 +1151,7 @@ class TosaArgGen:
         d_vals = [1]
         dilations = {x for x in itertools.product(*([d_vals] * 2))}
 
-        if not error_name:
+        if not error_name and testGen.args.oversize:
             # add some oversize argument values
             if max(ifm_shape) < 64:
                 bigPadding = 9
