@@ -1147,7 +1147,9 @@ def build_const_net(
 
     addl_args_tuple = arg_gen_fcn(op, curr_shape, rng)
     for desc, addl_args in addl_args_tuple:
-        if not filter or filter.search(test_dir + desc):
+        # Only filter on the full test_name, not the output directory
+        _, test_name = os.path.split(test_dir + desc)
+        if not filter or filter.search(test_name):
             unit_test_args.append(
                 [
                     op_name,

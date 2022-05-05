@@ -92,6 +92,16 @@ class ArgGen:
                             ):
                                 continue
 
+                            if (
+                                (shapes[1] - 1 - (filter_h - 1) * dilation_h) % stride_h
+                                != 0
+                            ) or (
+                                (shapes[2] - 1 - (filter_w - 1) * dilation_w) % stride_w
+                                != 0
+                            ):
+                                # Not an exact integer output
+                                continue
+
                             arg_list.append(
                                 [
                                     "_st{}{}_pad{}_dilat{}{}".format(
@@ -145,6 +155,14 @@ class ArgGen:
                         # Dilation must evenly divide the tensor.  Some of our inputs
                         # intentionally use odd-sized tensors.
                         if shapes[1] % dilation_h != 0 or shapes[2] % dilation_w != 0:
+                            continue
+
+                        if (
+                            (shapes[1] - 1 - (filter_h - 1) * dilation_h) % stride != 0
+                        ) or (
+                            (shapes[2] - 1 - (filter_w - 1) * dilation_w) % stride != 0
+                        ):
+                            # Not an exact integer output
                             continue
 
                         arg_list.append(
@@ -215,6 +233,12 @@ class ArgGen:
                             if (padding == "SAME") and (
                                 (shapes[1] < kernel_h) or (shapes[2] < kernel_w)
                             ):
+                                continue
+
+                            if ((shapes[1] - kernel_h) % stride_h != 0) or (
+                                (shapes[2] - kernel_w) % stride_w != 0
+                            ):
+                                # Not an exact integer output
                                 continue
 
                             arg_list.append(
