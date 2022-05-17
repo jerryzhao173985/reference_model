@@ -890,7 +890,8 @@ int OpConv3d<InDtype, WeightDtype>::eval()
                 {
                     for (int oc = 0; oc < out_channels; oc++)
                     {
-                        acc = 0;
+                        // Initialize accumulator with bias value
+                        acc = this->output->getTensor()(ob, od, oh, ow, oc);
                         for (int fd = 0; fd < f_depth; fd++)
                         {
                             d_idx = od * stride_d + fd * dilation_d;
