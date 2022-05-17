@@ -17,6 +17,7 @@ if [ -e "${BASH_SOURCE[0]}" ]; then
     SCRIPTS_DIR=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
     REFMODEL_DIR=$(dirname "$SCRIPTS_DIR")
     pip install -e "$REFMODEL_DIR"
+    pip install pytest
     export PYTHONPATH="$SCRIPTS_DIR:$REFMODEL_DIR/thirdparty/serialization_lib/python"
     echo "Set PYTHONPATH=$PYTHONPATH"
 else

@@ -15,6 +15,7 @@ fi
 
 if [ -e "setup.cfg" ]; then
     pip install -e .
+    pip install pytest
     export PYTHONPATH=$PWD/scripts:$PWD/thirdparty/serialization_lib/python
     echo "Set PYTHONPATH=$PYTHONPATH"
 else
