@@ -497,11 +497,8 @@ int OpTileBase<Rank, Dtype>::checkTensorAttributes()
 
     for (int32_t d = 0; d < Rank; d++)
     {
-        if (in->getShape()[d] * attribute->multiples()[d] != out->getShape()[d])
-        {
-            printNodeValidationError("unexpected output shape");
-            return 1;
-        }
+        ERROR_IF(in->getShape()[d] * attribute->multiples()[d] != out->getShape()[d],
+                 "Output shape not equal to input * multiples;")
     }
 
     return 0;
