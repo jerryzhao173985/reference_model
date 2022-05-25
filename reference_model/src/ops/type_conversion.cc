@@ -64,15 +64,27 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
 
     ASSERT_MEM(in && out);
 
-    if ((InDtype != DType_INT8) && (InDtype != DType_UINT8) && (attribute->input_zp() != 0))
+    if ((InDtype != DType_INT8) && (InDtype != DType_UINT8) && (InDtype != DType_UINT16) && (attribute->input_zp() != 0))
     {
-        printNodeValidationError("OpRescale: Input DType not INT8/UINT8 and zero point not 0");
+        printNodeValidationError("OpRescale: Input DType not INT8/UINT8/UINT16 and zero point not 0");
         return 1;
     }
 
-    if ((OutDtype != DType_INT8) && (OutDtype != DType_UINT8) && (attribute->output_zp() != 0))
+    if ((OutDtype != DType_INT8) && (OutDtype != DType_UINT8) && (OutDtype != DType_UINT16) && (attribute->output_zp() != 0))
     {
-        printNodeValidationError("OpRescale: Output DType not INT8/UINT8 and zero point not 0");
+        printNodeValidationError("OpRescale: Output DType not INT8/UINT8/UINT16 and zero point not 0");
+        return 1;
+    }
+
+    if ((InDtype == DType_UINT16) && ((attribute->input_zp() != 0) && (attribute->input_zp() != 32768)))
+    {
+        printNodeValidationError("OpRescale: Input DType UINT16 and zero point not 0 or 32768");
+        return 1;
+    }
+
+    if ((OutDtype == DType_UINT16) && ((attribute->output_zp() != 0) && (attribute->output_zp() != 32768)))
+    {
+        printNodeValidationError("OpRescale: Output DType UINT16 and zero point not 0 or 32768");
         return 1;
     }
 
@@ -329,4 +341,8 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT48, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT48, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT48, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, UINT8, INT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, UINT8, INT16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, UINT16, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT8, UINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT16, UINT8);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT16, UINT16);

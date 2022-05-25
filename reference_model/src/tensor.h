@@ -656,6 +656,7 @@ public:
             case DType_INT4:
             case DType_INT8:
             case DType_INT16:
+            case DType_UINT16:
                 switch (rank)
                 {
                     case 0:

@@ -59,9 +59,11 @@ def allDTypes(*, excludes=None):
 def usableDTypes(*, excludes=None):
     """Get a set of usable DType values, optionally excluding some values.
 
-    Excludes (DType.UNKNOWN, DType.UINT8) in addition to the excludes
-    specified by the caller, as the serializer lib does not support them.
-    If you wish to include 'UNKNOWN' or 'UINT8' use allDTypes instead.
+    Excludes uncommon types (DType.UNKNOWN, DType.UINT16, DType.UINT8) in
+    addition to the excludes specified by the caller, as the serializer lib
+    does not support them.
+    If you wish to include 'UNKNOWN', 'UINT8' or 'UINT16' use allDTypes
+    instead.
 
     Args:
         excludes: iterable of DType values (e.g. [DType.INT8, DType.BOOL])
@@ -69,7 +71,7 @@ def usableDTypes(*, excludes=None):
     Returns:
         A set of DType values
     """
-    omit = {DType.UNKNOWN, DType.UINT8}
+    omit = {DType.UNKNOWN, DType.UINT8, DType.UINT16}
     omit.update(excludes if excludes else ())
     return allDTypes(excludes=omit)
 

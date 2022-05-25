@@ -23,7 +23,7 @@ using namespace tosa;
 
 namespace TosaReference
 {
-// Shorter aliase templates for common Eigen::Tensor types
+// Shorter alias templates for common Eigen::Tensor types
 template <typename T>
 using ETensor0 = Eigen::Tensor<T, 0>;
 template <typename T>
@@ -89,6 +89,11 @@ struct GetEigenType<DType_UINT8>
     using type = int32_t;
 };
 template <>
+struct GetEigenType<DType_UINT16>
+{
+    using type = int32_t;
+};
+template <>
 struct GetEigenType<DType_INT4>
 {
     using type = int32_t;
@@ -119,6 +124,11 @@ template <>
 struct GetNumBits<DType_UINT8>
 {
     static constexpr int32_t value = 8;
+};
+template <>
+struct GetNumBits<DType_UINT16>
+{
+    static constexpr int32_t value = 16;
 };
 template <>
 struct GetNumBits<DType_INT4>
@@ -158,6 +168,11 @@ struct GetQMin<DType_UINT8>
     static constexpr int64_t value = 0L;
 };
 template <>
+struct GetQMin<DType_UINT16>
+{
+    static constexpr int64_t value = 0L;
+};
+template <>
 struct GetQMin<DType_INT4>
 {
     static constexpr int64_t value = -8L;
@@ -192,6 +207,11 @@ template <>
 struct GetQMax<DType_UINT8>
 {
     static constexpr int64_t value = 255L;
+};
+template <>
+struct GetQMax<DType_UINT16>
+{
+    static constexpr int64_t value = 65535L;
 };
 template <>
 struct GetQMax<DType_INT4>

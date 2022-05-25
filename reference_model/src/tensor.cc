@@ -102,6 +102,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
         case DType_INT4:
         case DType_INT8:
         case DType_INT16:
+        case DType_UINT16:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
             ASSERT_MEM(i32databuf);
 
@@ -157,6 +158,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
         case DType_INT4:
         case DType_INT8:
         case DType_INT16:
+        case DType_UINT16:
             if (setTensorValueInt32(elements, i32databuf))
             {
                 free(i32databuf);
@@ -225,6 +227,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
         case DType_INT4:
         case DType_INT8:
         case DType_INT16:
+        case DType_UINT16:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
             ASSERT_MEM(i32databuf);
 
