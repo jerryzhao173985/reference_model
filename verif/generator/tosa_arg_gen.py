@@ -1513,11 +1513,6 @@ class TosaArgGen:
                     )
                 newShape.append(remainingElements)
 
-                # Toss in a -1 sometimes
-                minusOne = testGen.randInt(0, newRank * 4)
-                if minusOne < newRank:
-                    newShape[minusOne] = -1
-
                 # Check for duplicates
                 found = False
                 for name, other_shape in arg_list:

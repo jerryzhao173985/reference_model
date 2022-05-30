@@ -236,8 +236,6 @@ OpReshape<InRank, OutRank, Dtype>::~OpReshape()
 template <int InRank, int OutRank, DType Dtype>
 int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
 {
-    uint32_t minusOneCount = 0;
-
     if (validateRequiredOperands())
         return 1;
 
@@ -258,21 +256,8 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
 
     for (uint32_t d = 0; d < OutRank; d++)
     {
-        if (attribute->shape()[d] == -1)
-        {
-            minusOneCount++;
-        }
-        else
-        {
-            ERROR_IF(attribute->shape()[d] != outputs[0]->getShape()[d],
-                     "OpReshape: new_shape doesn't match output shape");
-        }
-    }
-
-    if (minusOneCount > 1)
-    {
-        printNodeValidationError("OpReshape: new shape has more than one -1 dimension");
-        return 1;
+        ERROR_IF(attribute->shape()[d] != outputs[0]->getShape()[d],
+                    "OpReshape: new_shape doesn't match output shape");
     }
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
@@ -284,27 +269,10 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
 template <int InRank, int OutRank, DType Dtype>
 int OpReshape<InRank, OutRank, Dtype>::eval()
 {
-    uint32_t remainingSize = in->getElementCount();
-
-    // If there is a -1 dimension, find the remainder in one pass over the output shape
-    for (int32_t d = 0; d < OutRank; d++)
-    {
-        if (attribute->shape()[d] != -1)
-        {
-            remainingSize = remainingSize / attribute->shape()[d];
-        }
-    }
-
     for (int32_t d = 0; d < OutRank; d++)
     {
         array_shape[d]  = attribute->shape()[OutRank - 1 - d];
         out_reverser[d] = OutRank - 1 - d;
-
-        // Jam in the remainder here
-        if (array_shape[d] == -1)
-        {
-            array_shape[d] = remainingSize;
-        }
     }
 
     for (int32_t d = 0; d < InRank; d++)

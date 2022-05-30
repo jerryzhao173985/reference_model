@@ -4288,21 +4288,6 @@ class OutputShaper:
     def reshapeOp(ser, rng, a, shape, error_name=None):
         output_shape = shape.copy()
 
-        totalElements = 1
-        for i in a.shape:
-            totalElements *= i
-
-        # If there are any -1 elements, figure out what that dimension must be
-        totalOutputElements = 1
-        for i in output_shape:
-            if i != -1:
-                totalOutputElements *= i
-
-        # And fill it in
-        for i in range(len(output_shape)):
-            if output_shape[i] == -1:
-                output_shape[i] = totalElements // totalOutputElements
-
         if error_name == ErrorIf.TensorSizeInputOutputMismatch:
             for i in range(len(output_shape)):
                 output_shape[i] = output_shape[i] + rng.integers(1, 10)
