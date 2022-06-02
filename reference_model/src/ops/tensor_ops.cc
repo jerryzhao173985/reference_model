@@ -1535,12 +1535,6 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (attribute->dilation().size() != 2)
-    {
-        printNodeValidationError("OpTransposeConv2d: illegal size for attribute dilation");
-        return 1;
-    }
-
     if (attribute->output_shape().size() != 4)
     {
         printNodeValidationError("OpTransposeConv2d: illegal size for attribute output_shape");
@@ -1561,16 +1555,6 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         if (i < 1)
         {
             printNodeValidationError("OpTransposeConv2d: At least one stride is smaller than one");
-            return 1;
-        }
-    }
-
-    // TODO: Remove dilation once schema updated
-    for (int32_t i : attribute->dilation())
-    {
-        if (i != 1)
-        {
-            printNodeValidationError("OpTransposeConv2d: Dilation is deprecated and must be set to one");
             return 1;
         }
     }
