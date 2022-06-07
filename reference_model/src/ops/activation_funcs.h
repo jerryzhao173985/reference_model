@@ -28,7 +28,7 @@ template <int Rank, DType Dtype>
 class OpClamp : public UnaryNode<Rank, Dtype>
 {
 public:
-    OpClamp(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+    OpClamp(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : UnaryNode<Rank, Dtype>(sgt_, Op_CLAMP, id_)
     {
         INIT_ATTRIBUTE(Clamp);
@@ -48,7 +48,7 @@ template <int Rank, DType Dtype>
 class OpSigmoid : public UnaryNode<Rank, Dtype>
 {
 public:
-    OpSigmoid(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+    OpSigmoid(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : UnaryNode<Rank, Dtype>(sgt_, Op_SIGMOID, id_)
     {
         register_fcn();
@@ -64,7 +64,7 @@ template <int Rank, DType Dtype>
 class OpTanh : public UnaryNode<Rank, Dtype>
 {
 public:
-    OpTanh(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
+    OpTanh(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : UnaryNode<Rank, Dtype>(sgt_, Op_TANH, id_)
     {
         register_fcn();

@@ -42,7 +42,7 @@ template <int Rank, DType InDtype, DType OutDtype>
 class BinaryNodeBase : public GraphNode
 {
 public:
-    BinaryNodeBase(SubgraphTraverser* sgt_, const Op& nodeType, TosaQuantInfoBase* qinfo_, const uint64_t id_);
+    BinaryNodeBase(SubgraphTraverser* sgt_, const Op& nodeType, const uint64_t id_);
     virtual ~BinaryNodeBase();
 
     virtual int checkTensorAttributes() final;
@@ -71,8 +71,8 @@ template <int Rank, DType InDtype, DType OutDtype>
 class BinaryNode : public BinaryNodeBase<Rank, InDtype, OutDtype>
 {
 public:
-    BinaryNode(SubgraphTraverser* sgt_, const Op& op_, TosaQuantInfoBase* qinfo_, const uint64_t id_)
-        : BinaryNodeBase<Rank, InDtype, OutDtype>(sgt_, op_, qinfo_, id_)
+    BinaryNode(SubgraphTraverser* sgt_, const Op& op_, const uint64_t id_)
+        : BinaryNodeBase<Rank, InDtype, OutDtype>(sgt_, op_, id_)
     {}
     virtual ~BinaryNode()
     {}
@@ -90,8 +90,8 @@ template <DType InDtype, DType OutDtype>
 class BinaryNode<0, InDtype, OutDtype> : public BinaryNodeBase<0, InDtype, OutDtype>
 {
 public:
-    BinaryNode(SubgraphTraverser* sgt_, const Op& op_, TosaQuantInfoBase* qinfo_, const uint64_t id_)
-        : BinaryNodeBase<0, InDtype, OutDtype>(sgt_, op_, qinfo_, id_)
+    BinaryNode(SubgraphTraverser* sgt_, const Op& op_, const uint64_t id_)
+        : BinaryNodeBase<0, InDtype, OutDtype>(sgt_, op_, id_)
     {}
     virtual ~BinaryNode()
     {}
@@ -104,8 +104,8 @@ public:
     class Op##Opname : public BinaryNode<Rank, Dtype, Dtype>                                                           \
     {                                                                                                                  \
     public:                                                                                                            \
-        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)    \
-            : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_##OPNAME, qinfo_, id_)                                           \
+        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)    \
+            : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_##OPNAME, id_)                                           \
         {                                                                                                              \
             register_fcn();                                                                                            \
         }                                                                                                              \
@@ -139,9 +139,8 @@ class OpArithmeticRightShift : public BinaryNode<Rank, Dtype, Dtype>
 public:
     OpArithmeticRightShift(SubgraphTraverser* sgt_,
                            TosaAttributeBase* attribute_,
-                           TosaQuantInfoBase* qinfo_,
                            uint64_t id_)
-        : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_ARITHMETIC_RIGHT_SHIFT, qinfo_, id_)
+        : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_ARITHMETIC_RIGHT_SHIFT, id_)
     {
         INIT_ATTRIBUTE(ArithmeticRightShift);
         register_fcn();
@@ -158,8 +157,8 @@ template <int Rank, DType InDtype, DType OutDtype>
 class OpMul : public BinaryNode<Rank, InDtype, OutDtype>
 {
 public:
-    OpMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)
-        : BinaryNode<Rank, InDtype, OutDtype>(sgt_, Op_MUL, qinfo_, id_)
+    OpMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : BinaryNode<Rank, InDtype, OutDtype>(sgt_, Op_MUL, id_)
     {
         INIT_ATTRIBUTE(Mul);
         register_fcn();
@@ -178,7 +177,7 @@ template <int Rank, DType InDtype>
 class OpTable : public GraphNode
 {
 public:
-    OpTable(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpTable(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpTable();
 
     virtual int checkTensorAttributes();

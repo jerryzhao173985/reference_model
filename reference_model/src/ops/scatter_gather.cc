@@ -23,7 +23,6 @@ using namespace tosa;
 template <DType Dtype>
 OpGather<Dtype>::OpGather(SubgraphTraverser* sgt_,
                           TosaAttributeBase* attribute_,
-                          TosaQuantInfoBase* qinfo_,
                           uint64_t id_)
     : GraphNode(sgt_, Op_GATHER, id_)
 {
@@ -120,7 +119,6 @@ int OpGather<Dtype>::eval()
 template <DType Dtype>
 OpScatter<Dtype>::OpScatter(SubgraphTraverser* sgt_,
                             TosaAttributeBase* attribute_,
-                            TosaQuantInfoBase* qinfo_,
                             uint64_t id_)
     : GraphNode(sgt_, Op_SCATTER, id_)
 {

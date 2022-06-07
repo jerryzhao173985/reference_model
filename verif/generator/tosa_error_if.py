@@ -1003,12 +1003,7 @@ class TosaErrorValidator:
 
         Generally input_zp is index 0, output_zp is index 1
         """
-        if isinstance(qinfo, tuple):
-            zero_point = qinfo[index]
-        else:
-            # For use: qinfo.ints[0][1] = input_zp, qinfo.ints[1][1] = output_zp
-            zero_point = qinfo.ints[index][1]
-        return zero_point
+        return qinfo[index]
 
     @staticmethod
     def evInputZeroPointNotZero(check=False, **kwargs):

@@ -23,7 +23,6 @@ using namespace tosa;
 template <int Rank, DType Dtype>
 OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_,
                                 TosaAttributeBase* attribute_,
-                                TosaQuantInfoBase* qinfo_,
                                 uint64_t id_)
     : GraphNode(sgt_, Op_CONCAT, id_)
 {
@@ -124,22 +123,18 @@ int OpConcat<Rank, Dtype>::eval()
 template <int Rank, DType Dtype>
 OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
                           TosaAttributeBase* attribute_,
-                          TosaQuantInfoBase* qinfo_,
                           uint64_t id_)
     : GraphNode(sgt_, Op_PAD, id_)
 {
     setRequiredOperands(1, 1);
     setRequiredRank(0, 6);
 
-    INIT_QINFO(Pad);
     INIT_ATTRIBUTE(Pad);
 }
 
 template <int Rank, DType Dtype>
 OpPad<Rank, Dtype>::~OpPad()
 {
-    if (qinfo)
-        delete qinfo;
 }
 
 template <int Rank, DType Dtype>
@@ -177,11 +172,6 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         paddings_array[i] = std::make_pair(pad_front, pad_back);
     }
 
-    if (this->qinfo && Dtype != DType_INT8)
-    {
-        ERROR_IF(this->qinfo->input_zp() != 0, "OpPad: zeropoint should be 0");
-    }
-
     return 0;
 }
 
@@ -206,11 +196,6 @@ int OpPad<Rank, Dtype>::eval()
             break;
     }
 
-    if (this->qinfo && Dtype == DType_INT8)
-    {
-        pad_value += (InEigenType)this->qinfo->input_zp();
-    }
-
     this->out->getTensor() = this->in->getTensor().pad(this->paddings_array, pad_value);
 
     return GraphNode::eval();
@@ -219,7 +204,6 @@ int OpPad<Rank, Dtype>::eval()
 template <int InRank, int OutRank, DType Dtype>
 OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_,
                                              TosaAttributeBase* attribute_,
-                                             TosaQuantInfoBase* qinfo_,
                                              uint64_t id_)
     : GraphNode(sgt_, Op_RESHAPE, id_)
 {
@@ -315,7 +299,6 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 template <int Rank, DType Dtype>
 OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_,
                                   TosaAttributeBase* attribute_,
-                                  TosaQuantInfoBase* qinfo_,
                                   uint64_t id_)
     : GraphNode(sgt_, Op_REVERSE, id_)
 {
@@ -383,7 +366,6 @@ int OpReverse<Rank, Dtype>::eval()
 template <int Rank, DType Dtype>
 OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_,
                               TosaAttributeBase* attribute_,
-                              TosaQuantInfoBase* qinfo_,
                               uint64_t id_)
     : GraphNode(sgt_, Op_SLICE, id_)
 {
@@ -451,7 +433,6 @@ int OpSlice<Rank, Dtype>::eval()
 template <int Rank, DType Dtype>
 OpTileBase<Rank, Dtype>::OpTileBase(SubgraphTraverser* sgt_,
                                     TosaAttributeBase* attribute_,
-                                    TosaQuantInfoBase* qinfo_,
                                     uint64_t id_)
     : GraphNode(sgt_, Op_TILE, id_)
 {
@@ -586,7 +567,6 @@ int OpTile<4, Dtype>::eval()
 template <int Rank, DType Dtype>
 OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
                                       TosaAttributeBase* attribute_,
-                                      TosaQuantInfoBase* qinfo_,
                                       uint64_t id_)
     : GraphNode(sgt_, Op_TRANSPOSE, id_)
 {

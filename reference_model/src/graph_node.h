@@ -17,7 +17,6 @@
 #define GRAPH_NODE_H
 
 #include "attribute.h"
-#include "quant_info.h"
 #include "subgraph_traverser.h"
 #include "tensor.h"
 #include "tosa_generated.h"
@@ -124,17 +123,6 @@
     else                                                                                                               \
     {                                                                                                                  \
         FATAL_ERROR("Can't initialize Tosa" #ATTRIBUTE_NAME "Attribute");                                              \
-    }
-
-#define INIT_QINFO(QINFO_NAME)                                                                                         \
-    if (auto p = dynamic_cast<Tosa##QINFO_NAME##QuantInfo*>(qinfo_))                                                   \
-    {                                                                                                                  \
-        qinfo = new Tosa##QINFO_NAME##QuantInfo(p);                                                                    \
-        ASSERT_MEM(qinfo);                                                                                             \
-    }                                                                                                                  \
-    else                                                                                                               \
-    {                                                                                                                  \
-        qinfo = nullptr;                                                                                               \
     }
 
 namespace TosaReference

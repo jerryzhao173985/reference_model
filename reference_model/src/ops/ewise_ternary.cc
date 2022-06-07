@@ -22,7 +22,6 @@ using namespace tosa;
 template <int Rank, DType Dtype>
 OpSelectBase<Rank, Dtype>::OpSelectBase(SubgraphTraverser* sgt_,
                                         TosaAttributeBase* attribute_,
-                                        TosaQuantInfoBase* qinfo_,
                                         uint64_t id_)
     : GraphNode(sgt_, Op_SELECT, id_)
 {

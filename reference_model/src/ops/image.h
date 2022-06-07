@@ -27,7 +27,7 @@ template <DType InDtype, DType OutDtype>
 class OpResize : public GraphNode
 {
 public:
-    OpResize(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpResize(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpResize();
     virtual int checkTensorAttributes() final;
     virtual int eval();

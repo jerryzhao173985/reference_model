@@ -27,7 +27,7 @@ template <DType Dtype>
 class OpGather : public GraphNode
 {
 public:
-    OpGather(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpGather(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpGather();
 
     virtual int checkTensorAttributes();
@@ -49,7 +49,7 @@ template <DType Dtype>
 class OpScatter : public GraphNode
 {
 public:
-    OpScatter(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_);
+    OpScatter(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpScatter();
 
     virtual int checkTensorAttributes();

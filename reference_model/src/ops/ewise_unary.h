@@ -49,7 +49,7 @@ protected:
     class Op##Opname : public UnaryNode<Rank, Dtype>                                                                   \
     {                                                                                                                  \
     public:                                                                                                            \
-        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)    \
+        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)    \
             : UnaryNode<Rank, Dtype>(sgt_, Op_##OPNAME, id_)                                                           \
         {                                                                                                              \
             register_fcn();                                                                                            \
@@ -59,27 +59,6 @@ protected:
         using InEigenType             = typename GetEigenType<Dtype>::type;                                            \
         using OutEigenType            = typename GetEigenType<Dtype>::type;                                            \
         virtual int register_fcn();                                                                                    \
-    };
-
-#define DEF_TEMPLATE_UNARY_OP_WITH_QUANT_INFO(Opname, OPNAME)                                                          \
-    template <int Rank, DType Dtype>                                                                                   \
-    class Op##Opname : public UnaryNode<Rank, Dtype>                                                                   \
-    {                                                                                                                  \
-    public:                                                                                                            \
-        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, TosaQuantInfoBase* qinfo_, uint64_t id_)    \
-            : UnaryNode<Rank, Dtype>(sgt_, Op_##OPNAME, id_)                                                           \
-        {                                                                                                              \
-            INIT_QINFO(Unary);                                                                                         \
-            register_fcn();                                                                                            \
-        }                                                                                                              \
-        static constexpr int32_t QMin = GetQMin<Dtype>::value;                                                         \
-        static constexpr int32_t QMax = GetQMax<Dtype>::value;                                                         \
-        using InEigenType             = typename GetEigenType<Dtype>::type;                                            \
-        using OutEigenType            = typename GetEigenType<Dtype>::type;                                            \
-        virtual int register_fcn();                                                                                    \
-                                                                                                                       \
-    protected:                                                                                                         \
-        TosaUnaryQuantInfo* qinfo;                                                                                     \
     };
 
 DEF_TEMPLATE_UNARY_OP(Abs, ABS)
@@ -90,12 +69,28 @@ DEF_TEMPLATE_UNARY_OP(Exp, EXP)
 DEF_TEMPLATE_UNARY_OP(Floor, FLOOR)
 DEF_TEMPLATE_UNARY_OP(Log, LOG)
 DEF_TEMPLATE_UNARY_OP(LogicalNot, LOGICAL_NOT)
-DEF_TEMPLATE_UNARY_OP_WITH_QUANT_INFO(Negate, NEGATE)
 DEF_TEMPLATE_UNARY_OP(Reciprocal, RECIPROCAL)
 DEF_TEMPLATE_UNARY_OP(Rsqrt, RSQRT)
 
 #undef DEF_TEMPLATE_UNARY_OP
-#undef DEF_TEMPLATE_UNARY_OP_WITH_QUANT_INFO
+
+// Negate is the only unary op with attributes
+template <int Rank, DType Dtype>
+class OpNegate : public UnaryNode<Rank, Dtype>
+{
+public:
+    OpNegate(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
+    virtual ~OpNegate();
+
+    static constexpr int32_t QMin = GetQMin<Dtype>::value;
+    static constexpr int32_t QMax = GetQMax<Dtype>::value;
+    using InEigenType             = typename GetEigenType<Dtype>::type;
+    using OutEigenType            = typename GetEigenType<Dtype>::type;
+    virtual int register_fcn();
+
+protected:
+    tosa::TosaNegateAttribute* attribute;
+};
 
 };    // namespace TosaReference
 

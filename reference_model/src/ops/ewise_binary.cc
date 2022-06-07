@@ -25,7 +25,6 @@ using namespace tosa;
 template <int Rank, DType InDtype, DType OutDtype>
 BinaryNodeBase<Rank, InDtype, OutDtype>::BinaryNodeBase(SubgraphTraverser* sgt_,
                                                         const Op& op_,
-                                                        TosaQuantInfoBase* qinfo_,
                                                         uint64_t id_)
     : GraphNode(sgt_, op_, id_)
 {
@@ -490,7 +489,6 @@ int OpSub<Rank, Dtype>::register_fcn()
 template <int Rank, DType InDtype>
 OpTable<Rank, InDtype>::OpTable(SubgraphTraverser* sgt_,
                                 TosaAttributeBase* attribute_,
-                                TosaQuantInfoBase* qinfo_,
                                 uint64_t id_)
     : GraphNode(sgt_, Op_TABLE, id_)
 {

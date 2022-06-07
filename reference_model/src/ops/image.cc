@@ -15,7 +15,6 @@
 
 #include "image.h"
 #include "arith_util.h"
-#include "quant_util.h"
 
 using namespace TosaReference;
 using namespace Eigen;
@@ -24,7 +23,6 @@ using namespace tosa;
 template <DType InDtype, DType OutDtype>
 OpResize<InDtype, OutDtype>::OpResize(SubgraphTraverser* sgt_,
                                       TosaAttributeBase* attribute_,
-                                      TosaQuantInfoBase* qinfo_,
                                       uint64_t id_)
     : GraphNode(sgt_, Op_RESIZE, id_)
 {

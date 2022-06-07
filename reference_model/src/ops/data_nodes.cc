@@ -45,7 +45,6 @@ int OpConst::eval()
 template <int Rank, DType Dtype>
 OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_,
                                     TosaAttributeBase* attribute_,
-                                    TosaQuantInfoBase* qinfo_,
                                     uint64_t id_)
     : GraphNode(sgt_, Op_IDENTITY, id_)
 {

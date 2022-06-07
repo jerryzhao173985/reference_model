@@ -25,7 +25,6 @@ using namespace tosa;
 template <int Rank, DType InDtype, DType OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_,
                                               TosaAttributeBase* attribute_,
-                                              TosaQuantInfoBase* qinfo_,
                                               uint64_t id_)
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
@@ -218,7 +217,6 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 template <int Rank, DType InDtype, DType OutDtype>
 OpCast<Rank, InDtype, OutDtype>::OpCast(SubgraphTraverser* sgt_,
                                         TosaAttributeBase* attribute_,
-                                        TosaQuantInfoBase* qinfo_,
                                         uint64_t id_)
     : GraphNode(sgt_, Op_CAST, id_)
 {
