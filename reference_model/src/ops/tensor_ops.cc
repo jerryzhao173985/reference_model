@@ -26,7 +26,7 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
                            std::vector<int32_t> output_shape,
                            std::string& msg)
 {
-    if (attribute->padding().size() != 4)
+    if (attribute->pad().size() != 4)
     {
         msg = "illegal size for attribute padding";
         return 1;
@@ -44,7 +44,7 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
         return 1;
     }
 
-    for (int32_t i : attribute->padding())
+    for (int32_t i : attribute->pad())
     {
         if (i < 0)
         {
@@ -76,10 +76,10 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
     int32_t OH = output_shape[1];
     int32_t OW = output_shape[2];
 
-    int32_t pad_top    = attribute->padding()[0];
-    int32_t pad_bottom = attribute->padding()[1];
-    int32_t pad_left   = attribute->padding()[2];
-    int32_t pad_right  = attribute->padding()[3];
+    int32_t pad_top    = attribute->pad()[0];
+    int32_t pad_bottom = attribute->pad()[1];
+    int32_t pad_left   = attribute->pad()[2];
+    int32_t pad_right  = attribute->pad()[3];
 
     int32_t stride_y = attribute->stride()[0];
     int32_t stride_x = attribute->stride()[1];
@@ -125,9 +125,9 @@ int check_conv_attribute_qinfo(tosa::TosaConvAttribute* attribute,
                                DType WeightDtype,
                                std::string& msg)
 {
-    if (attribute->padding().size() != (2 * conv_dimension))
+    if (attribute->pad().size() != (2 * conv_dimension))
     {
-        msg = "Illegal size for attribute padding";
+        msg = "Illegal size for attribute pad";
         return 1;
     }
 
@@ -143,7 +143,7 @@ int check_conv_attribute_qinfo(tosa::TosaConvAttribute* attribute,
         return 1;
     }
 
-    for (int32_t i : attribute->padding())
+    for (int32_t i : attribute->pad())
     {
         if (i < 0)
         {
@@ -191,12 +191,12 @@ int check_conv_attribute_qinfo(tosa::TosaConvAttribute* attribute,
     int32_t dilation_x = attribute->dilation()[1 + offset_d];
 
     offset_d *= 2;
-    int32_t pad_d0     = conv_dimension == 3 ? attribute->padding()[0] : 0;
-    int32_t pad_d1     = conv_dimension == 3 ? attribute->padding()[1] : 0;
-    int32_t pad_top    = attribute->padding()[0 + offset_d];
-    int32_t pad_bottom = attribute->padding()[1 + offset_d];
-    int32_t pad_left   = attribute->padding()[2 + offset_d];
-    int32_t pad_right  = attribute->padding()[3 + offset_d];
+    int32_t pad_d0     = conv_dimension == 3 ? attribute->pad()[0] : 0;
+    int32_t pad_d1     = conv_dimension == 3 ? attribute->pad()[1] : 0;
+    int32_t pad_top    = attribute->pad()[0 + offset_d];
+    int32_t pad_bottom = attribute->pad()[1 + offset_d];
+    int32_t pad_left   = attribute->pad()[2 + offset_d];
+    int32_t pad_right  = attribute->pad()[3 + offset_d];
 
     int32_t full_D = ID - 1 + pad_d0 + pad_d1 - (kernel_d - 1) * dilation_d;
     int32_t full_H = IH - 1 + pad_top + pad_bottom - (kernel_h - 1) * dilation_y;
@@ -442,10 +442,10 @@ int OpAvgPool2d<Dtype>::eval()
     ERROR_IF(in_batch != out_batch, "OpAvgPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
     ERROR_IF(in_channels != out_channels, "OpAvgPool2d: tensor channel mismatch %d != %d", in_channels, out_channels);
 
-    int padding_top    = this->attribute->padding()[0];
-    int padding_bottom = this->attribute->padding()[1];
-    int padding_left   = this->attribute->padding()[2];
-    int padding_right  = this->attribute->padding()[3];
+    int pad_top    = this->attribute->pad()[0];
+    int pad_bottom = this->attribute->pad()[1];
+    int pad_left   = this->attribute->pad()[2];
+    int pad_right  = this->attribute->pad()[3];
     int kernel_h       = this->attribute->kernel()[0];
     int kernel_w       = this->attribute->kernel()[1];
     int stride_h       = this->attribute->stride()[0];
@@ -453,9 +453,9 @@ int OpAvgPool2d<Dtype>::eval()
 
     DEBUG_INFO(OP,
                "perform AvgPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
-               "stride=[%d,%d], padding=[%d,%d,%d,%d]",
+               "stride=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_h,
-               kernel_w, stride_h, stride_w, padding_top, padding_bottom, padding_left, padding_right);
+               kernel_w, stride_h, stride_w, pad_top, pad_bottom, pad_left, pad_right);
 
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
     im2col_input_dims[0] = kernel_h * kernel_w;
@@ -467,11 +467,11 @@ int OpAvgPool2d<Dtype>::eval()
     col2im_output_dims[2] = out_width;
     col2im_output_dims[3] = out_channels;
 
-    Eigen::array<std::pair<int32_t, int32_t>, 4> padding;
-    padding[0] = std::make_pair(0, 0);
-    padding[1] = std::make_pair(padding_top, padding_bottom);
-    padding[2] = std::make_pair(padding_left, padding_right);
-    padding[3] = std::make_pair(0, 0);
+    Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
+    pad[0] = std::make_pair(0, 0);
+    pad[1] = std::make_pair(pad_top, pad_bottom);
+    pad[2] = std::make_pair(pad_left, pad_right);
+    pad[3] = std::make_pair(0, 0);
 
     ETensor4<InEigenType> input_val = this->in->getTensor();
     if (this->qinfo)
@@ -479,7 +479,7 @@ int OpAvgPool2d<Dtype>::eval()
         input_val = input_val - (InEigenType)this->qinfo->input_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(padding);
+    ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
     // assuming input and output have same scales
     // so input and output scaling is not required
@@ -511,8 +511,8 @@ int OpAvgPool2d<Dtype>::eval()
 
     // calculate 1d height/width div_map (number of elements this pooling window covers)
     // and outer product to get 2d div_map, then reshape/broadcast to [N, H, W, C]
-    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_h, stride_h, padding_top, padding_bottom);
-    ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_w, stride_w, padding_left, padding_right);
+    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_h, stride_h, pad_top, pad_bottom);
+    ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_w, stride_w, pad_left, pad_right);
     Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
     Eigen::array<Eigen::Index, 4> bcast{ out_batch, 1, 1, out_channels };
 
@@ -636,10 +636,11 @@ int OpConv2d<InDtype, WeightDtype>::eval()
              out_channels);
     ERROR_IF(b_out_channels != out_channels, "OpConv2d: bias channel mismatch %d != %d", b_out_channels, out_channels);
 
-    int padding_top    = this->attribute->padding()[0];
-    int padding_bottom = this->attribute->padding()[1];
-    int padding_left   = this->attribute->padding()[2];
-    int padding_right  = this->attribute->padding()[3];
+    int pad_top    = this->attribute->pad()[0];
+    int pad_bottom = this->attribute->pad()[1];
+    int pad_left   = this->attribute->pad()[2];
+    int pad_right  = this->attribute->pad()[3];
+
     int stride_h       = this->attribute->stride()[0];
     int stride_w       = this->attribute->stride()[1];
     int dilation_h     = this->attribute->dilation()[0];
@@ -647,10 +648,10 @@ int OpConv2d<InDtype, WeightDtype>::eval()
 
     DEBUG_INFO(OP,
                "perform OpConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], "
-               "stride=[%d,%d], dilation=[%d,%d], padding=[%d,%d,%d,%d]",
+               "stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_out_channels, out_batch,
-               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, padding_top,
-               padding_bottom, padding_left, padding_right);
+               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, pad_top,
+               pad_bottom, pad_left, pad_right);
 
     // GEMM-conv2d, left matrix is input, right matrix is weight
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
@@ -682,11 +683,11 @@ int OpConv2d<InDtype, WeightDtype>::eval()
 
     Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
 
-    Eigen::array<std::pair<int32_t, int32_t>, 4> padding;
-    padding[0] = std::make_pair(0, 0);
-    padding[1] = std::make_pair(padding_top, padding_bottom);
-    padding[2] = std::make_pair(padding_left, padding_right);
-    padding[3] = std::make_pair(0, 0);
+    Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
+    pad[0] = std::make_pair(0, 0);
+    pad[1] = std::make_pair(pad_top, pad_bottom);
+    pad[2] = std::make_pair(pad_left, pad_right);
+    pad[3] = std::make_pair(0, 0);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -696,7 +697,7 @@ int OpConv2d<InDtype, WeightDtype>::eval()
         weight_val = weight_val - (WeightEigenType)this->qinfo->weight_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(padding);
+    ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
     // extract_image_patches() output [N, KH, KW, H * W, C]
     // need to transpose to [N, H * W, KH, KW, C]
@@ -825,15 +826,17 @@ int OpConv3d<InDtype, WeightDtype>::eval()
              out_channels);
     ERROR_IF(b_out_channels != out_channels, "OpConv3d: bias channel mismatch %d != %d", b_out_channels, out_channels);
 
-    int padding_d0     = this->attribute->padding()[0];
-    int padding_d1     = this->attribute->padding()[1];
-    int padding_top    = this->attribute->padding()[2];
-    int padding_bottom = this->attribute->padding()[3];
-    int padding_left   = this->attribute->padding()[4];
-    int padding_right  = this->attribute->padding()[5];
+    int pad_d0     = this->attribute->pad()[0];
+    int pad_d1     = this->attribute->pad()[1];
+    int pad_top    = this->attribute->pad()[2];
+    int pad_bottom = this->attribute->pad()[3];
+    int pad_left   = this->attribute->pad()[4];
+    int pad_right  = this->attribute->pad()[5];
+
     int stride_d       = this->attribute->stride()[0];
     int stride_h       = this->attribute->stride()[1];
     int stride_w       = this->attribute->stride()[2];
+
     int dilation_d     = this->attribute->dilation()[0];
     int dilation_h     = this->attribute->dilation()[1];
     int dilation_w     = this->attribute->dilation()[2];
@@ -841,17 +844,17 @@ int OpConv3d<InDtype, WeightDtype>::eval()
     DEBUG_INFO(
         OP,
         "perform OpConv3d, input.shape=[%d,%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d,%d], output.shape=[%d,%d,%d,%d,%d], "
-        "stride=[%d,%d,%d], dilation=[%d,%d,%d], padding=[%d,%d,%d,%d,%d,%d]",
+        "stride=[%d,%d,%d], dilation=[%d,%d,%d], pad=[%d,%d,%d,%d,%d,%d]",
         in_batch, in_depth, in_height, in_width, in_channels, f_out_channels, f_depth, f_height, f_width, f_in_channels,
         out_batch, out_depth, out_height, out_width, out_channels, stride_d, stride_h, stride_w, dilation_d, dilation_h,
-        dilation_w, padding_d0, padding_d1, padding_top, padding_bottom, padding_left, padding_right);
+        dilation_w, pad_d0, pad_d1, pad_top, pad_bottom, pad_left, pad_right);
 
-    Eigen::array<std::pair<int32_t, int32_t>, 5> padding;
-    padding[0] = std::make_pair(0, 0);
-    padding[1] = std::make_pair(padding_d0, padding_d1);
-    padding[2] = std::make_pair(padding_top, padding_bottom);
-    padding[3] = std::make_pair(padding_left, padding_right);
-    padding[4] = std::make_pair(0, 0);
+    Eigen::array<std::pair<int32_t, int32_t>, 5> pad;
+    pad[0] = std::make_pair(0, 0);
+    pad[1] = std::make_pair(pad_d0, pad_d1);
+    pad[2] = std::make_pair(pad_top, pad_bottom);
+    pad[3] = std::make_pair(pad_left, pad_right);
+    pad[4] = std::make_pair(0, 0);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -861,7 +864,7 @@ int OpConv3d<InDtype, WeightDtype>::eval()
         weight_val = weight_val - (WeightEigenType)this->qinfo->weight_zp();
     }
 
-    ETensor5<InEigenType> input_padded = input_val.pad(padding);
+    ETensor5<InEigenType> input_padded = input_val.pad(pad);
 
     // 1. initialize with bias
     Eigen::array<Eigen::Index, 5> reshape_dim;
@@ -1013,10 +1016,11 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
     ERROR_IF(b_out_channels != out_channels, "OpDepthwiseConv2d: bias channels mismatch %d != %d", b_out_channels,
              out_channels);
 
-    int padding_top    = this->attribute->padding()[0];
-    int padding_bottom = this->attribute->padding()[1];
-    int padding_left   = this->attribute->padding()[2];
-    int padding_right  = this->attribute->padding()[3];
+    int pad_top    = this->attribute->pad()[0];
+    int pad_bottom = this->attribute->pad()[1];
+    int pad_left   = this->attribute->pad()[2];
+    int pad_right  = this->attribute->pad()[3];
+
     int stride_h       = this->attribute->stride()[0];
     int stride_w       = this->attribute->stride()[1];
     int dilation_h     = this->attribute->dilation()[0];
@@ -1024,16 +1028,16 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
 
     DEBUG_INFO(OP,
                "perform OpDepthwiseConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
-               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], padding=[%d,%d,%d,%d]",
+               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_multiplier, out_batch,
-               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, padding_top,
-               padding_bottom, padding_left, padding_right);
+               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, pad_top,
+               pad_bottom, pad_left, pad_right);
 
-    Eigen::array<std::pair<int32_t, int32_t>, 4> padding;
-    padding[0] = std::make_pair(0, 0);
-    padding[1] = std::make_pair(padding_top, padding_bottom);
-    padding[2] = std::make_pair(padding_left, padding_right);
-    padding[3] = std::make_pair(0, 0);
+    Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
+    pad[0] = std::make_pair(0, 0);
+    pad[1] = std::make_pair(pad_top, pad_bottom);
+    pad[2] = std::make_pair(pad_left, pad_right);
+    pad[3] = std::make_pair(0, 0);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -1043,10 +1047,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
         weight_val = weight_val - (WeightEigenType)this->qinfo->weight_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(padding);
+    ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
     // GEMM doesn't fit well with DepthwiseConv2d
-    // 1. use extract_image_patches() to handle stride/dilation/padding
+    // 1. use extract_image_patches() to handle stride/dilation/pad
     // 2. perform direct convolution
 
     // 1. extract_image_patches() output [N, KH, KW, OH * OW, IC]
@@ -1411,10 +1415,11 @@ int OpMaxPool2d<Dtype>::eval()
     ERROR_IF(in_batch != out_batch, "OpMaxPool2d: tensor batch mismatch %d != %d", in_batch, out_batch);
     ERROR_IF(in_channels != out_channels, "OpMaxPool2d: tensor channel mismatch %d != %d", in_channels, out_channels);
 
-    int padding_top    = this->attribute->padding()[0];
-    int padding_bottom = this->attribute->padding()[1];
-    int padding_left   = this->attribute->padding()[2];
-    int padding_right  = this->attribute->padding()[3];
+    int pad_top    = this->attribute->pad()[0];
+    int pad_bottom = this->attribute->pad()[1];
+    int pad_left   = this->attribute->pad()[2];
+    int pad_right  = this->attribute->pad()[3];
+
     int kernel_h       = this->attribute->kernel()[0];
     int kernel_w       = this->attribute->kernel()[1];
     int stride_h       = this->attribute->stride()[0];
@@ -1422,9 +1427,9 @@ int OpMaxPool2d<Dtype>::eval()
 
     DEBUG_INFO(OP,
                "perform MaxPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
-               "stride=[%d,%d], padding=[%d,%d,%d,%d]",
+               "stride=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_h,
-               kernel_w, stride_h, stride_w, padding_top, padding_bottom, padding_left, padding_right);
+               kernel_w, stride_h, stride_w, pad_top, pad_bottom, pad_left, pad_right);
 
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
     im2col_input_dims[0] = kernel_h * kernel_w;
@@ -1436,13 +1441,13 @@ int OpMaxPool2d<Dtype>::eval()
     col2im_output_dims[2] = out_width;
     col2im_output_dims[3] = out_channels;
 
-    Eigen::array<std::pair<int32_t, int32_t>, 4> padding;
-    padding[0] = std::make_pair(0, 0);
-    padding[1] = std::make_pair(padding_top, padding_bottom);
-    padding[2] = std::make_pair(padding_left, padding_right);
-    padding[3] = std::make_pair(0, 0);
+    Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
+    pad[0] = std::make_pair(0, 0);
+    pad[1] = std::make_pair(pad_top, pad_bottom);
+    pad[2] = std::make_pair(pad_left, pad_right);
+    pad[3] = std::make_pair(0, 0);
 
-    ETensor4<InEigenType> input_padded = this->in->getTensor().pad(padding, std::numeric_limits<InEigenType>::lowest());
+    ETensor4<InEigenType> input_padded = this->in->getTensor().pad(pad, std::numeric_limits<InEigenType>::lowest());
 
     // extract_image_patches() output [N, KH, KW, H * W, C]
     // transpose to [KH, KW, N, H * W, C]
