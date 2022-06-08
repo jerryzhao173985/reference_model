@@ -342,11 +342,11 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
 
         // image
         case Op_RESIZE:
-            DEF_FACTORY_TWO_TYPE_RESIZE(OpResize, INT8, INT32);
-            DEF_FACTORY_TWO_TYPE_RESIZE(OpResize, INT8, INT8);
-            DEF_FACTORY_TWO_TYPE_RESIZE(OpResize, INT16, INT48);
-            DEF_FACTORY_TWO_TYPE_RESIZE(OpResize, INT16, INT16);
-            DEF_FACTORY_TWO_TYPE_RESIZE(OpResize, FLOAT, FLOAT);
+            DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OpResize, INT8, INT32);
+            DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OpResize, INT8, INT8);
+            DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OpResize, INT16, INT48);
+            DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OpResize, INT16, INT16);
+            DEF_FACTORY_TWO_TYPE_RESIZE_FLOAT(OpResize, FLOAT, FLOAT);
             break;
 
         // data_nodes

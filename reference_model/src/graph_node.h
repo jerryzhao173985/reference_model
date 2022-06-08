@@ -37,6 +37,9 @@
 
 #define DEF_INSTANTIATE_TWO_TYPE(OP, DTYPE1, DTYPE2) template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2>;
 
+#define DEF_INSTANTIATE_THREE_TYPE(OP, DTYPE1, DTYPE2, OP_TYPE)                                                        \
+    template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2, OP_TYPE>;
+
 #define DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OP, DTYPE)                                                           \
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 0, DTYPE)                                                                    \
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 1, DTYPE)                                                                    \
@@ -231,6 +234,9 @@ public:
     {
         return nodeType;
     }
+
+    // Helper functions.
+    int idiv_check(int input1, int input2, int& result);
 
 protected:
     // Print out a node validation error

@@ -23,7 +23,7 @@ using namespace tosa;
 namespace TosaReference
 {
 
-template <DType InDtype, DType OutDtype>
+template <DType InDtype, DType OutDtype, typename resize_t>
 class OpResize : public GraphNode
 {
 public:
@@ -39,12 +39,9 @@ public:
 
 protected:
     TosaResizeAttribute* attribute;
-    std::vector<int32_t> output_size;
-    std::vector<int32_t> stride;
-    std::vector<int32_t> offset;
-    int32_t shift;
-    std::vector<float> stride_fp;
-    std::vector<float> offset_fp;
+    std::vector<int16_t> scale;
+    std::vector<int16_t> offset;
+    std::vector<int16_t> border;
     ResizeMode mode;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;

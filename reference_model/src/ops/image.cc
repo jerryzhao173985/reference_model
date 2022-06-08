@@ -16,14 +16,16 @@
 #include "image.h"
 #include "arith_util.h"
 
+#include <type_traits>
+
 using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-template <DType InDtype, DType OutDtype>
-OpResize<InDtype, OutDtype>::OpResize(SubgraphTraverser* sgt_,
-                                      TosaAttributeBase* attribute_,
-                                      uint64_t id_)
+template <DType InDtype, DType OutDtype, typename resize_t>
+OpResize<InDtype, OutDtype, resize_t>::OpResize(SubgraphTraverser* sgt_,
+                                                TosaAttributeBase* attribute_,
+                                                uint64_t id_)
     : GraphNode(sgt_, Op_RESIZE, id_)
 {
     setRequiredOperands(1, 1);
@@ -32,15 +34,15 @@ OpResize<InDtype, OutDtype>::OpResize(SubgraphTraverser* sgt_,
     INIT_ATTRIBUTE(Resize);
 }
 
-template <DType InDtype, DType OutDtype>
-OpResize<InDtype, OutDtype>::~OpResize()
+template <DType InDtype, DType OutDtype, typename resize_t>
+OpResize<InDtype, OutDtype, resize_t>::~OpResize()
 {
     if (attribute)
         delete attribute;
 }
 
-template <DType InDtype, DType OutDtype>
-int OpResize<InDtype, OutDtype>::checkTensorAttributes()
+template <DType InDtype, DType OutDtype, typename resize_t>
+int OpResize<InDtype, OutDtype, resize_t>::checkTensorAttributes()
 {
     if (validateRequiredOperands())
         return 1;
@@ -48,16 +50,16 @@ int OpResize<InDtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]))
         return 1;
 
-    output_size = this->attribute->output_size();
-    stride      = this->attribute->stride();
-    offset      = this->attribute->offset();
-    shift       = this->attribute->shift();
-    stride_fp   = this->attribute->stride_fp();
-    offset_fp   = this->attribute->offset_fp();
-    mode        = this->attribute->mode();
+    if (this->attribute->scale().size() != 4)
+    {
+        printNodeValidationError("OpResize: illegal size for attribute scale");
+        return 1;
+    }
 
-    int output_height = outputs[0]->getShape()[1];
-    int output_width  = outputs[0]->getShape()[2];
+    scale  = this->attribute->scale();
+    offset = this->attribute->offset();
+    border = this->attribute->border();
+    mode   = this->attribute->mode();
 
     if (this->mode == ResizeMode_BILINEAR)
     {
@@ -76,12 +78,6 @@ int OpResize<InDtype, OutDtype>::checkTensorAttributes()
         }
     }
 
-    if (output_size[0] != output_height || output_size[1] != output_width)
-    {
-        printNodeValidationError("OpResize: attribute output_size doesn't match output [height, width]");
-        return 1;
-    }
-
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
@@ -90,8 +86,8 @@ int OpResize<InDtype, OutDtype>::checkTensorAttributes()
     return 0;
 }
 
-template <DType InDtype, DType OutDtype>
-int OpResize<InDtype, OutDtype>::eval()
+template <DType InDtype, DType OutDtype, typename resize_t>
+int OpResize<InDtype, OutDtype, resize_t>::eval()
 {
     int in_batch    = in->getShape()[0];
     int in_height   = in->getShape()[1];
@@ -103,36 +99,81 @@ int OpResize<InDtype, OutDtype>::eval()
     int out_width    = out->getShape()[2];
     int out_channels = out->getShape()[3];
 
+    int16_t scale_y_n = scale[0];
+    int16_t scale_y_d = scale[1];
+    int16_t scale_x_n = scale[2];
+    int16_t scale_x_d = scale[3];
+
+    int16_t offset_y = offset[0];
+    int16_t offset_x = offset[1];
+
+    int16_t border_y = border[0];
+    int16_t border_x = border[1];
+
     ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
              "OpResize: exceeds maximum dimension");
-    ERROR_IF(shift < 1 || shift > 11, "OpResize: attribute shift should be within [1, 11]");
-    ERROR_IF(stride[0] <= 0 || stride[0] >= (16 << shift), "OpResize: invalid attribute stride_x");
-    ERROR_IF(stride[1] <= 0 || stride[1] >= (16 << shift), "OpResize: invalid attribute stride_y");
-    ERROR_IF(offset[0] <= (-16 << shift) || offset[0] >= (16 << shift), "OpResize: invalid attribute offset_x");
-    ERROR_IF(offset[1] <= (-16 << shift) || offset[1] >= (16 << shift), "OpResize: invalid attribute offset_y");
     ERROR_IF(in_batch != out_batch, "OpResize: output tensor batch mismatch");
     ERROR_IF(in_channels != out_channels, "OpResize: output tensor channel mismatch");
+    ERROR_IF(scale_y_n <= 0 || scale_y_d <= 0 || scale_x_n <= 0 || scale_x_d <= 0,
+             "OpResize: attribute scale must not be negative");
+    // If data type is int8_t then ensure that an int32_t accumulator can be used.
+    ERROR_IF(scale_y_n > (1 << 11) || scale_x_n > (1 << 11), "OpResize: invalid attribute scale");
+    // Set a consistent lower limit of 1/16 downscale to simplify implementations
+    ERROR_IF((scale_y_d >= 16 * scale_y_n) || (scale_x_d >= 16 * scale_x_n), "OpResize: invalid attribute scale");
+    ERROR_IF((offset_y < -scale_y_n) || (offset_y >= 16 * scale_y_n),
+             "OpResize: invalid attribute offset height dimension");
+    ERROR_IF((offset_x < -scale_x_n) || (offset_x >= 16 * scale_x_n),
+             "OpResize: invalid attribute offset width dimension");
+    ERROR_IF((border_y < -16 * scale_y_n || border_y >= scale_y_n),
+             "OpResize: invalid attribute border height dimension");
+    ERROR_IF((border_x < -16 * scale_x_n || border_x >= scale_x_n),
+             "OpResize: invalid attribute border width dimension");
+
+    int32_t res_height = 0;
+    int32_t res_width = 0;
+
+    if (idiv_check((in_height - 1) * scale_y_n - offset_y + border_y, scale_y_d, res_height))
+       return 1;
+
+    if (idiv_check((in_width - 1) * scale_x_n - offset_x + border_x, scale_x_d, res_width))
+       return 1;
+
+    ERROR_IF(out_height != res_height + 1,
+             "OpResize: mismatch between output height dimension provided and expected shape");
+    ERROR_IF(out_width != res_width + 1,
+             "OpResize: mismatch between output width dimension provided and expected shape");
 
     for (int b = 0; b < out_batch; b++)
         for (int c = 0; c < out_channels; c++)
             for (int oy = 0; oy < out_height; oy++)
                 for (int ox = 0; ox < out_width; ox++)
                 {
-                    int32_t y = oy * stride[0] + offset[0];
-                    int32_t x = ox * stride[1] + offset[1];
+                    int32_t y = oy * scale_y_d + offset_y;
+                    int32_t x = ox * scale_x_d + offset_x;
 
-                    int32_t iy = y >> shift;
-                    int32_t dy = y - (iy << shift);
-                    int32_t ix = x >> shift;
-                    int32_t dx = x - (ix << shift);
+                    float fy = static_cast<float>(y) / static_cast<float>(scale_y_n);
+                    float fx = static_cast<float>(x) / static_cast<float>(scale_x_n);
+
+                    int32_t iy = floor(fy);
+                    int32_t ix = floor(fx);
+
+                    resize_t dy;
+                    resize_t dx;
+                    if (std::is_floating_point<resize_t>::value)
+                    {
+                        dy = fy - iy;
+                        dx = fx - ix;
+                    }
+                    else
+                    {
+                        dy = y - (iy * scale_y_n);
+                        dx = x - (ix * scale_x_n);
+                    }
 
                     int32_t iy0 = MAX(iy, 0);
                     int32_t iy1 = MIN(iy + 1, in_height - 1);
                     int32_t ix0 = MAX(ix, 0);
                     int32_t ix1 = MIN(ix + 1, in_width - 1);
-
-                    REQUIRE(iy0 <= iy1 && ix0 <= ix1, "OpResize: invalid index (iy0, iy1, ix0, ix1)=(%d,%d,%d,%d)", iy0,
-                            iy1, ix0, ix1);
 
                     OutEigenType acc;
                     if (mode == ResizeMode_BILINEAR)
@@ -142,86 +183,36 @@ int OpResize<InDtype, OutDtype>::eval()
                         InEigenType v10 = in->getTensor()(b, iy1, ix0, c);
                         InEigenType v11 = in->getTensor()(b, iy1, ix1, c);
 
-                        acc = (OutEigenType)v00 * ((1 << shift) - dy) * ((1 << shift) - dx);
-                        acc = acc + (OutEigenType)v01 * ((1 << shift) - dy) * dx;
-                        acc = acc + (OutEigenType)v10 * dy * ((1 << shift) - dx);
-                        acc = acc + (OutEigenType)v11 * dy * dx;
+                        if (std::is_floating_point<resize_t>::value)
+                        {
+                            acc = (OutEigenType)v00 * (1.0 - dy) * (1.0 - dx);
+                            acc += (OutEigenType)v01 * (1.0 - dy) * dx;
+                            acc += (OutEigenType)v10 * dy * (1.0 - dx);
+                            acc += (OutEigenType)v11 * dy * dx;
+                        }
+                        else
+                        {
+                            acc = (OutEigenType)v00 * (scale_y_n - dy) * (scale_x_n - dx);
+                            acc += (OutEigenType)v01 * (scale_y_n - dy) * dx;
+                            acc += (OutEigenType)v10 * dy * (scale_x_n - dx);
+                            acc += (OutEigenType)v11 * dy * dx;
+                        }
                     }
                     else
                     {
-                        iy  = (dy >> (shift - 1)) != 0 ? iy1 : iy0;
-                        ix  = (dx >> (shift - 1)) != 0 ? ix1 : ix0;
+                        ASSERT_MSG(mode == ResizeMode_NEAREST, "OpResize: invalid mode");
+                        if (std::is_floating_point<resize_t>::value)
+                        {
+                            iy = (dy >= 0.5) ? iy1 : iy0;
+                            ix = (dx >= 0.5) ? ix1 : ix0;
+                        }
+                        else
+                        {
+                            iy = (2 * dy >= scale_y_n) ? iy1 : iy0;
+                            ix = (2 * dx >= scale_x_n) ? ix1 : ix0;
+                        }
                         acc = in->getTensor()(b, iy, ix, c);
                     }
-
-                    out->getTensor()(b, oy, ox, c) = acc;
-                }
-
-    return GraphNode::eval();
-}
-
-template <>
-int OpResize<DType_FLOAT, DType_FLOAT>::eval()
-{
-    int in_batch    = in->getShape()[0];
-    int in_height   = in->getShape()[1];
-    int in_width    = in->getShape()[2];
-    int in_channels = in->getShape()[3];
-
-    int out_batch    = out->getShape()[0];
-    int out_height   = out->getShape()[1];
-    int out_width    = out->getShape()[2];
-    int out_channels = out->getShape()[3];
-
-    ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
-             "OpResize: exceeds maximum dimension");
-    ERROR_IF(shift != 0, "OpResize: float mode must have 0 shift");
-    ERROR_IF(stride_fp[0] <= 0.0f || stride_fp[1] <= 0.0f, "OpResize: invalid attribute stride");
-    ERROR_IF(stride_fp[0] > in_height || stride_fp[1] > in_width, "OpResize: stride larger than dimension");
-    ERROR_IF(in_batch != out_batch, "OpResize: output tensor batch mismatch");
-    ERROR_IF(in_channels != out_channels, "OpResize: output tensor channel mismatch");
-
-    for (int b = 0; b < out_batch; b++)
-        for (int c = 0; c < out_channels; c++)
-            for (int oy = 0; oy < out_height; oy++)
-                for (int ox = 0; ox < out_width; ox++)
-                {
-                    float y = oy * stride_fp[0] + offset_fp[0];
-                    float x = ox * stride_fp[1] + offset_fp[1];
-
-                    int32_t iy = static_cast<int32_t>(std::floor(y));
-                    float dy   = y - static_cast<float>(iy);
-                    int32_t ix = static_cast<int32_t>(std::floor(x));
-                    float dx   = x - static_cast<float>(ix);
-
-                    int32_t iy0 = MAX(iy, 0);
-                    int32_t iy1 = MIN(iy + 1, in_height - 1);
-                    int32_t ix0 = MAX(ix, 0);
-                    int32_t ix1 = MIN(ix + 1, in_width - 1);
-
-                    REQUIRE(iy0 <= iy1 && ix0 <= ix1, "OpResize: invalid index (iy0, iy1, ix0, ix1)=(%d,%d,%d,%d)", iy0,
-                            iy1, ix0, ix1);
-
-                    OutEigenType acc;
-                    if (mode == ResizeMode_BILINEAR)
-                    {
-                        InEigenType v00 = in->getTensor()(b, iy0, ix0, c);
-                        InEigenType v01 = in->getTensor()(b, iy0, ix1, c);
-                        InEigenType v10 = in->getTensor()(b, iy1, ix0, c);
-                        InEigenType v11 = in->getTensor()(b, iy1, ix1, c);
-
-                        acc = (OutEigenType)v00 * (1.0 - dy) * (1.0 - dx);
-                        acc = acc + (OutEigenType)v01 * (1.0 - dy) * dx;
-                        acc = acc + (OutEigenType)v10 * dy * (1.0 - dx);
-                        acc = acc + (OutEigenType)v11 * dy * dx;
-                    }
-                    else
-                    {
-                        iy  = (dy >= 0.5) ? iy1 : iy0;
-                        ix  = (dx >= 0.5) ? ix1 : ix0;
-                        acc = in->getTensor()(b, iy, ix, c);
-                    }
-
                     out->getTensor()(b, oy, ox, c) = acc;
                 }
 
@@ -229,8 +220,8 @@ int OpResize<DType_FLOAT, DType_FLOAT>::eval()
 }
 
 // template explicit instantiation
-DEF_INSTANTIATE_TWO_TYPE(OpResize, INT8, INT32);
-DEF_INSTANTIATE_TWO_TYPE(OpResize, INT8, INT8);
-DEF_INSTANTIATE_TWO_TYPE(OpResize, INT16, INT48);
-DEF_INSTANTIATE_TWO_TYPE(OpResize, INT16, INT16);
-DEF_INSTANTIATE_TWO_TYPE(OpResize, FLOAT, FLOAT);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, INT8, INT32, int16_t);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, INT8, INT8, int16_t);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, INT16, INT48, int16_t);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, INT16, INT16, int16_t);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, FLOAT, FLOAT, float);

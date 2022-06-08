@@ -1021,6 +1021,45 @@ class TBuilder:
             )
             return tf.identity(resize, name=self.result_name)
 
+    # New tf resize set (align_corners, half_pixel_centers) = (false, true) by default.
+    # Test the rest option combinations here.
+    # Note that (align_corners, half_pixel_centers) = (true, true) is NOT valid.
+    class ResizeBilinearV1AlignCorners:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            out_shape = []
+            out_shape.append(a.shape[1] * 2)
+            out_shape.append(a.shape[2] * 2)
+
+            resize = tf.compat.v1.image.resize_bilinear(
+                a,
+                out_shape,
+                align_corners=True,
+                name="resize",
+                half_pixel_centers=False,
+            )
+            return tf.identity(resize, name=self.result_name)
+
+    class ResizeBilinearV1None:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            out_shape = []
+            out_shape.append(a.shape[1] * 2)
+            out_shape.append(a.shape[2] * 2)
+
+            resize = tf.compat.v1.image.resize_bilinear(
+                a,
+                out_shape,
+                align_corners=False,
+                name="resize",
+                half_pixel_centers=False,
+            )
+            return tf.identity(resize, name=self.result_name)
+
     class LeftShift:
         def __init__(self, shift, name):
             self.shift = shift

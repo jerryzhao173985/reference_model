@@ -219,3 +219,12 @@ int GraphNode::validateRequiredRank(const Tensor* t)
 
     return 0;
 }
+
+int GraphNode::idiv_check(int input1, int input2, int& result)
+{
+    ERROR_IF(input2 == 0, "idiv_check: input2 must not be zero");
+    ERROR_IF(input1 % input2 != 0, "idiv_check: input1 must be a multiple of input2");
+
+    result = input1 / input2;
+    return 0;
+}

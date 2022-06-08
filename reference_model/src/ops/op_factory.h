@@ -41,37 +41,43 @@
     switch (inputRank)                                                                                                 \
     {                                                                                                                  \
         case 0:                                                                                                        \
-            return new OP<0>(sgt, attribute, id);                                                               \
+            return new OP<0>(sgt, attribute, id);                                                                      \
         case 1:                                                                                                        \
-            return new OP<1>(sgt, attribute, id);                                                               \
+            return new OP<1>(sgt, attribute, id);                                                                      \
         case 2:                                                                                                        \
-            return new OP<2>(sgt, attribute, id);                                                               \
+            return new OP<2>(sgt, attribute, id);                                                                      \
         case 3:                                                                                                        \
-            return new OP<3>(sgt, attribute, id);                                                               \
+            return new OP<3>(sgt, attribute, id);                                                                      \
         case 4:                                                                                                        \
-            return new OP<4>(sgt, attribute, id);                                                               \
+            return new OP<4>(sgt, attribute, id);                                                                      \
         case 5:                                                                                                        \
-            return new OP<5>(sgt, attribute, id);                                                               \
+            return new OP<5>(sgt, attribute, id);                                                                      \
         case 6:                                                                                                        \
-            return new OP<6>(sgt, attribute, id);                                                               \
+            return new OP<6>(sgt, attribute, id);                                                                      \
     }
 
 #define DEF_FACTORY_ONE_TYPE(OP, DTYPE)                                                                                \
     if (inputDType == DType_##DTYPE)                                                                                   \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE>(sgt, attribute, id);                                                       \
+        return new OP<DType_##DTYPE>(sgt, attribute, id);                                                              \
     }
 
 #define DEF_FACTORY_TWO_TYPE(OP, DTYPE1, DTYPE2)                                                                       \
     if (inputDType == DType_##DTYPE1 && weightDType == DType_##DTYPE2)                                                 \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, id);                                      \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, id);                                             \
     }
 
-#define DEF_FACTORY_TWO_TYPE_RESIZE(OP, DTYPE1, DTYPE2)                                                                \
+#define DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OP, DTYPE1, DTYPE2)                                                          \
     if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
     {                                                                                                                  \
-        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, id);                                      \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2, int16_t>(sgt, attribute, id);                                    \
+    }
+
+#define DEF_FACTORY_TWO_TYPE_RESIZE_FLOAT(OP, DTYPE1, DTYPE2)                                                          \
+    if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
+    {                                                                                                                  \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2, float>(sgt, attribute, id);                                      \
     }
 
 #define DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OP, DTYPE)                                                               \

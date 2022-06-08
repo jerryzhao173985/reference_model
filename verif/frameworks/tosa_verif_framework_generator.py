@@ -698,6 +698,30 @@ TF_OP_LIST = {
             ),
         },
     },
+    "resize_bilinear_v1_align_corners": {
+        "operands": (1, 0),
+        "build_fcn": (
+            TBuilder.ResizeBilinearV1AlignCorners,
+            TGen.tgPooling,
+            ArgGen.agNone,
+        ),
+        "types": {
+            "tf": TYPE_F,
+            "tflite": list(
+                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
+            ),
+        },
+    },
+    "resize_bilinear_v1_none": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.ResizeBilinearV1None, TGen.tgPooling, ArgGen.agNone),
+        "types": {
+            "tf": TYPE_F,
+            "tflite": list(
+                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
+            ),
+        },
+    },
     "left_shift": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.LeftShift, TGen.tgBasic, ArgGen.agShift),
