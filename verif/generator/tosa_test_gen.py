@@ -718,14 +718,13 @@ class TosaTestGen:
         filter,
         bias,
         stride,
-        outpad,
-        dilation,
+        out_pad,
         output_shape,
         validator_fcns=None,
         error_name=None,
         qinfo=None,
     ):
-        assert len(outpad) == 4
+        assert len(out_pad) == 4
         result_tens = OutputShaper.transposeConv2DOp(
             self.ser, self.rng, ifm, output_shape, error_name
         )
@@ -761,7 +760,7 @@ class TosaTestGen:
             input_list=input_list,
             num_operands=num_operands,
             output_list=output_list,
-            pad=outpad,
+            pad=out_pad,
             stride=stride,
             input_shape=ifm.shape,
             weight_shape=filter.shape,
@@ -770,7 +769,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.TransposeConvAttribute(outpad, stride, dilation, output_shape)
+        attr.TransposeConvAttribute(out_pad, stride, output_shape)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr, qinfo)
         return result_tens

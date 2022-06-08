@@ -1523,9 +1523,9 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
     output = dynamic_cast<TosaReference::TensorTemplate<TAcc>*>(outputs[0]);
 
-    if (attribute->outpad().size() != 4)
+    if (attribute->out_pad().size() != 4)
     {
-        printNodeValidationError("OpTransposeConv2d: illegal size for attribute outpad");
+        printNodeValidationError("OpTransposeConv2d: illegal size for attribute out_pad");
         return 1;
     }
 
@@ -1541,7 +1541,7 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         return 1;
     }
 
-    for (int32_t i : attribute->outpad())
+    for (int32_t i : attribute->out_pad())
     {
         if (i < 0)
         {
@@ -1578,13 +1578,13 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     int32_t kernel_h = weight->getShape()[1];
     int32_t kernel_w = weight->getShape()[2];
 
-    int32_t outpad_top    = attribute->outpad()[0];
-    int32_t outpad_bottom = attribute->outpad()[1];
-    int32_t outpad_left   = attribute->outpad()[2];
-    int32_t outpad_right  = attribute->outpad()[3];
+    int32_t out_pad_top    = attribute->out_pad()[0];
+    int32_t out_pad_bottom = attribute->out_pad()[1];
+    int32_t out_pad_left   = attribute->out_pad()[2];
+    int32_t out_pad_right  = attribute->out_pad()[3];
 
-    int32_t H = (IH - 1) * stride_y - outpad_top - outpad_bottom + kernel_h;
-    int32_t W = (IW - 1) * stride_x - outpad_left - outpad_right + kernel_w;
+    int32_t H = (IH - 1) * stride_y - out_pad_top - out_pad_bottom + kernel_h;
+    int32_t W = (IW - 1) * stride_x - out_pad_left - out_pad_right + kernel_w;
 
     if ((OH != H) || (OW != W))
     {
@@ -1630,10 +1630,10 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
     int out_width    = this->output->getShape()[2];
     int out_channels = this->output->getShape()[3];
 
-    int outpad_top    = this->attribute->outpad()[0];
-    int outpad_bottom = this->attribute->outpad()[1];
-    int outpad_left   = this->attribute->outpad()[2];
-    int outpad_right  = this->attribute->outpad()[3];
+    int out_pad_top    = this->attribute->out_pad()[0];
+    int out_pad_bottom = this->attribute->out_pad()[1];
+    int out_pad_left   = this->attribute->out_pad()[2];
+    int out_pad_right  = this->attribute->out_pad()[3];
 
     int stride_h = this->attribute->stride()[0];
     int stride_w = this->attribute->stride()[1];
@@ -1648,10 +1648,10 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
 
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
-               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], outpad=[%d,%d,%d,%d]",
+               "output.shape=[%d,%d,%d,%d], stride=[%d,%d], out_pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels,
-               out_batch, out_height, out_width, out_channels, stride_h, stride_w, outpad_top,
-               outpad_bottom, outpad_left, outpad_right);
+               out_batch, out_height, out_width, out_channels, stride_h, stride_w, out_pad_top,
+               out_pad_bottom, out_pad_left, out_pad_right);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -1684,8 +1684,8 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
         {
             for (int iw = 0; iw < in_width; iw++)
             {
-                out_x_origin = iw * stride_w - outpad_left;
-                out_y_origin = ih * stride_h - outpad_top;
+                out_x_origin = iw * stride_w - out_pad_left;
+                out_y_origin = ih * stride_h - out_pad_top;
                 for (int ic = 0; ic < in_channels; ic++)
                 {
                     for (int fh = 0; fh < f_height; fh++)
