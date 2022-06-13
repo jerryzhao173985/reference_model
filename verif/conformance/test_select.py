@@ -616,11 +616,10 @@ class ResizeOperator(Operator):
         "shape",
         "type",
         "mode",
-        "shift",
-        "output_dims",
         "output_type",
-        "stride",
+        "scale",
         "offset",
+        "border",
     ]
 
 

@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from tosa.DType import DType
 
+# Maximum dimension size for output and inputs for RESIZE
+MAX_RESIZE_DIMENSION = 16384
+
 
 def valueToName(item, value):
     """Get the name of an attribute with the given value.

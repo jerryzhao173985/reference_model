@@ -1,6 +1,7 @@
 # Copyright (c) 2021-2022, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import numpy as np
+from generator.tosa_utils import MAX_RESIZE_DIMENSION
 from generator.tosa_utils import product
 from generator.tosa_utils import usableDTypes
 from generator.tosa_utils import valueToName
@@ -11,14 +12,15 @@ from tosa.ResizeMode import ResizeMode
 
 class ErrorIf(object):
     MaxDimExceeded = "MaxDimExceeded"
-    StrideSmallerEqualZero = "StrideSmallerEqualZero"
-    StrideLargerEqualMax = "StrideLargerEqualMax"
-    StrideLargerDimension = "StrideLargerDimension"
-    OffsetSmallerEqualMin = "OffsetSmallerEqualMin"
+    ScaleSmallerEqualZero = "ScaleSmallerEqualZero"
+    ScaleNLargerMax = "ScaleNLargerMax"
+    ScaleDLargerMax = "ScaleDLargerMax"
+    OffsetSmallerMin = "OffsetSmallerMin"
     OffsetLargerEqualMax = "OffsetLargerEqualMax"
-    ShiftNotZero = "ShiftNotZero"
-    ShiftSmallerOne = "ShiftSmallerOne"
-    ShiftLargerEleven = "ShiftLargerEleven"
+    BorderSmallerMin = "BorderSmallerMin"
+    BorderLargerEqualMax = "BorderLargerEqualMax"
+    ResizeOutputShapeMismatch = "ResizeOutputShapeMismatch"
+    ResizeOutputShapeNonInteger = "ResizeOutputShapeNonInteger"
     WrongInputType = "WrongInputType"
     WrongOutputType = "WrongOutputType"
     WrongInputList = "WrongInputList"
@@ -81,63 +83,33 @@ class TosaErrorIfArgGen:
         dtype,
         shapeList,
         outputDType,
-        shift,
-        stride,
-        stride_fp,
+        scale,
         offset,
-        offset_fp,
+        border,
     ):
+        if error_name == ErrorIf.ScaleSmallerEqualZero:
+            index = testGen.randInt(low=0, high=4)
+            scale[index] = testGen.rng.choice([-2, -1, 0])
+        elif error_name == ErrorIf.ScaleNLargerMax:
+            index = testGen.rng.choice([0, 2])
+            scale[index] = (1 << 11) + testGen.rng.choice([1, 2, 3])
+        elif error_name == ErrorIf.ScaleDLargerMax:
+            index = testGen.rng.choice([1, 3])
+            scale[index] = 16 * scale[index - 1] + testGen.rng.choice([0, 1, 2])
 
-        if outputDType == DType.FLOAT:
-            if error_name == ErrorIf.StrideSmallerEqualZero:
-                stride_fp = testGen.rng.random(size=[2]) - 2
-            elif error_name == ErrorIf.ShiftNotZero:
-                shift = testGen.rng.integers(1, 5)
-            elif error_name == ErrorIf.StrideLargerDimension:
-                shape = shapeList[0]
-                transform_height = testGen.rng.choice([False, True])
-                if transform_height:
-                    stride_fp[0] = shape[1] + testGen.rng.integers(1, 10)
-                else:
-                    stride_fp[1] = shape[2] + testGen.rng.integers(1, 10)
-        else:
-            if error_name == ErrorIf.StrideSmallerEqualZero:
-                stride = np.int16(testGen.rng.integers(-1, 1, size=[2]))
-            elif error_name == ErrorIf.ShiftSmallerOne:
-                shift = testGen.rng.integers(-3, 1)
-                if shift <= 0:
-                    stride = [
-                        (16 >> -shift) - 1,
-                        (16 >> -shift) - 1,
-                    ]  # avoids other ERROR_IF checks
-                    offset = [
-                        (16 >> -shift) - 1,
-                        (16 >> -shift) - 1,
-                    ]  # avoids other ERROR_IF checks
-                else:
-                    stride = [
-                        (16 << shift) - 1,
-                        (16 << shift) - 1,
-                    ]  # avoids other ERROR_IF checks
-                    offset = [
-                        (16 << shift) - 1,
-                        (16 << shift) - 1,
-                    ]  # avoids other ERROR_IF checks
-            elif error_name == ErrorIf.ShiftLargerEleven:
-                shift = np.int16(testGen.rng.integers(12, 15))
-            elif error_name == ErrorIf.StrideLargerDimension:
-                shape = shapeList[0]
-                transform_height = testGen.rng.choice([False, True])
-                if transform_height:
-                    stride[0] = shape[1] + testGen.rng.integers(1, 10)
-                else:
-                    stride[1] = shape[2] + testGen.rng.integers(1, 10)
-            elif error_name == ErrorIf.StrideLargerEqualMax:
-                stride = [(16 << shift) + 1, (16 << shift) + 1]
-            elif error_name == ErrorIf.OffsetLargerEqualMax:
-                offset = [(16 << shift) + 1, (16 << shift) + 1]
-            elif error_name == ErrorIf.OffsetSmallerEqualMin:
-                offset = [(-16 << shift) - 1, (-16 << shift) - 1]
+        if error_name == ErrorIf.OffsetLargerEqualMax:
+            index = testGen.rng.choice([0, 1])
+            offset[index] = 16 * scale[index * 2] + testGen.rng.choice([0, 1, 2])
+        elif error_name == ErrorIf.OffsetSmallerMin:
+            index = testGen.rng.choice([0, 1])
+            offset[index] = -scale[index * 2] - testGen.rng.choice([1, 2, 3])
+
+        if error_name == ErrorIf.BorderLargerEqualMax:
+            index = testGen.rng.choice([0, 1])
+            border[index] = scale[index * 2] + testGen.rng.choice([0, 1, 2])
+        elif error_name == ErrorIf.BorderSmallerMin:
+            index = testGen.rng.choice([0, 1])
+            border[index] = -16 * scale[index * 2] - testGen.rng.choice([1, 2, 3])
 
         if error_name == ErrorIf.WrongOutputType:
             if mode == ResizeMode.NEAREST and dtype == DType.INT8:
@@ -182,7 +154,7 @@ class TosaErrorIfArgGen:
                 )
             outputDType = testGen.rng.choice(a=incorrect_types)
 
-        return shift, stride, stride_fp, offset, offset_fp, outputDType
+        return scale, offset, border, outputDType
 
     @staticmethod
     def eiPoolingErrorIf(testGen, error_name, stride, pad, kernel):
@@ -630,18 +602,16 @@ class TosaErrorValidator:
             "shape": [[1, 16584, 5, 1], [1, 2, 16499, 4]],
         }
         error_result = False
-        error_reason = (
-            "At least one maximum dimension is greater than or equal to 16384"
-        )
+        error_reason = f"At least one maximum dimension is greater than or equal to {MAX_RESIZE_DIMENSION}"
 
         if check:
             input_shape = kwargs["input_shape"]
-            output_shape = kwargs["output_shape"]  # Note this is just (OH, OW)
+            output_shape = kwargs["output_shape"]
             if (
-                (input_shape[1] >= 16384)
-                or (input_shape[2] >= 16384)
-                or (output_shape[0] >= 16384)
-                or (output_shape[1] >= 16384)
+                (input_shape[1] >= MAX_RESIZE_DIMENSION)
+                or (input_shape[2] >= MAX_RESIZE_DIMENSION)
+                or (output_shape[1] >= MAX_RESIZE_DIMENSION)
+                or (output_shape[2] >= MAX_RESIZE_DIMENSION)
             ):
                 error_result = True
 
@@ -711,27 +681,16 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evStrideSmallerEqualZero(check=False, **kwargs):
-        error_name = ErrorIf.StrideSmallerEqualZero
+    def evScaleSmallerEqualZero(check=False, **kwargs):
+        error_name = ErrorIf.ScaleSmallerEqualZero
         param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
-        error_reason = "Stride value smaller than or equal zero"
+        error_reason = "Scale value smaller than or equal zero"
 
         if check:
-            input_dtype = kwargs["input_dtype"]
-            output_dtype = kwargs["output_dtype"]
-            if input_dtype != DType.FLOAT and output_dtype == DType.FLOAT:
-                stride = kwargs["stride"]  # Work around wrong input/output type tests
-            elif output_dtype == DType.FLOAT:
-                stride = kwargs["stride_fp"]
-            elif input_dtype == DType.FLOAT and output_dtype != DType.FLOAT:
-                stride = kwargs[
-                    "stride_fp"
-                ]  # Work around wrong input/output type tests
-            else:
-                stride = kwargs["stride"]
+            scale = kwargs["scale"]
 
-            if min(stride) <= 0:
+            if min(scale) <= 0:
                 error_result = True
 
         info_dict = {
@@ -743,25 +702,17 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evStrideLargerEqualMax(check=False, **kwargs):
-        error_name = ErrorIf.StrideLargerEqualMax
-        param_reqs = {"rank": None, "dtype": [DType.INT8, DType.INT16], "shape": None}
+    def evScaleNLargerMax(check=False, **kwargs):
+        error_name = ErrorIf.ScaleNLargerMax
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
-        error_reason = "Stride value larger than or equal to maximum value"
+        error_reason = "Scale N value larger than maximum value"
 
         if check:
-            shift = kwargs["shift"]
-            input_dtype = kwargs["input_dtype"]
-            stride = kwargs["stride"]
-            if input_dtype in [DType.INT8, DType.INT16]:
-                if shift >= 0 and (
-                    stride[0] >= (16 << shift) or stride[1] >= (16 << shift)
-                ):
-                    error_result = True
-                elif shift < 0 and (
-                    stride[0] >= (16 >> -shift) or stride[1] >= (16 >> -shift)
-                ):
-                    error_result = True
+            scale = kwargs["scale"]
+
+            if scale[0] > (1 << 11) or scale[2] > (1 << 11):
+                error_result = True
 
         info_dict = {
             "error_name": error_name,
@@ -772,21 +723,17 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evStrideLargerDimension(check=False, **kwargs):
-        error_name = ErrorIf.StrideLargerDimension
-        param_reqs = {"rank": None, "dtype": [DType.FLOAT], "shape": None}
+    def evScaleDLargerMax(check=False, **kwargs):
+        error_name = ErrorIf.ScaleDLargerMax
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
-        error_reason = "Stride value larger than or equal to H/W dimension"
+        error_reason = "Scale D value larger than maximum value"
 
         if check:
-            shape = kwargs["input_shape"]
-            input_dtype = kwargs["input_dtype"]
-            stride = kwargs["stride_fp"]
+            scale = kwargs["scale"]
 
-            if (
-                input_dtype == DType.FLOAT
-                and (stride[0] > shape[1])
-                or (stride[1] > shape[2])
+            if (scale[0] > 0 and scale[1] >= (16 * scale[0])) or (
+                scale[2] > 0 and scale[3] >= (16 * scale[2])
             ):
                 error_result = True
 
@@ -799,27 +746,19 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evOffsetSmallerEqualMin(check=False, **kwargs):
-        error_name = ErrorIf.OffsetSmallerEqualMin
-        param_reqs = {"rank": None, "dtype": [DType.INT8, DType.INT16], "shape": None}
+    def evOffsetSmallerMin(check=False, **kwargs):
+        error_name = ErrorIf.OffsetSmallerMin
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
-        error_reason = "Offset value smaller than or equal to minimum value"
+        error_reason = "Offset value smaller than minimum value"
 
         if check:
-            shift = kwargs["shift"]
-            output_dtype = kwargs["output_dtype"]
-            if output_dtype == DType.FLOAT:
-                offset = kwargs["offset_fp"]
-            else:
-                offset = kwargs["offset"]
+            scale = kwargs["scale"]
+            offset = kwargs["offset"]
 
-            if shift >= 0 and (
-                offset[0] <= (-16 << shift) or offset[1] <= (-16 << shift)
-            ):
+            if scale[0] > 0 and scale[0] <= (1 << 11) and (offset[0] < -scale[0]):
                 error_result = True
-            elif shift < 0 and (
-                offset[0] <= (-16 >> -shift) or offset[1] <= (-16 >> -shift)
-            ):
+            elif scale[2] > 0 and scale[2] <= (1 << 11) and (offset[1] < -scale[2]):
                 error_result = True
 
         info_dict = {
@@ -833,31 +772,136 @@ class TosaErrorValidator:
     @staticmethod
     def evOffsetLargerEqualMax(check=False, **kwargs):
         error_name = ErrorIf.OffsetLargerEqualMax
-        param_reqs = {"rank": None, "dtype": [DType.INT8, DType.INT16], "shape": None}
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
         error_reason = "Offset value larger than or equal to maximum value"
 
         if check:
-            shift = kwargs["shift"]
-            output_dtype = kwargs["output_dtype"]
-            if output_dtype == DType.FLOAT:
-                offset = kwargs["offset_fp"]
-            else:
-                offset = kwargs["offset"]
+            scale = kwargs["scale"]
+            offset = kwargs["offset"]
 
-            if shift >= 0:
-                if offset[0] >= (16 << shift) or offset[1] >= (16 << shift):
+            if scale[0] > 0 and scale[0] <= (1 << 11) and (offset[0] >= 16 * scale[0]):
+                error_result = True
+            elif (
+                scale[2] > 0 and scale[2] <= (1 << 11) and (offset[1] >= 16 * scale[2])
+            ):
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evBorderSmallerMin(check=False, **kwargs):
+        error_name = ErrorIf.BorderSmallerMin
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Border value smaller than minimum value"
+
+        if check:
+            scale = kwargs["scale"]
+            border = kwargs["border"]
+
+            if (
+                scale[0] > 0
+                and scale[0] <= (1 << 11)
+                and (border[0] < (-16 * scale[0]))
+            ):
+                error_result = True
+            elif (
+                scale[2] > 0
+                and scale[2] <= (1 << 11)
+                and (border[1] < (-16 * scale[2]))
+            ):
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evBorderLargerEqualMax(check=False, **kwargs):
+        error_name = ErrorIf.BorderLargerEqualMax
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Border value larger than or equal to maximum value"
+
+        if check:
+            scale = kwargs["scale"]
+            border = kwargs["border"]
+
+            if scale[0] > 0 and scale[0] <= (1 << 11) and (border[0] >= scale[0]):
+                error_result = True
+            elif scale[2] > 0 and scale[2] <= (1 << 11) and (border[1] >= scale[2]):
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def checkResizeParams(scale, offset, border):
+        return (
+            min(scale) > 0
+            and max(scale[0], scale[2]) <= (1 << 11)
+            and scale[1] < 16 * scale[0]
+            and scale[3] < 16 * scale[2]
+            and offset[0] >= -scale[0]
+            and offset[1] >= -scale[2]
+            and offset[0] < 16 * scale[0]
+            and offset[1] < 16 * scale[2]
+            and border[0] >= -16 * scale[0]
+            and border[1] >= -16 * scale[2]
+            and border[0] < scale[0]
+            and border[1] < scale[2]
+        )
+
+    @staticmethod
+    def evResizeOutputShapeMismatch(check=False, **kwargs):
+        error_name = ErrorIf.ResizeOutputShapeMismatch
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = (
+            "Mismatch between output shape provided and expected output shape"
+        )
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            scale = kwargs["scale"]
+            offset = kwargs["offset"]
+            border = kwargs["border"]
+
+            # Ensure parameters are valid
+            params_valid = TosaErrorValidator.checkResizeParams(scale, offset, border)
+
+            if (
+                params_valid
+                and max(output_shape) < MAX_RESIZE_DIMENSION
+                and max(input_shape) < MAX_RESIZE_DIMENSION
+            ):
+                output_y = (
+                    (input_shape[1] - 1) * scale[0] - offset[0] + border[0]
+                ) // scale[1] + 1
+                output_x = (
+                    (input_shape[2] - 1) * scale[2] - offset[1] + border[1]
+                ) // scale[3] + 1
+
+                if [output_y, output_x] != output_shape[1:-1]:
                     error_result = True
 
-            if shift >= 0 and (
-                offset[0] >= (16 << shift) or offset[1] >= (16 << shift)
-            ):
-                error_result = True
-            elif shift < 0 and (
-                offset[0] >= (16 >> -shift) or offset[1] >= (16 >> -shift)
-            ):
-                error_result = True
-
         info_dict = {
             "error_name": error_name,
             "error_result": error_result,
@@ -867,64 +911,31 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evShiftNotZero(check=False, **kwargs):
-        error_name = ErrorIf.ShiftNotZero
-        param_reqs = {"rank": None, "dtype": [DType.FLOAT], "shape": None}
+    def evResizeOutputShapeNonInteger(check=False, **kwargs):
+        error_name = ErrorIf.ResizeOutputShapeNonInteger
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
-        error_reason = "Shift value must be zero for float input"
+        error_reason = "Parameters do not yield exact integer output dimensions"
 
         if check:
-            shift = kwargs["shift"]
-            input_dtype = kwargs["input_dtype"]
-            output_dtype = kwargs["output_dtype"]
-            if (
-                input_dtype == DType.FLOAT
-                and output_dtype == DType.FLOAT
-                and shift != 0
-            ):
-                error_result = True
+            input_shape = kwargs["input_shape"]
+            scale = kwargs["scale"]
+            offset = kwargs["offset"]
+            border = kwargs["border"]
 
-        info_dict = {
-            "error_name": error_name,
-            "error_result": error_result,
-            "error_reason": error_reason,
-            "param_reqs": param_reqs,
-        }
-        return info_dict
+            # Ensure parameters are valid
+            params_valid = TosaErrorValidator.checkResizeParams(scale, offset, border)
 
-    @staticmethod
-    def evShiftSmallerOne(check=False, **kwargs):
-        error_name = ErrorIf.ShiftSmallerOne
-        param_reqs = {"rank": None, "dtype": [DType.INT8, DType.INT16], "shape": None}
-        error_result = False
-        error_reason = "Shift value smaller than one"
+            if params_valid:
+                remainder_y = (
+                    (input_shape[1] - 1) * scale[0] - offset[0] + border[0]
+                ) % scale[1]
+                remainder_x = (
+                    (input_shape[2] - 1) * scale[2] - offset[1] + border[1]
+                ) % scale[3]
 
-        if check:
-            shift = kwargs["shift"]
-            input_dtype = kwargs["input_dtype"]
-            output_dtype = kwargs["output_dtype"]
-            if shift < 1 and input_dtype != DType.FLOAT and output_dtype != DType.FLOAT:
-                error_result = True
-
-        info_dict = {
-            "error_name": error_name,
-            "error_result": error_result,
-            "error_reason": error_reason,
-            "param_reqs": param_reqs,
-        }
-        return info_dict
-
-    @staticmethod
-    def evShiftLargerEleven(check=False, **kwargs):
-        error_name = ErrorIf.ShiftLargerEleven
-        param_reqs = {"rank": None, "dtype": [DType.INT8, DType.INT16], "shape": None}
-        error_result = False
-        error_reason = "Shift value larger than eleven"
-
-        if check:
-            shift = kwargs["shift"]
-            if shift > 11:
-                error_result = True
+                if max(remainder_y, remainder_x) > 0:
+                    error_result = True
 
         info_dict = {
             "error_name": error_name,
@@ -2191,43 +2202,23 @@ class TosaInvalidValidator:
         input_dtype = kwargs["input_dtype"]
         args = kwargs["args"]
         mode = args[0]
-        output_dtype = args[8]
+        output_dtype = args[5]
 
         if mode == ResizeMode.BILINEAR:
             # Invalid output data type / Invalid input datatype
             return (
                 not (input_dtype == DType.INT8 and output_dtype == DType.INT32)
-                or not (input_dtype == DType.INT16 and output_dtype == DType.INT48)
-                or not (input_dtype == DType.FLOAT and output_dtype == DType.FLOAT)
-                or (input_dtype not in [DType.INT8, DType.INT32, DType.FLOAT])
+                and not (input_dtype == DType.INT16 and output_dtype == DType.INT48)
+                and not (input_dtype == DType.FLOAT and output_dtype == DType.FLOAT)
             )
         elif mode == ResizeMode.NEAREST:
             # Invalid output data type / Invalid input datatype
             return (input_dtype != output_dtype) or (
-                input_dtype not in [DType.INT8, DType.INT32, DType.FLOAT]
+                input_dtype not in [DType.INT8, DType.INT16, DType.FLOAT]
             )
         else:
             # Invalid resize mode
             return True
-
-    @staticmethod
-    def ivBadStride(**kwargs):
-        input_dtype = kwargs["input_dtype"]
-        args = kwargs["args"]
-        stride_x = args[1][0]
-        stride_y = args[1][1]
-        stride_fp_x = args[4][0]
-        stride_fp_y = args[4][1]
-
-        if input_dtype == DType.FLOAT:
-            if stride_fp_x <= 0 or stride_fp_y <= 0:
-                # Negative or zero stride
-                return True
-        else:
-            if stride_x <= 0 or stride_y <= 0:
-                # Negative or zero stride
-                return True
-        return False
 
     @staticmethod
     def ivHeightWidthInvalid(**kwargs):

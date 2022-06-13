@@ -123,6 +123,14 @@ def parseArgs():
         help="Number of random permutations for a given shape/rank for randomly-sampled parameter spaces",
     )
 
+    parser.add_argument(
+        "--max-resize-output-dim",
+        dest="max_resize_output_dim",
+        default=1000,
+        type=int,
+        help="Upper limit on width and height output dimensions for `resize` op. Default: 1000",
+    )
+
     # Targetting a specific shape/rank/dtype
     parser.add_argument(
         "--target-shape",
@@ -212,12 +220,11 @@ def main():
         for opName, testStr, dtype, error, shapeList, testArgs in testList:
             # Check for and skip duplicate tests
             if testStr in testStrings:
+                print(f"Skipping duplicate test: {testStr}")
                 continue
             else:
                 testStrings.append(testStr)
 
-            if args.verbose:
-                print(testStr)
             results.append(
                 ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs)
             )

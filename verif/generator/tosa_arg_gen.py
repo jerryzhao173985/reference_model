@@ -6,6 +6,7 @@ import math
 import numpy as np
 from generator.tosa_error_if import ErrorIf
 from generator.tosa_error_if import TosaErrorIfArgGen
+from generator.tosa_utils import MAX_RESIZE_DIMENSION
 from serializer.tosa_serializer import DTypeNames
 from tosa.DType import DType
 from tosa.Op import Op
@@ -1609,10 +1610,107 @@ class TosaArgGen:
     @staticmethod
     def agResize(testGen, opName, shapeList, dtype, error_name=None):
         arg_list = []
-
         ifm_shape = shapeList[0]
-        for mode in [ResizeMode.NEAREST, ResizeMode.BILINEAR]:
 
+        def get_aspect_ratio_resize_params():
+            common_aspect_ratios = ((3, 2), (16, 9), (4, 3))
+            aspect_ratio = testGen.rng.choice(common_aspect_ratios)
+            invert = testGen.rng.choice((False, True))
+            letterbox = testGen.rng.choice((False, True))
+
+            scale_y_n = aspect_ratio[0] if invert else aspect_ratio[1]
+            scale_x_n = aspect_ratio[1] if invert else aspect_ratio[0]
+            scale_y_d = scale_x_d = 1
+            offset_x = offset_y = 0
+
+            if letterbox:
+                max_border = scale_y_n
+                border_y = testGen.randInt(low=0, high=max_border)
+                border_x = 0
+            else:
+                # Pillarboxing
+                border_y = 0
+                max_border = scale_x_n
+                border_x = testGen.randInt(low=0, high=max_border)
+
+            scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
+            offset = (offset_y, offset_x)
+            border = (border_y, border_x)
+
+            return scale, offset, border
+
+        def get_upscale_downscale_params():
+            valid_params = False
+            while not valid_params:
+                upscale = testGen.rng.choice((False, True))
+
+                # True if sampling begins from (0,0). Otherwise (-0.5,-0.5)
+                origin_sampling = testGen.rng.choice((False, True))
+
+                if upscale:
+                    shift = testGen.randInt(low=1, high=4)
+                    scale_x_d = scale_y_d = 1
+                    scale_x_n = scale_y_n = (
+                        1 << shift if origin_sampling else 2 << shift
+                    )
+                    border_x = border_y = 0 if origin_sampling else (1 << shift) - 1
+                    offset_x = offset_y = 0 if origin_sampling else -(1 << shift) + 1
+                else:
+                    scale_x_n = 1
+                    scale_y_n = 1
+
+                    # Return list of valid scale_*_d values (max value 4) given input dim shape
+                    def get_valid_denom(ifm_dim):
+                        return [x for x in range(1, 5) if ifm_dim % x == 1]
+
+                    # Generate list of valid downscale values and choose one randomly
+                    valid_scale_y_ds = get_valid_denom(ifm_shape[1])
+                    valid_scale_x_ds = get_valid_denom(ifm_shape[2])
+
+                    if not valid_scale_y_ds and not valid_scale_x_ds:
+                        # Bad parameters, skip
+                        continue
+
+                    if not valid_scale_y_ds:
+                        scale_y_d = 1
+                    else:
+                        scale_y_d = testGen.rng.choice(valid_scale_y_ds)
+
+                    if not valid_scale_x_ds:
+                        scale_x_d = 1
+                    else:
+                        scale_x_d = testGen.rng.choice(valid_scale_x_ds)
+
+                    border_x = border_y = 0
+                    offset_y = testGen.randInt(0, 16 * scale_y_n)
+                    offset_x = testGen.randInt(0, 16 * scale_x_n)
+                valid_params = True
+
+            scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
+            offset = (offset_y, offset_x)
+            border = (border_y, border_x)
+            return scale, offset, border
+
+        def get_rand_params():
+            # Scale
+            scale_y_n = testGen.randInt(low=1, high=(1 << 11))
+            scale_x_n = testGen.randInt(low=1, high=(1 << 11))
+
+            scale_y_d = testGen.randInt(low=1, high=(16 * scale_y_n))
+            scale_x_d = testGen.randInt(low=1, high=(16 * scale_x_n))
+
+            # Offsets and border within the scale
+            offset_y = testGen.randInt(low=-scale_y_n, high=(16 * scale_y_n))
+            offset_x = testGen.randInt(low=-scale_x_n, high=(16 * scale_x_n))
+            border_y = testGen.randInt(low=(-16 * scale_y_n), high=scale_y_n)
+            border_x = testGen.randInt(low=(-16 * scale_x_n), high=scale_x_n)
+
+            scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
+            offset = (offset_y, offset_x)
+            border = (border_y, border_x)
+            return scale, offset, border
+
+        for mode in [ResizeMode.NEAREST, ResizeMode.BILINEAR]:
             # Exclude illegal {mode, type} configurations.  Pick legal output types
             if mode == ResizeMode.NEAREST and dtype == DType.INT8:
                 outputDTypeList = [DType.INT8]
@@ -1631,114 +1729,98 @@ class TosaArgGen:
             else:
                 continue
 
+            arg_str = "mode{}_out{}_sc{}x{}x{}x{}_off{}x{}_bor{}x{}"
+
             for outputDType in outputDTypeList:
-                for perm in range(testGen.args.num_rand_permutations):
-                    # Randomly generate legal output dimensions and shift
-                    # and then compute the stride and offset based on them
-                    # A output_dim of 1 will cause offset to exceed allowed range
-                    # so minimum value 2 produced below
-                    output_dims = [testGen.randInt(1) + 1, testGen.randInt(1) + 1]
-                    while (float(ifm_shape[1]) / float(output_dims[0])) >= 16:
-                        output_dims[0] += 1
-                    while (float(ifm_shape[2]) / float(output_dims[1])) >= 16:
-                        output_dims[1] += 1
-
-                    in_center_h = (ifm_shape[1] - 1) / 2.0
-                    in_center_w = (ifm_shape[2] - 1) / 2.0
-                    out_center_h = (output_dims[0] - 1) / 2.0
-                    out_center_w = (output_dims[1] - 1) / 2.0
-
-                    fp_stride_y = float(ifm_shape[1]) / float(output_dims[0])
-                    fp_stride_x = float(ifm_shape[2]) / float(output_dims[1])
-                    fp_offset_y = in_center_h - fp_stride_y * out_center_h
-                    fp_offset_x = in_center_w - fp_stride_x * out_center_w
-
-                    if outputDType == DType.FLOAT:
-                        float_op = True
-                        arg_str = (
-                            "mode{}_shift{}_odim{}x{}_out{}"
-                            "_st{:.2f}x{:.2f}_off{:.2f}x{:.2f}"
+                perm = 0
+                while perm < testGen.args.num_rand_permutations:
+                    # Random choice of type of params we are testing
+                    _rnd_param_fn = testGen.rng.choice(
+                        (
+                            get_rand_params,
+                            get_upscale_downscale_params,
+                            get_aspect_ratio_resize_params,
                         )
-                        shift = 0
-                        stride = [0, 0]
-                        offset = [0, 0]
-                        stride_fp = [fp_stride_y, fp_stride_x]
-                        offset_fp = [fp_offset_y, fp_offset_x]
+                    )
+                    scale, offset, border = _rnd_param_fn()
 
-                    else:
-                        float_op = False
-                        arg_str = "mode{}_shift{}_odim{}x{}_out{}_st{}x{}_off{}x{}"
-                        shift = testGen.randInt(1, 12)
-                        # Now search for a shift value (1 to 11) that will produce
-                        # a valid and predictable resize operation
-                        count = 0
-                        while count < 12:
-                            unit = float(1 << shift)
-                            stride_y = int(round(fp_stride_y * unit))
-                            stride_x = int(round(fp_stride_x * unit))
-                            offset_y = int(round(fp_offset_y * unit))
-                            offset_x = int(round(fp_offset_x * unit))
+                    # Expand params for bounds-checking
+                    (scale_y_n, scale_y_d, scale_x_n, scale_x_d) = scale
+                    (offset_y, offset_x) = offset
+                    (border_y, border_x) = border
 
-                            if (
-                                stride_y <= 0
-                                or stride_x <= 0
-                                or stride_y >= (16 << shift)
-                                or stride_x >= (16 << shift)
-                                or offset_y >= (16 << shift)
-                                or offset_x >= (16 << shift)
-                                or offset_y <= (-16 << shift)
-                                or offset_x <= (-16 << shift)
-                            ):
-                                # Change the shift value and check again
-                                count += 1
-                                shift = (shift % 11) + 1
-                                continue
-
-                            def RESIZE_REQUIRE_CALC(
-                                length_in, length_out, stride, offset, shift
-                            ):
-                                # Perform the pseudo loop to look for out of bounds
-                                for pos in range(0, length_out):
-                                    a = pos * stride + offset
-                                    ia = a >> shift
-                                    ia0 = max(ia, 0)
-                                    ia1 = min(ia + 1, length_in - 1)
-                                    if ia0 > ia1:
-                                        # Found a problem value
-                                        break
-                                return ia0, ia1
-
-                            iy0, iy1 = RESIZE_REQUIRE_CALC(
-                                ifm_shape[1], output_dims[0], stride_y, offset_y, shift
-                            )
-                            ix0, ix1 = RESIZE_REQUIRE_CALC(
-                                ifm_shape[2], output_dims[1], stride_x, offset_x, shift
-                            )
-                            if ix0 > ix1 or iy0 > iy1:
-                                # Change the shift value and check again
-                                count += 1
-                                shift = (shift % 11) + 1
-                                continue
-                            break
-
-                        if count >= 12:
-                            # Couldn't find a good set of values for this test, skip it
+                    # Make sure output dimensions OH and OW are integers
+                    partial_output_y = (
+                        (ifm_shape[1] - 1) * scale_y_n - offset_y + border_y
+                    )
+                    partial_output_x = (
+                        (ifm_shape[2] - 1) * scale_x_n - offset_x + border_x
+                    )
+                    if error_name == ErrorIf.ResizeOutputShapeNonInteger:
+                        if (
+                            partial_output_y % scale_y_d == 0
+                            and partial_output_x % scale_x_d == 0
+                        ):
+                            # Skip this test as it doesn't produce NonInteger output
+                            perm += 1
                             continue
+                    else:
+                        while partial_output_y % scale_y_d != 0:
+                            scale_y_d -= 1
+                        while partial_output_x % scale_x_d != 0:
+                            scale_x_d -= 1
 
-                        stride = [stride_y, stride_x]
-                        offset = [offset_y, offset_x]
+                    output_y = partial_output_y // scale_y_d + 1
+                    output_x = partial_output_x // scale_x_d + 1
 
-                        stride_fp = [0.0, 0.0]
-                        offset_fp = [0.0, 0.0]
+                    if (
+                        output_y >= testGen.args.max_resize_output_dim
+                        or output_x >= testGen.args.max_resize_output_dim
+                    ) and error_name is None:
+                        # Skip positive test if output dim will be too high
+                        # Avoid high test latency and OOM issues
+                        perm += 1
+                        continue
+
+                    if (
+                        output_y <= 0
+                        or output_y >= MAX_RESIZE_DIMENSION
+                        or output_x <= 0
+                        or output_x >= MAX_RESIZE_DIMENSION
+                    ):
+                        # Output dimensions out of scope
+                        if error_name is not None and perm > 0:
+                            # As long as we have one ERROR_IF test, don't worry
+                            # about creating all the other permutations
+                            perm += 1
+                        continue
+
+                    if error_name == ErrorIf.ResizeOutputShapeMismatch and (
+                        (
+                            output_y + scale_y_d >= MAX_RESIZE_DIMENSION
+                            and output_y - scale_y_d < 1
+                        )
+                        or (
+                            output_x + scale_x_d >= MAX_RESIZE_DIMENSION
+                            and output_x - scale_x_d < 1
+                        )
+                    ):
+                        # Can't create a negative test with these params as it
+                        # will create invalid output size
+                        if perm > 0:
+                            perm += 1
+                        continue
+
+                    scale = [scale_y_n, scale_y_d, scale_x_n, scale_x_d]
+                    offset = [offset_y, offset_x]
+                    border = [border_y, border_x]
 
                     # Common for all data types
                     if error_name is not None:
                         (
-                            shift,
-                            stride,
-                            stride_fp,
+                            scale,
                             offset,
-                            offset_fp,
+                            border,
                             outputDTypeNew,
                         ) = TosaErrorIfArgGen.eiResizeErrorIf(
                             testGen,
@@ -1747,42 +1829,42 @@ class TosaArgGen:
                             dtype,
                             shapeList,
                             outputDType,
-                            shift,
-                            stride,
-                            stride_fp,
+                            scale,
                             offset,
-                            offset_fp,
+                            border,
                         )
                     else:
                         outputDTypeNew = outputDType
 
-                    arg_list.append(
-                        (
-                            arg_str.format(
-                                "N" if mode == ResizeMode.NEAREST else "B",
-                                shift,
-                                output_dims[0],
-                                output_dims[1],
-                                testGen.typeStr(outputDTypeNew),
-                                stride_fp[0] if float_op else stride[0],
-                                stride_fp[1] if float_op else stride[1],
-                                offset_fp[0] if float_op else offset[0],
-                                offset_fp[1] if float_op else offset[1],
-                            ),
-                            [
-                                mode,
-                                stride,
-                                offset,
-                                shift,
-                                stride_fp,
-                                offset_fp,
-                                output_dims,
-                                dtype,
-                                outputDTypeNew,
-                            ],
-                        )
+                    arg_to_append = (
+                        arg_str.format(
+                            "N" if mode == ResizeMode.NEAREST else "B",
+                            testGen.typeStr(outputDTypeNew),
+                            scale[0],
+                            scale[1],
+                            scale[2],
+                            scale[3],
+                            offset[0],
+                            offset[1],
+                            border[0],
+                            border[1],
+                        ),
+                        [
+                            mode,
+                            scale,
+                            offset,
+                            border,
+                            dtype,
+                            outputDTypeNew,
+                        ],
                     )
+                    if arg_to_append in arg_list:
+                        # Skip already generated test params
+                        continue
 
+                    # Valid permutation
+                    perm += 1
+                    arg_list.append(arg_to_append)
         return arg_list
 
     @staticmethod
