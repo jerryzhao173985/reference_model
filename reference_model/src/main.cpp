@@ -28,7 +28,7 @@
 #define MODEL_VERSION_MAJOR 0
 #define MODEL_VERSION_MINOR 30
 #define MODEL_VERSION_PATCH 0
-#define MODEL_VERSION_DRAFT true
+#define MODEL_VERSION_DRAFT false
 
 using namespace TosaReference;
 using namespace tosa;
