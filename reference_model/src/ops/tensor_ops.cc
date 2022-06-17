@@ -675,7 +675,7 @@ int OpConv2d<InDtype, WeightDtype>::eval()
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
-    if (InDtype == DType_INT8)
+    if (InDtype == DType_INT8 || WeightDtype == DType_INT8)
     {
         input_val  = input_val - (InEigenType)attribute->input_zp();
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
@@ -838,7 +838,7 @@ int OpConv3d<InDtype, WeightDtype>::eval()
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
-    if (InDtype == DType_INT8)
+    if (InDtype == DType_INT8 || WeightDtype == DType_INT8)
     {
         input_val  = input_val - (InEigenType)attribute->input_zp();
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
@@ -1017,7 +1017,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype>::eval()
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
-    if (InDtype == DType_INT8)
+    if (InDtype == DType_INT8 || WeightDtype == DType_INT8)
     {
         input_val  = input_val - (InEigenType)attribute->input_zp();
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
@@ -1156,7 +1156,7 @@ int OpFullyConnected<InDtype, WeightDtype>::eval()
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor().shuffle(weight_shuffle);
-    if (InDtype == DType_INT8)
+    if (InDtype == DType_INT8 || WeightDtype == DType_INT8)
     {
         input_val  = input_val - (InEigenType)attribute->input_zp();
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
@@ -1603,7 +1603,7 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
-    if (InDtype == DType_INT8)
+    if (InDtype == DType_INT8 || WeightDtype == DType_INT8)
     {
         input_val  = input_val - (InEigenType)attribute->input_zp();
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
