@@ -71,6 +71,7 @@ target_link_libraries(tosa_reference_model
   PRIVATE
     tosa_serialization_lib
     nlohmann_json::nlohmann_json
+    cxxopts
 )
 
 install (TARGETS tosa_reference_model DESTINATION bin)

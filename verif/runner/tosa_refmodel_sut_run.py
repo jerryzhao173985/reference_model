@@ -34,16 +34,16 @@ class TosaSUTRunner(TosaTestRunner):
         # Call Reference model with description file to provide all file details
         cmd = [
             args.ref_model_path,
-            "-Coperator_fbs={}".format(args.operator_fbs),
-            "-Ctest_desc={}".format(self.descFile),
+            "--operator_fbs={}".format(args.operator_fbs),
+            "--test_desc={}".format(self.descFile),
         ]
 
         # Specific debug options for reference model
         if args.ref_debug:
-            cmd.extend(["-dALL", "-l{}".format(args.ref_debug)])
+            cmd.extend(["-d ALL", "-l {}".format(args.ref_debug)])
 
         if args.ref_intermediates:
-            cmd.extend(["-Ddump_intermediates=1"])
+            cmd.extend(["-D dump_intermediates=1"])
 
         # Run command and interpret tosa graph result via process return codes
         graphMessage = None

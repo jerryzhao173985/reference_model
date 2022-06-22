@@ -518,11 +518,11 @@ def run_test(args, test, framework):
         os.path.join(
             args.tools_base_dir, "build", "reference_model", "tosa_reference_model"
         ),
-        "-Ctest_desc={}".format(os.path.join(test, flatbuffer_dir, "desc.json")),
+        "--test_desc={}".format(os.path.join(test, flatbuffer_dir, "desc.json")),
     ]
 
     if args.debug_ref_model:
-        ref_model_cmd.extend(["-DALL", "-lhigh"])
+        ref_model_cmd.extend(["-D ALL", "-l high"])
 
     if args.valgrind:
         ref_model_cmd = [

@@ -21,14 +21,11 @@
 #include <cinttypes>
 #include <signal.h>
 #include <stdio.h>
+#include <vector>
 
 void func_print_backtrace(FILE* out, int sig = SIGABRT);
 
 void func_enable_signal_handlers();
-
-// Debug content container
-#define WARNING_BUFFER_SIZE 16
-#define WARNING_BUFFER_ENTRY_LENGTH 1024
 
 // STRINGIFY2 is needed expand expression passed to STRINGIFY
 #define STRINGIFY2(s) #s
@@ -62,18 +59,26 @@ void func_enable_signal_handlers();
 
 struct func_debug_t
 {
-    uint32_t func_debug_verbosity;             // What verbosity level is set? (bitmask)
-    uint64_t func_debug_mask;                  // Which units have debugging enabled? (bitmask)
-    uint64_t func_debug_inst_mask;             // Which instances have debugging enabled (bitmask)
-    uint64_t inst_id;                          // The instance id for multiple model instances
-    uint32_t func_suppress_arch_error_mask;    // Which architecture error should be suppressed? (bitmask)
-    FILE* func_debug_file;                     // Output file
-    uint32_t record_warnings;
-    char* warning_buffer[WARNING_BUFFER_SIZE];
-    uint32_t warning_buffer_head;    // next unread message
-    uint32_t warning_buffer_tail;    // next message to write
-    uint32_t is_gzip;
-    bool is_output_unbuffered;    // should log files be opened with unbuffered I/O.
+    uint32_t func_debug_verbosity = 0;             // What verbosity level is set? (bitmask)
+    uint64_t func_debug_mask = 0;                  // Which units have debugging enabled? (bitmask)
+    uint64_t func_debug_inst_mask = 0;             // Which instances have debugging enabled (bitmask)
+    uint64_t inst_id = 0;                          // The instance id for multiple model instances
+    FILE* func_debug_file = stderr;                     // Output file
+    bool is_output_unbuffered = false;    // should log files be opened with unbuffered I/O.
+
+    int init_debug(uint64_t inst_id);
+    int fini_debug();
+    int set_file(const std::string& filename);
+    void set_mask(const std::string& str);
+    void set_mask(const uint64_t mask);
+    void print_masks(FILE* out);
+    void set_verbosity(const std::string& str);
+    void set_verbosity(const uint32_t verb);
+    void set_inst_mask(const char* mask);
+    void set_inst_mask(const uint64_t mask);
+    void set_output_unbuffered(const bool is_unbuffered);
+    std::string get_debug_mask_help_string();
+    std::string get_debug_verbosity_help_string();
 };
 
 #ifndef ASSERT
@@ -157,11 +162,7 @@ void func_debug_warning(
     fprintf(stderr, COL_WARN(fmt) "\n", ##__VA_ARGS__);
 #endif
 
-int func_debug_set_captured_warnings(func_debug_t* func_debug, uint32_t capture);
 
-int func_debug_has_captured_warning(func_debug_t* func_debug);
-
-int func_debug_get_captured_warning(func_debug_t* func_debug, char* buf_ptr, const uint32_t buf_len);
 
 // Is this debug verbosity and unit level enabled?
 // Provide compiler hints that this is unlikely
@@ -239,18 +240,5 @@ int func_debug_get_captured_warning(func_debug_t* func_debug, char* buf_ptr, con
 #define DEBUG_LOW(LEVEL, FMT, ...) DEBUG(DEBUG_VERB_LOW, LEVEL, COL_LOW(FMT), ##__VA_ARGS__)
 #define DEBUG_MED(LEVEL, FMT, ...) DEBUG(DEBUG_VERB_MED, LEVEL, COL_MED(FMT), ##__VA_ARGS__)
 #define DEBUG_HIGH(LEVEL, FMT, ...) DEBUG(DEBUG_VERB_HIGH, LEVEL, COL_HIGH(FMT), ##__VA_ARGS__)
-
-int func_init_debug(func_debug_t*, uint64_t inst_id);
-int func_fini_debug(func_debug_t*);
-int func_debug_set_file(func_debug_t*, const char* filename);
-void func_debug_set_mask(func_debug_t*, const char* str);
-void func_debug_set_mask(func_debug_t*, const uint64_t mask);
-void func_debug_print_masks(FILE* out);
-void func_debug_set_verbosity(func_debug_t*, const char* str);
-void func_debug_set_verbosity(func_debug_t*, const uint32_t verb);
-void func_debug_set_suppress_arch_error_mask(func_debug_t*, const uint32_t suppress);
-void func_debug_set_inst_mask(func_debug_t*, const char* mask);
-void func_debug_set_inst_mask(func_debug_t*, const uint64_t mask);
-void func_debug_set_output_unbuffered(func_debug_t*, const bool is_unbuffered);
 
 #endif

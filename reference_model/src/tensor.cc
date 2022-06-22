@@ -2054,8 +2054,8 @@ int TosaReference::Tensor6<bool>::allocate()
 template <>
 int TosaReference::Tensor0<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, "[ %%%sf ]\n", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), "[ %%%sf ]\n", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2071,8 +2071,8 @@ int TosaReference::Tensor0<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor1<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2093,8 +2093,8 @@ int TosaReference::Tensor1<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor2<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2120,8 +2120,8 @@ int TosaReference::Tensor2<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor3<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2152,8 +2152,8 @@ int TosaReference::Tensor3<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor4<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2189,8 +2189,8 @@ int TosaReference::Tensor4<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor5<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2231,8 +2231,8 @@ int TosaReference::Tensor5<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor6<float>::dumpTensor(FILE* out) const
 {
-    char fp_fmt[FOF_STR_LEN];
-    snprintf(fp_fmt, FOF_STR_LEN, " %%%sf ", g_func_config.fp_format);
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
 
     if (tensor == nullptr)
     {
@@ -2278,8 +2278,8 @@ int TosaReference::Tensor6<float>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor0<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, "[ %%ld ]\n");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), "[ %%ld ]\n");
 
     if (tensor == nullptr)
     {
@@ -2295,8 +2295,8 @@ int TosaReference::Tensor0<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor1<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2317,8 +2317,8 @@ int TosaReference::Tensor1<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor2<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2344,8 +2344,8 @@ int TosaReference::Tensor2<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor3<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2376,8 +2376,8 @@ int TosaReference::Tensor3<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor4<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2413,8 +2413,8 @@ int TosaReference::Tensor4<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor5<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2455,8 +2455,8 @@ int TosaReference::Tensor5<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor6<int64_t>::dumpTensor(FILE* out) const
 {
-    char i64_fmt[FOF_STR_LEN];
-    snprintf(i64_fmt, FOF_STR_LEN, " %%ld ");
+    char i64_fmt[32];
+    snprintf(i64_fmt, sizeof(i64_fmt), " %%ld ");
 
     if (tensor == nullptr)
     {
@@ -2502,8 +2502,8 @@ int TosaReference::Tensor6<int64_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor0<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, "[ %%d ]\n");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), "[ %%d ]\n");
 
     if (tensor == nullptr)
     {
@@ -2519,8 +2519,8 @@ int TosaReference::Tensor0<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor1<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2541,8 +2541,8 @@ int TosaReference::Tensor1<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor2<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2574,8 +2574,8 @@ int TosaReference::Tensor2<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor3<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2612,8 +2612,8 @@ int TosaReference::Tensor3<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor4<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2649,8 +2649,8 @@ int TosaReference::Tensor4<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor5<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2691,8 +2691,8 @@ int TosaReference::Tensor5<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor6<int32_t>::dumpTensor(FILE* out) const
 {
-    char i32_fmt[FOF_STR_LEN];
-    snprintf(i32_fmt, FOF_STR_LEN, " %%d ");
+    char i32_fmt[32];
+    snprintf(i32_fmt, sizeof(i32_fmt), " %%d ");
 
     if (tensor == nullptr)
     {
@@ -2738,8 +2738,8 @@ int TosaReference::Tensor6<int32_t>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor0<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, "[ %%s ]\n");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), "[ %%s ]\n");
 
     if (tensor == nullptr)
     {
@@ -2755,8 +2755,8 @@ int TosaReference::Tensor0<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor1<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {
@@ -2777,8 +2777,8 @@ int TosaReference::Tensor1<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor2<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {
@@ -2804,8 +2804,8 @@ int TosaReference::Tensor2<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor3<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {
@@ -2836,8 +2836,8 @@ int TosaReference::Tensor3<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor4<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {
@@ -2873,8 +2873,8 @@ int TosaReference::Tensor4<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor5<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {
@@ -2915,8 +2915,8 @@ int TosaReference::Tensor5<bool>::dumpTensor(FILE* out) const
 template <>
 int TosaReference::Tensor6<bool>::dumpTensor(FILE* out) const
 {
-    char bool_fmt[FOF_STR_LEN];
-    snprintf(bool_fmt, FOF_STR_LEN, " %%s ");
+    char bool_fmt[32];
+    snprintf(bool_fmt, sizeof(bool_fmt), " %%s ");
 
     if (tensor == nullptr)
     {

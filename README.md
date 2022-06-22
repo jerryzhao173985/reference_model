@@ -121,22 +121,22 @@ The JSON test descriptor must have the following field:
 
 Note by default, all the files specified by "tosa_file", "ifm_file",
 "ofm_file" are relative to desc.json. This could be overwritten by
--Cflatbuffer_dir=, if desired.
+--flatbuffer_dir=, if desired.
 
 An example command is shown below:
 
 ``` bash
 ./build/reference_model/tosa_reference_model \
-  -Ctest_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
+  --test_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
 ```
 
 Instead of drive model by JSON test descriptor, user can also drive model
-with -Ctosa_file=, -Cifm_name=, -Cifm_file=, -Cofm_name=, -Cofm_file=
+with --tosa_file=, --ifm_name=, --ifm_file=, --ofm_name=, --ofm_file=
 options directly.
 
-In case where -Ctest_desc= and other options are specified at the same time,
+In case where --test_desc= and other options are specified at the same time,
 JSON test descriptor will be initialized first. All other options
-(-Ctosa_file=, -Cifm_name=, -Cifm_file=, -Cofm_name=, -Cofm_file=) will
+(--tosa_file=, --ifm_name=, --ifm_file=, --ofm_name=, --ofm_file=) will
 overwrite whatever specified by JSON descriptor.
 
 On a successful execution, the output tensors will be written in NumPy
@@ -145,16 +145,16 @@ format into output tensors specified by "ofm_file".
 For example, you can generate new output .npy by:
 ``` bash
 ./build/reference_model/tosa_reference_model \
-  -Ctest_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
-  -Cofm_file=out.npy
+  --test_desc=examples/test_add_1x4x4x4_f32/flatbuffer-tflite/desc.json
+  --ofm_file=out.npy
 ```
 
 In this case, the "ofm_file" field in desc.json will be ignored, and the
-one specified by -Cofm_file= will be picked.
+one specified by --ofm_file= will be picked.
 
 When using JSON-formatted FlatBuffers input (.json extension), the
 FlatBuffers schema file from the TOSA Serialization library must be
-specified using -Coperator_fbs=.  When using the binary FlatBuffers
+specified using --operator_fbs=.  When using the binary FlatBuffers
 format (.tosa), the schema is not necessary.
 
 ### Examples

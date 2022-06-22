@@ -43,16 +43,14 @@ int readInputTensors(SubgraphTraverser& gt, json test_desc);
 int writeFinalTensors(SubgraphTraverser& gt, json test_desc);
 int loadGraph(TosaSerializationHandler& tsh, json test_desc);
 
-int main(int argc, const char** argv)
+int main(int argc, char** argv)
 {
     TosaVersion model_version(MODEL_VERSION_MAJOR, MODEL_VERSION_MINOR, MODEL_VERSION_PATCH, MODEL_VERSION_DRAFT);
 
     // Initialize configuration and debug subsystems
-    func_model_init_config();
-    func_model_set_default_config(&g_func_config);
-    func_init_debug(&g_func_debug, 0);
+    g_func_debug.init_debug(0);
 
-    if (func_model_parse_cmd_line(&g_func_config, &g_func_debug, argc, argv, model_version.to_string().c_str()))
+    if (func_model_parse_cmd_line(g_func_config, g_func_debug, argc, argv, model_version.to_string().c_str()))
     {
         return 1;
     }
@@ -191,8 +189,7 @@ done:
             fprintf(stderr, "Unknown graph status code=%d.\n", (int)main_gt.getGraphStatus());
     }
 
-    func_fini_debug(&g_func_debug);
-    func_model_config_cleanup();
+    g_func_debug.fini_debug();
 
     return (int)main_gt.getGraphStatus();
 }
@@ -201,12 +198,12 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
 {
     char graph_fullname[1024];
 
-    snprintf(graph_fullname, sizeof(graph_fullname), "%s/%s", g_func_config.flatbuffer_dir,
+    snprintf(graph_fullname, sizeof(graph_fullname), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
              test_desc["tosa_file"].get<std::string>().c_str());
 
     if (strlen(graph_fullname) <= 2)
     {
-        func_model_print_help(stderr);
+        func_model_print_help();
         FATAL_ERROR("Missing required argument: Check \"tosa_file\" in .json specified by -Ctosa_desc=");
     }
 
@@ -225,10 +222,10 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
 
     if (is_json)
     {
-        if (tsh.LoadFileSchema(g_func_config.operator_fbs))
+        if (tsh.LoadFileSchema(g_func_config.operator_fbs.c_str()))
         {
             FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck -Coperator_fbs=",
-                        g_func_config.operator_fbs);
+                        g_func_config.operator_fbs.c_str());
         }
 
         if (tsh.LoadFileJson(graph_fullname))
@@ -260,7 +257,7 @@ int readInputTensors(SubgraphTraverser& gt, json test_desc)
     {
         if ((tensorCount != (int)test_desc["ifm_name"].size()) || (tensorCount != (int)test_desc["ifm_file"].size()))
         {
-            WARNING("Number of input tensors(%d) doesn't match name(%ld)/file(%ld)in test descriptor.", tensorCount,
+            WARNING("Number of input tensors(%d) doesn't match name(%ld)/file(%ld) in test descriptor.", tensorCount,
                     test_desc["ifm_name"].size(), test_desc["ifm_file"].size());
             return 1;
         }
@@ -274,7 +271,7 @@ int readInputTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.flatbuffer_dir,
+            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
                      test_desc["ifm_file"][i].get<std::string>().c_str());
 
             DEBUG_MED(GT, "Loading input tensor %s from filename: %s", tensor->getName().c_str(), filename);
@@ -340,7 +337,7 @@ int writeFinalTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.output_dir,
+            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.output_dir.c_str(),
                      test_desc["ofm_file"][i].get<std::string>().c_str());
 
             DEBUG_MED(GT, "Writing output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(), filename);
@@ -403,63 +400,55 @@ int initTestDesc(json& test_desc)
     }
     else
     {
-        WARNING("Cannot open input file: %s", g_func_config.test_desc);
+        WARNING("Cannot open input file: %s", g_func_config.test_desc.c_str());
         return 1;
     }
 
     // Overwrite flatbuffer_dir/output_dir with dirname(g_func_config.test_desc) if it's not specified.
-    std::string flatbuffer_dir_str(g_func_config.flatbuffer_dir);
-    std::string output_dir_str(g_func_config.output_dir);
-    if (flatbuffer_dir_str.empty() || output_dir_str.empty())
+    if (g_func_config.flatbuffer_dir.empty() || g_func_config.output_dir.empty())
     {
-        std::string test_path(g_func_config.test_desc);
-        std::string test_dir = test_path.substr(0, test_path.find_last_of("/\\"));
-        if (flatbuffer_dir_str.empty())
+        std::string test_dir = g_func_config.test_desc.substr(0, g_func_config.test_desc.find_last_of("/\\"));
+        if (g_func_config.flatbuffer_dir.empty())
         {
-            strncpy(g_func_config.flatbuffer_dir, test_dir.c_str(), FOF_STR_LEN);
+            g_func_config.flatbuffer_dir = test_dir;
         }
-        if (output_dir_str.empty())
+        if (g_func_config.output_dir.empty())
         {
-            strncpy(g_func_config.output_dir, test_dir.c_str(), FOF_STR_LEN);
+            g_func_config.output_dir = test_dir;
         }
     }
 
     // Overwrite test_desc["tosa_file"] if -Ctosa_file= specified.
-    std::string tosa_file_str(g_func_config.tosa_file);
-    if (!tosa_file_str.empty())
+    if (!g_func_config.tosa_file.empty())
     {
-        test_desc["tosa_file"] = tosa_file_str;
+        test_desc["tosa_file"] = g_func_config.tosa_file;
     }
 
     // Overwrite test_desc["ifm_name"] if -Cifm_name= specified.
-    std::string ifm_name_str(g_func_config.ifm_name);
-    if (!ifm_name_str.empty())
+    if (!g_func_config.ifm_name.empty())
     {
-        std::vector<std::string> ifm_name_vec = parseFromString(ifm_name_str);
+        std::vector<std::string> ifm_name_vec = parseFromString(g_func_config.ifm_name);
         test_desc["ifm_name"]                 = ifm_name_vec;
     }
 
     // Overwrite test_desc["ifm_file"] if -Cifm_file= specified.
-    std::string ifm_file_str(g_func_config.ifm_file);
-    if (!ifm_file_str.empty())
+    if (!g_func_config.ifm_file.empty())
     {
-        std::vector<std::string> ifm_file_vec = parseFromString(ifm_file_str);
+        std::vector<std::string> ifm_file_vec = parseFromString(g_func_config.ifm_file);
         test_desc["ifm_file"]                 = ifm_file_vec;
     }
 
     // Overwrite test_desc["ofm_name"] if -Cofm_name= specified.
-    std::string ofm_name_str(g_func_config.ofm_name);
-    if (!ofm_name_str.empty())
+    if (!g_func_config.ofm_name.empty())
     {
-        std::vector<std::string> ofm_name_vec = parseFromString(ofm_name_str);
+        std::vector<std::string> ofm_name_vec = parseFromString(g_func_config.ofm_name);
         test_desc["ofm_name"]                 = ofm_name_vec;
     }
 
     // Overwrite test_desc["ofm_file"] if -Cofm_file= specified.
-    std::string ofm_file_str(g_func_config.ofm_file);
-    if (!ofm_file_str.empty())
+    if (!g_func_config.ofm_file.empty())
     {
-        std::vector<std::string> ofm_file_vec = parseFromString(ofm_file_str);
+        std::vector<std::string> ofm_file_vec = parseFromString(g_func_config.ofm_file);
         test_desc["ofm_file"]                 = ofm_file_vec;
     }
 
