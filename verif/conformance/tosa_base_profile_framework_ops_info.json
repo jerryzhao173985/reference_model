@@ -1,0 +1,185 @@
+{
+    "add": {
+        "tests": [
+            "add_1_qi16",
+            "add_1x32x32x8_qi8"
+        ]
+    },
+    "average_pool_2d": {
+        "alternate_names": [
+            "avg_pool2d"
+        ],
+        "tests": [
+            "average_pool_2d_1x4x4x4_qi8_st11_padSAME_kern11",
+            "average_pool_2d_1x4x8x19_qi16_st21_padSAME_kern22",
+            "average_pool_2d_1x7x7x9_qi8_st22_padSAME_kern11",
+            "average_pool_2d_1x32x32x8_qu8_st12_padVALID_kern12",
+            "average_pool_2d_1x8x4x17_qu8_st21_padVALID_kern21"
+        ]
+    },
+    "concatenation": {
+        "tests": [
+            "concatenation_concat_13x21x3_i32_axis_0",
+            "concatenation_concat_14x19_i32_axis_1",
+            "concatenation_concat_1x32x32x8_i32_axis_2",
+            "concatenation_concat_64_i32_axis_m1",
+            "concatenation_concatv2_13x21x3_i32_axis_1",
+            "concatenation_concatv2_1x32x32x8_i32_axis_m2",
+            "concatenation_concatv2_1x7x7x9_i32_axis_m3",
+            "concatenation_concatv2_64_i32_axis_0"
+        ],
+        "alternate_names": [
+            "concat",
+            "concatv2"
+        ]
+    },
+    "conv_2d": {
+        "alternate_names": [
+            "conv2d"
+        ],
+        "tests": [
+            "conv_2d_1x1_1x4x8x19_qu8_st11_padVALID_dilat21",
+            "conv_2d_3x3_1x7x7x9_qi8_st12_padVALID_dilat11",
+            "conv_2d_5x5_1x32x32x8_qu8_st11_padSAME_dilat22",
+            "conv_2d_bias_1x1_1x32x32x8_qi8_st11_padVALID_dilat12",
+            "conv_2d_bias_5x5_1x7x7x9_qu8_st22_padSAME_dilat12",
+            "conv_2d_relu_1x1_1x32x32x8_qi8",
+            "conv_2d_relu_3x3_1x4x8x19_qu8",
+            "conv_2d_relu6_3x3_1x8x4x17_qi8",
+            "conv_2d_relu6_5x5_1x4x8x19_qu8",
+            "conv_2d_relu_n1_to_1_3x3_1x32x32x8_qu8",
+            "conv_2d_relu_n1_to_1_5x5_1x7x7x9_qi8",
+            "conv_2d_tanh_3x3_1x7x7x9_qi8",
+            "conv_2d_tanh_5x5_1x32x32x8_qu8"
+        ]
+    },
+    "depthwise_conv_2d": {
+        "alternate_names": [
+            "depthwise_conv2d"
+        ],
+        "tests": [
+            "depthwise_conv_2d_1x1_1x32x32x8_qi8_st11_padSAME_dilat21",
+            "depthwise_conv_2d_3x3_1x7x7x9_qu8_st22_padVALID_dilat11",
+            "depthwise_conv_2d_5x5_1x32x32x8_qi8_st11_padSAME_dilat12",
+            "depthwise_conv_2d_bias_1x1_1x4x4x4_qu8_st11_padSAME_dilat11",
+            "depthwise_conv_2d_bias_3x3_1x32x32x8_qu8_st11_padVALID_dilat22"
+        ]
+    },
+    "fully_connected": {
+        "alternate_names": [
+            "matmul"
+        ],
+        "tests": [
+            "fully_connected_1x4x4x4_qi8",
+            "fully_connected_13x21x3_qu8",
+            "fully_connected_14x19_qi8"
+        ]
+    },
+    "leaky_relu": {
+        "tests": [
+            "leaky_relu_1_qi16_0",
+            "leaky_relu_14x19_qi8_0",
+            "leaky_relu_13x21x3_qu8_0",
+            "leaky_relu_1x4x8x19_qi16_0"
+        ]
+    },
+    "logistic": {
+        "alternate_names": [
+            "sigmoid"
+        ],
+        "tests": [
+            "logistic_13x21x3_qu8",
+            "logistic_1x8x4x17_qi8",
+            "logistic_64_qi16"
+        ]
+    },
+    "max_pool_2d": {
+        "alternate_names": [
+            "max_pool2d"
+        ],
+        "tests": [
+            "max_pool_2d_1x4x4x4_qi8_st11_padSAME_kern11",
+            "max_pool_2d_1x4x4x4_qu8_st22_padVALID_kern22",
+            "max_pool_2d_1x4x8x19_qu8_st21_padVALID_kern22",
+            "max_pool_2d_1x8x4x17_qu8_st21_padVALID_kern21",
+            "max_pool_2d_1x32x32x8_qi8_st12_padVALID_kern22"
+        ]
+    },
+    "minimum": {
+        "alternate_names": [
+            "min"
+        ],
+        "tests": [
+            "minimum_1x4x4x4_i32",
+            "minimum_64_i32"
+        ]
+    },
+    "mul": {
+        "tests": [
+            "mul_13x21x3_qi16",
+            "mul_1x4x8x19_qu8"
+        ]
+    },
+    "pack": {
+        "alternate_names": [
+            "stack"
+        ],
+        "tests": [
+            "pack_13x21x3_i32_axis0",
+            "pack_14x19_i32_axis1",
+            "pack_1x7x7x9_i32_axis2",
+            "pack_1x8x4x17_i32_axis4"
+        ]
+    },
+    "reshape": {
+        "tests": [
+            "reshape_14x19_i32_rank1",
+            "reshape_13x21x3_i32_rank3",
+            "reshape_1x32x32x8_i32_rank2"
+        ]
+    },
+    "resize_bilinear": {
+        "tests": [
+            "resize_bilinear_1x32x32x8_qi16",
+            "resize_bilinear_1x4x4x4_qi8"
+        ]
+    },
+    "resize_nearest_neighbor": {
+        "alternate_names": [
+            "resize_nearest"
+        ],
+        "tests": [
+            "resize_nearest_neighbor_1x4x8x19_qu8",
+            "resize_nearest_neighbor_1x8x4x17_qi8"
+        ]
+    },
+    "softmax": {
+        "tests": [
+            "softmax_1_qi8",
+            "softmax_14x19_qi16",
+            "softmax_1x32x32x8_qu8"
+        ]
+    },
+    "split": {
+        "tests": [
+            "split_13x21x3_i32_splitv_axis0",
+            "split_1x32x32x8_i32_split4_axis2",
+            "split_1x4x8x19_i32_splitv_axis3",
+            "split_64_i32_split2_axis0"
+        ]
+    },
+    "strided_slice": {
+        "tests": [
+            "strided_slice_13x21x3_i32_perm0",
+            "strided_slice_14x19_i32_perm1",
+            "strided_slice_64_i32_perm3"
+        ]
+    },
+    "tanh": {
+        "tests": [
+            "tanh_13x21x3_qu8",
+            "tanh_14x19_qi8",
+            "tanh_1x8x4x17_qi16"
+        ]
+    }
+}

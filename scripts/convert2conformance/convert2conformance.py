@@ -200,8 +200,10 @@ def main(argv=None):
     # Work out where the desc.json file is
     desc_filename = args.test_dir / NAME_DESC_FILENAME
     framework_conversion = False
+    test_type_desc = "unknown"
     if desc_filename.is_file():
-        logger.info("Found reference model unit test")
+        logger.debug("Found TOSA operator unit test")
+        test_type_desc = "TOSA operator"
     else:
         desc_filename = (
             args.test_dir
@@ -209,7 +211,8 @@ def main(argv=None):
             / NAME_DESC_FILENAME
         )
         if desc_filename.is_file():
-            logger.info(f"Found framework unit test for {args.framework}")
+            logger.debug(f"Found framework unit test for {args.framework}")
+            test_type_desc = f"{args.framework}"
             framework_conversion = True
         else:
             logger.error(f"Could not find {NAME_DESC_FILENAME} in {args.test_dir}")
@@ -297,7 +300,7 @@ def main(argv=None):
     with open(new_desc_filename, "w") as fd:
         json.dump(test_desc, fd, indent=2)
 
-    logger.info(f"Converted to {args.output_dir}")
+    logger.info(f"Converted {test_type_desc} test to {args.output_dir}")
     return 0
 
 
