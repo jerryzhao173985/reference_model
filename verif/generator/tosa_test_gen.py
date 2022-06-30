@@ -1653,13 +1653,13 @@ class TosaTestGen:
             multiplier_arr[i], shift_arr[i] = TosaQuantGen.computeMultiplierAndShift(
                 scale_arr[i], scale32
             )
-            min_shift_value_arr[i] = -1 << (shift_arr[i] - 2)
-            max_shift_value_arr[i] = (1 << (shift_arr[i] - 2)) - 1
+            min_shift_value_arr[i] = -1 << (shift_arr[i] - 1)
+            max_shift_value_arr[i] = (1 << (shift_arr[i] - 1)) - 1
 
         # print('multiplier {} shift {} inzp {} outzp {}'.format(multiplier_arr, shift_arr, input_zp, output_zp))
         if scale32 and error_name is None:
             # Make sure random values are within apply_scale_32 specification
-            # REQUIRES(value >= (-1<<(shift-2)) && value < (1<<(shift-2))
+            # REQUIRES(value >= (-1<<(shift-1)) && value < (1<<(shift-1))
             assert val.placeholderFilename
             values = np.load(
                 os.path.join(self.basePath, self.testPath, val.placeholderFilename)
