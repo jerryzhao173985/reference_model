@@ -2605,7 +2605,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evInputZeroPointNotZero,
                 TosaErrorValidator.evWeightZeroPointNotZero,
-                TosaErrorValidator.evPadSmallerZero,
+                TosaErrorValidator.evPadLargerEqualKernel,
                 TosaErrorValidator.evStrideSmallerOne,
                 TosaErrorValidator.evWrongRank,
                 TosaErrorValidator.evConvOutputShapeMismatch,

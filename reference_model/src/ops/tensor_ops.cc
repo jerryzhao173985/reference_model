@@ -1498,14 +1498,7 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
         return 1;
     }
 
-    for (int32_t i : attribute->out_pad())
-    {
-        if (i < 0)
-        {
-            printNodeValidationError("OpTransposeConv2d: At least one pad is smaller than zero");
-            return 1;
-        }
-    }
+
 
     for (int32_t i : attribute->stride())
     {
@@ -1540,8 +1533,13 @@ int OpTransposeConv2d<InDtype, WeightDtype>::checkTensorAttributes()
     int32_t out_pad_left   = attribute->out_pad()[2];
     int32_t out_pad_right  = attribute->out_pad()[3];
 
-    int32_t H = (IH - 1) * stride_y - out_pad_top - out_pad_bottom + kernel_h;
-    int32_t W = (IW - 1) * stride_x - out_pad_left - out_pad_right + kernel_w;
+    for (size_t i = 0; i < attribute->out_pad().size(); i++)
+    {
+        ERROR_IF(attribute->out_pad()[i] <= -(weight->getShape()[(i / 2) + 1]), "OpTransposeConv2d: At least one out_pad value is larger than kernel size");
+    }
+
+    int32_t H = (IH - 1) * stride_y + out_pad_top + out_pad_bottom + kernel_h;
+    int32_t W = (IW - 1) * stride_x + out_pad_left + out_pad_right + kernel_w;
 
     if ((OH != H) || (OW != W))
     {
@@ -1632,8 +1630,8 @@ int OpTransposeConv2d<InDtype, WeightDtype>::eval()
         {
             for (int iw = 0; iw < in_width; iw++)
             {
-                out_x_origin = iw * stride_w - out_pad_left;
-                out_y_origin = ih * stride_h - out_pad_top;
+                out_x_origin = iw * stride_w + out_pad_left;
+                out_y_origin = ih * stride_h + out_pad_top;
                 for (int ic = 0; ic < in_channels; ic++)
                 {
                     for (int fh = 0; fh < f_height; fh++)
