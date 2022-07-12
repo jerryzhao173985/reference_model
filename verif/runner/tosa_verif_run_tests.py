@@ -117,7 +117,7 @@ def parseArgs(argv):
         type=str,
         default="both",
         choices=["positive", "negative", "both"],
-        help="Filter tests based on expected failure status (positive, negative or both)",
+        help="Filter tests based on expected failure status",
     )
     parser.add_argument(
         "--no-color",
@@ -125,6 +125,13 @@ def parseArgs(argv):
         dest="no_color",
         action="store_true",
         help="Disable color output",
+    )
+    parser.add_argument(
+        "--profile",
+        dest="profile",
+        type=str,
+        choices=["tosa-bi", "tosa-mi"],
+        help="Filter tests based on profile",
     )
 
     args = parser.parse_args(argv)
@@ -171,8 +178,9 @@ def workerThread(task_queue, runnerList, args, result_queue):
                 runnerName = runnerModule.__name__
                 runner = runnerModule.TosaSUTRunner(args, runnerArgs, test)
 
-                if runner.skipTest():
-                    msg = "Skipping non-{} test".format(args.test_type)
+                skip, reason = runner.skipTest()
+                if skip:
+                    msg = "Skipping {} test".format(reason)
                     print("{} {}".format(msg, test))
                     rc = TosaTestRunner.Result.SKIPPED
                 else:

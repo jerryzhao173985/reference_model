@@ -37,6 +37,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "add": {
@@ -77,6 +81,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "argmax": {
@@ -125,6 +133,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "arithmetic_right_shift": {
@@ -162,6 +174,10 @@
             "shape",
             "type",
             "rounding"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "avg_pool2d": {
@@ -198,6 +214,10 @@
             "shape",
             "type",
             "pad"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "bitwise_and": {
@@ -236,6 +256,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "bitwise_not": {
@@ -274,6 +298,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "bitwise_or": {
@@ -312,6 +340,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "bitwise_xor": {
@@ -350,6 +382,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "cast": {
@@ -412,6 +448,10 @@
             "shape",
             "type",
             "output_type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "clamp": {
@@ -448,6 +488,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "clz": {
@@ -488,6 +532,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "concat": {
@@ -546,6 +594,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "cond_if": {
@@ -573,6 +625,10 @@
             "variant",
             "shape",
             "cond"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "const": {
@@ -624,6 +680,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "conv2d": {
@@ -665,6 +725,10 @@
             "shape",
             "type",
             "pad"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "conv3d": {
@@ -711,6 +775,10 @@
             "type",
             "pad",
             "stride"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "depthwise_conv2d": {
@@ -752,6 +820,10 @@
             "shape",
             "type",
             "pad"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "equal": {
@@ -792,6 +864,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "fully_connected": {
@@ -828,6 +904,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "gather": {
@@ -856,6 +936,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "greater": {
@@ -902,6 +986,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "greater_equal": {
@@ -942,6 +1030,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "identity": {
@@ -995,6 +1087,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "intdiv": {
@@ -1035,6 +1131,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_and": {
@@ -1069,6 +1169,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_left_shift": {
@@ -1117,6 +1221,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_not": {
@@ -1151,6 +1259,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_or": {
@@ -1185,6 +1297,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_right_shift": {
@@ -1233,6 +1349,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "logical_xor": {
@@ -1267,6 +1387,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "matmul": {
@@ -1303,6 +1427,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "maximum": {
@@ -1343,6 +1471,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "max_pool2d": {
@@ -1381,6 +1513,10 @@
             "shape",
             "type",
             "pad"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "minimum": {
@@ -1421,6 +1557,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "mul": {
@@ -1471,6 +1611,10 @@
             "type",
             "perm",
             "shift"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "negate": {
@@ -1519,6 +1663,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "pad": {
@@ -1585,6 +1733,10 @@
                 "type": "i8",
                 "pad": "pad00"
             }
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reduce_all": {
@@ -1606,6 +1758,10 @@
             "shape",
             "type",
             "axis"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reduce_any": {
@@ -1627,6 +1783,10 @@
             "shape",
             "type",
             "axis"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reduce_max": {
@@ -1656,6 +1816,10 @@
             "shape",
             "type",
             "axis"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reduce_min": {
@@ -1685,6 +1849,10 @@
             "shape",
             "type",
             "axis"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reduce_sum": {
@@ -1710,6 +1878,10 @@
             "shape",
             "type",
             "axis"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "rescale": {
@@ -1771,6 +1943,10 @@
             "shape",
             "type",
             "output_type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reshape": {
@@ -1805,6 +1981,10 @@
             "type",
             "rank",
             "perm"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "resize": {
@@ -1827,6 +2007,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "reverse": {
@@ -1857,6 +2041,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "scatter": {
@@ -1885,6 +2073,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "select": {
@@ -1939,6 +2131,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "slice": {
@@ -1996,6 +2192,10 @@
             "shape",
             "type",
             "perm"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "sub": {
@@ -2036,6 +2236,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "table": {
@@ -2072,6 +2276,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "tile": {
@@ -2098,6 +2306,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "transpose": {
@@ -2151,6 +2363,10 @@
             "shape",
             "type",
             "perm"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "transpose_conv2d": {
@@ -2193,6 +2409,10 @@
             "type",
             "stride",
             "pad"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     },
     "while_loop": {
@@ -2215,6 +2435,10 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
         ]
     }
 }

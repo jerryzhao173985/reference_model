@@ -76,13 +76,17 @@ class TosaTestRunner:
         self.descFile = str(descFilePath)
 
     def skipTest(self):
-        """Check if the test is skipped due to test type selection."""
+        """Check if the test is skipped due to test type or profile selection."""
         expectedFailure = self.testDesc["expected_failure"]
         if self.args.test_type == "negative" and not expectedFailure:
-            return True
+            return True, "non-negative type"
         elif self.args.test_type == "positive" and expectedFailure:
-            return True
-        return False
+            return True, "non-positive type"
+        if self.args.profile:
+            profile = self.testDesc["profile"] if "profile" in self.testDesc else []
+            if self.args.profile not in profile:
+                return True, "non-{} profile".format(self.args.profile)
+        return False, ""
 
     def runTestGraph(self):
         """Override with function that calls system under test."""

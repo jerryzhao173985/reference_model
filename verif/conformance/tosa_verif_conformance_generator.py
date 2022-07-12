@@ -31,7 +31,7 @@ logger = logging.getLogger("tosa_verif_conformance_generator")
 
 # Configuration for each TOSA profile
 PROFILE_OPS_INFO = {
-    "base": {
+    "tosa-bi": {
         "operator_test_params": "tosa_base_profile_ops_info.json",
         "framework_tests": "tosa_base_profile_framework_ops_info.json",
         "exclude_types": ["float"],
@@ -219,6 +219,7 @@ def convert_tests(
     operator,
     op_build_dir,
     output_dir,
+    profiles,
     tests=None,
     group=None,
     trim_op_subdir=False,
@@ -230,6 +231,8 @@ def convert_tests(
         output_dir = output_dir / group
 
     ref_cmd_base = ["--ref-model-directory", str(ref_model_dir)]
+    for profile in profiles:
+        ref_cmd_base.extend(["--profile", profile])
     if args.framework_schema:
         ref_cmd_base.extend(["--framework-schema", str(args.framework_schema)])
     ref_cmd_base.append("--output-directory")
@@ -388,11 +391,36 @@ def get_framework_tests_selection(args, operator, test_picks, op_build_dir):
 def parse_args(argv=None):
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
+    profiles = list(PROFILE_OPS_INFO.keys())
+    parser.add_argument(
+        "--profile",
+        dest="profile",
+        choices=profiles,
+        default=profiles[0],
+        type=str,
+        help=f"TOSA profile (default is {profiles[0]})",
+    )
     parser.add_argument(
         "--operators",
         type=str,
         nargs="*",
         help="The operator(s) to create tests for, if not supplied all tests will be created",
+    )
+    parser.add_argument(
+        "--unit-tests",
+        dest="unit_tests",
+        choices=["operator", "framework", "both"],
+        default="operator",
+        type=str,
+        help="Which unit tests are produced (default is operator)",
+    )
+    parser.add_argument(
+        "--test-type",
+        dest="test_type",
+        choices=["positive", "negative", "both"],
+        default="both",
+        type=str,
+        help="Type of tests produced (default is both)",
     )
     parser.add_argument(
         "--ref-model-directory",
@@ -401,13 +429,40 @@ def parse_args(argv=None):
         required=True,
         help="Reference Model directory (must be pre-built)",
     )
+    parser.add_argument(
+        "--framework-tests-directory",
+        dest="framework_tests_dir",
+        type=Path,
+        default=Path.cwd() / "tests",
+        help="The pre-built framework tests directory (default is tests)",
+    )
+    parser.add_argument(
+        "--framework-schema",
+        dest="framework_schema",
+        type=Path,
+        help="Framework flatbuffers schema needed to convert framework models",
+    )
+    parser.add_argument(
+        "--build-directory",
+        dest="build_dir",
+        type=Path,
+        default=Path.cwd() / "conformance_build",
+        help="Temporary build directory for files created during this process (default is conformance_build)",
+    )
+    parser.add_argument(
+        "--output-directory",
+        dest="output_dir",
+        type=Path,
+        default=Path.cwd() / "conformance",
+        help="Output directory (default is conformance)",
+    )
     script_dir = Path(__file__).parent.absolute()
     parser.add_argument(
         "--test-param-json-directory",
         dest="param_json_dir",
         type=Path,
         default=script_dir,
-        help="Test parameters (ops info) JSON file directory",
+        help=f"Test parameters (ops info) JSON file directory (default is {script_dir})",
     )
     parser.add_argument(
         "--convert-all-tests",
@@ -425,20 +480,6 @@ def parse_args(argv=None):
         help="Prints output of running sh commands",
     )
     parser.add_argument(
-        "--build-directory",
-        dest="build_dir",
-        type=Path,
-        default=Path.cwd() / "conformance_build",
-        help="Temporary build directory for files created during this process (default is conformance_build)",
-    )
-    parser.add_argument(
-        "--output-directory",
-        dest="output_dir",
-        type=Path,
-        default=Path.cwd() / "conformance",
-        help="Output directory (default is conformance)",
-    )
-    parser.add_argument(
         "-j",
         dest="num_cores",
         type=int,
@@ -451,44 +492,6 @@ def parse_args(argv=None):
         action="count",
         default=0,
         help="Verbosity (can be used multiple times for more details)",
-    )
-    parser.add_argument(
-        "--unit-tests",
-        dest="unit_tests",
-        choices=["operator", "framework", "both"],
-        default="operator",
-        type=str,
-        help="Which unit tests are produced: operator, framework, or both",
-    )
-    parser.add_argument(
-        "--test-type",
-        dest="test_type",
-        choices=["positive", "negative", "both"],
-        default="both",
-        type=str,
-        help="Type of tests produced: positive, negative, or both",
-    )
-    profiles = list(PROFILE_OPS_INFO.keys())
-    parser.add_argument(
-        "--profile",
-        dest="profile",
-        choices=profiles,
-        default=profiles[0],
-        type=str,
-        help="TOSA profile",
-    )
-    parser.add_argument(
-        "--framework-tests-directory",
-        dest="framework_tests_dir",
-        type=Path,
-        default=Path.cwd() / "tests",
-        help="The pre-built framework tests directory (default is tests)",
-    )
-    parser.add_argument(
-        "--framework-schema",
-        dest="framework_schema",
-        type=Path,
-        help="Framework flatbuffers schema needed to convert framework models",
     )
     args = parser.parse_args(argv)
 
@@ -567,6 +570,7 @@ def main():
 
                 logger.debug(f"Copying and renaming {op}")
                 framework_test_dir = copy_rename_framework_tests(args, op, test_picks)
+                profiles = test_picks[op]["profile"]
                 if args.convert_all_tests:
                     logger.debug("Running and converting all framework tests")
                     convert_tests(
@@ -574,6 +578,7 @@ def main():
                         op,
                         framework_test_dir,
                         root_output_dir,
+                        profiles,
                         trim_op_subdir=True,
                     )
                 else:
@@ -585,6 +590,7 @@ def main():
                         op,
                         framework_test_dir,
                         root_output_dir,
+                        profiles,
                         tests=framework_tests,
                         trim_op_subdir=True,
                     )
@@ -629,11 +635,17 @@ def main():
 
                 operator_group = test_params[op]["group"]
                 root_output_dir = args.output_dir / "operators"
+                profiles = test_params[op]["profile"]
                 if args.convert_all_tests:
                     logger.debug(f"Running and converting all {op} tests")
                     generate_results(args, op, op_build_dir)
                     output_dir = convert_tests(
-                        args, op, op_build_dir, root_output_dir, group=operator_group
+                        args,
+                        op,
+                        op_build_dir,
+                        root_output_dir,
+                        profiles,
+                        group=operator_group,
                     )
                 else:
                     if args.test_type in ["positive", "both"]:
@@ -646,6 +658,7 @@ def main():
                             op,
                             op_build_dir,
                             root_output_dir,
+                            profiles,
                             tests=tests_gen2,
                             group=operator_group,
                         )
@@ -661,6 +674,7 @@ def main():
                             op,
                             op_build_dir,
                             root_output_dir,
+                            profiles,
                             tests=negative_tests,
                             group=operator_group,
                         )

@@ -30,6 +30,8 @@ NAME_DESC_FILENAME = "desc.json"
 NAME_CONFORMANCE_RESULT_PREFIX = "Conformance-"
 NAME_REFMODEL_RUN_RESULT_SUFFIX = ".runner.tosa_refmodel_sut_run.npy"
 
+PROFILES_LIST = ["tosa-bi", "tosa-mi"]
+
 
 def parse_args(argv):
     """Parse the arguments."""
@@ -69,9 +71,18 @@ def parse_args(argv):
         help="Framework schema needed to convert framework models",
     )
     parser.add_argument(
+        "--profile",
+        dest="profile",
+        choices=PROFILES_LIST,
+        action="append",
+        required=True,
+        help="Profiles this test is suitable for. May be repeated",
+    )
+    parser.add_argument(
         "-v", "--verbose", dest="verbose", action="store_true", help="Verbose operation"
     )
     args = parser.parse_args(argv)
+
     return args
 
 
@@ -138,7 +149,11 @@ def convert_numpy_file(n_file: Path, output: Path, outname: Optional[str] = None
 
 
 def update_desc_json(
-    test_dir: Path, test_desc, output_dir: Optional[Path] = None, create_result=True
+    test_dir: Path,
+    test_desc,
+    output_dir: Optional[Path] = None,
+    create_result=True,
+    profiles=None,
 ):
     """Update the desc.json format for conformance and optionally create result."""
     ofm_files = []
@@ -171,6 +186,13 @@ def update_desc_json(
     if not test_desc["expected_failure"]:
         # Output expected result file for conformance if expected pass
         test_desc["expected_result_file"] = cfm_files
+
+    # Add supported profiles
+    if profiles is None:
+        # Assume base profile
+        profiles = [PROFILES_LIST[0]]
+    test_desc["profile"] = profiles
+
     return test_desc
 
 
@@ -289,7 +311,11 @@ def main(argv=None):
 
     # Update desc.json and convert result files to JSON
     test_desc = update_desc_json(
-        desc_filename.parent, test_desc, output_dir=args.output_dir, create_result=True
+        desc_filename.parent,
+        test_desc,
+        output_dir=args.output_dir,
+        create_result=True,
+        profiles=args.profile,
     )
     if not test_desc:
         # Error from conversion/update
