@@ -111,6 +111,14 @@ TF_OP_LIST = {
             ),
         },
     },
+    "relu1": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Relu1, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": [],
+            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
+        },
+    },
     "relu6": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Relu6, TGen.tgBasic, ArgGen.agNone),
