@@ -92,11 +92,28 @@ class TGen:
         return tf_placeholders, tf_consts
 
     @staticmethod
-    def tgConv2d(op, ifm_shape, dtype, rng):
+    def tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng):
 
         # Take the shape and generate an input and filter
         tf_placeholders = []
         tf_consts = []
+        tf_placeholders.append(("placeholder_0", TGen.getRand(ifm_shape, dtype, rng)))
+        tf_consts.append(("const_0", TGen.getRand(filter_shape, dtype, rng)))
+
+        try:
+            bias = op["bias"]
+        except KeyError:
+            bias = False
+
+        if bias:
+            # bias is 1D and size == output channels
+            bias_shape = (out_channels,)
+            tf_consts.append(("const_1", TGen.getRand(bias_shape, dtype, rng)))
+
+        return tf_placeholders, tf_consts
+
+    @staticmethod
+    def tgConv2d(op, ifm_shape, dtype, rng):
 
         # Require rank 4 shape
         if len(ifm_shape) != 4:
@@ -106,29 +123,13 @@ class TGen:
 
         # TODO: Hard-code the test by making the OFM depth 2x the IFM depth.
         # Could randomize this in the future.
-        filter_shape = (filter_h, filter_w, ifm_shape[3], ifm_shape[3] * 2)
+        out_channels = ifm_shape[3] * 2
+        filter_shape = (filter_h, filter_w, ifm_shape[3], out_channels)
 
-        tf_placeholders.append(("placeholder_0", TGen.getRand(ifm_shape, dtype, rng)))
-        tf_consts.append(("const_0", TGen.getRand(filter_shape, dtype, rng)))
-
-        try:
-            bias = op["bias"]
-        except KeyError:
-            bias = False
-
-        if bias:
-            # bias is 1D and size == output channels
-            bias_shape = (ifm_shape[3] * 2,)
-            tf_consts.append(("const_1", TGen.getRand(bias_shape, dtype, rng)))
-
-        return tf_placeholders, tf_consts
+        return TGen.tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng)
 
     @staticmethod
     def tgDepthwiseConv2d(op, ifm_shape, dtype, rng):
-
-        # Take the shape and generate an input and filter
-        tf_placeholders = []
-        tf_consts = []
 
         # Require rank 4 shape
         if len(ifm_shape) != 4:
@@ -136,31 +137,15 @@ class TGen:
 
         filter_h, filter_w = op["filter"]
 
-        # TODO: Hard-code the test by making the channel_multiplier=2. Could randomize
-        # this in the future.
+        # TODO: Hard-code the test by making the channel_multiplier=2.
+        # Could randomize this in the future.
         filter_shape = (filter_h, filter_w, ifm_shape[3], 2)
+        out_channels = ifm_shape[3] * 2
 
-        tf_placeholders.append(("placeholder_0", TGen.getRand(ifm_shape, dtype, rng)))
-        tf_consts.append(("const_0", TGen.getRand(filter_shape, dtype, rng)))
-
-        try:
-            bias = op["bias"]
-        except KeyError:
-            bias = False
-
-        if bias:
-            # bias is 1D and size == output channels
-            bias_shape = (ifm_shape[3] * 2,)
-            tf_consts.append(("const_1", TGen.getRand(bias_shape, dtype, rng)))
-
-        return tf_placeholders, tf_consts
+        return TGen.tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng)
 
     @staticmethod
     def tgTransposeConv2d(op, ifm_shape, dtype, rng):
-
-        # Take the shape and generate an input and filter
-        tf_placeholders = []
-        tf_consts = []
 
         # Require rank 4 shape
         if len(ifm_shape) != 4:
@@ -170,22 +155,26 @@ class TGen:
 
         # TODO: Hard-code the test by making the IFM depth 2x the OFM depth.
         # Could randomize this in the future.
-        filter_shape = (filter_h, filter_w, ifm_shape[3] * 2, ifm_shape[3])
+        out_channels = ifm_shape[3] * 2
+        filter_shape = (filter_h, filter_w, out_channels, ifm_shape[3])
 
-        tf_placeholders.append(("placeholder_0", TGen.getRand(ifm_shape, dtype, rng)))
-        tf_consts.append(("const_0", TGen.getRand(filter_shape, dtype, rng)))
+        return TGen.tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng)
 
-        try:
-            bias = op["bias"]
-        except KeyError:
-            bias = False
+    @staticmethod
+    def tgConv3d(op, ifm_shape, dtype, rng):
 
-        if bias:
-            # bias is 1D and size == output channels
-            bias_shape = ifm_shape[3] * 2
-            tf_consts.append(("const_1", TGen.getRand(bias_shape, dtype, rng)))
+        # Require rank 5 shape
+        if len(ifm_shape) != 5:
+            return [], []
 
-        return tf_placeholders, tf_consts
+        filter_d, filter_h, filter_w = op["filter"]
+
+        # TODO: Hard-code the test by making the OFM depth 2x the IFM depth.
+        # Could randomize this in the future.
+        out_channels = ifm_shape[3] * 2
+        filter_shape = (filter_d, filter_h, filter_w, ifm_shape[3], out_channels)
+
+        return TGen.tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng)
 
     @staticmethod
     def tgPooling(op, shapes, dtype, rng):

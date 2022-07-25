@@ -60,6 +60,7 @@ TYPE_FHIB = [tf.float32, tf.float16, tf.int32, tf.bool]
 #               processing in createDynamicOpLists)
 #   'bias':     boolean indicating that there is a bias component to be generated
 #   'qtypes':   List of QuantType quantized types to generate for this op
+#   'rank':     tuple (lowest rank, highest rank). Dimension range of input tensor.
 
 TF_OP_LIST = {
     "add": {
@@ -433,6 +434,37 @@ TF_OP_LIST = {
         "bias": True,
         "template": True,
     },
+    "conv3d_TEMPLATE": {
+        "operands": (1, 1),
+        "build_fcn": (TBuilder.Conv3d, TGen.tgConv3d, ArgGen.agConv3d),
+        "types": {
+            "tf": [tf.float32],
+            "tflite": [
+                tf.float32,
+                QuantType.CONV_U8_U8,
+                QuantType.CONV_I8_I8,
+                # Quantization to 16x8-bit not yet supported by tflite.
+            ],
+        },
+        "template": True,
+        "rank": (1, 5),
+    },
+    "conv3d_bias_TEMPLATE": {
+        "operands": (1, 2),
+        "build_fcn": (TBuilder.Conv3dWithBias, TGen.tgConv3d, ArgGen.agConv3d),
+        "types": {
+            "tf": [tf.float32],
+            "tflite": [
+                tf.float32,
+                QuantType.CONV_U8_U8,
+                QuantType.CONV_I8_I8,
+                # Quantization to 16x8-bit not yet supported by tflite.
+            ],
+        },
+        "bias": True,
+        "template": True,
+        "rank": (1, 5),
+    },
     "depthwise_conv2d_TEMPLATE": {
         "operands": (1, 1),
         "build_fcn": (
@@ -762,6 +794,9 @@ shape_list = [
     (1, 4, 8, 19),
     (1, 32, 32, 8),
     (1, 7, 7, 9),
+    (2, 2, 7, 7, 2),
+    (1, 4, 8, 21, 17),
+    (3, 32, 16, 16, 5),
 ]
 
 
@@ -776,13 +811,13 @@ def gen_rand_shapes(args):
     max_total_volume = 32 * 32 * 4
 
     shape_list = []
-    # Only iterate over ranks 2, 3, and 4
-    for rank in range(2, 5):
+    # Only iterate over ranks 2, 3, 4, and 5
+    for rank in range(2, 6):
         for n in range(args.random_shapes):
             new_shape = rng.integers(1, 48, size=rank)
 
-            # Set the batch dimension on 4D objects to 1
-            if rank == 4:
+            # Set the batch dimension on 4D or 5D objects to 1
+            if rank == 4 or rank == 5:
                 new_shape[0] = 1
 
             # Limit the total shape volume and throw out any
@@ -1190,6 +1225,16 @@ def build_const_net(
     op = TF_OP_LIST[op_name]
     op_fcn, tensor_gen_fcn, arg_gen_fcn = op["build_fcn"]
 
+    try:
+        rank_lo, rank_hi = op["rank"]
+    except KeyError:
+        # Set testing rank to (1, 4) in default.
+        rank_lo = 1
+        rank_hi = 4
+
+    if len(curr_shape) not in range(rank_lo, rank_hi + 1):
+        return
+
     addl_args_tuple = arg_gen_fcn(op, curr_shape, rng)
     for desc, addl_args in addl_args_tuple:
         # Only filter on the full test_name, not the output directory
@@ -1335,6 +1380,13 @@ def createDynamicOpLists():
         [5, 5],
     ]
 
+    # dim = [D, H, W]
+    KERNELS_3D = [
+        [1, 1, 1],
+        [2, 3, 3],
+        [3, 5, 5],
+    ]
+
     TEMPLATE_LIST = [
         "conv2d",
         "conv2d_bias",
@@ -1347,9 +1399,22 @@ def createDynamicOpLists():
         "transpose_conv2d",
     ]
 
+    TEMPLATE_LIST_CONV3D = [
+        "conv3d",
+        "conv3d_bias",
+    ]
+
     for t in TEMPLATE_LIST:
         for k in KERNELS:
             testName = "{}_{}x{}".format(t, k[0], k[1])
+            TF_OP_LIST[testName] = TF_OP_LIST["{}_TEMPLATE".format(t)].copy()
+            TF_OP_LIST[testName]["filter"] = k
+            TF_OP_LIST[testName]["template"] = False
+
+    # The existing operators don't support the dimension of kernel that is higher than 2.
+    for t in TEMPLATE_LIST_CONV3D:
+        for k in KERNELS_3D:
+            testName = "{}_{}x{}x{}".format(t, k[0], k[1], k[2])
             TF_OP_LIST[testName] = TF_OP_LIST["{}_TEMPLATE".format(t)].copy()
             TF_OP_LIST[testName]["filter"] = k
             TF_OP_LIST[testName]["template"] = False

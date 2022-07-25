@@ -171,7 +171,7 @@ int check_conv_attribute(tosa::TosaConvAttribute* attribute,
 
     ASSERT_MSG(conv_dimension == 2 || conv_dimension == 3, "Unsupported convolution dimension")
 
-    int32_t offset_d = 1 ? conv_dimension == 3 : 0;
+    int32_t offset_d = conv_dimension == 3 ? 1 : 0;
     int32_t ID = conv_dimension == 3 ? input_shape[1] : 1;
     int32_t IH = input_shape[1 + offset_d];
     int32_t IW = input_shape[2 + offset_d];

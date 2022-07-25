@@ -29,7 +29,7 @@ OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 4);
+    setRequiredRank(0, 6);
     INIT_ATTRIBUTE(Rescale);
 }
 
