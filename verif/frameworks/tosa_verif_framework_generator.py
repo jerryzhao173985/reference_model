@@ -139,6 +139,19 @@ TF_OP_LIST = {
             ),
         },
     },
+    "gelu": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Gelu, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            # Need compiler support for tf.Erf.
+            # "tf": TYPE_F,
+            "tflite": list(
+                # Only float32, int8 and uint8 supported currently
+                TYPE_F
+                + [QuantType.ALL_U8, QuantType.ALL_I8]
+            ),
+        },
+    },
     "concat": {
         "operands": (2, 0),
         "build_fcn": (TBuilder.Concat, TGen.tgBasic, ArgGen.agAxes),

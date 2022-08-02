@@ -101,6 +101,13 @@ class TBuilder:
         def eval(self, a):
             return tf.nn.leaky_relu(a, alpha=self.alpha, name=self.result_name)
 
+    class Gelu:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.nn.gelu(a, name=self.result_name)
+
     class Concat:
         def __init__(self, axis, name):
             self.axis = axis
