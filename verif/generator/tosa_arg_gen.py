@@ -1879,7 +1879,16 @@ class TosaArgGen:
             table = np.int32(
                 testGen.rng.integers(low=-32768, high=32768, size=[513])
             ).tolist()
-
+            # Make sure all slopes are within REQUIRE min/max 16-bit int
+            for idx in range(len(table) - 1):
+                slope = table[idx + 1] - table[idx]
+                # Alter the next table entry to force the slope to be ok
+                if slope > 32767:
+                    table[idx + 1] -= slope - 32767
+                if slope < -32768:
+                    table[idx + 1] -= slope + 32768
+                slope = table[idx + 1] - table[idx]
+                assert slope <= 32767 and slope >= -32768
         arg_list.append(
             (
                 "",

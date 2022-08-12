@@ -554,10 +554,14 @@ int OpTable<Rank, InDtype>::eval()
                 index         = std::min<int32_t>(std::max<int32_t>(index, 0), NumTableEntries - 1);    // 9-bit index
                 int32_t frac  = (input_truncated)&0x7F;    // 7-bit fraction
 
-                // 3. interpolate, generate 16.7 (23-bit) output
+                // 3. Add REQUIRE CHECK for extreme large/small slopes
                 int32_t base  = table[index];
                 int32_t next  = table[index + 1];
-                int32_t value = (base << 7) + (next - base) * frac;
+                int32_t slope = next - base;
+                REQUIRE(slope <= std::numeric_limits<int16_t>::max() && slope >= std::numeric_limits<int16_t>::min(), "OpTable: slope out of int16_t range");
+
+                // 4. interpolate, generate 16.7 (23-bit) output
+                int32_t value = (base << 7) + (slope) * frac;
 
                 return value;
             });
