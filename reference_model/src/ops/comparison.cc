@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ int OpEqual<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a == b; };
@@ -43,6 +44,7 @@ int OpGreater<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b; };
@@ -59,6 +61,7 @@ int OpGreaterEqual<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a >= b; };
@@ -71,11 +74,14 @@ int OpGreaterEqual<Rank, Dtype>::register_fcn()
 }
 
 // template explicit instantiation
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, INT32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, INT32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, INT32);

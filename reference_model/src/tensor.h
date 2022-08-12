@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2021, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -643,6 +643,7 @@ public:
         switch (tensorDtype_)
         {
             case DType_FLOAT:
+            case DType_FP16:
                 switch (rank)
                 {
                     case 0:

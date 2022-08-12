@@ -40,7 +40,7 @@ def _delete_data_file(file: Path):
         (np.uint16, trc.TestResult.MISMATCH),
         (np.uint32, trc.TestResult.MISMATCH),
         (np.uint64, trc.TestResult.MISMATCH),
-        (np.float16, trc.TestResult.MISMATCH),
+        (np.float16, trc.TestResult.PASS),
         (np.float32, trc.TestResult.PASS),
         (np.float64, trc.TestResult.MISMATCH),
         (bool, trc.TestResult.PASS),

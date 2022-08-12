@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -86,6 +86,42 @@ class CastHelper<DType_BOOL, OutDtype>
 {
 public:
     using InEigenType               = typename GetEigenType<DType_BOOL>::type;
+    using OutEigenType              = typename GetEigenType<OutDtype>::type;
+    using FcnType                   = std::function<OutEigenType(InEigenType)>;
+    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
+    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <DType InDtype>
+class CastHelper<InDtype, DType_FP16>
+{
+public:
+    using InEigenType  = typename GetEigenType<InDtype>::type;
+    using OutEigenType = typename GetEigenType<DType_FP16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <DType OutDtype>
+class CastHelper<DType_FP16, OutDtype>
+{
+public:
+    using InEigenType               = typename GetEigenType<DType_FP16>::type;
     using OutEigenType              = typename GetEigenType<OutDtype>::type;
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;

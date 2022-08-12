@@ -12,6 +12,7 @@ option(BUILD_MODEL_RUNNER_SAMPLE "Enable building of ModelRunner sample executab
 option(SERIALIZATION_DIR "Location where the TOSA Serialization Library 'include' folder is found" Off)
 option(FLATBUFFERS_DIR "Location where the FlatBuffers 'include' and 'lib' folders is found" Off)
 option(EIGEN_DIR "Location where the Eigen folder is found" Off)
+option(HALF_DIR "Location where the Half folder is found" Off)
 option(DOCTEST_DIR "Location where the doctest folder is found (If building unit tests)" Off)
 
 add_subdirectory(thirdparty)

@@ -16,8 +16,10 @@ class NumpyArrayEncoder(json.JSONEncoder):
         """Encode default operation."""
         if isinstance(obj, np.integer):
             return int(obj)
-        elif isinstance(obj, np.floating):
+        elif isinstance(obj, np.float32):
             return float(obj)
+        elif isinstance(obj, np.float16):
+            return np.float16(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(NumpyArrayEncoder, self).default(obj)

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2021, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
         {
             InEigenType min = (InEigenType)attribute->min_fp();
@@ -57,6 +58,7 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return (1.0 / (1.0 + (expf(-1.0 * a)))); };
             break;
@@ -72,6 +74,7 @@ int OpTanh<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return tanhf(a); };
             break;
@@ -83,10 +86,13 @@ int OpTanh<Rank, Dtype>::register_fcn()
 }
 
 // template explicit instantiation
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT16);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FLOAT);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FLOAT);

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -385,6 +385,14 @@ int SubgraphTraverser::allocateTensor()
                     tensor->setTensorValueInt64(i64_data.size(), i64_data.data());
                 }
                 break;
+                case DType_FP16:
+                {
+                    // Interpret f16 data as float
+                    std::vector<float> f16_data;
+                    TosaSerializationHandler::ConvertU8toF16(ts->GetData(), tensor->getElementCount(), f16_data);
+                    tensor->setTensorValueFloat(f16_data.size(), f16_data.data());
+                }
+                break;
                 case DType_FLOAT:
                 {
                     std::vector<float> fp32_data;
@@ -693,7 +701,7 @@ int SubgraphTraverser::validateGraph()
             DType dtype = currTensor->getDtype();
 
             // Float-point disallowed
-            if (dtype == DType_FLOAT)
+            if (dtype == DType_FLOAT || dtype == DType_FP16)
             {
                 WARNING("SubgraphTraverser::validateGraph(): TOSA Base Inference profile selected: All floating point "
                         "disabled, but %s tensor %s found\n",

@@ -147,14 +147,14 @@ def test_check(
         tolerance = 0.0
         # Fall-through to below to add failure values
 
-    elif reference_result.dtype == np.float32:
+    # TODO: update for fp16 tolerance
+    elif reference_result.dtype == np.float32 or reference_result.dtype == np.float16:
         tolerance = float_tolerance
         if np.allclose(reference_result, test_result, atol=tolerance, equal_nan=True):
             print_color(LogColors.GREEN, "Results PASS {}".format(test_name))
             return (TestResult.PASS, tolerance, "")
         msg = "Float result does not match within tolerance of {}".format(tolerance)
         # Fall-through to below to add failure values
-
     else:
         print_color(LogColors.RED, "Results UNSUPPORTED TYPE {}".format(test_name))
         msg = "Unsupported results type: {}".format(reference_result.dtype)

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2021, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ int OpAbs<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FLOAT:
+        case DType_FP16:
         case DType_INT32:
             this->fcn = [](InEigenType a) -> OutEigenType { return a > (InEigenType)0 ? a : (-a); };
             break;
@@ -111,6 +112,7 @@ int OpCeil<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return ceilf(a); };
             break;
@@ -158,6 +160,7 @@ int OpExp<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return expf(a); };
             break;
@@ -173,6 +176,7 @@ int OpFloor<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return floorf(a); };
             break;
@@ -188,6 +192,7 @@ int OpLog<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return logf(a); };
             break;
@@ -239,6 +244,7 @@ int OpNegate<Rank, Dtype>::register_fcn()
 
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType {
                 InEigenType result = -(a);
@@ -290,6 +296,7 @@ int OpReciprocal<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / a; };
             break;
@@ -305,6 +312,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
+        case DType_FP16:
         case DType_FLOAT:
             this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / sqrtf(a); };
             break;
@@ -316,6 +324,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
 }
 
 // template explicit instantiation
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, INT32);
 
@@ -323,23 +332,30 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FLOAT);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClz, INT32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FLOAT);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FLOAT);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FLOAT);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalNot, BOOL);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FLOAT);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FLOAT);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FLOAT);

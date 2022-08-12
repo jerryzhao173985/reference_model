@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2021, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -226,9 +226,11 @@ int OpScatter<Dtype>::eval()
 DEF_INSTANTIATE_ONE_TYPE(OpGather, INT8);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, INT16);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, INT32);
+DEF_INSTANTIATE_ONE_TYPE(OpGather, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, FLOAT);
 
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, INT8);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, INT16);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, INT32);
+DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, FLOAT);

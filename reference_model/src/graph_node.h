@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@
 
 #define DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, RANK, DTYPE) template class TosaReference::OP<RANK, DType_##DTYPE>;
 
+#define DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, RANK, DTYPE, ACCUM_DTYPE)                                      \
+    template class TosaReference::OP<RANK, DType_##DTYPE, DType_##ACCUM_DTYPE>;
+
 #define DEF_INSTANTIATE_ONE_RANK_TWO_TYPE(OP, RANK, DTYPE1, DTYPE2)                                                    \
     template class TosaReference::OP<RANK, DType_##DTYPE1, DType_##DTYPE2>;
 
@@ -35,7 +38,13 @@
 
 #define DEF_INSTANTIATE_ONE_TYPE(OP, DTYPE) template class TosaReference::OP<DType_##DTYPE>;
 
+#define DEF_INSTANTIATE_ONE_TYPE_ONE_ACCUM(OP, DTYPE, ACCUM_DTYPE)                                                     \
+    template class TosaReference::OP<DType_##DTYPE, DType_##ACCUM_DTYPE>;
+
 #define DEF_INSTANTIATE_TWO_TYPE(OP, DTYPE1, DTYPE2) template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2>;
+
+#define DEF_INSTANTIATE_TWO_TYPE_ONE_ACCUM(OP, DTYPE1, DTYPE2, ACCUM_DTYPE)                                            \
+    template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2, DType_##ACCUM_DTYPE>;
 
 #define DEF_INSTANTIATE_THREE_TYPE(OP, DTYPE1, DTYPE2, OP_TYPE)                                                        \
     template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2, OP_TYPE>;
@@ -56,6 +65,14 @@
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 4, DTYPE)                                                                    \
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 5, DTYPE)                                                                    \
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 6, DTYPE)
+
+#define DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, DTYPE, ACCUM_DTYPE)                                    \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 1, DTYPE, ACCUM_DTYPE)                                             \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 2, DTYPE, ACCUM_DTYPE)                                             \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 3, DTYPE, ACCUM_DTYPE)                                             \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 4, DTYPE, ACCUM_DTYPE)                                             \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 5, DTYPE, ACCUM_DTYPE)                                             \
+    DEF_INSTANTIATE_ONE_RANK_ONE_TYPE_ONE_ACCUM(OP, 6, DTYPE, ACCUM_DTYPE)
 
 #define DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OP, DTYPE1, DTYPE2)                                                  \
     DEF_INSTANTIATE_ONE_RANK_TWO_TYPE(OP, 0, DTYPE1, DTYPE2)                                                           \

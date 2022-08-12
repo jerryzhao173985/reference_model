@@ -43,13 +43,17 @@ else()
   set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
 endif()
 
-# If Flatbuffers or Eigen path isn't specified, set to thirdparty directory.
+# If Flatbuffers, Eigen, Half path isn't specified, set to thirdparty directory.
 if(NOT FLATBUFFERS_DIR)
   set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
 endif()
 
 if(NOT EIGEN_DIR)
   set(EIGEN_DIR "../thirdparty/eigen/")
+endif()
+
+if(NOT HALF_DIR)
+  set(HALF_DIR "../thirdparty/serialization_lib/third_party/half")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -92,6 +96,7 @@ target_include_directories(tosa_reference_model_lib
     ${EIGEN_DIR}
     ${EIGEN_DIR}/unsupported/
     ${SERIALIZATION_DIR}/include
+    ${HALF_DIR}/include
 )
 
 target_link_libraries(tosa_reference_model_lib
@@ -130,6 +135,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
       ${EIGEN_DIR}
       ${EIGEN_DIR}/unsupported/
       ${SERIALIZATION_DIR}/include
+      ${HALF_DIR}/include
   )
 
   target_link_libraries(tosa_reference_model
@@ -171,6 +177,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       ${EIGEN_DIR}
       ${EIGEN_DIR}/unsupported/
       ${SERIALIZATION_DIR}/include
+      ${HALF_DIR}/include
       ${DOCTEST_DIR}
     )
 
@@ -203,6 +210,7 @@ if(BUILD_MODEL_RUNNER_SAMPLE)
       ${EIGEN_DIR}
       ${EIGEN_DIR}/unsupported/
       ${SERIALIZATION_DIR}/include
+      ${HALF_DIR}/include
   )
 
   target_link_libraries(model_runner_sample
