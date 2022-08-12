@@ -76,7 +76,7 @@ cd build
 cmake ..
 ```
 
-Optionally, `-DCMAKE_BUILD_MODE=Debug` can be used on the `cmake`
+Optionally, `-DCMAKE_BUILD_TYPE=Debug` can be used on the `cmake`
 command to create a debug build.  Next compile using `make`:
 
 ``` bash
