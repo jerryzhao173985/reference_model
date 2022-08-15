@@ -169,6 +169,8 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         int32_t pad_front = attribute->padding()[2 * i];
         int32_t pad_back  = attribute->padding()[2 * i + 1];
         ERROR_IF((pad_front < 0) || (pad_back < 0), "OpPad: padding can't be smaller than 0");
+        ERROR_IF(out->getShape()[i] != pad_front + in->getShape()[i] + pad_back,
+                 "OpPad: output shape not equal to input plus padding");
         paddings_array[i] = std::make_pair(pad_front, pad_back);
     }
 
