@@ -3428,6 +3428,7 @@ class TosaTestGen:
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evPadSmallerZero,
+                TosaErrorValidator.evPadOutputShapeMismatch,
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
@@ -4261,6 +4262,10 @@ class OutputShaper:
 
         for i in range(len(output_shape)):
             output_shape[i] = padding[i][0] + padding[i][1] + output_shape[i]
+
+        if error_name == ErrorIf.PadOutputShapeMismatch:
+            bad_dim = rng.choice(range(len(output_shape)))
+            output_shape[bad_dim] -= rng.choice([1, 2])
 
         # Fix negative output shape if error_if test causes it
         if error_name == ErrorIf.PadSmallerZero and min(output_shape) < 1:

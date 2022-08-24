@@ -43,6 +43,7 @@ class ErrorIf(object):
     DilationSmallerOne = "DilationSmallerOne"
     PadSmallerZero = "PadSmallerZero"
     PadLargerEqualKernel = "PadLargerEqualKernel"
+    PadOutputShapeMismatch = "PadOutputShapeMismatch"
     PoolingOutputShapeMismatch = "PoolingOutputShapeMismatch"
     PoolingOutputShapeNonInteger = "PoolingOutputShapeNonInteger"
     ConvOutputShapeMismatch = "ConvOutputShapeMismatch"
@@ -1268,6 +1269,30 @@ class TosaErrorValidator:
                     or pad[2] >= kernel[1]
                     or pad[3] >= kernel[1]
                 ):
+                    error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evPadOutputShapeMismatch(check=False, **kwargs):
+        error_name = ErrorIf.PadOutputShapeMismatch
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Pad output shape mismatch for requested padding"
+
+        if check:
+            pad = kwargs["pad"]
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            for dim, padding in enumerate(pad):
+                expected_size = input_shape[dim] + padding[0] + padding[1]
+                if expected_size != output_shape[dim]:
                     error_result = True
 
         info_dict = {
