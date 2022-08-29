@@ -171,8 +171,9 @@ class TGen:
 
         # TODO: Hard-code the test by making the OFM depth 2x the IFM depth.
         # Could randomize this in the future.
-        out_channels = ifm_shape[3] * 2
-        filter_shape = (filter_d, filter_h, filter_w, ifm_shape[3], out_channels)
+        in_channels = ifm_shape[4]
+        out_channels = in_channels * 2
+        filter_shape = (filter_d, filter_h, filter_w, in_channels, out_channels)
 
         return TGen.tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng)
 
