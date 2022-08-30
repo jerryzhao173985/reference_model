@@ -1901,7 +1901,9 @@
                 "--tensor-dim-range",
                 "1,16",
                 "--target-rank",
-                "4"
+                "4",
+                "--target-rank",
+                "5"
             ],
             [
                 "--target-shape",

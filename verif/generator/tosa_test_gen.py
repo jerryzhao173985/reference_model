@@ -3653,7 +3653,6 @@ class TosaTestGen:
         "rescale": {
             "op": Op.RESCALE,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_rescale,
                 TosaTensorGen.tgBasic,
@@ -3677,7 +3676,6 @@ class TosaTestGen:
                 TosaErrorValidator.evScaleNotTrue,
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
-                TosaErrorValidator.evWrongRank,
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
