@@ -737,6 +737,21 @@ class TBuilder:
                 )
             return tf.stack(sums, 0, name=self.result_name)
 
+    class MirrorPad:
+        def __init__(self, padding, mode, name):
+            self.padding = padding
+            self.mode = mode
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.pad(
+                a,
+                self.padding,
+                mode=self.mode,
+                constant_values=0,
+                name=self.result_name,
+            )
+
     class Pad:
         def __init__(self, padding, name):
             self.padding = padding

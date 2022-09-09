@@ -592,6 +592,11 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.Unstack, TGen.tgPooling, ArgGen.agAxes),
         "types": TYPE_F,
     },
+    "mirrorpad": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.MirrorPad, TGen.tgBasic, ArgGen.agMirrorPad),
+        "types": TYPE_FI,
+    },
     "pad": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Pad, TGen.tgBasic, ArgGen.agPad),

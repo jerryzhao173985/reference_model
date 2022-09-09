@@ -525,6 +525,43 @@ class ArgGen:
             axes.append(["_axis{}".format(i), [i]])
         return axes
 
+    def agMirrorPad(op, shapes, rng):
+        arg_list = []
+
+        rank = len(shapes)
+        for mode in ["REFLECT", "SYMMETRIC"]:
+            for left in range(3):
+                for right in range(3):
+                    paddings = np.zeros((rank, 2), dtype=np.int32)
+                    is_valid = True
+
+                    # Fill in the padding parameter if the values are valid on each dimension,
+                    # otherwise drop that case.
+                    for d in range(rank):
+                        paddings[d, 0] = left
+                        paddings[d, 1] = right
+
+                        # In "REFLECT" mode, paddings must be no greater than tensor dim size - 1.
+                        if mode == "REFLECT":
+                            if (left > shapes[d] - 1) or (right > shapes[d] - 1):
+                                is_valid = False
+                                break
+
+                        # In "SYMMETRIC" mode, paddings must be no greater than tensor dim size.
+                        else:
+                            if (left > shapes[d]) or (right > shapes[d]):
+                                is_valid = False
+                                break
+
+                    if is_valid:
+                        arg_list.append(
+                            [
+                                "_pad{}{}_{}".format(left, right, mode[0:3].lower()),
+                                [paddings, mode],
+                            ]
+                        )
+        return arg_list
+
     def agPad(op, shapes, rng):
         arg_list = []
 
