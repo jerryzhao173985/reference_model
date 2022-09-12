@@ -25,6 +25,6 @@ repos:
         name: pytest
         stages: [commit]
         language: system
-        entry: pytest
+        entry: pytest -m "not postcommit"
         types: [python]
         pass_filenames: false

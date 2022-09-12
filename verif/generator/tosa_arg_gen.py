@@ -29,8 +29,12 @@ class TosaQuantGen:
     def getZeroPoint(testGen, dtype, error_name=None):
 
         if dtype == DType.INT8:
+            if testGen.args.zeropoint is not None:
+                return min(127, max(-128, testGen.args.zeropoint))
             return testGen.randInt(-128, 128)
         elif dtype == DType.UINT8:
+            if testGen.args.zeropoint is not None:
+                return min(255, max(0, testGen.args.zeropoint))
             return testGen.randInt(0, 256)
         elif error_name in [
             ErrorIf.InputZeroPointNotZero,

@@ -23,7 +23,7 @@ def auto_int(x):
     return int(x, 0)
 
 
-def parseArgs():
+def parseArgs(argv):
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -184,14 +184,22 @@ def parseArgs():
         help="allow oversize padding, stride and kernel tests",
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        "--zero-point",
+        dest="zeropoint",
+        default=None,
+        type=int,
+        help="set a particular zero point for all valid positive tests",
+    )
+
+    args = parser.parse_args(argv)
 
     return args
 
 
-def main():
+def main(argv=None):
 
-    args = parseArgs()
+    args = parseArgs(argv)
 
     ttg = TosaTestGen(args)
 

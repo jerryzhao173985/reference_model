@@ -2252,6 +2252,10 @@ class TosaTestGen:
 
     def createDynamicOpLists(self):
 
+        if "conv2d_TEMPLATE" not in self.TOSA_OP_LIST:
+            # Already created these lists (can occur when class is initialized more than once)
+            return
+
         # Dynamically create op lists for convolutions with a list of kernel sizes
         KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
 

@@ -6,4 +6,8 @@ build/
 dist/
 *.egg-info
 verif/tests/test-result-*.tests.tosa_mock_sut_run.npy
+verif/tests/_pytest_vtest_*
 .coverage
+result.xml
+vtest/
+examples/*/*/out.npy
