@@ -268,14 +268,14 @@ void func_debug_t::set_inst_mask(const uint64_t mask)
 }
 
 std::vector<std::pair<std::string, int>> debug_str_table = {
-#define DEBUG_MODE(NAME, BIT) {#NAME, BIT},
+#define DEBUG_MODE(NAME, BIT) {#NAME, DEBUG_##NAME},
 #include "debug_modes.def"
 #undef DEBUG_MODE
 };
 
 void func_debug_t::set_mask(const std::string& str)
 {
-    if (str == "all")
+    if (str == "ALL")
     {
         set_mask(UINT64_MAX - 1);
         return;
@@ -330,6 +330,7 @@ std::string func_debug_t::get_debug_mask_help_string()
     for (auto& mask : debug_str_table) {
         rval += mask.first + " ";
     }
+    rval += "ALL";
     return rval;
 }
 
