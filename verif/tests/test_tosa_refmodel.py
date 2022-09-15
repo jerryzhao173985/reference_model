@@ -240,8 +240,8 @@ def test_refmodel_simple_op(tosaTest):
 
         # Check Numpy result versus refmodel
         check_result, tolerance, msg = tosa_check(
-            str(result_file),
-            str(ofm_file),
+            result_file,
+            ofm_file,
             test_name=test_dir.name,
             misc_checks=misc_checks,
         )

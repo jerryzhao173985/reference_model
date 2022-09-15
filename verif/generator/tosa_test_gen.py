@@ -36,6 +36,9 @@ class TosaTestGen:
         self.quantGen = TosaQuantGen()
         # Force makeShape to do a specific starting shape
         self.targetted_shape = None
+        # Work out floating point range
+        self.random_fp_low = min(args.tensor_fp_value_range)
+        self.random_fp_high = max(args.tensor_fp_value_range)
 
     def createSerializer(self, opName, testPath):
         self.testPath = os.path.join(opName, testPath)
@@ -84,13 +87,25 @@ class TosaTestGen:
                 self.rng.integers(low=-(1 << 47), high=(1 << 47), size=shape)
             )
         elif dtype == DType.FP16:
-            return np.float16(self.rng.random(size=shape))
+            return np.float16(
+                self.rng.uniform(
+                    low=self.random_fp_low, high=self.random_fp_high, size=shape
+                )
+            )
         elif dtype == DType.BF16:
-            f32_tensor = np.float32(self.rng.random(size=shape))
+            f32_tensor = np.float32(
+                self.rng.uniform(
+                    low=self.random_fp_low, high=self.random_fp_high, size=shape
+                )
+            )
             # Floor the last 16 bits of each f32 value
             return np.float32(vect_f32_to_bf16(f32_tensor))
         elif dtype == DType.FP32:
-            return np.float32(self.rng.random(size=shape))
+            return np.float32(
+                self.rng.uniform(
+                    low=self.random_fp_low, high=self.random_fp_high, size=shape
+                )
+            )
         else:
             raise Exception("Unrecognized Dtype: {}".format(dtype))
 
@@ -135,12 +150,17 @@ class TosaTestGen:
 
     def getRandNumberDType(self, dtype):
         if dtype == DType.FP32:
-            return self.rng.random()
+            return np.float32(
+                self.rng.uniform(low=self.random_fp_low, high=self.random_fp_high)
+            )
         elif dtype == DType.FP16:
-            rand_f32 = self.rng.random()
-            return np.float16(rand_f32)
+            return np.float16(
+                self.rng.uniform(low=self.random_fp_low, high=self.random_fp_high)
+            )
         elif dtype == DType.BF16:
-            rand_f32 = self.rng.random()
+            rand_f32 = np.float32(
+                self.rng.uniform(low=self.random_fp_low, high=self.random_fp_high)
+            )
             return vect_f32_to_bf16(rand_f32)
         elif dtype == DType.BOOL:
             return self.rng.choice([False, True])

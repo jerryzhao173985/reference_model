@@ -2,7 +2,6 @@
 # Copyright (c) 2020-2022, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
-import glob
 import importlib
 import os
 import queue
@@ -38,6 +37,13 @@ def parseArgs(argv):
         dest="test_list_file",
         type=Path,
         help="File containing list of tests to run (one per line)",
+    )
+    parser.add_argument(
+        "-r",
+        "--recursive",
+        dest="recursive_tests",
+        action="store_true",
+        help="Recursively search for tests",
     )
     parser.add_argument(
         "--operator-fbs",
@@ -146,27 +152,28 @@ def parseArgs(argv):
 EXCLUSION_PREFIX = ["test", "model", "desc"]
 
 
-def convert2Numpy(testDir):
+def convert2Numpy(test_path):
     """Convert all the JSON numpy files back into binary numpy."""
-    jsons = glob.glob(os.path.join(testDir, "*.json"))
+    jsons = test_path.glob("*.json")
     for json in jsons:
         for exclude in EXCLUSION_PREFIX:
-            if os.path.basename(json).startswith(exclude):
-                json = ""
+            if json.name.startswith(exclude):
+                json = None
+                break
         if json:
-            # debug print("Converting " + json)
-            json2numpy.json_to_npy(Path(json))
+            # debug print(f"Converting {json}")
+            json2numpy.json_to_npy(json)
 
 
 def workerThread(task_queue, runnerList, args, result_queue):
     """Worker thread that runs the next test from the queue."""
     while True:
         try:
-            test = task_queue.get(block=False)
+            test_path = task_queue.get(block=False)
         except queue.Empty:
             break
 
-        if test is None:
+        if test_path is None:
             break
 
         msg = ""
@@ -176,21 +183,25 @@ def workerThread(task_queue, runnerList, args, result_queue):
                 start_time = datetime.now()
                 # Set up system under test runner
                 runnerName = runnerModule.__name__
-                runner = runnerModule.TosaSUTRunner(args, runnerArgs, test)
+                runner = runnerModule.TosaSUTRunner(args, runnerArgs, test_path)
 
                 skip, reason = runner.skipTest()
                 if skip:
                     msg = "Skipping {} test".format(reason)
-                    print("{} {}".format(msg, test))
+                    print("{} {}".format(msg, test_path))
                     rc = TosaTestRunner.Result.SKIPPED
                 else:
                     # Convert JSON data files into numpy format on first pass
                     if not converted:
-                        convert2Numpy(test)
+                        convert2Numpy(test_path)
                         converted = True
 
                     if args.verbose:
-                        print("Running runner {} with test {}".format(runnerName, test))
+                        print(
+                            "Running runner {} with test {}".format(
+                                runnerName, test_path
+                            )
+                        )
                     try:
                         grc, gmsg = runner.runTestGraph()
                         rc, msg = runner.testResult(grc, gmsg)
@@ -220,7 +231,9 @@ def workerThread(task_queue, runnerList, args, result_queue):
                 rc = TosaTestRunner.Result.INTERNAL_ERROR
             finally:
                 end_time = datetime.now()
-                result_queue.put((runnerName, test, rc, msg, end_time - start_time))
+                result_queue.put(
+                    (runnerName, test_path, rc, msg, end_time - start_time)
+                )
 
         task_queue.task_done()
 
@@ -262,10 +275,10 @@ def createXUnitResults(xunitFile, runnerList, resultLists, verbose):
         xunit_suite = xunit_result.create_suite(runner)
 
         # Sort by test name
-        for test, rc, msg, time_delta in sorted(
+        for test_path, rc, msg, time_delta in sorted(
             resultLists[runner], key=lambda tup: tup[0]
         ):
-            test_name = test
+            test_name = str(test_path)
             xt = xunit.xunit_test(test_name, runner)
 
             xt.time = str(
@@ -293,12 +306,27 @@ def createXUnitResults(xunitFile, runnerList, resultLists, verbose):
     xunit_result.write_results(xunitFile)
 
 
+def getTestsInPath(path):
+    # Recursively find any tests in this directory
+    desc_path = path / "desc.json"
+    if desc_path.is_file():
+        return [path]
+    elif path.is_dir():
+        path_list = []
+        for p in path.glob("*"):
+            path_list.extend(getTestsInPath(p))
+        return path_list
+    else:
+        return []
+
+
 def main(argv=None):
     """Start worker threads to do the testing and outputs the results."""
     args = parseArgs(argv)
 
-    if TOSA_REFMODEL_RUNNER in args.sut_module and not os.path.isfile(
-        args.ref_model_path
+    if (
+        TOSA_REFMODEL_RUNNER in args.sut_module
+        and not Path(args.ref_model_path).is_file()
     ):
         print(
             "Argument error: Reference Model not found ({})".format(args.ref_model_path)
@@ -307,7 +335,7 @@ def main(argv=None):
 
     if args.test_list_file:
         try:
-            with open(args.test_list_file) as f:
+            with args.test_list_file.open("r") as f:
                 args.test = f.read().splitlines()
         except Exception as e:
             print(
@@ -323,12 +351,21 @@ def main(argv=None):
     taskQueue = queue.Queue()
     resultQueue = queue.Queue()
 
-    for t in args.test:
-        if os.path.isfile(t):
-            if not os.path.basename(t) == "README":
-                print("Warning: Skipping test {} as not a valid directory".format(t))
+    for tdir in args.test:
+        tpath = Path(tdir)
+        if tpath.is_file():
+            if tpath.name != "README":
+                print(
+                    "Warning: Skipping test {} as not a valid directory".format(tpath)
+                )
         else:
-            taskQueue.put((t))
+            if args.recursive_tests:
+                tpath_list = getTestsInPath(tpath)
+            else:
+                tpath_list = [tpath]
+
+            for t in tpath_list:
+                taskQueue.put((t))
 
     print(
         "Running {} tests on {} system{} under test".format(
@@ -356,7 +393,7 @@ def main(argv=None):
 
     while True:
         try:
-            runner, test, rc, msg, time_delta = resultQueue.get(block=False)
+            runner, test_path, rc, msg, time_delta = resultQueue.get(block=False)
             resultQueue.task_done()
         except queue.Empty:
             break
@@ -368,7 +405,7 @@ def main(argv=None):
             msg = "{} ...\nskipped {} bytes\n... {}".format(
                 msg[:half], trimmed, msg[-half:]
             )
-        resultLists[runner].append((test, rc, msg, time_delta))
+        resultLists[runner].append((test_path, rc, msg, time_delta))
         results[runner][rc] += 1
 
     createXUnitResults(args.xunit_file, runnerList, resultLists, args.verbose)

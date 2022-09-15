@@ -21,9 +21,9 @@ class TosaRefReturnCode(IntEnum):
 class TosaSUTRunner(TosaTestRunner):
     """TOSA Reference Model runner."""
 
-    def __init__(self, args, runnerArgs, testDir):
+    def __init__(self, args, runnerArgs, testDirPath):
         """Initialize using the given test details."""
-        super().__init__(args, runnerArgs, testDir)
+        super().__init__(args, runnerArgs, testDirPath)
 
     def runTestGraph(self):
         """Run the test on the reference model."""

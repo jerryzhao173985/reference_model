@@ -7,9 +7,9 @@ from runner.tosa_test_runner import TosaTestRunner
 class TosaSUTRunner(TosaTestRunner):
     """TOSA dummy SUT runner."""
 
-    def __init__(self, args, runnerArgs, testDir):
+    def __init__(self, args, runnerArgs, testDirPath):
         """Initialize using the given test details."""
-        super().__init__(args, runnerArgs, testDir)
+        super().__init__(args, runnerArgs, testDirPath)
 
     def runTestGraph(self):
         """Nothing run as this is a dummy SUT that does nothing."""

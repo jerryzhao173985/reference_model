@@ -33,47 +33,49 @@ class TosaTestInvalid(Exception):
 class TosaTestRunner:
     """TOSA Test Runner template class for systems under test."""
 
-    def __init__(self, args, runnerArgs, testDir):
+    def __init__(self, args, runnerArgs, testDirPath):
         """Initialize and load JSON meta data file."""
         self.args = args
         self.runnerArgs = runnerArgs
-        self.testDir = testDir
-        self.testName = Path(self.testDir).name
+        self.testDir = str(testDirPath)
+        self.testDirPath = testDirPath
+        self.testName = self.testDirPath.name
 
         set_print_in_color(not args.no_color)
 
         # Check if we want to run binary and if its already converted
-        descFilePath = Path(testDir, "desc.json")
-        descBinFilePath = Path(testDir, "desc_binary.json")
+        descFilePath = testDirPath / "desc.json"
+        descBinFilePath = testDirPath / "desc_binary.json"
         if args.binary:
             if descBinFilePath.is_file():
                 descFilePath = descBinFilePath
 
         try:
             # Load the json test file
-            with open(descFilePath, "r") as fd:
+            with descFilePath.open("r") as fd:
                 self.testDesc = json.load(fd)
         except Exception as e:
             raise TosaTestInvalid(str(descFilePath), e)
 
         # Convert to binary if needed
-        tosaFilePath = Path(testDir, self.testDesc["tosa_file"])
+        tosaFilePath = testDirPath / self.testDesc["tosa_file"]
         if args.binary and tosaFilePath.suffix == ".json":
             # Convert tosa JSON to binary
             json2fbbin.json_to_fbbin(
                 Path(args.flatc_path),
                 Path(args.operator_fbs),
                 tosaFilePath,
-                Path(testDir),
+                testDirPath,
             )
             # Write new desc_binary file
             self.testDesc["tosa_file"] = tosaFilePath.stem + ".tosa"
-            with open(descBinFilePath, "w") as fd:
+            with descBinFilePath.open("w") as fd:
                 json.dump(self.testDesc, fd, indent=2)
             descFilePath = descBinFilePath
 
         # Set location of desc.json (or desc_binary.json) file in use
         self.descFile = str(descFilePath)
+        self.descFilePath = descFilePath
 
     def skipTest(self):
         """Check if the test is skipped due to test type or profile selection."""
@@ -109,9 +111,9 @@ class TosaTestRunner:
                 for resultNum, resultFileName in enumerate(self.testDesc["ofm_file"]):
                     if "expected_result_file" in self.testDesc:
                         try:
-                            conformanceFile = Path(
-                                self.testDir,
-                                self.testDesc["expected_result_file"][resultNum],
+                            conformanceFilePath = (
+                                self.testDirPath
+                                / self.testDesc["expected_result_file"][resultNum]
                             )
                         except IndexError:
                             result = TosaTestRunner.Result.INTERNAL_ERROR
@@ -122,14 +124,14 @@ class TosaTestRunner:
                             print(msg)
                             break
                     else:
-                        conformanceFile = None
-                    resultFile = Path(self.testDir, resultFileName)
+                        conformanceFilePath = None
+                    resultFilePath = self.testDirPath / resultFileName
 
-                    if conformanceFile:
+                    if conformanceFilePath:
                         print_result_line = False  # Checker will print one for us
                         chkResult, tolerance, msg = test_check(
-                            str(conformanceFile),
-                            str(resultFile),
+                            conformanceFilePath,
+                            resultFilePath,
                             test_name=self.testName,
                         )
                         # Change EXPECTED_PASS assumption if we have any failures
@@ -140,18 +142,18 @@ class TosaTestRunner:
                                 print(msg)
                     else:
                         # No conformance file to verify, just check results file exists
-                        if not resultFile.is_file():
+                        if not resultFilePath.is_file():
                             result = TosaTestRunner.Result.UNEXPECTED_FAILURE
-                            msg = "Results file is missing: {}".format(resultFile)
+                            msg = "Results file is missing: {}".format(resultFilePath)
                             messages.append(msg)
                             print(msg)
 
-                    if resultFile.is_file():
-                        # Move the resultFile to allow subsequent system under
+                    if resultFilePath.is_file():
+                        # Move the resultFilePath to allow subsequent system under
                         # tests to create them and to test they have been created
-                        resultFile = resultFile.rename(
-                            resultFile.with_suffix(
-                                ".{}{}".format(self.__module__, resultFile.suffix)
+                        resultFilePath = resultFilePath.rename(
+                            resultFilePath.with_suffix(
+                                ".{}{}".format(self.__module__, resultFilePath.suffix)
                             )
                         )
 

@@ -135,10 +135,39 @@ class Operator:
 
         test_dir: the directory where the tests for all operators can be found
         config: a dictionary with:
-                "params" - mappings of parameter names to the values to select
+                "params" - a dictionary with mappings of parameter names to the values
+                    to select (a sub-set of expected values for instance)
                 "permutes" - a list of parameter names to be permuted
+                "preselected" - a list of dictionaries containing parameter names and
+                    pre-chosen values
+                "sparsity" - a dictionary of parameter names with a sparsity value
                 "errorifs" - list of ERRORIF case names to be selected (negative test)
         negative: bool indicating if negative testing is being selected (ERRORIF tests)
+
+        EXAMPLE CONFIG:
+            "params": {
+                "output_type": [
+                    "outi8",
+                    "outb"
+                ]
+            },
+            "permutes": [
+                "shape",
+                "type"
+            ],
+            "sparsity": {
+                "pad": 15
+            },
+            "preselected": [
+                {
+                    "shape": "6",
+                    "type": "i8",
+                    "pad": "pad00"
+                }
+            ],
+            "errorifs": [
+                "InputZeroPointNotZero"
+            ]
         """
         assert isinstance(
             self.name, str

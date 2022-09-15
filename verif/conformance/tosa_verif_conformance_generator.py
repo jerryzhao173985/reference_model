@@ -35,8 +35,15 @@ PROFILE_OPS_INFO = {
         "operator_test_params": "tosa_base_profile_ops_info.json",
         "framework_tests": "tosa_base_profile_framework_ops_info.json",
         "exclude_types": [],
-    }
+    },
+    "tosa-mi": {
+        # Note: This is just the extra tests not in the base profile!
+        "operator_test_params": "tosa_main_profile_ops_info.json",
+        "framework_tests": "tosa_main_profile_framework_ops_info.json",
+        "exclude_types": [],
+    },
 }
+PROFILES_ALL = "all"
 
 LOCATION_REF_MODEL_BINARY = Path("build/reference_model/tosa_reference_model")
 
@@ -181,7 +188,7 @@ def _get_all_tests_list(
     return tests
 
 
-def generate_results(args, operator, op_build_dir, tests=None):
+def generate_results(args, profile, operator, op_build_dir, tests=None):
     """Run tests on reference model and save result to the test directory."""
     num_cores = args.num_cores
     run_tests_cmd = "tosa_verif_run_tests"
@@ -201,7 +208,7 @@ def generate_results(args, operator, op_build_dir, tests=None):
     if not tests:
         # Do not need to run ERRORIF tests as they don't have result files
         tests = _get_all_tests_list(
-            args.profile, op_build_dir, operator, exclude_negative_tests=True
+            profile, op_build_dir, operator, exclude_negative_tests=True
         )
 
     for test in tests:
@@ -232,10 +239,11 @@ def generate_results(args, operator, op_build_dir, tests=None):
 
 def convert_tests(
     args,
+    profile,
     operator,
     op_build_dir,
     output_dir,
-    profiles,
+    op_profiles_list,
     tests=None,
     group=None,
     trim_op_subdir=False,
@@ -247,8 +255,10 @@ def convert_tests(
         output_dir = output_dir / group
 
     ref_cmd_base = ["--ref-model-directory", str(ref_model_dir)]
-    for profile in profiles:
-        ref_cmd_base.extend(["--profile", profile])
+    # This op maybe in more than one profile - e.g. tosa_bi and tosa_mi
+    # even if we are only producing tests for tosa_mi
+    for op_profile in op_profiles_list:
+        ref_cmd_base.extend(["--profile", op_profile])
     if args.framework_schema:
         ref_cmd_base.extend(["--framework-schema", str(args.framework_schema)])
     ref_cmd_base.append("--output-directory")
@@ -256,8 +266,8 @@ def convert_tests(
     ref_cmds = []
 
     if not tests:
-        tests = _get_all_tests_list(args.profile, op_build_dir, operator)
-        logger.info(f"Converting all {args.profile} profile tests")
+        tests = _get_all_tests_list(profile, op_build_dir, operator)
+        logger.info(f"Converting all {profile} profile tests")
 
     # Controls if we copy the tests in their operator sub-directory or not
     output_dir_relative_pos = -1 if trim_op_subdir else -2
@@ -303,16 +313,19 @@ def convert_tests(
     return output_dir
 
 
-def get_op_tests_selection(args, operator, op_build_dir, test_params, negative=False):
+def get_op_tests_selection(
+    args, profile, operator, op_build_dir, test_params, negative=False
+):
     """Use test picker to get subsection of tests generated."""
     assert operator in test_params
+    logger.info("Choosing {} tests".format(("negative" if negative else "positive")))
     try:
         op_params = test_params[operator]
         op = Operator.registry[operator](
             op_build_dir,
             op_params,
             negative,
-            exclude_types=PROFILE_OPS_INFO[args.profile]["exclude_types"],
+            exclude_types=PROFILE_OPS_INFO[profile]["exclude_types"],
         )
     except KeyError:
         logger.error(f"{operator} operator is not supported by test_select")
@@ -321,11 +334,11 @@ def get_op_tests_selection(args, operator, op_build_dir, test_params, negative=F
     return op.select_tests()
 
 
-def check_op_tests(args, operator, output_dir):
+def check_op_tests(args, profile, operator, output_dir):
     """Move test folders than contain files larger than 30MB to new directory."""
     destination_dir = str(args.output_dir) + "_large_files"
 
-    tests = _get_all_tests_list(args.profile, output_dir, operator, include_all=True)
+    tests = _get_all_tests_list(profile, output_dir, operator, include_all=True)
     if not tests:
         logger.error(
             f"Couldn't find any tests to size check for {operator} in {output_dir}"
@@ -408,6 +421,7 @@ def parse_args(argv=None):
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
     profiles = list(PROFILE_OPS_INFO.keys())
+    profiles.append(PROFILES_ALL)
     parser.add_argument(
         "--profile",
         dest="profile",
@@ -555,7 +569,6 @@ def main():
     logging.getLogger("test_select").setLevel(loglevel)
     logging.getLogger("convert2conformance").setLevel(loglevel)
 
-    print(f"Creating conformance tests for TOSA {args.profile} profile")
     print(f"Output directory: {args.output_dir}")
 
     if args.random_seed != DEFAULT_SEED:
@@ -567,147 +580,172 @@ def main():
     logger.debug(f"Creating build directory: {args.build_dir}")
     args.build_dir.mkdir(parents=True, exist_ok=True)
 
+    # TODO: For tosa-mi should really generate tosa-bi profile as well
+    # - for now leave it as subset instead of as superset (for testing)
+    if args.profile == PROFILES_ALL:
+        profiles = list(PROFILE_OPS_INFO.keys())
+    else:
+        profiles = [args.profile]
+
     try:
-        # Framework unit tests
-        if args.unit_tests in ["framework", "both"]:
-            logger.debug("Creating FRAMEWORK unit tests")
-            test_picks_file = (
-                args.param_json_dir / PROFILE_OPS_INFO[args.profile]["framework_tests"]
-            )
-            try:
-                with open(test_picks_file, "r") as fd:
-                    test_picks = json.load(fd)
-            except Exception as e:
-                logger.error(
-                    f"Couldn't load framework tests info - {test_picks_file}: {e}"
+        for profile in profiles:
+            print(f"Creating conformance tests for TOSA {profile} profile")
+            # Framework unit tests
+            if args.unit_tests in ["framework", "both"]:
+                logger.debug("Creating FRAMEWORK unit tests")
+                test_picks_file = (
+                    args.param_json_dir / PROFILE_OPS_INFO[profile]["framework_tests"]
                 )
-                return 1
-
-            operators = args.operators
-            if not operators:
-                # Create tests for all the operators
-                operators = list(test_picks.keys())
-
-            root_output_dir = args.output_dir / "frameworks" / "tflite" / "operators"
-            for op in operators:
-                if op not in test_picks:
-                    logger.warning(
-                        f"Framework op {op} not found in {test_picks_file} - skipping"
+                try:
+                    with open(test_picks_file, "r") as fd:
+                        test_picks = json.load(fd)
+                except Exception as e:
+                    logger.error(
+                        f"Couldn't load framework tests info - {test_picks_file}: {e}"
                     )
-                    continue
+                    return 1
 
-                logger.debug(f"Copying and renaming {op}")
-                framework_test_dir = copy_rename_framework_tests(args, op, test_picks)
-                profiles = test_picks[op]["profile"]
-                if args.convert_all_tests:
-                    logger.debug("Running and converting all framework tests")
+                operators = args.operators
+                if not operators:
+                    # Create tests for all the operators
+                    operators = list(test_picks.keys())
+
+                root_output_dir = (
+                    args.output_dir / "frameworks" / "tflite" / "operators"
+                )
+                for op in operators:
+                    logger.info(f"FRAMEWORK OP: {op}")
+                    if op not in test_picks:
+                        logger.warning(
+                            f"Framework op {op} not found in {test_picks_file} - skipping"
+                        )
+                        continue
+
+                    op_profiles_list = test_picks[op]["profile"]
+                    if (
+                        args.profile != PROFILES_ALL
+                        and args.profile not in op_profiles_list
+                    ):
+                        # Skip this operator as not part of the profile chosen
+                        logger.debug(f"Skipping {op} as not part of {args.profile}")
+                        continue
+
+                    logger.debug(f"Copying and renaming {op}")
+                    framework_test_dir = copy_rename_framework_tests(
+                        args, op, test_picks
+                    )
+
+                    if args.convert_all_tests:
+                        logger.debug("Running and converting all framework tests")
+                        framework_tests = None  # Don't select any
+                    else:
+                        logger.debug("Running and converting selected framework tests")
+                        framework_tests = get_framework_tests_selection(
+                            args, op, test_picks, framework_test_dir
+                        )
                     convert_tests(
                         args,
+                        profile,
                         op,
                         framework_test_dir,
                         root_output_dir,
-                        profiles,
-                        trim_op_subdir=True,
-                    )
-                else:
-                    framework_tests = get_framework_tests_selection(
-                        args, op, test_picks, framework_test_dir
-                    )
-                    convert_tests(
-                        args,
-                        op,
-                        framework_test_dir,
-                        root_output_dir,
-                        profiles,
+                        op_profiles_list,
                         tests=framework_tests,
                         trim_op_subdir=True,
                     )
 
-        # Operator unit tests
-        if args.unit_tests in ["operator", "both"]:
-            logger.debug("Creating OPERATOR unit tests")
-            test_params_file = (
-                args.param_json_dir
-                / PROFILE_OPS_INFO[args.profile]["operator_test_params"]
-            )
-            try:
-                with open(test_params_file, "r") as fd:
-                    test_params = json.load(fd)
-            except Exception as e:
-                logger.error(
-                    f"Couldn't load operator test params - {test_params_file}: {e}"
+            # Operator unit tests
+            if args.unit_tests in ["operator", "both"]:
+                logger.debug("Creating OPERATOR unit tests")
+                test_params_file = (
+                    args.param_json_dir
+                    / PROFILE_OPS_INFO[profile]["operator_test_params"]
                 )
-                return 1
-
-            operators = args.operators
-            if not operators:
-                # Create tests for all the operators
-                operators = list(test_params.keys())
-
-            for op in operators:
-                if op not in test_params:
-                    logger.warning(
-                        f"{op} operator parameters not found in {test_params_file} - skipping"
+                try:
+                    with open(test_params_file, "r") as fd:
+                        test_params = json.load(fd)
+                except Exception as e:
+                    logger.error(
+                        f"Couldn't load operator test params - {test_params_file}: {e}"
                     )
-                    continue
+                    return 1
 
-                if (
-                    args.test_type == "negative"
-                    and "no_negative_tests" in test_params[op]
-                    and test_params[op]["no_negative_tests"]
-                ):
-                    logger.warning(f"No negative tests for {op}")
-                    continue
+                operators = args.operators
+                if not operators:
+                    # Create tests for all the operators
+                    operators = list(test_params.keys())
 
-                op_build_dir = build_op_tests(args, op, test_params)
+                for op in operators:
+                    logger.info(f"OPERATOR: {op}")
+                    if op not in test_params:
+                        logger.warning(
+                            f"{op} operator parameters not found in {test_params_file} - skipping"
+                        )
+                        continue
 
-                operator_group = test_params[op]["group"]
-                root_output_dir = args.output_dir / "operators"
-                profiles = test_params[op]["profile"]
-                if args.convert_all_tests:
-                    logger.debug(f"Running and converting all {op} tests")
-                    generate_results(args, op, op_build_dir)
+                    if (
+                        args.test_type == "negative"
+                        and "no_negative_tests" in test_params[op]
+                        and test_params[op]["no_negative_tests"]
+                    ):
+                        logger.warning(f"No negative tests for {op}")
+                        continue
+
+                    op_profiles_list = test_params[op]["profile"]
+                    if (
+                        args.profile != PROFILES_ALL
+                        and args.profile not in op_profiles_list
+                    ):
+                        # Skip this operator as not part of the profile chosen
+                        logger.debug(f"Skipping {op} as not part of {args.profile}")
+                        continue
+
+                    op_build_dir = build_op_tests(args, op, test_params)
+
+                    operator_group = test_params[op]["group"]
+                    root_output_dir = args.output_dir / "operators"
+                    if args.convert_all_tests:
+                        logger.debug(f"Running and converting all {op} tests")
+                        generate_results(args, profile, op, op_build_dir)
+                        operator_test_list = None
+                    else:
+                        logger.debug(f"Running and converting selection of {op} tests")
+                        if args.test_type in ["positive", "both"]:
+                            tests_gen, tests_gen2 = tee(
+                                get_op_tests_selection(
+                                    args, profile, op, op_build_dir, test_params
+                                )
+                            )
+                            generate_results(args, profile, op, op_build_dir, tests_gen)
+                            operator_test_list = list(tests_gen2)
+                        else:
+                            operator_test_list = []
+                        if args.test_type in ["negative", "both"] and (
+                            "no_negative_tests" not in test_params[op]
+                            or not test_params[op]["no_negative_tests"]
+                        ):
+                            operator_test_list.extend(
+                                get_op_tests_selection(
+                                    args,
+                                    profile,
+                                    op,
+                                    op_build_dir,
+                                    test_params,
+                                    negative=True,
+                                )
+                            )
                     output_dir = convert_tests(
                         args,
+                        profile,
                         op,
                         op_build_dir,
                         root_output_dir,
-                        profiles,
+                        op_profiles_list,
+                        tests=operator_test_list,
                         group=operator_group,
                     )
-                else:
-                    if args.test_type in ["positive", "both"]:
-                        tests_gen1, tests_gen2 = tee(
-                            get_op_tests_selection(args, op, op_build_dir, test_params)
-                        )
-                        generate_results(args, op, op_build_dir, tests_gen1)
-                        output_dir = convert_tests(
-                            args,
-                            op,
-                            op_build_dir,
-                            root_output_dir,
-                            profiles,
-                            tests=tests_gen2,
-                            group=operator_group,
-                        )
-                    if args.test_type in ["negative", "both"] and (
-                        "no_negative_tests" not in test_params[op]
-                        or not test_params[op]["no_negative_tests"]
-                    ):
-                        negative_tests = get_op_tests_selection(
-                            args, op, op_build_dir, test_params, negative=True
-                        )
-                        output_dir = convert_tests(
-                            args,
-                            op,
-                            op_build_dir,
-                            root_output_dir,
-                            profiles,
-                            tests=negative_tests,
-                            group=operator_group,
-                        )
-                if not args.keep_large_files:
-                    check_op_tests(args, op, output_dir)
+                    if not args.keep_large_files:
+                        check_op_tests(args, profile, op, output_dir)
     except GenConformanceError:
         return 1
 
