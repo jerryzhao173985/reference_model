@@ -40,7 +40,7 @@ class TosaTestGen:
 
         fullPath = os.path.join(self.basePath, self.testPath)
         os.makedirs(fullPath, exist_ok=True)
-        self.ser = ts.TosaSerializer(fullPath)
+        self.ser = ts.TosaSerializer(fullPath, saveConstsToFile=self.args.dump_consts)
 
     def getSerializer(self):
         return self.ser

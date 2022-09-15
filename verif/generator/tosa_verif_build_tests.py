@@ -192,6 +192,13 @@ def parseArgs(argv):
         help="set a particular zero point for all valid positive tests",
     )
 
+    parser.add_argument(
+        "--dump-const-tensors",
+        dest="dump_consts",
+        action="store_true",
+        help="output const tensors as numpy files for inspection",
+    )
+
     args = parser.parse_args(argv)
 
     return args
