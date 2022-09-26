@@ -382,6 +382,209 @@ DEF_CTENSOR_COPY_VALUE_FROM(6, bool)
 
 #undef DEF_CTENSOR_COPY_VALUE_FROM
 
+int TosaReference::Tensor::readfromVector(const std::vector<float>& vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case DType_FLOAT:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueFloat(elements, vals.data());
+            break;
+        default:
+            WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const std::vector<int32_t>& vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case DType_INT32:
+        case DType_UINT8:
+        case DType_INT4:
+        case DType_INT8:
+        case DType_INT16:
+        case DType_UINT16:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueInt32(elements, vals.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const std::vector<int64_t>& vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case DType_INT48:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueInt64(elements, vals.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const std::vector<unsigned char>& vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case DType_BOOL:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueBool(elements, reinterpret_cast<const bool*>(vals.data()));
+            break;
+        default:
+            WARNING("The input type (bool) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(std::vector<float>& vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case DType_FLOAT:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueFloat(elements, vals.data());
+            break;
+        default:
+            WARNING("The output type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(std::vector<int32_t>& vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case DType_INT32:
+        case DType_UINT8:
+        case DType_INT4:
+        case DType_INT8:
+        case DType_INT16:
+        case DType_UINT16:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueInt32(elements, vals.data());
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(std::vector<int64_t>& vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case tosa::DType_INT48:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueInt64(elements, vals.data());
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(std::vector<unsigned char>& vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case tosa::DType_BOOL:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueBool(elements, reinterpret_cast<bool*>(vals.data()));
+            break;
+        default:
+            WARNING("The output type (bool) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
 template <class T>
 int TosaReference::TensorTemplate<T>::setTensorValueFloat(const size_t buflen, const float* vals)
 {

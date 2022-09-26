@@ -12,6 +12,13 @@ set(CMAKE_INSTALL_PREFIX "./thirdparty" CACHE PATH "..." FORCE)
 
 project(thirdparty LANGUAGES CXX)
 
-add_subdirectory(cxxopts)
 add_subdirectory(serialization_lib EXCLUDE_FROM_ALL)
-add_subdirectory(json EXCLUDE_FROM_ALL)
+
+if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
+    add_subdirectory(cxxopts)
+    add_subdirectory(json EXCLUDE_FROM_ALL)
+endif()
+
+if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
+    add_subdirectory(doctest EXCLUDE_FROM_ALL)
+endif()

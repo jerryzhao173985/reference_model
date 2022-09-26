@@ -13,30 +13,23 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#include <stdio.h>
+#include "model_runner.h"
+#include "version.h"
 
-#include "model_common.h"
+#include "command_line_utils.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
-#include <Eigen/CXX11/Tensor>
-#include <iostream>
 
 #include <fstream>
+#include <iostream>
+#include <stdio.h>
+#include <Eigen/CXX11/Tensor>
 #include <nlohmann/json.hpp>
-
-#define MODEL_VERSION_MAJOR 0
-#define MODEL_VERSION_MINOR 41
-#define MODEL_VERSION_PATCH 0
-#define MODEL_VERSION_DRAFT true
 
 using namespace TosaReference;
 using namespace tosa;
 using json = nlohmann::json;
-
-// Global instantiation of configuration and debug objects
-func_config_t g_func_config;
-func_debug_t g_func_debug;
 
 int initTestDesc(json& test_desc);
 int readInputTensors(SubgraphTraverser& gt, json test_desc);
@@ -45,7 +38,10 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc);
 
 int main(int argc, char** argv)
 {
-    TosaVersion model_version(MODEL_VERSION_MAJOR, MODEL_VERSION_MINOR, MODEL_VERSION_PATCH, MODEL_VERSION_DRAFT);
+    TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR,
+                              TOSA_REFERENCE_MODEL_VERSION_MINOR,
+                              TOSA_REFERENCE_MODEL_VERSION_PATCH,
+                              TOSA_REFERENCE_MODEL_VERSION_DRAFT);
 
     // Initialize configuration and debug subsystems
     g_func_debug.init_debug(0);
@@ -203,7 +199,6 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
 
     if (strlen(graph_fullname) <= 2)
     {
-        func_model_print_help();
         FATAL_ERROR("Missing required argument: Check \"tosa_file\" in .json specified by -Ctosa_desc=");
     }
 

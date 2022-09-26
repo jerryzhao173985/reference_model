@@ -13,18 +13,14 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#include <cxxopts.hpp>
-#include <ctype.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
+#ifndef COMMAND_LINE_UTILS_H_
+#define COMMAND_LINE_UTILS_H_
 
 #include "func_config.h"
 #include "func_debug.h"
+
+#include <stdint.h>
+#include <cxxopts.hpp>
 
 // Read the command line arguments
 int func_model_parse_cmd_line(
@@ -102,7 +98,4 @@ int func_model_parse_cmd_line(
     return 0;
 }
 
-void func_model_print_help()
-{
-
-}
+#endif

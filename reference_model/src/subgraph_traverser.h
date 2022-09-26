@@ -16,6 +16,7 @@
 #ifndef SUBGRAPH_TRAVERSER_H
 #define SUBGRAPH_TRAVERSER_H
 
+#include "graph_status.h"
 #include "graph_node.h"
 #include "model_common.h"
 #include "ops/op_factory.h"
@@ -25,13 +26,6 @@
 
 namespace TosaReference
 {
-
-enum class GraphStatus : int
-{
-    TOSA_VALID         = 0,
-    TOSA_UNPREDICTABLE = 1,
-    TOSA_ERROR         = 2,
-};
 
 class SubgraphTraverser
 {

@@ -16,6 +16,9 @@
 #ifndef FUNC_CONFIG_H_
 #define FUNC_CONFIG_H_
 
+#include <iostream>
+#include <stdio.h>
+
 struct func_config_t
 {
     std::string operator_fbs = "tosa.fbs";
@@ -34,13 +37,5 @@ struct func_config_t
     uint32_t dump_intermediates = 0;
     std::string fp_format       = "0.5";
 };
-
-// Forward declaration
-struct func_debug_t;
-
-int func_model_parse_cmd_line(
-    func_config_t& func_config, func_debug_t& func_debug, int argc, char** argv, const char* version);
-int func_model_parse_flat_config_file(func_config_t*, const char* filename);
-void func_model_print_help();
 
 #endif

@@ -21,6 +21,7 @@
 #include <cinttypes>
 #include <signal.h>
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 void func_print_backtrace(FILE* out, int sig = SIGABRT);

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.4)
 
-# Copyright (c) 2020, ARM Limited.
+# Copyright (c) 2020-2022, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@ cmake_minimum_required (VERSION 3.4)
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-
 project(tosa_reference_model LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -26,52 +25,202 @@ else()
   set(CMAKE_CXX_FLAGS "-Wall -Wno-ignored-attributes")
 endif()
 
-set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
-set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
+# If Serialization Library path is specified, look for library so it doesn't have to be built again.
+# Otherwise, set the Serialization Library related paths to thirdparty directory.
+if(SERIALIZATION_DIR)
+  find_library(SERIALIZATION_LIB
+               NAMES libtosa_serialization_lib.a tosa_serialization_lib
+               NO_DEFAULT_PATH
+               HINTS ${SERIALIZATION_DIR}
+               PATH_SUFFIXES lib)
 
-set (CXX_SOURCE
-     src/main.cpp
-     src/tensor.cc
-     src/graph_node.cc
-     src/subgraph_traverser.cc
-     src/func_debug.cc
-     src/func_config.cc
-     src/ops/op_factory.cc
-     src/ops/tensor_ops.cc
-     src/ops/activation_funcs.cc
-     src/ops/ewise_binary.cc
-     src/ops/ewise_unary.cc
-     src/ops/ewise_ternary.cc
-     src/ops/comparison.cc
-     src/ops/reduction.cc
-     src/ops/data_layout.cc
-     src/ops/scatter_gather.cc
-     src/ops/image.cc
-     src/ops/type_conversion.cc
-     src/ops/data_nodes.cc
-     src/ops/custom.cc
-     src/ops/control_flow.cc
+  if(NOT SERIALIZATION_LIB)
+    message(FATAL_ERROR "TOSA Serialization Library location was specified but not found at: ${SERIALIZATION_LIB_DIR}")
+  endif()
+else()
+  # Build from third party directory if not found.
+  set(SERIALIZATION_LIB tosa_serialization_lib)
+  set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
+endif()
+
+# If Flatbuffers or Eigen path isn't specified, set to thirdparty directory.
+if(NOT FLATBUFFERS_DIR)
+  set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
+endif()
+
+if(NOT EIGEN_DIR)
+  set(EIGEN_DIR "../thirdparty/eigen/")
+endif()
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Common sources required for TOSA Reference Model library, executable and unit tests
+set(CXX_SOURCE
+    src/model_runner.cc
+    src/model_runner_impl.cc
+    src/tensor.cc
+    src/graph_node.cc
+    src/subgraph_traverser.cc
+    src/func_debug.cc
+    src/ops/op_factory.cc
+    src/ops/tensor_ops.cc
+    src/ops/activation_funcs.cc
+    src/ops/ewise_binary.cc
+    src/ops/ewise_unary.cc
+    src/ops/ewise_ternary.cc
+    src/ops/comparison.cc
+    src/ops/reduction.cc
+    src/ops/data_layout.cc
+    src/ops/scatter_gather.cc
+    src/ops/image.cc
+    src/ops/type_conversion.cc
+    src/ops/data_nodes.cc
+    src/ops/custom.cc
+    src/ops/control_flow.cc
 )
 
-add_executable(tosa_reference_model ${CXX_SOURCE})
+# Build TOSA Reference Model library
+add_library(tosa_reference_model_lib ${CXX_SOURCE})
 
-target_include_directories(tosa_reference_model
+target_include_directories(tosa_reference_model_lib
   PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${FLATBUFFERS_DIR}/include
-    ../thirdparty/eigen/
-    ../thirdparty/eigen/unsupported/
+    ${EIGEN_DIR}
+    ${EIGEN_DIR}/unsupported/
     ${SERIALIZATION_DIR}/include
 )
 
-target_link_libraries(tosa_reference_model
+target_link_libraries(tosa_reference_model_lib
   PRIVATE
-    tosa_serialization_lib
-    nlohmann_json::nlohmann_json
-    cxxopts
+    ${SERIALIZATION_LIB}
 )
 
-install (TARGETS tosa_reference_model DESTINATION bin)
+set(PUBLIC_HEADERS)
+list(APPEND PUBLIC_HEADERS
+    include/debug_modes.def
+    include/debug_types.h
+    include/func_config.h
+    include/func_debug.h
+    include/graph_status.h
+    include/model_common.h
+    include/model_runner.h
+    include/version.h
+)
+
+set_target_properties(tosa_reference_model_lib PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}")
+
+# Build TOSA Refererence Model executable
+if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
+  set(CXX_SOURCE_EX src/main.cpp)
+  list(APPEND CXX_SOURCE_EX ${CXX_SOURCE})
+
+  add_executable(tosa_reference_model ${CXX_SOURCE_EX})
+
+  target_include_directories(tosa_reference_model
+    PUBLIC
+      $<INSTALL_INTERFACE:include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+      ${FLATBUFFERS_DIR}/include
+      ${EIGEN_DIR}
+      ${EIGEN_DIR}/unsupported/
+      ${SERIALIZATION_DIR}/include
+  )
+
+  target_link_libraries(tosa_reference_model
+    PRIVATE
+      ${SERIALIZATION_LIB}
+      nlohmann_json::nlohmann_json
+      cxxopts
+  )
+
+  install(TARGETS tosa_reference_model DESTINATION bin)
+endif()
+
+if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
+  # Set definition so unit tests can find examples directory.
+  add_definitions(-DPROJECT_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
+
+  # Set doctest location if not specified.
+  if(NOT DOCTEST_DIR)
+    set(DOCTEST_DIR "../thirdparty/doctest/doctest")
+  endif()
+
+  # Sources only required for unit tests.
+  set(CXX_SOURCE_TESTS
+      test/model_runner_tests.cpp
+      ${DOCTEST_DIR}/doctest.h
+  )
+
+  list(APPEND CXX_SOURCE_TESTS ${CXX_SOURCE})
+
+  add_executable(unit_tests ${CXX_SOURCE_TESTS})
+
+  target_include_directories(unit_tests
+    PUBLIC
+      $<INSTALL_INTERFACE:include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+      ${FLATBUFFERS_DIR}/include
+      ${EIGEN_DIR}
+      ${EIGEN_DIR}/unsupported/
+      ${SERIALIZATION_DIR}/include
+      ${DOCTEST_DIR}
+    )
+
+  target_link_libraries(unit_tests
+    PRIVATE
+      ${SERIALIZATION_LIB}
+  )
+endif()
+
+if(BUILD_MODEL_RUNNER_SAMPLE)
+  # Set definition so sample executable can find examples directory.
+  add_definitions(-DPROJECT_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
+
+  # Sources only required for example executable.
+  set(CXX_SOURCE_SAMPLE
+      samples/model_runner_simple_sample.cpp
+  )
+
+  list(APPEND CXX_SOURCE_SAMPLE ${CXX_SOURCE})
+
+  add_executable(model_runner_sample ${CXX_SOURCE_SAMPLE})
+
+  target_include_directories(model_runner_sample
+    PUBLIC
+      $<INSTALL_INTERFACE:include>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}/src
+      ${FLATBUFFERS_DIR}/include
+      ${EIGEN_DIR}
+      ${EIGEN_DIR}/unsupported/
+      ${SERIALIZATION_DIR}/include
+  )
+
+  target_link_libraries(model_runner_sample
+    PRIVATE
+      ${SERIALIZATION_LIB}
+  )
+endif()
+
+# Follow GNU packaging norms for installation directory structure.
+include(GNUInstallDirs)
+install(
+  TARGETS tosa_reference_model_lib EXPORT TosaReferenceModelLibTargets
+  PUBLIC_HEADER
+  ARCHIVE
+)
+
+install(EXPORT TosaReferenceModelLibTargets
+  FILE TosaReferenceModelLibTargets.cmake
+  NAMESPACE TosaReference::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/tosa_reference_model_lib"
+)

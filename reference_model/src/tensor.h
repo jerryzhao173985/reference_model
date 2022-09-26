@@ -228,6 +228,16 @@ public:
     virtual int writeToNpyFile(const char* filename) const;
     virtual int copyValueFrom(Tensor* tensor) = 0;
 
+    virtual int readfromVector(const std::vector<float>& vals);
+    virtual int readfromVector(const std::vector<int32_t>& vals);
+    virtual int readfromVector(const std::vector<int64_t>& vals);
+    virtual int readfromVector(const std::vector<unsigned char>& vals);
+
+    virtual int writeToVector(std::vector<float>& vals);
+    virtual int writeToVector(std::vector<int32_t>& vals);
+    virtual int writeToVector(std::vector<int64_t>& vals);
+    virtual int writeToVector(std::vector<unsigned char>& vals);
+
     const char* bool_to_str(bool in) const
     {
         static const char* true_str  = "true";
