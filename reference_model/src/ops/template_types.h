@@ -65,7 +65,7 @@ using Tensor6 = TensorTemplate<ETensor6<T>>;
 template <DType type>
 struct GetEigenType;
 template <>
-struct GetEigenType<DType_FLOAT>
+struct GetEigenType<DType_FP32>
 {
     using type = float;
 };
@@ -301,9 +301,9 @@ struct GetAccDType<DType_FP16, DType_FP16>
     static constexpr DType value = DType_FP16;
 };
 template <>
-struct GetAccDType<DType_FLOAT, DType_FLOAT>
+struct GetAccDType<DType_FP32, DType_FP32>
 {
-    static constexpr DType value = DType_FLOAT;
+    static constexpr DType value = DType_FP32;
 };
 
 };    // namespace TosaReference

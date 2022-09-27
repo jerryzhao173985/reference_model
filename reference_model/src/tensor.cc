@@ -93,7 +93,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
 
     switch (getDtype())
     {
-        case DType_FLOAT:
+        case DType_FP32:
             fdatabuf = (float*)calloc(sizeof(float), elements);
             ASSERT_MEM(fdatabuf);
 
@@ -161,8 +161,8 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             for (uint32_t i=0; i < elements; i++) {
                 fdatabuf[i] = half_float::half_cast<float, half_float::half>(f16databuf[i]);
             }
-            // Fall through to DType_FLOAT case
-        case DType_FLOAT:
+            // Fall through to DType_FP32 case
+        case DType_FP32:
             if (setTensorValueFloat(elements, fdatabuf))
             {
                 if (f16databuf)
@@ -229,7 +229,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 
     switch (getDtype())
     {
-        case DType_FLOAT:
+        case DType_FP32:
             fdatabuf = (float*)calloc(sizeof(float), elements);
             ASSERT_MEM(fdatabuf);
 
@@ -429,7 +429,7 @@ int TosaReference::Tensor::readfromVector(const std::vector<float>& vals)
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
-        case DType_FLOAT:
+        case DType_FP32:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -532,7 +532,7 @@ int TosaReference::Tensor::writeToVector(std::vector<float>& vals)
 
     switch (getDtype())
     {
-        case DType_FLOAT:
+        case DType_FP32:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",

@@ -394,7 +394,7 @@ int SubgraphTraverser::allocateTensor()
                     tensor->setTensorValueFloat(f16_data.size(), f16_data.data());
                 }
                 break;
-                case DType_FLOAT:
+                case DType_FP32:
                 {
                     std::vector<float> fp32_data;
                     TosaSerializationHandler::ConvertU8toF32(ts->GetData(), tensor->getElementCount(), fp32_data);
@@ -702,7 +702,7 @@ int SubgraphTraverser::validateGraph()
             DType dtype = currTensor->getDtype();
 
             // Float-point disallowed
-            if (dtype == DType_FLOAT || dtype == DType_FP16)
+            if (dtype == DType_FP32 || dtype == DType_FP16)
             {
                 WARNING("SubgraphTraverser::validateGraph(): TOSA Base Inference profile selected: All floating point "
                         "disabled, but %s tensor %s found\n",

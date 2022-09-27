@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2022, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ namespace TosaReference
 // Eigen::Tensor does support some binary element-wise natively (e.g. CWiseMax, or '+', etc.)
 // which might be faster since it could be implemented with SIMD instructions
 // the way of registering lambda + .binaryExpr() might sacrifice performance here
-// but it can avoid partially specialization for combination of {rankN, rank0} x {FLOAT/INT32, QU8, ...}
+// but it can avoid partially specialization for combination of {rankN, rank0} x {FP32/INT32, QU8, ...}
 // needs to revisit if performance becomes a bottleneck here
 template <int Rank, DType InDtype, DType OutDtype>
 class BinaryNodeBase : public GraphNode

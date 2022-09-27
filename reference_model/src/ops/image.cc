@@ -63,7 +63,7 @@ int OpResize<InDtype, OutDtype, resize_t>::checkTensorAttributes()
 
     if (this->mode == ResizeMode_BILINEAR)
     {
-        if (OutDtype != DType_INT32 && OutDtype != DType_INT48 && OutDtype != DType_FLOAT && OutDtype != DType_FP16)
+        if (OutDtype != DType_INT32 && OutDtype != DType_INT48 && OutDtype != DType_FP32 && OutDtype != DType_FP16)
         {
             printNodeValidationError("OpResize: invalid data type for BILINEAR");
             return 1;
@@ -71,7 +71,7 @@ int OpResize<InDtype, OutDtype, resize_t>::checkTensorAttributes()
     }
     else
     {
-        if (OutDtype != DType_INT8 && OutDtype != DType_INT16 && OutDtype != DType_FLOAT && OutDtype != DType_FP16)
+        if (OutDtype != DType_INT8 && OutDtype != DType_INT16 && OutDtype != DType_FP32 && OutDtype != DType_FP16)
         {
             printNodeValidationError("OpResize: invalid data type for NEAREST");
             return 1;
@@ -225,4 +225,4 @@ DEF_INSTANTIATE_THREE_TYPE(OpResize, INT8, INT8, int16_t);
 DEF_INSTANTIATE_THREE_TYPE(OpResize, INT16, INT48, int16_t);
 DEF_INSTANTIATE_THREE_TYPE(OpResize, INT16, INT16, int16_t);
 DEF_INSTANTIATE_THREE_TYPE(OpResize, FP16, FP16, float);
-DEF_INSTANTIATE_THREE_TYPE(OpResize, FLOAT, FLOAT, float);
+DEF_INSTANTIATE_THREE_TYPE(OpResize, FP32, FP32, float);

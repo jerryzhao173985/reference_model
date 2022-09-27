@@ -45,7 +45,7 @@ REF_MODEL_TYPE_TO_OUT = {
     "uint8": "u8",
     "int16": "i16",
     "int32": "i32",
-    "float": "float",
+    "fp32": "f32",
     "fp16": "f16",
 }
 
@@ -123,21 +123,21 @@ class BuildTosaTest:
 # Tests - op_name, ref_model_type, num_expected_tests
 TEST_PARAMS = [
     ("add", "int32", 1),
-    ("add", "float", 1),
+    ("add", "fp32", 1),
     ("abs", "int32", 1),
-    ("abs", "float", 1),
+    ("abs", "fp32", 1),
     ("abs", "fp16", 1),
     ("negate", "int8", 1),
     ("negate", "int16", 1),
     ("negate", "int32", 1),
-    ("negate", "float", 1),
+    ("negate", "fp32", 1),
     ("negate", "fp16", 1),
     # One test per axis (shape dimensions)
     ("concat", "bool", SHAPE_DIMS),
     ("concat", "int8", SHAPE_DIMS),
     ("concat", "int16", SHAPE_DIMS),
     ("concat", "int32", SHAPE_DIMS),
-    ("concat", "float", SHAPE_DIMS),
+    ("concat", "fp32", SHAPE_DIMS),
     ("concat", "fp16", SHAPE_DIMS),
 ]
 

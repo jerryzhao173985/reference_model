@@ -78,7 +78,7 @@ int OpAbs<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_FLOAT:
+        case DType_FP32:
         case DType_FP16:
         case DType_INT32:
             this->fcn = [](InEigenType a) -> OutEigenType { return a > (InEigenType)0 ? a : (-a); };
@@ -113,7 +113,7 @@ int OpCeil<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return ceilf(a); };
             break;
         default:
@@ -161,7 +161,7 @@ int OpExp<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return expf(a); };
             break;
         default:
@@ -177,7 +177,7 @@ int OpFloor<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return floorf(a); };
             break;
         default:
@@ -193,7 +193,7 @@ int OpLog<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return logf(a); };
             break;
         default:
@@ -245,7 +245,7 @@ int OpNegate<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType {
                 InEigenType result = -(a);
                 return result;
@@ -297,7 +297,7 @@ int OpReciprocal<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / a; };
             break;
         default:
@@ -313,7 +313,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
-        case DType_FLOAT:
+        case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / sqrtf(a); };
             break;
         default:
@@ -325,7 +325,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
 
 // template explicit instantiation
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT8);
@@ -333,29 +333,29 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClz, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalNot, BOOL);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FP16);
-DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FLOAT);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FP32);

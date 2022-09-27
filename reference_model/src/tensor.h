@@ -642,7 +642,7 @@ public:
     {
         switch (tensorDtype_)
         {
-            case DType_FLOAT:
+            case DType_FP32:
             case DType_FP16:
                 switch (rank)
                 {

@@ -137,11 +137,11 @@ private:
 };
 
 template <DType InDtype>
-class CastHelper<InDtype, DType_FLOAT>
+class CastHelper<InDtype, DType_FP32>
 {
 public:
     using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<DType_FLOAT>::type;
+    using OutEigenType = typename GetEigenType<DType_FP32>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -154,10 +154,10 @@ private:
 };
 
 template <DType OutDtype>
-class CastHelper<DType_FLOAT, OutDtype>
+class CastHelper<DType_FP32, OutDtype>
 {
 public:
-    using InEigenType               = typename GetEigenType<DType_FLOAT>::type;
+    using InEigenType               = typename GetEigenType<DType_FP32>::type;
     using OutEigenType              = typename GetEigenType<OutDtype>::type;
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
