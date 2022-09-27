@@ -40,10 +40,10 @@ class TosaSUTRunner(TosaTestRunner):
 
         # Specific debug options for reference model
         if args.ref_debug:
-            cmd.extend(["-d ALL", "-l {}".format(args.ref_debug)])
+            cmd.extend(["-d", "ALL", "-l", args.ref_debug])
 
         if args.ref_intermediates:
-            cmd.extend(["-D dump_intermediates=1"])
+            cmd.extend(["--dump_intermediates", str(args.ref_intermediates)])
 
         # Run command and interpret tosa graph result via process return codes
         graphMessage = None

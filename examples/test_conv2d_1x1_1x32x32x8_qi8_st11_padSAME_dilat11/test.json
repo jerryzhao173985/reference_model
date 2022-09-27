@@ -1,7 +1,7 @@
 {
   "tflite_model_filename": "model.tflite",
   "tflite_result_npy_filename": "tflite_result.npy",
-  "tflite_result_name": "Identity",
+  "tflite_result_name": "PartitionedCall:0",
   "ifm_file": [
     "placeholder_0.npy"
   ],

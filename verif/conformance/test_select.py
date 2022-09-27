@@ -336,7 +336,7 @@ class AvgPool2dOperator(Operator):
     """Test selector for the AVG_POOL2D operator."""
 
     name = "avg_pool2d"
-    param_names = ["shape", "type", "stride", "kernel", "pad"]
+    param_names = ["shape", "type", "accum_type", "stride", "kernel", "pad"]
 
 
 class BitwiseAndOperator(Operator):
@@ -380,7 +380,6 @@ class CLZOperator(Operator):
     """Test selector for the CLZ operator."""
 
     name = "clz"
-    param_names = ["shape", "type"]
 
 
 class ConcatOperator(Operator):
@@ -407,21 +406,21 @@ class Conv2dOperator(Operator):
     """Test selector for the CONV2D operator."""
 
     name = "conv2d"
-    param_names = ["kernel", "shape", "type", "stride", "pad", "dilation"]
+    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
 
 
 class Conv3dOperator(Operator):
     """Test selector for the CONV3D operator."""
 
     name = "conv3d"
-    param_names = ["kernel", "shape", "type", "stride", "pad", "dilation"]
+    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
 
 
 class DepthwiseConv2dOperator(Operator):
     """Test selector for the DEPTHWISE_CONV2D operator."""
 
     name = "depthwise_conv2d"
-    param_names = ["kernel", "shape", "type", "stride", "pad", "dilation"]
+    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
 
 
 class EqualOperator(Operator):
@@ -434,6 +433,7 @@ class FullyConnectedOperator(Operator):
     """Test selector for the FULLY_CONNECTED operator."""
 
     name = "fully_connected"
+    param_names = ["shape", "type", "accum_type"]
 
 
 class GatherOperator(Operator):
@@ -511,6 +511,7 @@ class MatmulOperator(Operator):
     """Test selector for the MATMUL operator."""
 
     name = "matmul"
+    param_names = ["shape", "type", "accum_type"]
 
 
 class MaximumOperator(Operator):
@@ -684,7 +685,15 @@ class TransposeConv2dOperator(Operator):
     """Test selector for the TRANSPOSE_CONV2D operator."""
 
     name = "transpose_conv2d"
-    param_names = ["kernel", "shape", "type", "stride", "pad", "out_shape"]
+    param_names = [
+        "kernel",
+        "shape",
+        "type",
+        "accum_type",
+        "stride",
+        "pad",
+        "out_shape",
+    ]
 
     def path_params(self, path):
         """Return a dictionary of params from the test path."""

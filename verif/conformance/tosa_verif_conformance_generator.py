@@ -34,11 +34,13 @@ PROFILE_OPS_INFO = {
     "tosa-bi": {
         "operator_test_params": "tosa_base_profile_ops_info.json",
         "framework_tests": "tosa_base_profile_framework_ops_info.json",
-        "exclude_types": ["float"],
+        "exclude_types": [],
     }
 }
 
 LOCATION_REF_MODEL_BINARY = Path("build/reference_model/tosa_reference_model")
+
+DEFAULT_SEED = 42
 
 
 class GenConformanceError(Exception):
@@ -90,7 +92,7 @@ def build_op_tests(args, operator, test_params):
         "-o",
         str(op_build_dir),
         "--seed",
-        "42",
+        str(args.random_seed),
     ]
 
     ref_cmds = []
@@ -99,12 +101,26 @@ def build_op_tests(args, operator, test_params):
         # Append extra parameters and run test generator for each set of parameters.
         for arglist in test_params[operator]["generator_args"]:
             ref_cmd_pos_test = ref_cmd_base.copy()
+            ref_cmd_pos_test.extend(["--test-type", "positive"])
             ref_cmd_pos_test.extend(arglist)
             ref_cmds.append(ref_cmd_pos_test)
 
     if args.test_type in ["negative", "both"]:
+        # Get target-dtypes options only to limit tests to those needed
+        target_dtypes_args = []
+        for arglist in test_params[operator]["generator_args"]:
+            idx = 0
+            while idx < len(arglist):
+                if arglist[idx] == "--target-dtype":
+                    if arglist[idx + 1] not in target_dtypes_args:
+                        target_dtypes_args.extend(arglist[idx : idx + 2])
+                    idx += 1  # skip over option (and then argument below)
+                idx += 1
         ref_cmd_neg_test = ref_cmd_base.copy()
         ref_cmd_neg_test.extend(["--test-type", "negative"])
+        # Limit sizes of negative tests
+        ref_cmd_neg_test.extend(["--tensor-dim-range", "1,16"])
+        ref_cmd_neg_test.extend(target_dtypes_args)
         ref_cmds.append(ref_cmd_neg_test)
 
     logger.debug(f"Creating {operator} tests with {len(ref_cmds)} parameter(s)")
@@ -430,6 +446,13 @@ def parse_args(argv=None):
         help="Reference Model directory (must be pre-built)",
     )
     parser.add_argument(
+        "--seed",
+        dest="random_seed",
+        default=DEFAULT_SEED,
+        type=int,
+        help="Random test seed",
+    )
+    parser.add_argument(
         "--framework-tests-directory",
         dest="framework_tests_dir",
         type=Path,
@@ -534,6 +557,11 @@ def main():
 
     print(f"Creating conformance tests for TOSA {args.profile} profile")
     print(f"Output directory: {args.output_dir}")
+
+    if args.random_seed != DEFAULT_SEED:
+        logger.warning(
+            "Random test seed changed from default, tests will not match official conformance"
+        )
 
     args.build_dir = args.build_dir.resolve()
     logger.debug(f"Creating build directory: {args.build_dir}")

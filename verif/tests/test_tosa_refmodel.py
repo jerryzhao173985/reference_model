@@ -46,6 +46,7 @@ REF_MODEL_TYPE_TO_OUT = {
     "int16": "i16",
     "int32": "i32",
     "float": "float",
+    "fp16": "f16",
 }
 
 
@@ -125,16 +126,19 @@ TEST_PARAMS = [
     ("add", "float", 1),
     ("abs", "int32", 1),
     ("abs", "float", 1),
+    ("abs", "fp16", 1),
     ("negate", "int8", 1),
     ("negate", "int16", 1),
     ("negate", "int32", 1),
     ("negate", "float", 1),
+    ("negate", "fp16", 1),
     # One test per axis (shape dimensions)
     ("concat", "bool", SHAPE_DIMS),
     ("concat", "int8", SHAPE_DIMS),
     ("concat", "int16", SHAPE_DIMS),
     ("concat", "int32", SHAPE_DIMS),
     ("concat", "float", SHAPE_DIMS),
+    ("concat", "fp16", SHAPE_DIMS),
 ]
 
 

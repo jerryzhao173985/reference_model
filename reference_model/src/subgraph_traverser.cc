@@ -327,6 +327,7 @@ int SubgraphTraverser::allocateTensor()
             {
                 if (dim <= 0)
                 {
+                    DEBUG_INFO(GT, "Failed to allocate tensor %s with invalid dimension of %d", ts->GetName().c_str(), dim);
                     this->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
                     return 1;
                 }
