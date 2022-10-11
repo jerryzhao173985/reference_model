@@ -20,6 +20,9 @@
 #include "model_runner.h"
 #include "general_utils.h"
 
+// Remove conflicting REQUIRE definition between doctest and reference_model
+#undef REQUIRE
+
 #include "doctest.h"
 
 using namespace TosaReference;
