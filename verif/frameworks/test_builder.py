@@ -86,6 +86,16 @@ class TBuilder:
             # alternatively, we can use clip_by_value
             return tf.math.minimum(1.0, tf.math.maximum(-1.0, a))
 
+    class Relu0To1:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            # TF doesn't have relu_0_to_1 operator,
+            # use min and max as a workaround
+            # alternatively, we can use clip_by_value
+            return tf.math.minimum(1.0, tf.math.maximum(0.0, a))
+
     class Relu6:
         def __init__(self, name):
             self.result_name = name
