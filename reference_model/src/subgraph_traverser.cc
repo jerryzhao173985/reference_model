@@ -14,6 +14,7 @@
 //    limitations under the License.
 
 #include "subgraph_traverser.h"
+#include "tosa_model_types.h"
 
 #ifndef SUBGRAPH_ERROR_IF
 #define SUBGRAPH_ERROR_IF(COND, fmt, ...)                                                                              \
@@ -323,11 +324,19 @@ int SubgraphTraverser::allocateTensor()
         auto got = used_tensor_name_set.find(ts->GetName());
         if (got != used_tensor_name_set.end())
         {
+            uint32_t elements = 1;
             for (auto& dim : ts->GetShape())
             {
                 if (dim <= 0)
                 {
                     DEBUG_INFO(GT, "Failed to allocate tensor %s with invalid dimension of %d", ts->GetName().c_str(), dim);
+                    this->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
+                    return 1;
+                }
+                if (dim > static_cast<int32_t>(TOSA_MAX_TENSOR_SIZE / elements))
+                {
+                    // Size greather than maximum defined in spec
+                    DEBUG_INFO(GT, "Tensor %s size is greater than allowed maximum", ts->GetName().c_str());
                     this->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
                     return 1;
                 }
