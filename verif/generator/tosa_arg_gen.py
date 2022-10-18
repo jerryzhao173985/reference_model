@@ -1426,7 +1426,7 @@ class TosaArgGen:
             raise Exception("Unexpected input dtype: {}".format(inDtype))
 
         for dtype in dtypeList:
-            arg_list.append(("out{}".format(DTypeNames[dtype]), [dtype]))
+            arg_list.append(("out{}".format(testGen.typeStr(dtype)), [dtype]))
 
         return arg_list
 
@@ -1518,7 +1518,7 @@ class TosaArgGen:
                         arg_list.append(
                             (
                                 "out{}_sc{}_dr{}_pc{}".format(
-                                    DTypeNames[outDtype],
+                                    testGen.typeStr(outDtype),
                                     int(scale32),
                                     int(double_round),
                                     int(per_channel),

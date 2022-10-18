@@ -478,10 +478,10 @@
             "shape": [],
             "type": [],
             "output_type": [
-                "outINT8",
-                "outINT16",
-                "outINT32",
-                "outBOOL"
+                "outi8",
+                "outi16",
+                "outi32",
+                "outb"
             ]
         },
         "permutes": [
@@ -2420,6 +2420,12 @@
                 "int32",
                 "--tensor-dim-range",
                 "4,32"
+            ],
+            [
+                "--target-dtype",
+                "bool",
+                "--tensor-dim-range",
+                "1,16"
             ],
             [
                 "--target-dtype",
