@@ -156,7 +156,7 @@ done:
 }
 
 template <typename T>
-int ModelRunnerImpl::setInput(std::string input_name, std::vector<T> vals)
+int ModelRunnerImpl::setInput(std::string input_name, std::vector<T>& vals)
 {
     if (_main_gt == nullptr)
     {
@@ -214,7 +214,7 @@ std::vector<T> ModelRunnerImpl::getOutput(std::string output_name)
         return std::vector<T>();
     }
 
-    std::vector<T> outputs(tensor->getElementCount(), 0);
+    std::vector<T> outputs(tensor->getElementCount());
 
     if (tensor->writeToVector(outputs))
     {
@@ -266,12 +266,14 @@ void ModelRunnerImpl::checkGraphStatus(SubgraphTraverser& main_gt)
 }
 
 // Template explicit specialization
-template int ModelRunnerImpl::setInput<float>(std::string input_name, std::vector<float> vals);
-template int ModelRunnerImpl::setInput<int32_t>(std::string input_name, std::vector<int32_t> vals);
-template int ModelRunnerImpl::setInput<int64_t>(std::string input_name, std::vector<int64_t> vals);
-template int ModelRunnerImpl::setInput<unsigned char>(std::string input_name, std::vector<unsigned char> vals);
+template int ModelRunnerImpl::setInput<float>(std::string input_name, std::vector<float>& vals);
+template int ModelRunnerImpl::setInput<half_float::half>(std::string input_name, std::vector<half_float::half>& vals);
+template int ModelRunnerImpl::setInput<int32_t>(std::string input_name, std::vector<int32_t>& vals);
+template int ModelRunnerImpl::setInput<int64_t>(std::string input_name, std::vector<int64_t>& vals);
+template int ModelRunnerImpl::setInput<unsigned char>(std::string input_name, std::vector<unsigned char>& vals);
 
 template std::vector<float> ModelRunnerImpl::getOutput<float>(std::string output_name);
+template std::vector<half_float::half> ModelRunnerImpl::getOutput<half_float::half>(std::string output_name);
 template std::vector<int32_t> ModelRunnerImpl::getOutput<int32_t>(std::string output_name);
 template std::vector<int64_t> ModelRunnerImpl::getOutput<int64_t>(std::string output_name);
 template std::vector<unsigned char> ModelRunnerImpl::getOutput<unsigned char>(std::string output_name);

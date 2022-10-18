@@ -68,7 +68,7 @@ public:
      * NOTE: setInput() must be called for each input tensor before run() is called.
      */
     template <typename T>
-    int setInput(std::string input_name, std::vector<T> vals);
+    int setInput(std::string input_name, std::vector<T>& vals);
 
     /*
      * Retrieve the output tensors from the graph after running.

@@ -429,6 +429,7 @@ int TosaReference::Tensor::readfromVector(const std::vector<float>& vals)
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
+        case DType_FP16:
         case DType_FP32:
             if (vals.size() != elements)
             {
@@ -441,6 +442,38 @@ int TosaReference::Tensor::readfromVector(const std::vector<float>& vals)
             break;
         default:
             WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const std::vector<half_float::half>& vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case DType_FP16:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            // Convert from fp16 to fp32
+            for (uint32_t i=0; i < elements; i++)
+            {
+                tensor[i] = half_float::half_cast<float, half_float::half>(vals[i]);
+            }
+
+            setTensorValueFloat(elements, tensor.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
                     EnumNameDType(getDtype()));
             return -2;
     }
@@ -532,6 +565,7 @@ int TosaReference::Tensor::writeToVector(std::vector<float>& vals)
 
     switch (getDtype())
     {
+        case DType_FP16:
         case DType_FP32:
             if (vals.size() != elements)
             {
@@ -544,6 +578,37 @@ int TosaReference::Tensor::writeToVector(std::vector<float>& vals)
             break;
         default:
             WARNING("The output type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameDType(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(std::vector<half_float::half>& vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case DType_FP16:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueFloat(elements, tensor.data());
+
+            // Convert fp32 to fp16
+            for (uint32_t i=0; i < elements; i++)
+            {
+                vals[i] = half_float::half_cast<half_float::half, float>(tensor[i]);
+            }
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
                     EnumNameDType(getDtype()));
             return -2;
     }

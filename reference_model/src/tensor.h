@@ -229,11 +229,13 @@ public:
     virtual int copyValueFrom(Tensor* tensor) = 0;
 
     virtual int readfromVector(const std::vector<float>& vals);
+    virtual int readfromVector(const std::vector<half_float::half>& vals);
     virtual int readfromVector(const std::vector<int32_t>& vals);
     virtual int readfromVector(const std::vector<int64_t>& vals);
     virtual int readfromVector(const std::vector<unsigned char>& vals);
 
     virtual int writeToVector(std::vector<float>& vals);
+    virtual int writeToVector(std::vector<half_float::half>& vals);
     virtual int writeToVector(std::vector<int32_t>& vals);
     virtual int writeToVector(std::vector<int64_t>& vals);
     virtual int writeToVector(std::vector<unsigned char>& vals);

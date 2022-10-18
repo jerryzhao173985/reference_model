@@ -46,7 +46,7 @@ public:
     GraphStatus run();
 
     template <typename T>
-    int setInput(std::string input_name, std::vector<T> vals);
+    int setInput(std::string input_name, std::vector<T>& vals);
 
     template <typename T>
     std::vector<T> getOutput(std::string output_name);
