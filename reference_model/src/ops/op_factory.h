@@ -111,6 +111,12 @@
         return new OP<DType_##DTYPE1, DType_##DTYPE2, float>(sgt, attribute, id);                                      \
     }
 
+#define DEF_FACTORY_TWO_TYPE_RESIZE_BF16(OP, DTYPE1, DTYPE2)                                                           \
+    if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
+    {                                                                                                                  \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2, Eigen::bfloat16>(sgt, attribute, id);                            \
+    }
+
 #define DEF_FACTORY_TWO_TYPE_RESIZE_FP32(OP, DTYPE1, DTYPE2)                                                          \
     if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
     {                                                                                                                  \

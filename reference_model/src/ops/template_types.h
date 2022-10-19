@@ -19,6 +19,8 @@
 #include "tosa_generated.h"
 #include <Eigen/CXX11/Tensor>
 #include "half.hpp"
+#include <Eigen/Core>
+#include "arith_util.h"
 
 using namespace tosa;
 
@@ -71,6 +73,12 @@ struct GetEigenType<DType_FP32>
 };
 template <>
 struct GetEigenType<DType_FP16>
+{
+    // NOTE: full precision used
+    using type = float;
+};
+template <>
+struct GetEigenType<DType_BF16>
 {
     // NOTE: full precision used
     using type = float;
@@ -130,12 +138,6 @@ template <DType Dtype>
 struct GetAccEigenType
 {
     using type = typename GetEigenType<Dtype>::type;
-};
-
-template <DType Dtype>
-struct GetHalfEigenType
-{
-    using type = half_float::half;
 };
 
 // Meta function to get number of bits

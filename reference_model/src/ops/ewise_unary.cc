@@ -78,10 +78,13 @@ int OpAbs<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
     {
-        case DType_FP32:
-        case DType_FP16:
+        case DType_FP32: // No fpTrunc for FP32 as it is a no-op
         case DType_INT32:
             this->fcn = [](InEigenType a) -> OutEigenType { return a > (InEigenType)0 ? a : (-a); };
+            break;
+        case DType_FP16:
+        case DType_BF16:
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(a > (InEigenType)0 ? a : (-a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -113,8 +116,9 @@ int OpCeil<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return ceilf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(ceilf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -161,8 +165,9 @@ int OpExp<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return expf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(expf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -177,8 +182,9 @@ int OpFloor<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return floorf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(floorf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -193,8 +199,9 @@ int OpLog<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return logf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(logf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -245,10 +252,11 @@ int OpNegate<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
             this->fcn = [](InEigenType a) -> OutEigenType {
                 InEigenType result = -(a);
-                return result;
+                return fpTrunc<Dtype>(result);
             };
             break;
         case DType_INT16:
@@ -297,8 +305,9 @@ int OpReciprocal<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / a; };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / a); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -313,8 +322,9 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 / sqrtf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / sqrtf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -325,6 +335,7 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
 
 // template explicit instantiation
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAbs, INT32);
 
@@ -333,29 +344,36 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpBitwiseNot, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpCeil, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClz, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpFloor, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLog, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalNot, BOOL);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpNegate, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpReciprocal, FP32);

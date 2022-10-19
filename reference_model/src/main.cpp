@@ -20,6 +20,7 @@
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
+#include "arith_util.h"
 
 #include <fstream>
 #include <iostream>
@@ -66,6 +67,8 @@ int main(int argc, char** argv)
                    model_version.to_string().c_str(), tsh.GetVersion().to_string().c_str());
             return TOSA_VERSION_MISMATCH;
     }
+
+    g_func_config.float_is_big_endian = float_is_big_endian();
 
     json test_desc;
 

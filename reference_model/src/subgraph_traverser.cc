@@ -15,6 +15,7 @@
 
 #include "subgraph_traverser.h"
 #include "tosa_model_types.h"
+#include "arith_util.h"
 
 #ifndef SUBGRAPH_ERROR_IF
 #define SUBGRAPH_ERROR_IF(COND, fmt, ...)                                                                              \
@@ -401,6 +402,16 @@ int SubgraphTraverser::allocateTensor()
                     std::vector<float> f16_data;
                     TosaSerializationHandler::ConvertU8toF16(ts->GetData(), tensor->getElementCount(), f16_data);
                     tensor->setTensorValueFloat(f16_data.size(), f16_data.data());
+                }
+                break;
+                case DType_BF16:
+                {
+                    std::vector<float> fp32_data;
+                    TosaSerializationHandler::ConvertU8toF32(ts->GetData(), tensor->getElementCount(), fp32_data);
+                    // Ensure valid bfloat16 stored in each float
+                    for (auto f : fp32_data)
+                        ASSERT_MSG(checkValidBFloat(f), "Float value %f not valid bfloat16", f);
+                    tensor->setTensorValueFloat(fp32_data.size(), fp32_data.data());
                 }
                 break;
                 case DType_FP32:

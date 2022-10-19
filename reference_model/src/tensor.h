@@ -646,6 +646,7 @@ public:
         {
             case DType_FP32:
             case DType_FP16:
+            case DType_BF16:
                 switch (rank)
                 {
                     case 0:

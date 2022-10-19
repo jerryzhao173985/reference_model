@@ -143,8 +143,9 @@ int OpAdd<Rank, Dtype>::register_fcn()
             };
             break;
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a + b; };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a + b); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
@@ -371,6 +372,7 @@ int OpMaximum<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b ? a : b; };
@@ -388,6 +390,7 @@ int OpMinimum<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
         case DType_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a < b ? a : b; };
@@ -407,8 +410,9 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
     switch (InDtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [shift](InEigenType a, InEigenType b) -> OutEigenType { return a * b; };
+            this->fcn = [shift](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a * b); };
             break;
         case DType_INT32:
             this->fcn = [this, shift](InEigenType a, InEigenType b) -> OutEigenType {
@@ -457,8 +461,9 @@ int OpPow<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return powf(a, b); };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(powf(a, b)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -482,8 +487,9 @@ int OpSub<Rank, Dtype>::register_fcn()
             };
             break;
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a - b; };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a - b); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[InDtype]);
@@ -581,6 +587,7 @@ int OpTable<Rank, InDtype>::eval()
 
 // template explicit instantiation
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAdd, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAdd, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAdd, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpAdd, INT32);
 
@@ -617,23 +624,28 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalOr, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpLogicalXor, BOOL);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMaximum, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMaximum, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMaximum, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMaximum, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMinimum, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMinimum, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMinimum, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpMinimum, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, FP16, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, BF16, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, FP32, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, INT8, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, INT16, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpMul, INT32, INT32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpPow, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpPow, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpPow, FP32);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSub, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSub, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSub, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSub, INT32);
 
@@ -643,5 +655,6 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTable, INT16);
 // Instantiation of nodes for comparison operators opEqual, opGreater
 // and opGreaterEqual
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(BinaryNode, FP16, BOOL);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(BinaryNode, BF16, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(BinaryNode, FP32, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(BinaryNode, INT32, BOOL);

@@ -1,5 +1,9 @@
 # Copyright (c) 2021-2022, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
+import struct
+import sys
+
+import numpy as np
 from tosa.DType import DType
 
 # Maximum dimension size for output and inputs for RESIZE
@@ -15,6 +19,7 @@ DTYPE_ATTRIBUTES = {
     DType.INT32: {"str": "i32", "width": 32},
     DType.INT48: {"str": "i48", "width": 48},
     DType.FP16: {"str": "f16", "width": 16},
+    DType.BF16: {"str": "bf16", "width": 16},
     DType.FP32: {"str": "f32", "width": 32},
 }
 
@@ -125,7 +130,11 @@ def get_wrong_output_type(op_name, rng, input_dtype):
                 DType.FP32,
                 DType.FP16,
             )
-        elif input_dtype == DType.FP32 or input_dtype == DType.FP16:
+        elif (
+            input_dtype == DType.FP32
+            or input_dtype == DType.FP16
+            or input_dtype == DType.BF16
+        ):
             incorrect_types = (
                 DType.INT4,
                 DType.INT8,
@@ -134,3 +143,37 @@ def get_wrong_output_type(op_name, rng, input_dtype):
                 DType.INT48,
             )
     return rng.choice(a=incorrect_types)
+
+
+def float32_is_valid_bfloat16(f):
+    """Return True if float value is valid bfloat16."""
+    f32_bits = get_float32_bitstring(f)
+    return f32_bits[16:] == "0" * 16
+
+
+def get_float32_bitstring(f):
+    """Return a big-endian string of bits representing a 32 bit float."""
+    f32_bits_as_int = struct.unpack(">L", struct.pack(">f", f))[0]
+    return f"{f32_bits_as_int:032b}"
+
+
+def float32_to_bfloat16(f):
+    """Turns fp32 value into bfloat16 by flooring.
+
+    Floors the least significant 16 bits of the input
+    fp32 value and returns this valid bfloat16 representation as fp32.
+    For simplicity during bit-wrangling, ignores underlying system
+    endianness and interprets as big-endian.
+    Returns a bf16-valid float following system's native byte order.
+    """
+    f32_bits = get_float32_bitstring(f)
+    f32_floored_bits = f32_bits[:16] + "0" * 16
+
+    # Assume sys.byteorder matches system's underlying float byteorder
+    fp_bytes = int(f32_floored_bits, 2).to_bytes(4, byteorder=sys.byteorder)
+    return struct.unpack("@f", fp_bytes)[0]  # native byteorder
+
+
+vect_f32_to_bf16 = np.vectorize(
+    float32_to_bfloat16, otypes=(np.float32,)
+)  # NumPy vectorize: applies function to vector faster than looping

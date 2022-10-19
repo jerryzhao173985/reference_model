@@ -5,6 +5,7 @@ import re
 
 from generator.tosa_test_gen import TosaTestGen
 from serializer.tosa_serializer import dtype_str_to_val
+from serializer.tosa_serializer import DTypeNames
 
 
 # Used for parsing a comma-separated list of integers in a string
@@ -150,13 +151,14 @@ def parseArgs(argv):
         help="Create tests with a particular input tensor rank",
     )
 
+    # Used for parsing a comma-separated list of integers in a string
     parser.add_argument(
         "--target-dtype",
         dest="target_dtypes",
         action="append",
         default=None,
         type=lambda x: dtype_str_to_val(x),
-        help="Create test with a particular DType (may be repeated)",
+        help=f"Create test with a particular DType: [{', '.join([d.lower() for d in DTypeNames[1:]])}] (may be repeated)",
     )
 
     parser.add_argument(

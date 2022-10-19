@@ -16,6 +16,7 @@
 #include "activation_funcs.h"
 #include "quant_util.h"
 #include "template_types.h"
+#include "arith_util.h"
 #include <cmath>
 
 using namespace TosaReference;
@@ -28,13 +29,14 @@ int OpClamp<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
         {
             InEigenType min = (InEigenType)attribute->min_fp();
             InEigenType max = (InEigenType)attribute->max_fp();
             ERROR_IF(max < min, "OpClamp: max smaller than min");
 
-            this->fcn = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
+            this->fcn = [min, max](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(a <= min ? min : a >= max ? max : a); };
         }
         break;
         case DType_INT8:
@@ -59,8 +61,9 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return (1.0 / (1.0 + (expf(-1.0 * a)))); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / (1.0 + (expf(-1.0 * a)))); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -75,8 +78,9 @@ int OpTanh<Rank, Dtype>::register_fcn()
     switch (Dtype)
     {
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return tanhf(a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(tanhf(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
@@ -87,12 +91,15 @@ int OpTanh<Rank, Dtype>::register_fcn()
 
 // template explicit instantiation
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpClamp, INT16);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSigmoid, FP32);
 
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FP32);
