@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("argmax", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("argmax", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -137,7 +137,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("avg_pool2d", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("avg_pool2d", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -185,7 +185,7 @@ extern "C"
                                                       { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("conv2d", { op }, { input, weight, bias, output },
+        tosa::TosaSerializationBasicBlock block("conv2d", "main", { op }, { input, weight, bias, output },
                                                 { input->GetName(), weight->GetName(), bias->GetName() },
                                                 { output->GetName() });
 
@@ -236,7 +236,7 @@ extern "C"
                                                       { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("conv3d", { op }, { input, weight, bias, output },
+        tosa::TosaSerializationBasicBlock block("conv3d", "main", { op }, { input, weight, bias, output },
                                                 { input->GetName(), weight->GetName(), bias->GetName() },
                                                 { output->GetName() });
 
@@ -287,7 +287,7 @@ extern "C"
             { input->GetName(), weight->GetName(), bias->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("depthwise_conv2d", { op }, { input, weight, bias, output },
+        tosa::TosaSerializationBasicBlock block("depthwise_conv2d", "main", { op }, { input, weight, bias, output },
                                                 { input->GetName(), weight->GetName(), bias->GetName() },
                                                 { output->GetName() });
 
@@ -328,8 +328,8 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("fully_connected", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("fully_connected", "main", { op }, { input, output },
+                                                { input->GetName() }, { output->GetName() });
 
         // Setup model
         TosaReference::ModelRunnerImpl runner;
@@ -367,8 +367,8 @@ extern "C"
                                                       &attr, { a->GetName(), b->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("matmul", { op }, { a, b, output }, { a->GetName(), b->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("matmul", "main", { op }, { a, b, output },
+                                                { a->GetName(), b->GetName() }, { output->GetName() });
 
         // Setup model
         TosaReference::ModelRunnerImpl runner;
@@ -411,7 +411,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("max_pool2d", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("max_pool2d", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -463,7 +463,7 @@ extern "C"
             { input->GetName(), weight->GetName(), bias->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("transpose_conv2d", { op }, { input, weight, bias, output },
+        tosa::TosaSerializationBasicBlock block("transpose_conv2d", "main", { op }, { input, weight, bias, output },
                                                 { input->GetName(), weight->GetName(), bias->GetName() },
                                                 { output->GetName() });
 
@@ -506,7 +506,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("clamp", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("clamp", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -537,7 +537,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("sigmoid", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("sigmoid", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -568,7 +568,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("tanh", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("tanh", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -600,7 +600,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("add", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("add", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -638,7 +638,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("arithmetic_right_shift", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("arithmetic_right_shift", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -672,7 +672,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_and", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("bitwise_and", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -706,7 +706,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_or", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("bitwise_or", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -740,7 +740,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_xor", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("bitwise_xor", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -773,7 +773,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("intdiv", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("intdiv", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -807,7 +807,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_and", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("logical_and", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -843,7 +843,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_left_shift", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("logical_left_shift", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -879,7 +879,7 @@ extern "C"
                                                 &attr, { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_right_shift", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("logical_right_shift", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -913,7 +913,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_or", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("logical_or", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -947,7 +947,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_xor", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("logical_xor", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -981,7 +981,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("maximum", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("maximum", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1015,7 +1015,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("minimum", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("minimum", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1052,7 +1052,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("mul", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("mul", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1085,7 +1085,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("pow", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("pow", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1118,7 +1118,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("sub", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("sub", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1154,7 +1154,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("table", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("table", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1185,7 +1185,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("abs", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("abs", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1216,8 +1216,8 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_not", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("bitwise_not", "main", { op }, { input1, output },
+                                                { input1->GetName() }, { output->GetName() });
 
         // Setup model
         TosaReference::ModelRunnerImpl runner;
@@ -1247,7 +1247,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("ceil", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("ceil", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1278,7 +1278,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("clz", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("clz", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1309,7 +1309,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("exp", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("exp", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1340,7 +1340,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("floor", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("floor", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1371,7 +1371,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("log", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("log", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1402,8 +1402,8 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_not", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_not", "main", { op }, { input1, output },
+                                                { input1->GetName() }, { output->GetName() });
 
         // Setup model
         TosaReference::ModelRunnerImpl runner;
@@ -1438,7 +1438,7 @@ extern "C"
                                                       &attr, { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("negate", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("negate", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1469,7 +1469,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reciprocal", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("reciprocal", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1500,7 +1500,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("rsqrt", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("rsqrt", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1537,7 +1537,7 @@ extern "C"
                                                       { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("select", { op }, { input1, input2, input3, output },
+        tosa::TosaSerializationBasicBlock block("select", "main", { op }, { input1, input2, input3, output },
                                                 { input1->GetName(), input2->GetName(), input3->GetName() },
                                                 { output->GetName() });
 
@@ -1572,7 +1572,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("equal", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("equal", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1606,7 +1606,7 @@ extern "C"
                                                       { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("greater", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("greater", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1641,7 +1641,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("greater_equal", { op }, { input1, input2, output },
+        tosa::TosaSerializationBasicBlock block("greater_equal", "main", { op }, { input1, input2, output },
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
@@ -1674,7 +1674,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_all", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reduce_all", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1706,7 +1706,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_any", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reduce_any", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1738,7 +1738,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_max", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reduce_max", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1770,7 +1770,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_min", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reduce_min", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1802,8 +1802,8 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_product", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_product", "main", { op }, { input, output },
+                                                { input->GetName() }, { output->GetName() });
 
         // Setup model
         TosaReference::ModelRunnerImpl runner;
@@ -1834,7 +1834,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_sum", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reduce_sum", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1865,7 +1865,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("concat", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("concat", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1904,7 +1904,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("pad", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("pad", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1939,7 +1939,7 @@ extern "C"
                                                       &attr, { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reshape", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("reshape", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -1970,7 +1970,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reverse", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("reverse", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2008,7 +2008,7 @@ extern "C"
                                                       &attr, { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("slice", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("slice", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2045,7 +2045,7 @@ extern "C"
                                                       &attr, { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("tile", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("tile", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2081,7 +2081,7 @@ extern "C"
                                                 &attr, { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("transpose", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("transpose", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2114,7 +2114,7 @@ extern "C"
                                                       { values->GetName(), indices->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("gather", { op }, { values, indices, output },
+        tosa::TosaSerializationBasicBlock block("gather", "main", { op }, { values, indices, output },
                                                 { values->GetName(), indices->GetName() }, { output->GetName() });
 
         // Setup model
@@ -2152,7 +2152,7 @@ extern "C"
                                                       { values_out->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("scatter", { op }, { values_in, indices, input, values_out },
+        tosa::TosaSerializationBasicBlock block("scatter", "main", { op }, { values_in, indices, input, values_out },
                                                 { values_in->GetName(), indices->GetName(), input->GetName() },
                                                 { values_out->GetName() });
 
@@ -2195,7 +2195,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("resize", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("resize", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2226,7 +2226,7 @@ extern "C"
                                                       { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("cast", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("cast", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2274,7 +2274,7 @@ extern "C"
                                                       &attr, { input->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("rescale", { op }, { input, output }, { input->GetName() },
+        tosa::TosaSerializationBasicBlock block("rescale", "main", { op }, { input, output }, { input->GetName() },
                                                 { output->GetName() });
 
         // Setup model
@@ -2305,7 +2305,7 @@ extern "C"
                                                       { input1->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("identity", { op }, { input1, output }, { input1->GetName() },
+        tosa::TosaSerializationBasicBlock block("identity", "main", { op }, { input1, output }, { input1->GetName() },
                                                 { output->GetName() });
 
         // Setup model

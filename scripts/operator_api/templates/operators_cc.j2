@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -64,11 +64,11 @@ tosa::ResizeMode translate_client_tosa_mode(tosa_mode_t mode) {
     switch(mode) {
         case tosa_mode_nearest:
             return tosa::ResizeMode_NEAREST;
-        case tosa_mode_max:            
+        case tosa_mode_max:
         case tosa_mode_bilinear:
             return tosa::ResizeMode_BILINEAR;
         default:
-            return tosa::ResizeMode_UNKNOWN;            
+            return tosa::ResizeMode_UNKNOWN;
     }
 }
 
@@ -131,7 +131,7 @@ extern "C"
                                                              });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("{{operator.name}}", { op },
+        tosa::TosaSerializationBasicBlock block("{{operator.name}}", "main", { op },
                                                  {
                                                     {%- for input in operator.inputs: -%}
                                                         {{input}},

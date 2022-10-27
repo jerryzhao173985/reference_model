@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import numpy as np
 import tensorflow as tf
@@ -1164,3 +1164,82 @@ class TBuilder:
 
         def eval(self, a):
             return tf.bitwise.right_shift(a, self.shift, name=self.result_name)
+
+    class While:
+        def __init__(self, name):
+            self.result_name = name
+
+        def while_cond(self, x):
+            return tf.reduce_sum(x) < self.cap
+
+        def while_body(self, x):
+            return tf.add(x, tf.math.sigmoid(x))
+
+        def eval(self, a):
+            self.cap = tf.cast(
+                tf.constant(
+                    2.0,
+                    shape=[
+                        1,
+                    ],
+                ),
+                a.dtype,
+            )
+
+            result = tf.while_loop(
+                self.while_cond, self.while_body, [a], name=self.result_name
+            )
+
+            return result[0]
+
+    class LSTM:
+        def __init__(self, name):
+            self.result_name = name
+            self.lstm = tf.keras.layers.LSTM(
+                2,
+                activation="tanh",
+                unroll=False,
+                recurrent_activation="sigmoid",
+                use_bias=True,
+                recurrent_initializer="ones",
+                kernel_initializer="ones",
+            )
+
+        def eval(self, a):
+            return self.lstm(a)
+
+    class GRU:
+        def __init__(self, name):
+            self.result_name = name
+            self.lstm = tf.keras.layers.GRU(
+                2,
+                recurrent_activation="sigmoid",
+                use_bias=True,
+                recurrent_initializer="ones",
+                kernel_initializer="ones",
+            )
+
+        def eval(self, a):
+            return self.lstm(a)
+
+    class RNN:
+        def __init__(self, name):
+            self.result_name = name
+            basic_cell = tf.keras.layers.SimpleRNNCell(
+                units=2,
+                activation="sigmoid",
+                use_bias=True,
+                recurrent_initializer="ones",
+            )
+            self.rnn = tf.keras.layers.RNN(basic_cell, unroll=False)
+
+        def eval(self, a):
+            return self.rnn(a)
+
+    class FullyConnected:
+        def __init__(self, name):
+            self.result_name = name
+            self.dense = tf.keras.layers.Dense(2)
+
+        def eval(self, a):
+            return self.dense(a)

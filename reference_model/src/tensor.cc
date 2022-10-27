@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -32,10 +32,17 @@ TosaReference::Tensor::Tensor(std::string tensorName_, DType tensorDtype_, std::
     consumers.clear();
     isSubgraphInput  = false;
     isSubgraphOutput = false;
+    isParentGraphOutput = false;
 }
 
 TosaReference::Tensor::~Tensor()
 {}
+
+int TosaReference::Tensor::setIsParentGraphOutput()
+{
+    isParentGraphOutput = true;
+    return 0;
+}
 
 int TosaReference::Tensor::setIsSubgraphInput()
 {

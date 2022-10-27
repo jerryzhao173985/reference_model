@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
         FATAL_ERROR("Unable to load graph");
     }
 
-    SubgraphTraverser main_gt(tsh.GetMainBlock(), &tsh);
+    SubgraphTraverser main_gt(tsh.GetMainRegion()->GetBlockByName("main"), &tsh, nullptr);
 
     if (main_gt.initializeGraph())
     {

@@ -807,6 +807,42 @@ TF_OP_LIST = {
             ]
         },
     },
+    "while": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.While, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tflite": list(TYPE_F),
+        },
+    },
+    "lstm": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.LSTM, TGen.tgRecurrent, ArgGen.agNone),
+        "types": {
+            "tflite": [
+                tf.float32,
+                # tf.int32
+            ]
+        },
+    },
+    "gru": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.GRU, TGen.tgRecurrent, ArgGen.agNone),
+        "types": {
+            "tflite": [
+                tf.float32,
+                # tf.int32
+            ]
+        },
+    },
+    "rnn": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.RNN, TGen.tgRecurrent, ArgGen.agNone),
+        "types": {
+            "tflite": [
+                tf.float32,
+            ]
+        },
+    },
 }
 
 # Shapes to be tested; default can be overwritten

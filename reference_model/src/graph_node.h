@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -163,7 +163,6 @@ public:
 
     int addInputTensor(Tensor* tens);
     int addOutputTensor(Tensor* tens);
-
     // Validate that the input tensors match properly
     // in their types, attributes, rank, etc well enough to be
     // processed.
@@ -252,6 +251,22 @@ public:
         return nodeType;
     }
 
+    SubgraphTraverser* getParentSGT()
+    {
+        return parent_sgt;
+    }
+
+    int setInMainBlock(bool isInMainBlock)
+    {
+        inMainBlock = isInMainBlock;
+        return 0;
+    }
+
+    bool getInMainBlock()
+    {
+        return inMainBlock;
+    }
+
     // Helper functions.
     int idiv_check(int input1, int input2, int& result);
 
@@ -328,6 +343,8 @@ protected:
     // -1 means n/a
     int requiredRankMin;
     int requiredRankMax;
+
+    bool inMainBlock;
 };
 
 };    // namespace TosaReference

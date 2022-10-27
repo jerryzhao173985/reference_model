@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ void ModelRunnerImpl::setFuncDebug(func_debug_t& func_debug)
 GraphStatus ModelRunnerImpl::initialize(TosaSerializationHandler& serialization_handler)
 {
     validateTosaVersion(serialization_handler);
-    return initialize(serialization_handler.GetMainBlock(), &serialization_handler);
+    return initialize(serialization_handler.GetMainRegion()->GetBlocks()[0], &serialization_handler);
 }
 
 GraphStatus ModelRunnerImpl::initialize(TosaSerializationBasicBlock& bb)
@@ -284,7 +284,7 @@ GraphStatus ModelRunnerImpl::initialize(TosaSerializationBasicBlock* bb,
 
     // Make nullptr in case ModelRunnerImpl is being initialized again with a different graph.
     _main_gt = nullptr;
-    _main_gt = new SubgraphTraverser(bb, serialization_handler);
+    _main_gt = new SubgraphTraverser(bb, serialization_handler, nullptr);
 
     if (_main_gt == nullptr)
     {

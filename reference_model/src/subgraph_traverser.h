@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ namespace TosaReference
 class SubgraphTraverser
 {
 public:
-    SubgraphTraverser(TosaSerializationBasicBlock* block, TosaSerializationHandler* tsh);
+    SubgraphTraverser(TosaSerializationBasicBlock* block, TosaSerializationHandler* tsh, SubgraphTraverser* parent_sgt);
     ~SubgraphTraverser();
 
     int initializeGraph();
@@ -59,6 +59,10 @@ public:
     {
         return block->GetName();
     }
+    std::string getRegionName() const
+    {
+        return block->GetRegionName();
+    }
     int getNumInputTensors() const;
     Tensor* getInputTensor(const unsigned int idx) const;
     Tensor* getInputTensorByName(const std::string name) const;
@@ -76,6 +80,10 @@ private:
     GraphNode* getNextNode();
 
     GraphStatus graph_status;
+
+    // pointer to the parent subgraph traversal if exists
+    // e.g., Control Flow Ops will have nested blocks (subgraph traversals)
+    SubgraphTraverser* parent_sgt;
 
     // pointer to serialization library and corresponding basic block
     TosaSerializationBasicBlock* block;
