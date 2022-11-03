@@ -101,6 +101,18 @@ class TBuilder:
         def eval(self, a):
             return tf.nn.leaky_relu(a, alpha=self.alpha, name=self.result_name)
 
+    class Prelu:
+        def __init__(self, name):
+            self.result_name = name
+            self.prelu = tf.keras.layers.PReLU(
+                alpha_initializer=tf.keras.initializers.RandomNormal(
+                    mean=0.0, stddev=1.0
+                )
+            )
+
+        def eval(self, a):
+            return self.prelu(a)
+
     class Gelu:
         def __init__(self, name):
             self.result_name = name

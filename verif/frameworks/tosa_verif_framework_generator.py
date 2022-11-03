@@ -140,6 +140,13 @@ TF_OP_LIST = {
             ),
         },
     },
+    "prelu": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Prelu, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
+        },
+    },
     "gelu": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Gelu, TGen.tgBasic, ArgGen.agNone),
