@@ -63,7 +63,9 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
         case DType_FP16:
         case DType_BF16:
         case DType_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / (1.0 + (expf(-1.0 * a)))); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return fpTrunc<Dtype>(1.f / (1.f + (expf(-1.f * a))));
+            };
             break;
         default:
             ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
