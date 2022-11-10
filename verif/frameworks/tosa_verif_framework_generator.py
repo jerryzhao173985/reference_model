@@ -298,6 +298,13 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.Rsqrt, TGen.tgBasic, ArgGen.agNone),
         "types": TYPE_F,
     },
+    "sign": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Sign, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": TYPE_F,
+        },
+    },
     "sigmoid": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Sigmoid, TGen.tgBasic, ArgGen.agNone),

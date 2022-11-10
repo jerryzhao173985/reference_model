@@ -317,6 +317,13 @@ class TBuilder:
         def eval(self, a):
             return tf.math.rsqrt(a, name=self.result_name)
 
+    class Sign:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.sign(a, name=self.result_name)
+
     class Sigmoid:
         def __init__(self, name):
             self.result_name = name
