@@ -208,7 +208,7 @@ TF_OP_LIST = {
     "reduce_all": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.ReduceAll, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": {"tf": TYPE_B},
+        "types": TYPE_B,
     },
     "reduce_min": {
         "operands": (1, 0),
