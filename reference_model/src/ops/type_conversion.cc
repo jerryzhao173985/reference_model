@@ -159,7 +159,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         else
                             scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
                                                                               channel_shift);
-                        OutEigenType out_val = (OutEigenType)(scaled + output_zp);
+                        scaled               = scaled + output_zp;
+                        OutEigenType out_val = static_cast<OutEigenType>(scaled);
                         out_val              = std::max<OutEigenType>(out_val, QMin);
                         out_val              = std::min<OutEigenType>(out_val, QMax);
                         return out_val;
@@ -192,7 +193,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 else
                     scaled =
                         TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
-                OutEigenType out_val = (OutEigenType)(scaled + output_zp);
+                scaled               = scaled + output_zp;
+                OutEigenType out_val = static_cast<OutEigenType>(scaled);
                 out_val              = std::max<OutEigenType>(out_val, QMin);
                 out_val              = std::min<OutEigenType>(out_val, QMax);
                 return out_val;
