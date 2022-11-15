@@ -159,8 +159,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
     switch (dtype)
     {
         case DType_FP16:
-            // Convert from fp16 to fp32
-            //TODO(jw): remove this once we cast to fp16 in register_fcn/eval
+            // Convert from fp16 to fp32 so that fp16 values can be manipulated as float
             for (uint32_t i=0; i < elements; i++) {
                 fdatabuf[i] = half_float::half_cast<float, half_float::half>(f16databuf[i]);
             }
@@ -277,7 +276,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
                 free(f16databuf);
                 return 1;
             }
-            // Convert fp32 to fp16
+            // Convert fp32 to fp16 so that output file contains valid fp16 data
             for (uint32_t i=0; i < elements; i++) {
                 f16databuf[i] = half_float::half_cast<half_float::half, float>(fdatabuf[i]);
             }

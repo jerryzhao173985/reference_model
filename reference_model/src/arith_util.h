@@ -30,17 +30,18 @@
 #include <fenv.h>
 #include <math.h>
 #define __STDC_LIMIT_MACROS    //enable min/max of plain data type
-#include "func_debug.h"
 #include "func_config.h"
+#include "func_debug.h"
+#include "half.hpp"
 #include "inttypes.h"
 #include "tosa_generated.h"
+#include <Eigen/Core>
+#include <bitset>
 #include <cassert>
 #include <iostream>
 #include <limits>
 #include <stdint.h>
 #include <typeinfo>
-#include <Eigen/Core>
-#include <bitset>
 
 using namespace tosa;
 using namespace std;
@@ -269,8 +270,12 @@ float fpTrunc(float f_in)
             truncateFloatToBFloat(&f_in, 1);
             break;
         case DType_FP16:
-            // TODO(jw): implement FP16 truncate function (no-op placeholder for now)
-            break;
+            // Cast to temporary float16 value before casting back to float32
+            {
+                half_float::half h = half_float::half_cast<half_float::half, float>(f_in);
+                f_in               = half_float::half_cast<float, half_float::half>(h);
+                break;
+            }
         case DType_FP32:
             // No-op for fp32
             break;
