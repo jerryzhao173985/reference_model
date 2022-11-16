@@ -581,7 +581,9 @@ OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
 
 template <int Rank, DType Dtype>
 OpTranspose<Rank, Dtype>::~OpTranspose()
-{}
+{
+    if (attribute) delete attribute;
+}
 
 template <int Rank, DType Dtype>
 int OpTranspose<Rank, Dtype>::checkTensorAttributes()

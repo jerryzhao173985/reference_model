@@ -56,6 +56,12 @@ int OpClamp<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, DType Dtype>
+OpClamp<Rank, Dtype>::~OpClamp()
+{
+    if (attribute) delete attribute;
+}
+
+template <int Rank, DType Dtype>
 int OpSigmoid<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)

@@ -192,6 +192,12 @@ int OpArithmeticRightShift<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, DType Dtype>
+OpArithmeticRightShift<Rank, Dtype>::~OpArithmeticRightShift()
+{
+    if (attribute) delete attribute;
+}
+
+template <int Rank, DType Dtype>
 int OpBitwiseAnd<Rank, Dtype>::register_fcn()
 {
     switch (Dtype)
@@ -455,6 +461,12 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
     return 0;
 }
 
+template <int Rank, DType InDtype, DType OutDtype>
+OpMul<Rank, InDtype, OutDtype>::~OpMul()
+{
+    if (attribute) delete attribute;
+}
+
 template <int Rank, DType Dtype>
 int OpPow<Rank, Dtype>::register_fcn()
 {
@@ -512,7 +524,9 @@ OpTable<Rank, InDtype>::OpTable(SubgraphTraverser* sgt_,
 
 template <int Rank, DType InDtype>
 OpTable<Rank, InDtype>::~OpTable()
-{}
+{
+    if (attribute) delete attribute;
+}
 
 template <int Rank, DType InDtype>
 int OpTable<Rank, InDtype>::checkTensorAttributes()

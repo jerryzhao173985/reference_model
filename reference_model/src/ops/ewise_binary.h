@@ -148,6 +148,7 @@ public:
     using InEigenType  = typename GetEigenType<Dtype>::type;
     using OutEigenType = typename GetEigenType<Dtype>::type;
     virtual int register_fcn();
+    virtual ~OpArithmeticRightShift();
 
 protected:
     TosaArithmeticRightShiftAttribute* attribute;
@@ -163,6 +164,7 @@ public:
         INIT_ATTRIBUTE(Mul);
         register_fcn();
     }
+    virtual ~OpMul();
     static constexpr int64_t QMin = GetQMin<OutDtype>::value;
     static constexpr int64_t QMax = GetQMax<OutDtype>::value;
     using InEigenType             = typename GetEigenType<InDtype>::type;
