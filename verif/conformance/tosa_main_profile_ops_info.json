@@ -155,6 +155,43 @@
             "tosa-mi"
         ]
     },
+    "gather": {
+        "group": "scatter_gather",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "5,72"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "2,65536,1",
+                "--target-shape",
+                "1,2,65535",
+                "--target-shape",
+                "5000,1,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "max_pool2d": {
         "group": "tensor",
         "generator_args": [
@@ -205,6 +242,43 @@
         "sparsity": {
             "pad": 11
         },
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "scatter": {
+        "group": "scatter_gather",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "5,56"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,65541,1",
+                "--target-shape",
+                "1,1,65531",
+                "--target-shape",
+                "2989,6,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
         "profile": [
             "tosa-mi"
         ]
