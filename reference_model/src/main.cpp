@@ -196,14 +196,16 @@ done:
 int loadGraph(TosaSerializationHandler& tsh, json test_desc)
 {
     char graph_fullname[1024];
+    const std::string error_msg1 = "Check \"tosa_file\" in .json specified by --tosa_desc";
+    const std::string error_msg2 = " or via arguments --tosa_file & --flatbuffer_dir";
+
+    if (strlen(test_desc["tosa_file"].get<std::string>().c_str()) <= 0)
+    {
+        FATAL_ERROR("Missing tosa_file.\n%s", error_msg1.c_str());
+    }
 
     snprintf(graph_fullname, sizeof(graph_fullname), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
              test_desc["tosa_file"].get<std::string>().c_str());
-
-    if (strlen(graph_fullname) <= 2)
-    {
-        FATAL_ERROR("Missing required argument: Check \"tosa_file\" in .json specified by -Ctosa_desc=");
-    }
 
     const char JSON_EXT[] = ".json";
     int is_json           = 0;
@@ -222,14 +224,14 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
     {
         if (tsh.LoadFileSchema(g_func_config.operator_fbs.c_str()))
         {
-            FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck -Coperator_fbs=",
+            FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck --operator_fbs is set correctly",
                         g_func_config.operator_fbs.c_str());
         }
 
         if (tsh.LoadFileJson(graph_fullname))
         {
-            FATAL_ERROR("\nError loading JSON graph file: %s\nCheck -Ctest_desc=, -Ctosa_file= and -Cflatbuffer_dir=",
-                        graph_fullname);
+            FATAL_ERROR("\nError loading JSON graph file: %s\n%s%s\nCheck --operator_fbs is using correct version",
+                        graph_fullname, error_msg1.c_str(), error_msg2.c_str());
         }
     }
     else
@@ -237,8 +239,8 @@ int loadGraph(TosaSerializationHandler& tsh, json test_desc)
         if (tsh.LoadFileTosaFlatbuffer(graph_fullname))
         {
             FATAL_ERROR(
-                "\nError loading TOSA flatbuffer file: %s\nCheck -Ctest_desc=, -Ctosa_file= and -Cflatbuffer_dir=",
-                graph_fullname);
+                "\nError loading TOSA flatbuffer file: %s\n%s%s",
+                graph_fullname, error_msg1.c_str(), error_msg2.c_str());
         }
     }
 
@@ -416,34 +418,34 @@ int initTestDesc(json& test_desc)
         }
     }
 
-    // Overwrite test_desc["tosa_file"] if -Ctosa_file= specified.
+    // Overwrite test_desc["tosa_file"] if --tosa_file specified.
     if (!g_func_config.tosa_file.empty())
     {
         test_desc["tosa_file"] = g_func_config.tosa_file;
     }
 
-    // Overwrite test_desc["ifm_name"] if -Cifm_name= specified.
+    // Overwrite test_desc["ifm_name"] if --ifm_name specified.
     if (!g_func_config.ifm_name.empty())
     {
         std::vector<std::string> ifm_name_vec = parseFromString(g_func_config.ifm_name);
         test_desc["ifm_name"]                 = ifm_name_vec;
     }
 
-    // Overwrite test_desc["ifm_file"] if -Cifm_file= specified.
+    // Overwrite test_desc["ifm_file"] if --ifm_file specified.
     if (!g_func_config.ifm_file.empty())
     {
         std::vector<std::string> ifm_file_vec = parseFromString(g_func_config.ifm_file);
         test_desc["ifm_file"]                 = ifm_file_vec;
     }
 
-    // Overwrite test_desc["ofm_name"] if -Cofm_name= specified.
+    // Overwrite test_desc["ofm_name"] if --ofm_name specified.
     if (!g_func_config.ofm_name.empty())
     {
         std::vector<std::string> ofm_name_vec = parseFromString(g_func_config.ofm_name);
         test_desc["ofm_name"]                 = ofm_name_vec;
     }
 
-    // Overwrite test_desc["ofm_file"] if -Cofm_file= specified.
+    // Overwrite test_desc["ofm_file"] if --ofm_file specified.
     if (!g_func_config.ofm_file.empty())
     {
         std::vector<std::string> ofm_file_vec = parseFromString(g_func_config.ofm_file);
