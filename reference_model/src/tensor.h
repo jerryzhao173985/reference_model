@@ -16,6 +16,7 @@
 #ifndef TOSA_REFERENCE_TENSOR_H
 #define TOSA_REFERENCE_TENSOR_H
 
+#include "array_proxy.h"
 #include "model_common.h"
 #include "ops/template_types.h"
 #include "tosa_generated.h"
@@ -228,17 +229,17 @@ public:
     virtual int writeToNpyFile(const char* filename) const;
     virtual int copyValueFrom(Tensor* tensor) = 0;
 
-    virtual int readfromVector(const std::vector<float>& vals);
-    virtual int readfromVector(const std::vector<half_float::half>& vals);
-    virtual int readfromVector(const std::vector<int32_t>& vals);
-    virtual int readfromVector(const std::vector<int64_t>& vals);
-    virtual int readfromVector(const std::vector<unsigned char>& vals);
+    virtual int readfromVector(const ArrayProxy<float> vals);
+    virtual int readfromVector(const ArrayProxy<half_float::half> vals);
+    virtual int readfromVector(const ArrayProxy<int32_t> vals);
+    virtual int readfromVector(const ArrayProxy<int64_t> vals);
+    virtual int readfromVector(const ArrayProxy<unsigned char> vals);
 
-    virtual int writeToVector(std::vector<float>& vals);
-    virtual int writeToVector(std::vector<half_float::half>& vals);
-    virtual int writeToVector(std::vector<int32_t>& vals);
-    virtual int writeToVector(std::vector<int64_t>& vals);
-    virtual int writeToVector(std::vector<unsigned char>& vals);
+    virtual int writeToVector(ArrayProxy<float> vals);
+    virtual int writeToVector(ArrayProxy<half_float::half> vals);
+    virtual int writeToVector(ArrayProxy<int32_t> vals);
+    virtual int writeToVector(ArrayProxy<int64_t> vals);
+    virtual int writeToVector(ArrayProxy<unsigned char> vals);
 
     const char* bool_to_str(bool in) const
     {

@@ -55,13 +55,23 @@ GraphStatus IModelRunner::run()
 template <typename T>
 int IModelRunner::setInput(std::string input_name, std::vector<T>& vals)
 {
-    return model_runner_impl->setInput<T>(input_name, vals);
+    return model_runner_impl->setInput<T>(input_name, ArrayProxy(vals.size(), vals.data()));
+}
+
+int IModelRunner::setInput(std::string input_name, uint8_t* raw_ptr, size_t size)
+{
+    return model_runner_impl->setInput(input_name, raw_ptr, size);
 }
 
 template <typename T>
 std::vector<T> IModelRunner::getOutput(std::string output_name)
 {
     return model_runner_impl->getOutput<T>(output_name);
+}
+
+int IModelRunner::getOutput(std::string output_name, uint8_t* raw_ptr, size_t size)
+{
+    return model_runner_impl->getOutput(output_name, raw_ptr, size);
 }
 
 // Template explicit specialization

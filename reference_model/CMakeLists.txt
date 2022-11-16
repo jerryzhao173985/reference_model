@@ -66,6 +66,7 @@ set(CXX_SOURCE
     src/graph_node.cc
     src/subgraph_traverser.cc
     src/func_debug.cc
+    src/operators.cc
     src/ops/op_factory.cc
     src/ops/tensor_ops.cc
     src/ops/activation_funcs.cc
