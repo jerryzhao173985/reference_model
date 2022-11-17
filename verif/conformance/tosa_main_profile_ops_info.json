@@ -168,6 +168,62 @@
             "tosa-mi"
         ]
     },
+    "const": {
+        "group": "data_nodes",
+        "no_negative_tests": "true",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "4",
+                "--target-rank",
+                "5"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,65540,1,1,1",
+                "--target-shape",
+                "1,2,1,65529"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "conv2d": {
         "group": "tensor",
         "generator_args": [
@@ -244,6 +300,64 @@
                 "1,2,65535",
                 "--target-shape",
                 "5000,1,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "identity": {
+        "group": "data_nodes",
+        "no_negative_tests": "true",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,67",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,19",
+                "--target-rank",
+                "4",
+                "--target-rank",
+                "5"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65539,1,1",
+                "--target-shape",
+                "1,1,2,65529"
             ]
         ],
         "params": {},
