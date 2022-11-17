@@ -105,6 +105,69 @@
             "tosa-mi"
         ]
     },
+    "concat": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "16,64",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3",
+                "--num-const-inputs-concat",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "4",
+                "--target-rank",
+                "5",
+                "--num-const-inputs-concat",
+                "1"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65534,1,1",
+                "--target-shape",
+                "1,65537,1,2",
+                "--num-const-inputs-concat",
+                "2"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "conv2d": {
         "group": "tensor",
         "generator_args": [
@@ -246,6 +309,159 @@
             "tosa-mi"
         ]
     },
+    "pad": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,65",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,17",
+                "--target-rank",
+                "4"
+            ],
+            [
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "5"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65539,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "sparsity": {
+            "pad": 21
+        },
+        "preselected": [
+            {
+                "shape": "50",
+                "type": "bf16",
+                "pad": "pad11"
+            },
+            {
+                "shape": "63x46",
+                "type": "bf16",
+                "pad": "pad1010"
+            },
+            {
+                "shape": "6",
+                "type": "f16",
+                "pad": "pad01"
+            }
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "reshape": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--num-rand-permutations",
+                "2"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65536,1",
+                "--target-shape",
+                "1,65535,1,2",
+                "--num-rand-permutations",
+                "2"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "rank",
+            "perm"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "reverse": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,48"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65537",
+                "--target-shape",
+                "1,65535,1,2"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "scatter": {
         "group": "scatter_gather",
         "generator_args": [
@@ -278,6 +494,103 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "tile": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "4,32"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "65535",
+                "--target-shape",
+                "1,65543,2,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "transpose": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--filter",
+                "^transpose$",
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--num-rand-permutations",
+                "2"
+            ],
+            [
+                "--filter",
+                "^transpose$",
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-rank",
+                "3",
+                "--target-rank",
+                "4",
+                "--num-rand-permutations",
+                "2"
+            ],
+            [
+                "--filter",
+                "^transpose$",
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,65539,2",
+                "--target-shape",
+                "1,1,1,65535",
+                "--num-rand-permutations",
+                "1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "perm"
         ],
         "profile": [
             "tosa-mi"
