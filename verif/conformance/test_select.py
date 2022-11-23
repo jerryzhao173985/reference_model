@@ -793,7 +793,7 @@ def main():
     args = parse_args()
 
     loglevels = (logging.ERROR, logging.WARNING, logging.INFO, logging.DEBUG)
-    logger.basicConfig(level=loglevels[min(args.verbosity, len(loglevels) - 1)])
+    logger.setLevel(loglevels[min(args.verbosity, len(loglevels) - 1)])
     logger.info(f"{__file__}: args: {args}")
 
     try:
