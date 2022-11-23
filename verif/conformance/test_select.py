@@ -399,6 +399,12 @@ class CastOperator(Operator):
     param_names = ["shape", "type", "output_type"]
 
 
+class CeilOperator(Operator):
+    """Test selector for the CEIL operator."""
+
+    name = "ceil"
+
+
 class ClampOperator(Operator):
     """Test selector for the CLAMP operator."""
 
@@ -456,6 +462,12 @@ class EqualOperator(Operator):
     """Test selector for the EQUAL operator."""
 
     name = "equal"
+
+
+class FloorOperator(Operator):
+    """Test selector for the FLOOR operator."""
+
+    name = "floor"
 
 
 class FullyConnectedOperator(Operator):
