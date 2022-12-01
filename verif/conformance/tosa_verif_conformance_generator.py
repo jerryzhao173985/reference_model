@@ -80,7 +80,7 @@ def _run_sh_command(args, cwd, full_cmd):
     return (rc.stdout, rc.stderr)
 
 
-def build_op_tests(args, operator, test_params):
+def build_op_tests(args, profile, operator, test_params):
     """Build tests for a given operator.
 
     Builds a set of tests based on the parameters defined in test_params
@@ -90,7 +90,7 @@ def build_op_tests(args, operator, test_params):
     assert operator in test_params
 
     build_tests_cmd = "tosa_verif_build_tests"
-    op_build_dir = args.build_dir
+    op_build_dir = args.build_dir / profile
 
     ref_cmd_base = [
         build_tests_cmd,
@@ -700,7 +700,7 @@ def main():
                         logger.debug(f"Skipping {op} as not part of {args.profile}")
                         continue
 
-                    op_build_dir = build_op_tests(args, op, test_params)
+                    op_build_dir = build_op_tests(args, profile, op, test_params)
 
                     operator_group = test_params[op]["group"]
                     root_output_dir = args.output_dir / "operators"
