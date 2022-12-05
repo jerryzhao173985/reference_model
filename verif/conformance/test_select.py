@@ -594,6 +594,12 @@ class PadOperator(Operator):
     param_names = ["shape", "type", "pad"]
 
 
+class PowOperator(Operator):
+    """Test selector for the POW operator."""
+
+    name = "pow"
+
+
 class ReduceAllOperator(Operator):
     """Test selector for the REDUCE_ALL operator."""
 

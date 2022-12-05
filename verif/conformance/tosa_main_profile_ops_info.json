@@ -731,6 +731,59 @@
             "tosa-mi"
         ]
     },
+    "pow": {
+        "group": "ew_binary",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "16,64",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "4",
+                "--target-rank",
+                "5"
+            ],
+            [
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "65534,3,1,1",
+                "--target-shape",
+                "2,65541,1,1,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "reshape": {
         "group": "data_layout",
         "generator_args": [
