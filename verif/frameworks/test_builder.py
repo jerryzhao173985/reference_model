@@ -331,6 +331,20 @@ class TBuilder:
         def eval(self, a):
             return tf.math.tanh(a, name=self.result_name)
 
+    class Sin:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.sin(a, name=self.result_name)
+
+    class Cos:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.cos(a, name=self.result_name)
+
     class Square:
         def __init__(self, name):
             self.result_name = name
