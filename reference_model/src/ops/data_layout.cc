@@ -191,6 +191,7 @@ int OpPad<Rank, Dtype>::eval()
             pad_value = (InEigenType)attribute->pad_const_int();
             break;
         case DType_FP16:
+        case DType_BF16:
         case DType_FP32:
             pad_value = (InEigenType)attribute->pad_const_fp();
             break;
