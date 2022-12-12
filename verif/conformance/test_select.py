@@ -684,6 +684,12 @@ class SelectOperator(Operator):
     name = "select"
 
 
+class SigmoidOperator(Operator):
+    """Test selector for the SIGMOID operator."""
+
+    name = "sigmoid"
+
+
 class SliceOperator(Operator):
     """Test selector for the SLICE operator."""
 
@@ -701,6 +707,12 @@ class TableOperator(Operator):
     """Test selector for the TABLE operator."""
 
     name = "table"
+
+
+class TanhOperator(Operator):
+    """Test selector for the TANH operator."""
+
+    name = "tanh"
 
 
 class TileOperator(Operator):
