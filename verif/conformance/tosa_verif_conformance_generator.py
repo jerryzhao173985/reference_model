@@ -92,7 +92,7 @@ def build_op_tests(args, profile, operator, test_params):
     build_tests_cmd = "tosa_verif_build_tests"
     op_build_dir = args.build_dir / profile
 
-    ref_cmd_base = [
+    build_cmd_base = [
         build_tests_cmd,
         "--filter",
         operator,
@@ -102,15 +102,15 @@ def build_op_tests(args, profile, operator, test_params):
         str(args.random_seed),
     ]
 
-    ref_cmds = []
+    build_cmds_list = []
 
     if args.test_type in ["positive", "both"]:
         # Append extra parameters and run test generator for each set of parameters.
         for arglist in test_params[operator]["generator_args"]:
-            ref_cmd_pos_test = ref_cmd_base.copy()
-            ref_cmd_pos_test.extend(["--test-type", "positive"])
-            ref_cmd_pos_test.extend(arglist)
-            ref_cmds.append(ref_cmd_pos_test)
+            build_cmd_pos_test = build_cmd_base.copy()
+            build_cmd_pos_test.extend(["--test-type", "positive"])
+            build_cmd_pos_test.extend(arglist)
+            build_cmds_list.append(build_cmd_pos_test)
 
     if args.test_type in ["negative", "both"]:
         # Get target-dtypes options only to limit tests to those needed
@@ -123,24 +123,29 @@ def build_op_tests(args, profile, operator, test_params):
                         target_dtypes_args.extend(arglist[idx : idx + 2])
                     idx += 1  # skip over option (and then argument below)
                 idx += 1
-        ref_cmd_neg_test = ref_cmd_base.copy()
-        ref_cmd_neg_test.extend(["--test-type", "negative"])
+        build_cmd_neg_test = build_cmd_base.copy()
+        build_cmd_neg_test.extend(["--test-type", "negative"])
         # Limit sizes of negative tests
-        ref_cmd_neg_test.extend(["--tensor-dim-range", "1,16"])
-        ref_cmd_neg_test.extend(target_dtypes_args)
-        ref_cmds.append(ref_cmd_neg_test)
+        dim_range = (
+            test_params[operator]["generator_negative_dim_range"]
+            if "generator_negative_dim_range" in test_params[operator]
+            else "1,16"
+        )
+        build_cmd_neg_test.extend(["--tensor-dim-range", dim_range])
+        build_cmd_neg_test.extend(target_dtypes_args)
+        build_cmds_list.append(build_cmd_neg_test)
 
-    logger.debug(f"Creating {operator} tests with {len(ref_cmds)} parameter(s)")
+    logger.debug(f"Creating {operator} tests with {len(build_cmds_list)} parameter(s)")
     error = False
-    for i, cmd in enumerate(ref_cmds):
+    for i, cmd in enumerate(build_cmds_list):
         try:
             _run_sh_command(args, args.ref_model_dir.absolute(), cmd)
             logger.info(
-                f"{operator} test batch {(i+1)}/{len(ref_cmds)} created successfully"
+                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} created successfully"
             )
         except Exception as e:
             logger.error(
-                f"{operator} test batch {(i+1)}/{len(ref_cmds)} unsuccessful, skipping"
+                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} unsuccessful, skipping"
             )
             logger.error(f" build_op_tests error: {e} ")
             error = True
@@ -254,16 +259,16 @@ def convert_tests(
     if group:
         output_dir = output_dir / group
 
-    ref_cmd_base = ["--ref-model-directory", str(ref_model_dir)]
+    c2c_args_base = ["--strict", "--ref-model-directory", str(ref_model_dir)]
     # This op maybe in more than one profile - e.g. tosa_bi and tosa_mi
     # even if we are only producing tests for tosa_mi
     for op_profile in op_profiles_list:
-        ref_cmd_base.extend(["--profile", op_profile])
+        c2c_args_base.extend(["--profile", op_profile])
     if args.framework_schema:
-        ref_cmd_base.extend(["--framework-schema", str(args.framework_schema)])
-    ref_cmd_base.append("--output-directory")
+        c2c_args_base.extend(["--framework-schema", str(args.framework_schema)])
+    c2c_args_base.append("--output-directory")
 
-    ref_cmds = []
+    c2c_args_list = []
 
     if not tests:
         tests = _get_all_tests_list(profile, op_build_dir, operator)
@@ -273,21 +278,21 @@ def convert_tests(
     output_dir_relative_pos = -1 if trim_op_subdir else -2
     for test in tests:
         logger.info(f"Test chosen: {test}")
-        ref_cmd = ref_cmd_base.copy()
+        c2c_args = c2c_args_base.copy()
         full_output_directory = output_dir / test.relative_to(
             *test.parts[:output_dir_relative_pos]
         )
-        ref_cmd.append(str(full_output_directory))
-        ref_cmd.append(str(test))
-        ref_cmds.append(ref_cmd)
+        c2c_args.append(str(full_output_directory))
+        c2c_args.append(str(test))
+        c2c_args_list.append(c2c_args)
 
-    if len(ref_cmds) == 0:
+    if len(c2c_args_list) == 0:
         logger.warning("No tests found. Nothing to convert")
         return
 
     job_pool = mp.Pool(args.num_cores)
 
-    pool_results = job_pool.map(c2c_main, ref_cmds)
+    pool_results = job_pool.map(c2c_main, c2c_args_list)
     job_pool.close()
     job_pool.join()
 
@@ -295,13 +300,15 @@ def convert_tests(
     for i, result in enumerate(pool_results):
         if result != 0:
             logger.error(
-                f"test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} failed to convert."
+                f"test {i+1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} failed to convert."
             )
             failed_counter += 1
         else:
-            logger.info(f"test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} converted")
+            logger.info(
+                f"test {i+1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} converted"
+            )
     logger.info(
-        f"{len(ref_cmds)-failed_counter}/{len(ref_cmds)} tests successfully converted"
+        f"{len(c2c_args_list)-failed_counter}/{len(c2c_args_list)} tests successfully converted"
     )
 
     if failed_counter > 0:

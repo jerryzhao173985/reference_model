@@ -79,6 +79,12 @@ def parse_args(argv):
         help="Profiles this test is suitable for. May be repeated",
     )
     parser.add_argument(
+        "--strict",
+        dest="strict",
+        action="store_true",
+        help="Output directory must not contain the same test directory",
+    )
+    parser.add_argument(
         "-v", "--verbose", dest="verbose", action="store_true", help="Verbose operation"
     )
     args = parser.parse_args(argv)
@@ -269,9 +275,12 @@ def main(argv=None):
 
     # Make the output directory if needed
     try:
-        args.output_dir.mkdir(parents=True, exist_ok=True)
+        args.output_dir.mkdir(parents=True, exist_ok=(not args.strict))
     except FileExistsError:
-        logger.error(f"{args.output_dir} is not a directory")
+        if args.strict:
+            logger.error(f"{args.output_dir} already exists")
+        else:
+            logger.error(f"{args.output_dir} is not a directory")
         return 2
 
     # Convert the TOSA flatbuffer binary
