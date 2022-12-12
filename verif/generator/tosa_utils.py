@@ -142,6 +142,9 @@ def get_wrong_output_type(op_name, rng, input_dtype):
                 DType.INT32,
                 DType.INT48,
             )
+    else:
+        # Assume all types but the input type are incorrect
+        incorrect_types = list(usableDTypes(excludes=(input_dtype,)))
     return rng.choice(a=incorrect_types)
 
 
