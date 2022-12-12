@@ -231,7 +231,6 @@ inline void truncateFloatToBFloat(float* src, int64_t size) {
 inline bool checkValidBFloat(float src)
 {
     /* Checks if the least significant two bytes are zero. */
-    ASSERT_MEM(src);
     char src_as_bytes[sizeof(float)];
     memcpy(src_as_bytes, &src, sizeof(float));
 

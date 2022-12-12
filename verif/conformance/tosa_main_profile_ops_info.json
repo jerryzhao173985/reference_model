@@ -1125,6 +1125,47 @@
             "tosa-mi"
         ]
     },
+    "resize": {
+        "group": "image",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1103,1,2",
+                "--max-resize-output-dim",
+                "9100"
+            ]
+        ],
+        "params": {
+            "offset": [],
+            "shape": [],
+            "type": [],
+            "mode": [],
+            "output_type": [],
+            "scale": ["sc2x1x3x1"],
+            "border": ["bor0x1"]
+        },
+        "permutes": [
+            "shape",
+            "type"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "select": {
         "group": "ew_ternary",
         "generator_args": [
