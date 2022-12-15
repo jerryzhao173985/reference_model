@@ -352,6 +352,13 @@ class TBuilder:
         def eval(self, a):
             return tf.math.cos(a, name=self.result_name)
 
+    class Atan2:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a, b):
+            return tf.math.atan2(a, b, name=self.result_name)
+
     class Square:
         def __init__(self, name):
             self.result_name = name

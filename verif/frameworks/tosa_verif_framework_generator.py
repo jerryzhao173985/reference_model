@@ -335,6 +335,13 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.Cos, TGen.tgBasic, ArgGen.agNone),
         "types": TYPE_F,
     },
+    "atan2": {
+        "operands": (2, 0),
+        "build_fcn": (TBuilder.Atan2, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tflite": TYPE_F,
+        },
+    },
     "square": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Square, TGen.tgBasic, ArgGen.agNone),
