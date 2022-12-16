@@ -321,16 +321,12 @@ TF_OP_LIST = {
     "sin": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Sin, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": TYPE_F,
-        },
+        "types": TYPE_F,
     },
     "cos": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Cos, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": TYPE_F,
-        },
+        "types": TYPE_F,
     },
     "square": {
         "operands": (1, 0),
