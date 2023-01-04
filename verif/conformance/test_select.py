@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022, ARM Limited.
+# Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Select generated tests."""
 import argparse
@@ -464,6 +464,12 @@ class EqualOperator(Operator):
     name = "equal"
 
 
+class ExpOperator(Operator):
+    """Test selector for the EXP operator."""
+
+    name = "exp"
+
+
 class FloorOperator(Operator):
     """Test selector for the FLOOR operator."""
 
@@ -507,9 +513,15 @@ class IdentityOperator(Operator):
 
 
 class IntDivOperator(Operator):
-    """Test selector for the INTDIV."""
+    """Test selector for the INTDIV operator."""
 
     name = "intdiv"
+
+
+class LogOperator(Operator):
+    """Test selector for the LOG operator."""
+
+    name = "log"
 
 
 class LogicalAndOperator(Operator):
@@ -600,6 +612,12 @@ class PowOperator(Operator):
     name = "pow"
 
 
+class ReciprocalOperator(Operator):
+    """Test selector for the RECIPROCAL operator."""
+
+    name = "reciprocal"
+
+
 class ReduceAllOperator(Operator):
     """Test selector for the REDUCE_ALL operator."""
 
@@ -676,6 +694,12 @@ class ReverseOperator(Operator):
 
     name = "reverse"
     param_names = ["shape", "type", "axis"]
+
+
+class RsqrtOperator(Operator):
+    """Test selector for the RSQRT operator."""
+
+    name = "rsqrt"
 
 
 class ScatterOperator(Operator):
