@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import glob
@@ -482,6 +482,20 @@ def run_test(args, test, framework):
             )
         except KeyError:
             assert 0, "fail to load tflite result numpy"
+
+    # TOSA has no notion of complex datatypes, it represents complex values using two
+    # fp32 output tensors representing real and imaginary values. When legalizing
+    # complex operations from frameworks, these two output tensors are combined into
+    # a single tensor of shape [?, ..., ?, 2] whereby each inner pair of values
+    # represents the real and imaginary parts of a complex value. This is completed
+    # by inserting reshape and concatenate TOSA operations during the legalization to
+    # maintain a one-to-one correspondance with framework outputs, thus simplifying
+    # legalization. Here tf_result should also match this format before being
+    # compared to the ref model output.
+    if tf_result.dtype == np.complex64:
+        ifm_shape = tf_result.shape + (2,)
+        tf_result = tf_result.view(np.float32)
+        tf_result = tf_result.reshape(ifm_shape)
 
     # Generate test descriptor per flatbuffer generation
     # Input .npy will be shared across different frameworks

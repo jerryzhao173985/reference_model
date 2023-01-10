@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -246,6 +246,27 @@ protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
     tosa::TosaPoolAttribute* attribute;
+};
+
+template <DType Dtype>
+class OpRFFT2d : public GraphNode
+{
+public:
+    OpRFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
+    virtual ~OpRFFT2d();
+
+    virtual int checkTensorAttributes() final;
+    virtual int eval() final;
+
+    using InEigenType   = typename GetEigenType<Dtype>::type;
+    using OutEigenType  = typename GetEigenType<Dtype>::type;
+    using TIn           = Eigen::Tensor<InEigenType, 3>;
+    using TOut          = Eigen::Tensor<OutEigenType, 3>;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TOut>* out_real;
+    TosaReference::TensorTemplate<TOut>* out_imag;
 };
 
 template <DType InDtype, DType WeightDtype, DType AccDtype>

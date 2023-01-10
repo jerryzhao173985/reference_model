@@ -1243,3 +1243,11 @@ class TBuilder:
 
         def eval(self, a):
             return self.dense(a)
+
+    class RFFT2d:
+        def __init__(self, fft_length, name):
+            self.fft_length = fft_length
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.signal.rfft2d(a, self.fft_length, name=self.result_name)

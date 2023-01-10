@@ -274,3 +274,12 @@ class TGen:
             )
 
         return tf_placeholders, tf_consts
+
+    @staticmethod
+    def tgRFFT2d(op, shape, dtype, rng):
+        # Require rank 3 shape
+        if len(shape) != 3:
+            return [], []
+
+        tf_placeholders = [("placeholder_0", TGen.getRand(shape, dtype, rng))]
+        return tf_placeholders, []

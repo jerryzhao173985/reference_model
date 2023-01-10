@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -839,6 +839,13 @@ TF_OP_LIST = {
             ]
         },
     },
+    "rfft2d": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.RFFT2d, TGen.tgRFFT2d, ArgGen.agRFFT2d),
+        "types": {
+            "tflite": TYPE_F,
+        },
+    },
 }
 
 # Shapes to be tested; default can be overwritten
@@ -847,6 +854,7 @@ shape_list = [
     (64,),
     (14, 19),
     (13, 21, 3),
+    (1, 8, 16),
     (1, 4, 4, 4),
     (1, 8, 4, 17),
     (1, 4, 8, 19),
