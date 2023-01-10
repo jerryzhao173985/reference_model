@@ -159,8 +159,15 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         else
                             scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
                                                                               channel_shift);
-                        scaled               = scaled + output_zp;
-                        OutEigenType out_val = static_cast<OutEigenType>(scaled);
+                        int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp;
+                        int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+                        int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+                        if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
+                        {
+                            std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" + std::to_string(output_zp) + "] not in i32 range";
+                            throw desc;
+                        }
+                        OutEigenType out_val = static_cast<OutEigenType>(res_in_64);
                         out_val              = std::max<OutEigenType>(out_val, QMin);
                         out_val              = std::min<OutEigenType>(out_val, QMax);
                         return out_val;
@@ -174,7 +181,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         }
         catch (std::string desc)
         {
-            REQUIRE(false, "OpRescale apply_scale_32/16() fails: %s.", desc.c_str());
+            REQUIRE(false, "OpRescale failure: %s.", desc.c_str());
         }
     }
     else
@@ -193,8 +200,16 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 else
                     scaled =
                         TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
-                scaled               = scaled + output_zp;
-                OutEigenType out_val = static_cast<OutEigenType>(scaled);
+                int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp;
+                int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+                int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+                if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
+                {
+                    std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" + std::to_string(output_zp) + "] not in i32 range";
+                    throw desc;
+                }
+
+                OutEigenType out_val = static_cast<OutEigenType>(res_in_64);
                 out_val              = std::max<OutEigenType>(out_val, QMin);
                 out_val              = std::min<OutEigenType>(out_val, QMax);
                 return out_val;
@@ -202,7 +217,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         }
         catch (std::string desc)
         {
-            REQUIRE(false, "OpRescale apply_scale_32/16() fails: %s.", desc.c_str());
+            REQUIRE(false, "OpRescale failure: %s.", desc.c_str());
         }
     }
 
