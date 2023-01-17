@@ -1552,6 +1552,69 @@
             "tosa-mi"
         ]
     },
+    "slice": {
+        "group": "data_layout",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "16,64",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3",
+                "--num-rand-permutations",
+                "2"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "4",
+                "--num-rand-permutations",
+                "2"
+            ],
+            [
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,1,655341,1",
+                "--target-shape",
+                "1,65539,1,1",
+                "--num-rand-permutations",
+                "2"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "perm"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ]
+    },
     "tanh": {
         "group": "activation",
         "generator_args": [
