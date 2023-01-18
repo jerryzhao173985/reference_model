@@ -74,12 +74,24 @@
         return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, id);                                             \
     }
 
+#define DEF_FACTORY_TWO_TYPE_IN_OUT(OP, DTYPE1, DTYPE2)                                                                \
+    if (inputDType == DType_##DTYPE1 && outputDType == DType_##DTYPE2)                                                 \
+    {                                                                                                                  \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2>(sgt, attribute, id);                                             \
+    }
+
 #define DEF_FACTORY_TWO_TYPE_ONE_ACCUM(OP, ATTR_NAME, DTYPE1, DTYPE2, ACCUM_DTYPE)                                     \
     if (inputDType == DType_##DTYPE1 && weightDType == DType_##DTYPE2                                                  \
             && ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == DType_##ACCUM_DTYPE)                                                 \
     {                                                                                                                  \
         return new OP<DType_##DTYPE1, DType_##DTYPE2, DType_##ACCUM_DTYPE>(sgt, attribute, id);                        \
     }                                                                                                                  \
+
+#define DEF_FACTORY_THREE_TYPE(OP, DTYPE1, DTYPE2, DTYPE3)                                                             \
+    if (inputDType == DType_##DTYPE1 && weightDType == DType_##DTYPE2 && outputDType == DType_##DTYPE3)                \
+    {                                                                                                                  \
+        return new OP<DType_##DTYPE1, DType_##DTYPE2, DType_##DTYPE3>(sgt, attribute, id);                             \
+    }
 
 // Statement-expression to evaluate accumulate attribute in-place
 #define ACCUM_FROM_ATTRIBUTE(ATTRIBUTE_NAME)                                                                           \

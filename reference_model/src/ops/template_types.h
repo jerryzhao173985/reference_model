@@ -275,39 +275,6 @@ struct GetQMax<DType_INT48>
     static constexpr int64_t value = (1L << 47) - 1;
 };
 
-template <DType TIn1, DType TIn2>
-struct GetAccDType;
-template <>
-struct GetAccDType<DType_INT8, DType_INT4>
-{
-    static constexpr DType value = DType_INT32;
-};
-template <>
-struct GetAccDType<DType_INT8, DType_INT8>
-{
-    static constexpr DType value = DType_INT32;
-};
-template <>
-struct GetAccDType<DType_INT16, DType_INT8>
-{
-    static constexpr DType value = DType_INT48;
-};
-template <>
-struct GetAccDType<DType_INT16, DType_INT16>
-{
-    static constexpr DType value = DType_INT48;
-};
-template <>
-struct GetAccDType<DType_FP16, DType_FP16>
-{
-    static constexpr DType value = DType_FP16;
-};
-template <>
-struct GetAccDType<DType_FP32, DType_FP32>
-{
-    static constexpr DType value = DType_FP32;
-};
-
 };    // namespace TosaReference
 
 #endif

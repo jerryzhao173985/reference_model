@@ -690,7 +690,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], accum_dtype)
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -762,7 +762,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], accum_dtype)
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -825,9 +825,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.TransposeConvAttribute(
-            out_pad, stride, output_shape, qinfo[0], qinfo[1], accum_dtype
-        )
+        attr.TransposeConvAttribute(out_pad, stride, output_shape, qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -898,7 +896,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], accum_dtype)
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -947,7 +945,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.FullyConnectedAttribute(qinfo[0], qinfo[1], accum_dtype)
+        attr.FullyConnectedAttribute(qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -989,7 +987,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.MatMulAttribute(qinfo[0], qinfo[1], accum_dtype)
+        attr.MatMulAttribute(qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens

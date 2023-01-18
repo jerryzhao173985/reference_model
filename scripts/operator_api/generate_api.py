@@ -9,6 +9,8 @@ from xml.dom import minidom
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
+# Note: main script designed to be run from the scripts/operator_api/ directory
+
 
 def getTosaArgTypes(tosaXml):
     """

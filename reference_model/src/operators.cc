@@ -168,10 +168,9 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t weight_zp       = client_weight_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp, accum_dtype);
+        const int32_t input_zp  = client_input_zp;
+        const int32_t weight_zp = client_weight_zp;
+        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -219,10 +218,9 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[6]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[3]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[3]);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t weight_zp       = client_weight_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp, accum_dtype);
+        const int32_t input_zp  = client_input_zp;
+        const int32_t weight_zp = client_weight_zp;
+        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -270,10 +268,9 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t weight_zp       = client_weight_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp, accum_dtype);
+        const int32_t input_zp  = client_input_zp;
+        const int32_t weight_zp = client_weight_zp;
+        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -313,10 +310,9 @@ extern "C"
                                            tosa_tensor_t client_output)
     {
         // Create operator attributes
-        const int32_t input_zp        = client_input_zp;
-        const int32_t weight_zp       = client_weight_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaFullyConnectedAttribute attr(input_zp, weight_zp, accum_dtype);
+        const int32_t input_zp  = client_input_zp;
+        const int32_t weight_zp = client_weight_zp;
+        TosaFullyConnectedAttribute attr(input_zp, weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -352,10 +348,9 @@ extern "C"
                                   tosa_tensor_t client_output)
     {
         // Create operator attributes
-        const int32_t a_zp            = client_a_zp;
-        const int32_t b_zp            = client_b_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaMatMulAttribute attr(a_zp, b_zp, accum_dtype);
+        const int32_t a_zp = client_a_zp;
+        const int32_t b_zp = client_b_zp;
+        TosaMatMulAttribute attr(a_zp, b_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* a      = translate_client_tensor(client_a, "a");
@@ -446,10 +441,9 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[0] + client_pad_len);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[0] + client_dilation_len);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t weight_zp       = client_weight_zp;
-        const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp, accum_dtype);
+        const int32_t input_zp  = client_input_zp;
+        const int32_t weight_zp = client_weight_zp;
+        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
