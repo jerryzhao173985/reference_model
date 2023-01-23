@@ -15,6 +15,7 @@
 
 #include "type_conversion.h"
 #include "quant_util.h"
+#include "arith_util.h"
 #include "template_types.h"
 #include <cmath>
 #include "half.hpp"
@@ -307,30 +308,88 @@ CastHelper<DType_BOOL, OutDtype>::CastHelper()
 template <DType InDtype>
 CastHelper<InDtype, DType_FP16>::CastHelper()
 {
+    // Integer data converted to fp16 (stored as fp32)
     fcn = [](InEigenType in) -> float {
-        half_float::half out = half_float::half_cast<half_float::half, InEigenType>(in);  // Cast to half_float
-        return half_float::half_cast<float, half_float::half>(out);  // Cast to float (underlying FP16 EigenType)
+        half_float::half h = half_float::half(in);
+        float out = half_float::half_cast<float, half_float::half>(h);
+        return out;
+    };
+}
+
+CastHelper<DType_FP32, DType_FP16>::CastHelper()
+{
+    // fp32 data converted to fp16 (stored as fp32)
+    fcn = [](float in) -> float {
+        float out = fpTrunc<DType_FP16>(in);  // truncate required for conversion from higher precision
+        return out;
+    };
+}
+
+template <DType InDtype>
+CastHelper<InDtype, DType_BF16>::CastHelper()
+{
+    // Integer data converted to bf16 (stored as fp32)
+    fcn = [](InEigenType in) -> float {
+        float out = (float)in;    // default cast to float is round_to_nearest_float()
+        return out;
+    };
+}
+
+CastHelper<DType_FP32, DType_BF16>::CastHelper()
+{
+    // fp32 data converted to bf16 (stored as fp32)
+    fcn = [](float in) -> float {
+        return fpTrunc<DType_BF16>(in);  // truncate required for conversions from higher precision
     };
 }
 
 template <DType OutDtype>
 CastHelper<DType_FP16, OutDtype>::CastHelper()
 {
-    // Assuming InEigenType = float.
+    // fp16 data (stored as fp32) converted to integer
     fcn = [](float in) -> OutEigenType {
-        // Perform initial rounding in half-precision then cast back to float
-        half_float::half h = half_float::half_cast<half_float::half, float>(in);
+        // Cast from float representation back to half_float before rounding
+        half_float::half h = half_float::half(in);
         h = std::round(h);
-        OutEigenType out = half_float::half_cast<float, half_float::half>(h);
+        OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
         out              = std::max<OutEigenType>(out, OutMin);
         out              = std::min<OutEigenType>(out, OutMax);
         return out;
     };
 }
 
+CastHelper<DType_FP16, DType_FP32>::CastHelper()
+{
+    // No-op since fp16 values treated internally as their fp32 representation
+    fcn = [](float in) -> OutEigenType {
+        return in;
+    };
+}
+
+template <DType OutDtype>
+CastHelper<DType_BF16, OutDtype>::CastHelper()
+{
+    // bf16 data (stored as fp32) converted to integer
+    fcn = [](float in) -> OutEigenType {
+        OutEigenType out = std::round(in);
+        out              = std::max<OutEigenType>(out, OutMin);
+        out              = std::min<OutEigenType>(out, OutMax);
+        return out;
+    };
+}
+
+CastHelper<DType_BF16, DType_FP32>::CastHelper()
+{
+    // No-op since bf16 values treated as truncated fp32 internally
+    fcn = [](InEigenType in) -> OutEigenType {
+        return in;
+    };
+}
+
 template <DType InDtype>
 CastHelper<InDtype, DType_FP32>::CastHelper()
 {
+    // Integer data converted to fp32
     fcn = [](InEigenType in) -> float {
         float out = (OutEigenType)in;    // default cast to float is round_to_nearest_float()
         return out;
@@ -340,6 +399,7 @@ CastHelper<InDtype, DType_FP32>::CastHelper()
 template <DType OutDtype>
 CastHelper<DType_FP32, OutDtype>::CastHelper()
 {
+    // fp32 data converted to integer
     fcn = [](float in) -> OutEigenType {
         OutEigenType out = std::round(in);
         out              = std::max<OutEigenType>(out, OutMin);
@@ -356,26 +416,33 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, BOOL);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT32, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, BF16, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, BF16, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, BF16, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, BF16, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, FP16);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, BF16);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT8, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpRescale, INT8, INT16);

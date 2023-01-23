@@ -216,6 +216,82 @@
             "tosa-mi"
         ]
     },
+    "cast": {
+        "group": "type_conversion",
+        "generator_negative_dim_range": "1,10",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--target-dtype",
+                "int8",
+                "--target-dtype",
+                "int16",
+                "--target-dtype",
+                "int32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "16,64",
+                "--target-rank",
+                "1",
+                "--target-rank",
+                "2",
+                "--target-rank",
+                "3"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--target-dtype",
+                "int8",
+                "--target-dtype",
+                "int16",
+                "--target-dtype",
+                "int32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,16",
+                "--target-rank",
+                "4",
+                "--target-rank",
+                "5"
+            ],
+            [
+                "--target-dtype",
+                "fp16",
+                "--target-shape",
+                "1,1,1,65533,1",
+                "--target-shape",
+                "2,65538,1,1"
+            ]
+        ],
+        "params": {
+            "shape": [],
+            "type": [],
+            "output_type": []
+        },
+        "permutes": [
+            "shape",
+            "type",
+            "output_type"
+        ],
+        "exclude_patterns": [
+            ".*_(i8|i16|i32|b)_out(i8|i16|i32|b)"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "ceil": {
         "group": "ew_unary",
         "generator_args": [

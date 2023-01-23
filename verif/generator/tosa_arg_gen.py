@@ -1445,19 +1445,40 @@ class TosaArgGen:
         if error_name == ErrorIf.WrongOutputType:
             dtypeList = TosaErrorIfArgGen.eiCastErrorIf(testGen, inDtype)
         elif inDtype == DType.INT8:
-            dtypeList = [DType.BOOL, DType.INT16, DType.INT32, DType.FP32]
+            dtypeList = [
+                DType.BOOL,
+                DType.INT16,
+                DType.INT32,
+                DType.FP16,
+                DType.BF16,
+                DType.FP32,
+            ]
         elif inDtype == DType.INT16:
-            dtypeList = [DType.BOOL, DType.INT8, DType.INT32, DType.FP32]
+            dtypeList = [
+                DType.BOOL,
+                DType.INT8,
+                DType.INT32,
+                DType.FP16,
+                DType.BF16,
+                DType.FP32,
+            ]
         elif inDtype == DType.INT32:
-            dtypeList = [DType.BOOL, DType.INT8, DType.INT16, DType.FP32]
+            dtypeList = [
+                DType.BOOL,
+                DType.INT8,
+                DType.INT16,
+                DType.FP16,
+                DType.BF16,
+                DType.FP32,
+            ]
         elif inDtype == DType.BOOL:
             dtypeList = [DType.INT8, DType.INT16, DType.INT32]
         elif inDtype == DType.FP16:
-            dtypeList = [DType.INT8, DType.INT16, DType.INT32]
+            dtypeList = [DType.INT8, DType.INT16, DType.INT32, DType.FP32]
         elif inDtype == DType.BF16:
-            dtypeList = [DType.INT8, DType.INT16, DType.INT32]
+            dtypeList = [DType.INT8, DType.INT16, DType.INT32, DType.FP32]
         elif inDtype == DType.FP32:
-            dtypeList = [DType.INT8, DType.INT16, DType.INT32]
+            dtypeList = [DType.INT8, DType.INT16, DType.INT32, DType.FP16, DType.BF16]
         elif error_name == ErrorIf.WrongInputType:
             # Pick some potentially correct output type for incorrect input type
             dtypeList = [DType.BOOL, DType.INT8, DType.INT16, DType.FP32]

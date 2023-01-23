@@ -34,13 +34,11 @@ PROFILE_OPS_INFO = {
     "tosa-bi": {
         "operator_test_params": "tosa_base_profile_ops_info.json",
         "framework_tests": "tosa_base_profile_framework_ops_info.json",
-        "exclude_types": [],
     },
     "tosa-mi": {
         # Note: This is just the extra tests not in the base profile!
         "operator_test_params": "tosa_main_profile_ops_info.json",
         "framework_tests": "tosa_main_profile_framework_ops_info.json",
-        "exclude_types": [],
     },
 }
 PROFILES_ALL = "all"
@@ -164,7 +162,6 @@ def build_op_tests(args, profile, operator, test_params):
 def _check_to_include_test(profile, test_name, exclude_negative_tests=False):
     """Check test name for exclusions, return False to indicate excluded."""
     excludes = ["ERRORIF"] if exclude_negative_tests else []
-    excludes.extend(PROFILE_OPS_INFO[profile]["exclude_types"])
 
     for exclusion in excludes:
         if f"_{exclusion}_" in test_name:
@@ -338,7 +335,6 @@ def get_op_tests_selection(
             op_build_dir,
             op_params,
             negative,
-            exclude_types=PROFILE_OPS_INFO[profile]["exclude_types"],
         )
     except KeyError:
         logger.error(f"{operator} operator is not supported by test_select")

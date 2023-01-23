@@ -314,12 +314,14 @@ class TosaErrorIfArgGen:
 
     @staticmethod
     def eiCastErrorIf(testGen, input_dtype):
-        if input_dtype in [DType.BOOL, DType.FP16, DType.BF16, DType.FP32]:
-            outputDType = [DType.BOOL, DType.INT48, DType.FP16, DType.BF16, DType.FP32]
+        if input_dtype in [DType.BOOL, DType.FP32]:
+            outputDType = [DType.BOOL, DType.INT48, DType.FP32]
+        elif input_dtype in [DType.FP16, DType.BF16]:
+            outputDType = [DType.BOOL, DType.INT48]
         elif input_dtype in [DType.INT8, DType.INT16, DType.INT32]:
             outputDType = [DType.INT48]
         else:
-            assert True, f"input_dtype ({input_dtype}) not supported"
+            assert False, f"input_dtype ({input_dtype}) not supported"
         return outputDType
 
 
@@ -538,15 +540,24 @@ class TosaErrorValidator:
                     )
                     or (
                         input_dtype == DType.FP16
-                        and output_dtype not in [DType.INT8, DType.INT16, DType.INT32]
+                        and output_dtype
+                        not in [DType.INT8, DType.INT16, DType.INT32, DType.FP32]
                     )
                     or (
                         input_dtype == DType.BF16
-                        and output_dtype not in [DType.INT8, DType.INT16, DType.INT32]
+                        and output_dtype
+                        not in [DType.INT8, DType.INT16, DType.INT32, DType.FP32]
                     )
                     or (
                         input_dtype == DType.FP32
-                        and output_dtype not in [DType.INT8, DType.INT16, DType.INT32]
+                        and output_dtype
+                        not in [
+                            DType.INT8,
+                            DType.INT16,
+                            DType.INT32,
+                            DType.FP16,
+                            DType.BF16,
+                        ]
                     )
                 ):
                     error_result = True

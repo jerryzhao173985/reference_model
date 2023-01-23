@@ -5,6 +5,7 @@ import argparse
 import itertools
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 from typing import Dict
@@ -129,20 +130,28 @@ class Operator:
         test_dir: Path,
         config: Dict[str, Dict[str, List[Any]]],
         negative=False,
-        exclude_types=None,
     ):
         """Initialise the selection parameters for an operator.
 
-        test_dir: the directory where the tests for all operators can be found
+        test_dir: the directory where the tests for all operators can
+            be found
         config: a dictionary with:
-                "params" - a dictionary with mappings of parameter names to the values
-                    to select (a sub-set of expected values for instance)
+                "params" - a dictionary with mappings of parameter
+                    names to the values to select (a sub-set of
+                    expected values for instance)
                 "permutes" - a list of parameter names to be permuted
-                "preselected" - a list of dictionaries containing parameter names and
-                    pre-chosen values
-                "sparsity" - a dictionary of parameter names with a sparsity value
-                "errorifs" - list of ERRORIF case names to be selected (negative test)
-        negative: bool indicating if negative testing is being selected (ERRORIF tests)
+                "preselected" - a list of dictionaries containing
+                    parameter names and pre-chosen values
+                "sparsity" - a dictionary of parameter names with a
+                    sparsity value
+                "exclude_patterns" - a list of regex's whereby each
+                    match will not be considered for selection.
+                    Exclusion happens BEFORE test selection (i.e.
+                    before permutes are applied).
+                "errorifs" - list of ERRORIF case names to be selected
+                    (negative test)
+        negative: bool indicating if negative testing is being selected
+            (ERRORIF tests)
 
         EXAMPLE CONFIG:
             "params": {
@@ -164,6 +173,9 @@ class Operator:
                     "type": "i8",
                     "pad": "pad00"
                 }
+            ],
+            "exclude_patterns": [
+                ".*_(i8|i16|i32|b)_out(i8|i16|i32|b)"
             ],
             "errorifs": [
                 "InputZeroPointNotZero"
@@ -187,23 +199,34 @@ class Operator:
             )
             config["permutes"] = []
             config["preselected"] = {}
+            config["exclude_patterns"] = []
 
         self.params = config["params"] if "params" in config else {}
         self.permutes = config["permutes"] if "permutes" in config else []
         self.sparsity = config["sparsity"] if "sparsity" in config else {}
         self.preselected = config["preselected"] if "preselected" in config else {}
+        self.exclude_patterns = (
+            config["exclude_patterns"] if "exclude_patterns" in config else []
+        )
         self.non_permutes = [x for x in self.wks_param_names if x not in self.permutes]
         logger.info(f"{self.name}: permutes={self.permutes}")
         logger.info(f"{self.name}: non_permutes={self.non_permutes}")
+        logger.info(f"{self.name}: exclude_patterns={self.exclude_patterns}")
 
-        if exclude_types is None:
-            exclude_types = []
-        self.test_paths = [
-            p
-            for p in self.get_test_paths(test_dir, self.negative)
-            # exclusion of types if requested
-            if self.path_params(p)["type"] not in exclude_types
-        ]
+        self.test_paths = []
+        excluded_paths = []
+        for path in self.get_test_paths(test_dir, self.negative):
+            pattern_match = False
+            for pattern in self.exclude_patterns:
+                if re.fullmatch(pattern, path.name):
+                    excluded_paths.append(path)
+                    pattern_match = True
+                    break
+            if not pattern_match:
+                self.test_paths.append(path)
+
+        logger.debug(f"{self.name}: regex excluded paths={excluded_paths}")
+
         if not self.test_paths:
             logger.error(f"no tests found for {self.name} in {test_dir}")
         logger.debug(f"{self.name}: paths={self.test_paths}")
@@ -861,9 +884,7 @@ def main():
     for op_name in Operator.registry:
         if not args.operators or op_name in args.operators:
             op_params = config[op_name] if op_name in config else {}
-            op = Operator.registry[op_name](
-                args.test_dir, op_params, negative, exclude_types=["float"]
-            )
+            op = Operator.registry[op_name](args.test_dir, op_params, negative)
             for test_path in op.select_tests():
                 print(test_path.resolve() if args.full_path else test_path.name)
 
