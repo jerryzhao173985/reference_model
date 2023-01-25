@@ -350,7 +350,7 @@ CastHelper<DType_FP16, OutDtype>::CastHelper()
     fcn = [](float in) -> OutEigenType {
         // Cast from float representation back to half_float before rounding
         half_float::half h = half_float::half(in);
-        h = std::round(h);
+        h = std::rint(h);
         OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
         out              = std::max<OutEigenType>(out, OutMin);
         out              = std::min<OutEigenType>(out, OutMax);
@@ -401,7 +401,7 @@ CastHelper<DType_FP32, OutDtype>::CastHelper()
 {
     // fp32 data converted to integer
     fcn = [](float in) -> OutEigenType {
-        OutEigenType out = std::round(in);
+        OutEigenType out = std::rint(in);
         out              = std::max<OutEigenType>(out, OutMin);
         out              = std::min<OutEigenType>(out, OutMax);
         return out;
