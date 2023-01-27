@@ -1204,7 +1204,7 @@ def run_unit_test(
         if tflite_model_filename:
             tflite_result_npy_filename = "tflite_result.npy"
 
-            ops_with_optimized_only_kernel = ["elu", "ceil", "gather"]
+            ops_with_optimized_only_kernel = ["elu", "ceil", "gather", "rfft2d"]
 
             if args.tflite_kernel_mode == "optimized" or (
                 op_name in ops_with_optimized_only_kernel
