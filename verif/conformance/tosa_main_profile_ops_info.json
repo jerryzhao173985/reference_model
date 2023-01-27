@@ -1801,6 +1801,74 @@
             "tosa-mi"
         ]
     },
+    "reduce_product": {
+        "group": "reduction",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,34"
+            ],
+            [
+                "--target-dtype",
+                "fp16",
+                "--target-shape",
+                "2,65527,3,1",
+                "--target-shape",
+                "1,3,2,65541"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "axis"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "reduce_sum": {
+        "group": "reduction",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--tensor-dim-range",
+                "1,37"
+            ],
+            [
+                "--target-dtype",
+                "bf16",
+                "--target-shape",
+                "1,3,65529,1",
+                "--target-shape",
+                "1,65537,1,1"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "axis"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "resize": {
         "group": "image",
         "generator_args": [

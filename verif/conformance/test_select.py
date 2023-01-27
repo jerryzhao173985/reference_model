@@ -669,6 +669,13 @@ class ReduceMinOperator(Operator):
     param_names = ["shape", "type", "axis"]
 
 
+class ReduceProductOperator(Operator):
+    """Test selector for the REDUCE_PRODUCT operator."""
+
+    name = "reduce_product"
+    param_names = ["shape", "type", "axis"]
+
+
 class ReduceSumOperator(Operator):
     """Test selector for the REDUCE_SUM operator."""
 
