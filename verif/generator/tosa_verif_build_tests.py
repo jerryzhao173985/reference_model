@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import re
@@ -96,7 +96,7 @@ def parseArgs(argv):
         "--max-batch-size",
         dest="max_batch_size",
         default=1,
-        type=int,
+        type=positive_integer_type,
         help="Maximum batch size for NHWC tests",
     )
 
@@ -236,6 +236,14 @@ def parseArgs(argv):
     args = parser.parse_args(argv)
 
     return args
+
+
+def positive_integer_type(argv_str):
+    value = int(argv_str)
+    if value <= 0:
+        msg = f"{argv_str} is not a valid positive integer"
+        raise argparse.ArgumentTypeError(msg)
+    return value
 
 
 def main(argv=None):

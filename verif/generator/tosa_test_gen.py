@@ -219,6 +219,11 @@ class TosaTestGen:
             shape[0] = min(shape[0], self.args.max_batch_size)
         return shape
 
+    def makeDimension(self):
+        return self.randInt(
+            low=self.args.tensor_shape_range[0], high=self.args.tensor_shape_range[1]
+        )
+
     # Argument generators
     # Returns a list of tuples (stringDescriptor, [build_fcn_arg_list])
     # Where the string descriptor is used to generate the test name and
