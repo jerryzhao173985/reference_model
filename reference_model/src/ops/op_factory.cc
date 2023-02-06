@@ -89,6 +89,9 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_THREE_TYPE(OpDepthwiseConv2d, INT8, INT8, INT32);
             DEF_FACTORY_THREE_TYPE(OpDepthwiseConv2d, INT16, INT8, INT48);
             break;
+        case Op_FFT2D:
+            DEF_FACTORY_ONE_TYPE(OpFFT2d, FP32);
+            break;
         case Op_FULLY_CONNECTED:
             DEF_FACTORY_THREE_TYPE(OpFullyConnected, FP16, FP16, FP16);
             DEF_FACTORY_THREE_TYPE(OpFullyConnected, FP16, FP16, FP32);
