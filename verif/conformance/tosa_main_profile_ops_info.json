@@ -285,7 +285,7 @@
             "output_type"
         ],
         "exclude_patterns": [
-            ".*_(i8|i16|i32|b)_out(i8|i16|i32|b)"
+            "^((?!ERRORIF).)*_(i8|i16|i32|b)_out(i8|i16|i32|b)"
         ],
         "profile": [
             "tosa-mi"
@@ -786,6 +786,7 @@
     },
     "gather": {
         "group": "scatter_gather",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1154,6 +1155,7 @@
     },
     "negate": {
         "group": "ew_unary",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1523,6 +1525,7 @@
     },
     "scatter": {
         "group": "scatter_gather",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1560,6 +1563,7 @@
     },
     "tile": {
         "group": "data_layout",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1825,6 +1829,7 @@
     },
     "reduce_max": {
         "group": "reduction",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1861,6 +1866,7 @@
     },
     "reduce_min": {
         "group": "reduction",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1965,6 +1971,7 @@
     },
     "resize": {
         "group": "image",
+        "generator_negative_dim_range": "1,10",
         "generator_args": [
             [
                 "--target-dtype",
@@ -1999,6 +2006,9 @@
         "permutes": [
             "shape",
             "type"
+        ],
+        "exclude_patterns": [
+            ".*_ERRORIF_MaxDimExceeded_1x16584x5x1_.*"
         ],
         "profile": [
             "tosa-mi"

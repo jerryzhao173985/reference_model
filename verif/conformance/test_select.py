@@ -149,11 +149,12 @@ class Operator:
                     Exclusion happens BEFORE test selection (i.e.
                     before permutes are applied).
                 "errorifs" - list of ERRORIF case names to be selected
-                    (negative test)
+                    after exclusion (negative tests)
         negative: bool indicating if negative testing is being selected
-            (ERRORIF tests)
+            which filters for ERRORIF in the test name and only selects
+            the first test found (ERRORIF tests)
 
-        EXAMPLE CONFIG:
+        EXAMPLE CONFIG (with non-json comments):
             "params": {
                 "output_type": [
                     "outi8",
@@ -175,7 +176,10 @@ class Operator:
                 }
             ],
             "exclude_patterns": [
-                ".*_(i8|i16|i32|b)_out(i8|i16|i32|b)"
+                # Exclude positive (not ERRORIF) integer tests
+                "^((?!ERRORIF).)*_(i8|i16|i32|b)_out(i8|i16|i32|b)",
+                # Exclude negative (ERRORIF) i8 test
+                ".*_ERRORIF_.*_i8_outi8"
             ],
             "errorifs": [
                 "InputZeroPointNotZero"
@@ -199,7 +203,6 @@ class Operator:
             )
             config["permutes"] = []
             config["preselected"] = {}
-            config["exclude_patterns"] = []
 
         self.params = config["params"] if "params" in config else {}
         self.permutes = config["permutes"] if "permutes" in config else []
