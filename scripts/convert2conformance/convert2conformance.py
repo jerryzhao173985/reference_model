@@ -79,6 +79,13 @@ def parse_args(argv):
         help="Profiles this test is suitable for. May be repeated",
     )
     parser.add_argument(
+        "--tag",
+        dest="tag",
+        action="append",
+        type=str,
+        help="Optional string tag mark this test with. May be repeated",
+    )
+    parser.add_argument(
         "--strict",
         dest="strict",
         action="store_true",
@@ -160,6 +167,7 @@ def update_desc_json(
     output_dir: Optional[Path] = None,
     create_result=True,
     profiles=None,
+    tags=None,
 ):
     """Update the desc.json format for conformance and optionally create result."""
     ofm_files = []
@@ -198,6 +206,10 @@ def update_desc_json(
         # Assume base profile
         profiles = [PROFILES_LIST[0]]
     test_desc["profile"] = profiles
+
+    # Add tags (if any)
+    if tags is not None:
+        test_desc["tag"] = tags
 
     return test_desc
 
@@ -325,6 +337,7 @@ def main(argv=None):
         output_dir=args.output_dir,
         create_result=True,
         profiles=args.profile,
+        tags=args.tag,
     )
     if not test_desc:
         # Error from conversion/update

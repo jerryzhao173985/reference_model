@@ -130,6 +130,7 @@ class Operator:
         test_dir: Path,
         config: Dict[str, Dict[str, List[Any]]],
         negative=False,
+        ignore_missing=False,
     ):
         """Initialise the selection parameters for an operator.
 
@@ -144,6 +145,8 @@ class Operator:
                     parameter names and pre-chosen values
                 "sparsity" - a dictionary of parameter names with a
                     sparsity value
+                "full_sparsity" - "true"/"false" to use the sparsity
+                    value on permutes/params/preselected
                 "exclude_patterns" - a list of regex's whereby each
                     match will not be considered for selection.
                     Exclusion happens BEFORE test selection (i.e.
@@ -153,6 +156,7 @@ class Operator:
         negative: bool indicating if negative testing is being selected
             which filters for ERRORIF in the test name and only selects
             the first test found (ERRORIF tests)
+        ignore_missing: bool indicating if missing tests should be ignored
 
         EXAMPLE CONFIG (with non-json comments):
             "params": {
@@ -190,6 +194,7 @@ class Operator:
         ), f"{self.__class__.__name__}: {self.name} is not a valid operator name"
 
         self.negative = negative
+        self.ignore_missing = ignore_missing
         self.wks_param_names = self.param_names.copy()
         if self.negative:
             # need to override positive set up - use "errorifs" config if set
@@ -207,6 +212,9 @@ class Operator:
         self.params = config["params"] if "params" in config else {}
         self.permutes = config["permutes"] if "permutes" in config else []
         self.sparsity = config["sparsity"] if "sparsity" in config else {}
+        self.full_sparsity = (
+            (config["full_sparsity"] == "true") if "full_sparsity" in config else False
+        )
         self.preselected = config["preselected"] if "preselected" in config else {}
         self.exclude_patterns = (
             config["exclude_patterns"] if "exclude_patterns" in config else []
@@ -308,7 +316,7 @@ class Operator:
             unused_values = {k: set(v) for k, v in self.params.items()}
 
         # select tests matching permuted, or preselected, parameter combinations
-        for path in self.test_paths:
+        for n, path in enumerate(self.test_paths):
             path_params = self.path_params(path)
             if path_params in unused_permuted or path_params in unused_preselected:
                 unused_paths.remove(path)
@@ -321,10 +329,20 @@ class Operator:
                         for p in list(unused_permuted):
                             if p["case"] == path_params["case"]:
                                 unused_permuted.remove(p)
+                if self.full_sparsity:
+                    # Test for sparsity
+                    skip = False
+                    for k in path_params:
+                        if k in self.sparsity and n % self.sparsity[k] != 0:
+                            logger.debug(f"Skipping due to {k} sparsity - {path.name}")
+                            skip = True
+                            break
+                    if skip:
+                        continue
                 # remove the param values used by this path
                 for k in path_params:
                     unused_values[k].discard(path_params[k])
-                logger.debug(f"FOUND: {path.name}")
+                logger.debug(f"FOUND wanted: {path.name}")
                 yield path
 
         # search for tests that match any unused parameter values
@@ -339,26 +357,30 @@ class Operator:
                     # remove the param values used by this path
                     for p in path_params:
                         unused_values[p].discard(path_params[p])
-                    logger.debug(f"FOUND: {path.name}")
+                    sparsity = self.sparsity[k] if k in self.sparsity else 0
+                    logger.debug(f"FOUND unused [{k}/{n}/{sparsity}]: {path.name}")
                     yield path
                     break
 
-        # report any preselected combinations that were not found
-        for params in unused_preselected:
-            logger.warning(f"MISSING preselected: {params}")
-        # report any permuted combinations that were not found
-        for params in unused_permuted:
-            logger.debug(f"MISSING permutation: {params}")
-        # report any param values that were not found
-        for k, values in unused_values.items():
-            if values:
-                if k not in self.sparsity:
-                    logger.warning(f"MISSING {len(values)} values for {k}: {values}")
-                else:
-                    logger.info(
-                        f"Skipped {len(values)} values for {k} due to sparsity setting"
-                    )
-                    logger.debug(f"Values skipped: {values}")
+        if not self.ignore_missing:
+            # report any preselected combinations that were not found
+            for params in unused_preselected:
+                logger.warning(f"MISSING preselected: {params}")
+            # report any permuted combinations that were not found
+            for params in unused_permuted:
+                logger.debug(f"MISSING permutation: {params}")
+            # report any param values that were not found
+            for k, values in unused_values.items():
+                if values:
+                    if k not in self.sparsity:
+                        logger.warning(
+                            f"MISSING {len(values)} values for {k}: {values}"
+                        )
+                    else:
+                        logger.info(
+                            f"Skipped {len(values)} values for {k} due to sparsity setting"
+                        )
+                        logger.debug(f"Values skipped: {values}")
 
 
 class AbsOperator(Operator):
@@ -858,6 +880,12 @@ def parse_args():
         help="A JSON file defining the parameters to use for each operator",
     )
     parser.add_argument(
+        "--selector",
+        default="default",
+        type=str,
+        help="The selector in the selection dictionary to use for each operator",
+    )
+    parser.add_argument(
         "--full-path", action="store_true", help="output the full path for each test"
     )
     parser.add_argument(
@@ -907,7 +935,14 @@ def main():
     for op_name in Operator.registry:
         if not args.operators or op_name in args.operators:
             op_params = config[op_name] if op_name in config else {}
-            op = Operator.registry[op_name](args.test_dir, op_params, negative)
+            if "selection" in op_params and args.selector in op_params["selection"]:
+                selection_config = op_params["selection"][args.selector]
+            else:
+                logger.warning(
+                    f"Could not find selection config {args.selector} for {op_name}"
+                )
+                selection_config = {}
+            op = Operator.registry[op_name](args.test_dir, selection_config, negative)
             for test_path in op.select_tests():
                 print(test_path.resolve() if args.full_path else test_path.name)
 

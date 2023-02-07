@@ -25,6 +25,7 @@ from tosa.Op import Op
 
 class TosaTestGen:
     # Maximum rank of tensor supported by test generator.
+    # This currently matches the 8K level defined in the specification.
     TOSA_TENSOR_MAX_RANK = 6
 
     def __init__(self, args):
@@ -3647,7 +3648,6 @@ class TosaTestGen:
         "pad": {
             "op": Op.PAD,
             "operands": (1, 0),
-            "rank": (1, 5),
             "build_fcn": (
                 build_pad,
                 TosaTensorGen.tgBasic,

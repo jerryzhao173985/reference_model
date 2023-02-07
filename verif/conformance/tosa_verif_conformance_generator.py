@@ -11,6 +11,7 @@ Steps:
 - Tests are converted into JSON format and saved to desired output directory.
 """
 import argparse
+import copy
 import json
 import logging
 import multiprocessing as mp
@@ -47,6 +48,10 @@ LOCATION_REF_MODEL_BINARY = Path("build/reference_model/tosa_reference_model")
 
 DEFAULT_SEED = 42
 
+# When there is a dictionary of generator argument lists (groups) only the
+# standard group will have negative tests generated for it
+STANDARD_GENERATOR_GROUP = "standard"
+
 
 class GenConformanceError(Exception):
     """Generation error reporting exception."""
@@ -78,17 +83,17 @@ def _run_sh_command(args, cwd, full_cmd):
     return (rc.stdout, rc.stderr)
 
 
-def build_op_tests(args, profile, operator, test_params):
+def build_op_tests(
+    args, test_type, profile, operator, group, gen_args_list, gen_neg_dim_range
+):
     """Build tests for a given operator.
 
-    Builds a set of tests based on the parameters defined in test_params
+    Builds a set of tests based on the given generator arguments list
 
     Returns operator output directory
     """
-    assert operator in test_params
-
     build_tests_cmd = "tosa_verif_build_tests"
-    op_build_dir = args.build_dir / profile
+    op_build_dir = args.build_dir / profile / group
 
     build_cmd_base = [
         build_tests_cmd,
@@ -102,19 +107,19 @@ def build_op_tests(args, profile, operator, test_params):
 
     build_cmds_list = []
 
-    if args.test_type in ["positive", "both"]:
+    if test_type in ["positive", "both"]:
         # Append extra parameters and run test generator for each set of parameters.
-        for arglist in test_params[operator]["generator_args"]:
+        for arglist in gen_args_list:
             build_cmd_pos_test = build_cmd_base.copy()
             build_cmd_pos_test.extend(["--test-type", "positive"])
             build_cmd_pos_test.extend(arglist)
             build_cmds_list.append(build_cmd_pos_test)
 
-    if args.test_type in ["negative", "both"]:
+    if test_type in ["negative", "both"]:
         # Get target-dtypes options and any filter string to limit tests
         target_dtypes_args = []
         filter_str = None
-        for arglist in test_params[operator]["generator_args"]:
+        for arglist in gen_args_list:
             idx = 0
             while idx < len(arglist):
                 if arglist[idx] == "--target-dtype":
@@ -130,11 +135,8 @@ def build_op_tests(args, profile, operator, test_params):
             build_cmd_neg_test.extend(["--filter", filter_str])
         build_cmd_neg_test.extend(["--test-type", "negative"])
         # Limit sizes of negative tests
-        dim_range = (
-            test_params[operator]["generator_negative_dim_range"]
-            if "generator_negative_dim_range" in test_params[operator]
-            else "1,16"
-        )
+        dim_range = gen_neg_dim_range if gen_neg_dim_range is not None else "1,16"
+
         build_cmd_neg_test.extend(["--tensor-dim-range", dim_range])
         build_cmd_neg_test.extend(target_dtypes_args)
         build_cmds_list.append(build_cmd_neg_test)
@@ -255,6 +257,7 @@ def convert_tests(
     tests=None,
     group=None,
     trim_op_subdir=False,
+    tags=None,
 ):
     """Convert tests to JSON and save to output directory."""
     ref_model_dir = args.ref_model_dir
@@ -267,6 +270,9 @@ def convert_tests(
     # even if we are only producing tests for tosa_mi
     for op_profile in op_profiles_list:
         c2c_args_base.extend(["--profile", op_profile])
+    if tags is not None:
+        for tag in tags:
+            c2c_args_base.extend(["--tag", tag])
     if args.framework_schema:
         c2c_args_base.extend(["--framework-schema", str(args.framework_schema)])
     c2c_args_base.append("--output-directory")
@@ -290,8 +296,10 @@ def convert_tests(
         c2c_args_list.append(c2c_args)
 
     if len(c2c_args_list) == 0:
-        logger.warning("No tests found. Nothing to convert")
-        return
+        logger.error(
+            f"No tests found for {operator}. Nothing to convert in {op_build_dir}"
+        )
+        raise (GenConformanceError())
 
     job_pool = mp.Pool(args.num_cores)
 
@@ -324,17 +332,21 @@ def convert_tests(
 
 
 def get_op_tests_selection(
-    args, profile, operator, op_build_dir, test_params, negative=False
+    args,
+    profile,
+    operator,
+    op_build_dir,
+    selection_config,
+    negative=False,
+    ignore_missing=False,
 ):
     """Use test picker to get subsection of tests generated."""
-    assert operator in test_params
+    # Need a full copy of the config as the selector updates it
+    config = copy.deepcopy(selection_config)
     logger.info("Choosing {} tests".format(("negative" if negative else "positive")))
     try:
-        op_params = test_params[operator]
         op = Operator.registry[operator](
-            op_build_dir,
-            op_params,
-            negative,
+            op_build_dir, config, negative=negative, ignore_missing=ignore_missing
         )
     except KeyError:
         logger.error(f"{operator} operator is not supported by test_select")
@@ -692,14 +704,6 @@ def main():
                         )
                         continue
 
-                    if (
-                        args.test_type == "negative"
-                        and "no_negative_tests" in test_params[op]
-                        and test_params[op]["no_negative_tests"]
-                    ):
-                        logger.warning(f"No negative tests for {op}")
-                        continue
-
                     op_profiles_list = test_params[op]["profile"]
                     if (
                         args.profile != PROFILES_ALL
@@ -709,52 +713,117 @@ def main():
                         logger.debug(f"Skipping {op} as not part of {args.profile}")
                         continue
 
-                    op_build_dir = build_op_tests(args, profile, op, test_params)
-
                     operator_group = test_params[op]["group"]
                     root_output_dir = args.output_dir / "operators"
-                    if args.convert_all_tests:
-                        logger.debug(f"Running and converting all {op} tests")
-                        generate_results(args, profile, op, op_build_dir)
-                        operator_test_list = None
-                    else:
-                        logger.debug(f"Running and converting selection of {op} tests")
-                        if args.test_type in ["positive", "both"]:
-                            tests_gen, tests_gen2 = tee(
-                                get_op_tests_selection(
-                                    args, profile, op, op_build_dir, test_params
+
+                    # Iterate through the generation groups selecting tests from each
+                    for gen_name, gen_dict in test_params[op]["generation"].items():
+                        no_neg_tests = (
+                            "no_negative_tests" in gen_dict
+                            and gen_dict["no_negative_tests"] == "true"
+                        )
+
+                        if no_neg_tests:
+                            if args.test_type == "negative":
+                                logger.info(
+                                    f"No negative tests for {op} / generation group {gen_name}"
                                 )
-                            )
-                            generate_results(args, profile, op, op_build_dir, tests_gen)
-                            operator_test_list = list(tests_gen2)
+                                continue
+                            # Only produce positive tests
+                            test_type = "positive"
                         else:
-                            operator_test_list = []
-                        if args.test_type in ["negative", "both"] and (
-                            "no_negative_tests" not in test_params[op]
-                            or not test_params[op]["no_negative_tests"]
-                        ):
-                            operator_test_list.extend(
-                                get_op_tests_selection(
-                                    args,
-                                    profile,
-                                    op,
-                                    op_build_dir,
-                                    test_params,
-                                    negative=True,
-                                )
+                            test_type = args.test_type
+
+                        gen_neg_dim_range = (
+                            gen_dict["negative_dim_range"]
+                            if "negative_dim_range" in gen_dict
+                            else None
+                        )
+
+                        ignore_missing = gen_name != STANDARD_GENERATOR_GROUP
+                        tags = (
+                            [gen_name] if gen_name != STANDARD_GENERATOR_GROUP else None
+                        )
+
+                        op_build_dir = build_op_tests(
+                            args,
+                            test_type,
+                            profile,
+                            op,
+                            gen_name,
+                            gen_dict["generator_args"],
+                            gen_neg_dim_range,
+                        )
+
+                        if args.convert_all_tests:
+                            logger.debug(f"Running and converting all {op} tests")
+                            generate_results(args, profile, op, op_build_dir)
+                            operator_test_list = None
+                        else:
+                            logger.debug(
+                                f"Running and converting selection of {op} tests"
                             )
-                    output_dir = convert_tests(
-                        args,
-                        profile,
-                        op,
-                        op_build_dir,
-                        root_output_dir,
-                        op_profiles_list,
-                        tests=operator_test_list,
-                        group=operator_group,
-                    )
-                    if not args.keep_large_files:
-                        check_op_tests(args, profile, op, output_dir)
+                            # Work out which selection criteria we are using
+                            if "selector" in gen_dict:
+                                selector_name = gen_dict["selector"]
+                                if selector_name not in test_params[op]["selection"]:
+                                    logger.warn(
+                                        f"Could not find {selector_name} in selection dict for {op} - using default"
+                                    )
+                                    selector_name = "default"
+                            else:
+                                selector_name = "default"
+                            if selector_name not in test_params[op]["selection"]:
+                                logger.error(
+                                    f"Could not find {selector_name} in selection dict for {op}"
+                                )
+                                raise (GenConformanceError())
+
+                            # Selection criteria
+                            selection_config = test_params[op]["selection"][
+                                selector_name
+                            ]
+                            if test_type in ["positive", "both"]:
+                                tests_gen, tests_gen2 = tee(
+                                    get_op_tests_selection(
+                                        args,
+                                        profile,
+                                        op,
+                                        op_build_dir,
+                                        selection_config,
+                                        ignore_missing=ignore_missing,
+                                    )
+                                )
+                                generate_results(
+                                    args, profile, op, op_build_dir, tests_gen
+                                )
+                                operator_test_list = list(tests_gen2)
+                            else:
+                                operator_test_list = []
+                            if test_type in ["negative", "both"]:
+                                operator_test_list.extend(
+                                    get_op_tests_selection(
+                                        args,
+                                        profile,
+                                        op,
+                                        op_build_dir,
+                                        selection_config,
+                                        negative=True,
+                                    )
+                                )
+                        output_dir = convert_tests(
+                            args,
+                            profile,
+                            op,
+                            op_build_dir,
+                            root_output_dir,
+                            op_profiles_list,
+                            tests=operator_test_list,
+                            group=operator_group,
+                            tags=tags,
+                        )
+                        if not args.keep_large_files:
+                            check_op_tests(args, profile, op, output_dir)
     except GenConformanceError:
         return 1
 
