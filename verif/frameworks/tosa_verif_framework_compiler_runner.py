@@ -384,7 +384,13 @@ def run_test(args, test, framework):
             while len(list(ifm_np.shape)) < len(test_desc["ifm_shape"][i]):
                 ifm_np = np.expand_dims(ifm_np, axis=0)
 
-            assert list(ifm_np.shape) == test_desc["ifm_shape"][i]
+            # After legalization, complex tensors are expected to be represented
+            # as a single floating point tensor of shape [?, ..., ?, 2].
+            expected_shape = test_desc["ifm_shape"][i]
+            if test.endswith("c64"):
+                expected_shape.append(2)
+
+            assert list(ifm_np.shape) == expected_shape
 
             reference_runner_ifm_name.append(ifm_tensor_name)
 

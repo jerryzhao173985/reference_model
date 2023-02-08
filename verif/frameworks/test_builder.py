@@ -1225,3 +1225,17 @@ class TBuilder:
 
         def eval(self, a):
             return tf.signal.rfft2d(a, self.fft_length, name=self.result_name)
+
+    class Real:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.real(a, name=self.result_name)
+
+    class Imag:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.imag(a, name=self.result_name)

@@ -841,6 +841,20 @@ TF_OP_LIST = {
             "tflite": TYPE_F,
         },
     },
+    "real": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Real, TGen.tgComplexComponents, ArgGen.agNone),
+        "types": {
+            "tflite": [tf.complex64],
+        },
+    },
+    "imag": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Imag, TGen.tgComplexComponents, ArgGen.agNone),
+        "types": {
+            "tflite": [tf.complex64],
+        },
+    },
 }
 
 # Shapes to be tested; default can be overwritten
@@ -1154,6 +1168,14 @@ def run_unit_test(
             # 1. Saved out numpy array directly
             for idx, (name, val) in enumerate(placeholders):
                 placeholder_vals.append(tf.convert_to_tensor(val))
+
+                # Complex tensors are expected to be repsesented by a
+                # single floating point tensor of shape [?, ..., ?, 2].
+                if val.dtype == np.complex64:
+                    val_shape = val.shape + (2,)
+                    val = val.view(np.float32)
+                    val = val.reshape(val_shape)
+
                 np.save(
                     os.path.join(test_dir, placeholder_npy_filenames[idx]), val, False
                 )

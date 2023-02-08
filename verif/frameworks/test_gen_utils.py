@@ -30,6 +30,8 @@ def get_shape_str(shape, dtype):
         shape_name = shape_name + "_qi16"
     elif dtype == tf.quint16:
         shape_name = shape_name + "_qu16"
+    elif dtype == tf.complex64:
+        shape_name = shape_name + "_c64"
     else:
         raise Exception("Unsupported type: {}".format(dtype))
 
