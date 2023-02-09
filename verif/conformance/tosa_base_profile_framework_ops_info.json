@@ -227,8 +227,8 @@
     "split": {
         "tests": [
             "split_13x21x3_i32_splitv_axis0",
-            "split_1x32x32x8_i32_split4_axis2",
-            "split_1x4x8x19_i32_splitv_axis3",
+            "split_13x21x3_i32_split3_axis1",
+            "split_1x4x8x19_i32_splitv_axis2",
             "split_64_i32_split2_axis0"
         ],
         "profile": [
