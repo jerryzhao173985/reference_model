@@ -305,7 +305,7 @@ Finally you can choose the type of test to run - positive, negative or both
 (default) -using the `test-type` option. To only run the positive tests:
 
 ```bash
-tosa_run_tests --test-type positive -t vtest/*/*
+tosa_verif_run_tests --test-type positive -t vtest/*/*
 ```
 
 #### Verbosity
