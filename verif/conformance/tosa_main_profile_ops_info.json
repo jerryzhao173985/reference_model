@@ -788,6 +788,36 @@
             "tosa-mi"
         ]
     },
+    "fft2d": {
+        "group": "tensor",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,256,64",
+                "--target-shape",
+                "1,4,4096"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type",
+            "inverse"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "fully_connected": {
         "group": "tensor",
         "generator_negative_dim_range": "1,10",
@@ -2116,6 +2146,35 @@
         ],
         "exclude_patterns": [
             ".*_ERRORIF_MaxDimExceeded_1x16584x5x1_.*"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
+    "rfft2d": {
+        "group": "tensor",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0"
+            ],
+            [
+                "--target-dtype",
+                "fp32",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,16,512",
+                "--target-shape",
+                "1,8192,2"
+            ]
+        ],
+        "params": {},
+        "permutes": [
+            "shape",
+            "type"
         ],
         "profile": [
             "tosa-mi"

@@ -496,6 +496,13 @@ class ExpOperator(Operator):
     name = "exp"
 
 
+class FFT2DOperator(Operator):
+    """Test selector for the FFT2D operator."""
+
+    name = "fft2d"
+    param_names = ["shape", "type", "inverse"]
+
+
 class FloorOperator(Operator):
     """Test selector for the FLOOR operator."""
 
@@ -727,6 +734,12 @@ class ReverseOperator(Operator):
 
     name = "reverse"
     param_names = ["shape", "type", "axis"]
+
+
+class RFFT2DOperator(Operator):
+    """Test selector for the RFFT2D operator."""
+
+    name = "rfft2d"
 
 
 class RsqrtOperator(Operator):
