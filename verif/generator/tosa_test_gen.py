@@ -3762,7 +3762,13 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgDefault,
                 None,
             ),
-            "types": TYPE_FIB,
+            "types": TYPE_FIB + [DType.INT48],
+            "error_if_validators": (
+                TosaErrorValidator.evWrongInputType,
+                TosaErrorValidator.evWrongOutputType,
+                TosaErrorValidator.evWrongInputList,
+                TosaErrorValidator.evWrongOutputList,
+            ),
         },
         "identity": {
             "op": Op.IDENTITY,
