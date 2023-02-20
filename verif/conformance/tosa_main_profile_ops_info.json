@@ -1796,6 +1796,58 @@
             "tosa-mi"
         ]
     },
+    "transpose_conv2d": {
+        "group": "tensor",
+        "generator_negative_dim_range": "1,10",
+        "generator_args": [
+            [
+                "--target-dtype",
+                "fp32",
+                "--target-dtype",
+                "fp16",
+                "--target-dtype",
+                "bf16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "10,24,9,13",
+                "--target-shape",
+                "8,14,20,5",
+                "--tensor-dim-range",
+                "1,16",
+                "--allow-pooling-and-conv-oversizes"
+            ],
+            [
+                "--target-dtype",
+                "fp16",
+                "--fp-values-range",
+                "-2.0,2.0",
+                "--target-shape",
+                "1,65536,1",
+                "--tensor-dim-range",
+                "1,17",
+                "--max-conv-dilation",
+                "1"
+            ]
+        ],
+        "params": {
+            "shape": [],
+            "type": [],
+            "kernel": [],
+            "stride": [],
+            "pad": [],
+            "out_shape": []
+        },
+        "permutes": [
+            "shape",
+            "type",
+            "stride",
+            "pad"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "maximum": {
         "group": "ew_binary",
         "generator_args": [
