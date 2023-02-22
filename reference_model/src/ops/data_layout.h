@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -186,6 +186,8 @@ DEF_OP_TILE_RANK(1)
 DEF_OP_TILE_RANK(2)
 DEF_OP_TILE_RANK(3)
 DEF_OP_TILE_RANK(4)
+DEF_OP_TILE_RANK(5)
+DEF_OP_TILE_RANK(6)
 
 #undef DEF_OP_TILE_RANK
 

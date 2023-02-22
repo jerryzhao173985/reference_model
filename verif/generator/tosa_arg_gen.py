@@ -176,6 +176,7 @@ class TosaTensorGen:
         for i in range(pl + const):
             shape_list.append(shape.copy())
 
+            # Generates an input rank mismatch for operators with more than one input
             if error_name == ErrorIf.RankMismatch:
                 if rank == 1 and i != 1:
                     shape = testGen.makeShape(rank + testGen.rng.choice([1, 2, 3]))
