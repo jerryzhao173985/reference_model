@@ -570,12 +570,21 @@ class ArgGen:
         rank = len(shapes)
         for left in range(3):
             for right in range(3):
-                paddings = np.zeros((rank, 2), dtype=np.int32)
-                for d in range(rank):
-                    paddings[d, 0] = left
-                    paddings[d, 1] = right
+                # Padding nothing in tensorflow lite causes the interpreter fail to set
+                # the input tensor properly due to date type mismatch.
+                if (left == 0) and (right == 0):
+                    continue
 
-                    arg_list.append(["_pad{}{}".format(left, right), [paddings]])
+                # A simple way to generate explicit pad_const including zero.
+                pad_const = (left - right) * rng.integers(0, 5, dtype=np.int32)
+                padding = np.zeros((rank, 2), dtype=np.int32)
+                for d in range(rank):
+                    padding[d, 0] = left
+                    padding[d, 1] = right
+
+                    arg_list.append(
+                        ["_pad{}{}".format(left, right), [padding, pad_const]]
+                    )
         return arg_list
 
     def agFill(op, shapes, rng):

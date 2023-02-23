@@ -793,8 +793,9 @@ class TBuilder:
             )
 
     class Pad:
-        def __init__(self, padding, name):
+        def __init__(self, padding, pad_const, name):
             self.padding = padding
+            self.pad_const = pad_const
             self.result_name = name
 
         def eval(self, a):
@@ -802,7 +803,7 @@ class TBuilder:
                 a,
                 self.padding,
                 mode="CONSTANT",
-                constant_values=0,
+                constant_values=self.pad_const,
                 name=self.result_name,
             )
 

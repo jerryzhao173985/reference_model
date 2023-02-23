@@ -631,7 +631,10 @@ TF_OP_LIST = {
     "pad": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Pad, TGen.tgBasic, ArgGen.agPad),
-        "types": TYPE_F,
+        "types": {
+            "tf": TYPE_F,
+            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
+        },
     },
     "expand_dims": {
         "operands": (1, 0),
