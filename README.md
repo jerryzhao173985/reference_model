@@ -25,7 +25,7 @@ tools:
 
 * CMake version 3.4 or later
 * GNU Make 4.1 or later
-* GCC (tested with 7.5.0) or Clang C++ compiler (tested with clang-9)
+* GCC (tested with 9.4.0) or Clang C++ compiler (tested with clang-10)
   with C++17 support
 
 The model includes the following git submodules:
@@ -36,7 +36,7 @@ The model includes the following git submodules:
 * doctest 2.4.9 (When building unit tests)
 
 The model is written using
-C++17 and has been primarily tested on Ubuntu x86_64 18.04 LTS Linux
+C++17 and has been primarily tested on Ubuntu x86_64 20.04 LTS Linux
 systems.
 
 The testing infrastructure requires:
