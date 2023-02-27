@@ -762,43 +762,9 @@ TF_OP_LIST = {
         ),
         "types": {"tf": TYPE_F},
     },
-    "resize_nearest": {
+    "resize": {
         "operands": (1, 0),
-        "build_fcn": (TBuilder.ResizeNearest, TGen.tgPooling, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "resize_bilinear": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ResizeBilinear, TGen.tgPooling, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "resize_bilinear_v1_align_corners": {
-        "operands": (1, 0),
-        "build_fcn": (
-            TBuilder.ResizeBilinearV1AlignCorners,
-            TGen.tgPooling,
-            ArgGen.agNone,
-        ),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "resize_bilinear_v1_none": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ResizeBilinearV1None, TGen.tgPooling, ArgGen.agNone),
+        "build_fcn": (TBuilder.Resize, TGen.tgPooling, ArgGen.agResize),
         "types": {
             "tf": TYPE_F,
             "tflite": list(
@@ -878,6 +844,7 @@ shape_list = [
     (1, 32, 32, 8),
     (1, 7, 7, 9),
     (1, 7, 7, 479),
+    (3, 1, 1, 7),
     (2, 2, 7, 7, 2),
     (1, 4, 8, 21, 17),
     (3, 32, 16, 16, 5),

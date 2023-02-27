@@ -1086,81 +1086,30 @@ class TBuilder:
                 name=self.result_name,
             )
 
-    class ResizeNearest:
-        def __init__(self, name):
+    class Resize:
+        def __init__(self, mode, align, half, scale, name):
             self.result_name = name
+            self.mode = mode
+            self.align = align
+            self.half = half
+            self.scale = scale
 
         def eval(self, a):
             out_shape = []
-            out_shape.append(a.shape[1] * 2)
-            out_shape.append(a.shape[2] * 2)
+            out_shape.append(a.shape[1] * self.scale)
+            out_shape.append(a.shape[2] * self.scale)
 
-            # tf.image.resize() will overwrite the node name with result_name +
-            # '/BILINEAR' need to add extra identity to force output tensor name to
-            # result_name return tf.image.resize(a, out_shape,
-            # method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, name=result_name)
-            resize = tf.image.resize(
+            tf_resize_dict = (
+                {"tf_resize_func": tf.compat.v1.image.resize_nearest_neighbor}
+                if (self.mode == "nearest")
+                else {"tf_resize_func": tf.compat.v1.image.resize_bilinear}
+            )
+            resize = tf_resize_dict["tf_resize_func"](
                 a,
                 out_shape,
-                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR,
+                align_corners=self.align,
                 name="resize",
-            )
-            return tf.identity(resize, name=self.result_name)
-
-    class ResizeBilinear:
-        def __init__(self, name):
-            self.result_name = name
-
-        def eval(self, a):
-            out_shape = []
-            out_shape.append(a.shape[1] * 2)
-            out_shape.append(a.shape[2] * 2)
-
-            # tf.image.resize() will overwrite the node name with result_name +
-            # '/BILINEAR' need to add extra identity to force output tensor name to
-            # result_name return tf.image.resize(a, out_shape,
-            # method=tf.image.ResizeMethod.NEAREST_NEIGHBOR, name=result_name)
-            resize = tf.image.resize(
-                a, out_shape, method=tf.image.ResizeMethod.BILINEAR, name="resize"
-            )
-            return tf.identity(resize, name=self.result_name)
-
-    # New tf resize set (align_corners, half_pixel_centers) = (false, true) by default.
-    # Test the rest option combinations here.
-    # Note that (align_corners, half_pixel_centers) = (true, true) is NOT valid.
-    class ResizeBilinearV1AlignCorners:
-        def __init__(self, name):
-            self.result_name = name
-
-        def eval(self, a):
-            out_shape = []
-            out_shape.append(a.shape[1] * 2)
-            out_shape.append(a.shape[2] * 2)
-
-            resize = tf.compat.v1.image.resize_bilinear(
-                a,
-                out_shape,
-                align_corners=True,
-                name="resize",
-                half_pixel_centers=False,
-            )
-            return tf.identity(resize, name=self.result_name)
-
-    class ResizeBilinearV1None:
-        def __init__(self, name):
-            self.result_name = name
-
-        def eval(self, a):
-            out_shape = []
-            out_shape.append(a.shape[1] * 2)
-            out_shape.append(a.shape[2] * 2)
-
-            resize = tf.compat.v1.image.resize_bilinear(
-                a,
-                out_shape,
-                align_corners=False,
-                name="resize",
-                half_pixel_centers=False,
+                half_pixel_centers=self.half,
             )
             return tf.identity(resize, name=self.result_name)
 

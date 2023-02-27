@@ -587,6 +587,30 @@ class ArgGen:
                     )
         return arg_list
 
+    def agResize(op, shapes, rng):
+        args = []
+        for mode in ["nearest", "bilinear"]:
+            for align_corners in [True, False]:
+                for half_pixel in [True, False]:
+                    # If half_pixel_centers is True, align_corners must be False.
+                    if (
+                        (mode == "bilinear")
+                        and (align_corners is True)
+                        and (half_pixel is True)
+                    ):
+                        continue
+
+                    for i in range(1, 4):
+                        args.append(
+                            [
+                                "_{}_align{}_half{}_scale{}".format(
+                                    mode, int(align_corners), int(half_pixel), i
+                                ),
+                                [mode, align_corners, half_pixel, i],
+                            ]
+                        )
+        return args
+
     def agFill(op, shapes, rng):
         values = []
         for i in range(4):
