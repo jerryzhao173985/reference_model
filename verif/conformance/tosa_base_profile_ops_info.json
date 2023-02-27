@@ -746,6 +746,8 @@
                 "1,49,42,28",
                 "--target-shape",
                 "1,11,44,13",
+                "--tensor-dim-range",
+                "1,16",
                 "--allow-pooling-and-conv-oversizes"
             ],
             [
@@ -797,6 +799,8 @@
                 "1,9,21,14,1",
                 "--target-shape",
                 "1,9,11,12,3",
+                "--tensor-dim-range",
+                "1,4",
                 "--allow-pooling-and-conv-oversizes"
             ],
             [
@@ -809,7 +813,7 @@
                 "--max-conv-dilation",
                 "1",
                 "--tensor-dim-range",
-                "1,4",
+                "1,2",
                 "--allow-pooling-and-conv-oversizes"
             ]
         ],
@@ -849,6 +853,8 @@
                 "1,9,44,3",
                 "--target-shape",
                 "1,11,33,4",
+                "--tensor-dim-range",
+                "1,16",
                 "--allow-pooling-and-conv-oversizes"
             ],
             [
