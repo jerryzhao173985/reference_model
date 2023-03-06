@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -105,7 +105,7 @@ inline size_t _count_leading_ones(T val)
 #define DIV_CEIL(a, b) ((a) % (b) ? ((a) / (b) + 1) : ((a) / (b)))
 
 // Returns a mask of 1's of this size
-#define ONES_MASK(SIZE) ((uint64_t)((SIZE) >= 64 ? 0xffffffffffffffffULL : ((uint64_t)(1) << (SIZE)) - 1))
+#define ONES_MASK(SIZE) ((uint64_t)((SIZE) >= 64 ? UINT64_C(0xffffffffffffffff) : (UINT64_C(1) << (SIZE)) - 1))
 
 // Returns a field of bits from HIGH_BIT to LOW_BIT, right-shifted
 // include both side, equivalent VAL[LOW_BIT:HIGH_BIT] in verilog

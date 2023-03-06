@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -196,83 +196,83 @@ struct GetNumBits<DType_FP16>
 template <DType T>
 struct GetQMin
 {
-    static constexpr int64_t value = 0L;
+    static constexpr int64_t value = INT64_C(0);
 };
 template <>
 struct GetQMin<DType_UINT8>
 {
-    static constexpr int64_t value = 0L;
+    static constexpr int64_t value = INT64_C(0);
 };
 template <>
 struct GetQMin<DType_UINT16>
 {
-    static constexpr int64_t value = 0L;
+    static constexpr int64_t value = INT64_C(0);
 };
 template <>
 struct GetQMin<DType_INT4>
 {
-    static constexpr int64_t value = -8L;
+    static constexpr int64_t value = INT64_C(-8);
 };
 template <>
 struct GetQMin<DType_INT8>
 {
-    static constexpr int64_t value = -128L;
+    static constexpr int64_t value = INT64_C(-128);
 };
 template <>
 struct GetQMin<DType_INT16>
 {
-    static constexpr int64_t value = -32768L;
+    static constexpr int64_t value = INT64_C(-32768);
 };
 template <>
 struct GetQMin<DType_INT32>
 {
-    static constexpr int64_t value = -(1L << 31);
+    static constexpr int64_t value = -(INT64_C(1) << 31);
 };
 template <>
 struct GetQMin<DType_INT48>
 {
-    static constexpr int64_t value = -(1L << 47);
+    static constexpr int64_t value = -(INT64_C(1) << 47);
 };
 
 template <DType T>
 struct GetQMax
 {
-    static constexpr int64_t value = 0L;
+    static constexpr int64_t value = INT64_C(0);
 };
 template <>
 struct GetQMax<DType_UINT8>
 {
-    static constexpr int64_t value = 255L;
+    static constexpr int64_t value = INT64_C(255);
 };
 template <>
 struct GetQMax<DType_UINT16>
 {
-    static constexpr int64_t value = 65535L;
+    static constexpr int64_t value = INT64_C(65535);
 };
 template <>
 struct GetQMax<DType_INT4>
 {
-    static constexpr int64_t value = 7L;
+    static constexpr int64_t value = INT64_C(7);
 };
 template <>
 struct GetQMax<DType_INT8>
 {
-    static constexpr int64_t value = 127L;
+    static constexpr int64_t value = INT64_C(127);
 };
 template <>
 struct GetQMax<DType_INT16>
 {
-    static constexpr int64_t value = 32767L;
+    static constexpr int64_t value = INT64_C(32767);
 };
 template <>
 struct GetQMax<DType_INT32>
 {
-    static constexpr int64_t value = (1L << 31) - 1;
+    static constexpr int64_t value = (INT64_C(1) << 31) - 1;
 };
 template <>
 struct GetQMax<DType_INT48>
 {
-    static constexpr int64_t value = (1L << 47) - 1;
+    static constexpr int64_t value = (INT64_C(1) << 47) - 1;
 };
 
 };    // namespace TosaReference

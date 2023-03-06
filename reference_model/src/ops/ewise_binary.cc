@@ -434,7 +434,7 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
                 int64_t result;
                 if (shift > 0)
                 {
-                    int64_t round = 1L << (shift - 1);
+                    int64_t round = INT64_C(1) << (shift - 1);
                     result        = static_cast<int64_t>(a) * static_cast<int64_t>(b) + round;
                     result        = result >> shift;
 

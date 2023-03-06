@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2021, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public:
         ASSERT_MSG(value > 0, "AvgPool2d reciprocal_scale() error: # of elements should be > 1 but is %d", value);
         uint32_t value_u32 = (uint32_t)value;
         int32_t k          = 32 - LEADING_ZEROS_32(value_u32 - 1);    // (1<<k)/2 < value <= (1<<k)
-        int64_t numerator  = ((1L << 30) + 1) << k;
+        int64_t numerator  = ((INT64_C(1) << 30) + 1) << k;
         multiplier         = numerator / value;    // (1<<30) <= multiplier < (1<<31)
         shift              = 30 + k;
     }
@@ -55,8 +55,8 @@ public:
                 "apply_scale_32(): shift value should stay within [2, 62] but is " + std::to_string(shift);
             throw desc;
         }
-        int64_t low_val  = -1L << (shift - 1);
-        int64_t high_val = 1L << (shift - 1);
+        int64_t low_val  = INT64_C(-1) << (shift - 1);
+        int64_t high_val = INT64_C(1) << (shift - 1);
         if (value < low_val || value >= high_val)
         {
             std::string desc = "apply_scale_32(): value should stay within [" + std::to_string(low_val) + ", " +
@@ -64,17 +64,17 @@ public:
                                std::to_string(shift);
             throw desc;
         }
-        int64_t round = 1L << (shift - 1);
+        int64_t round = INT64_C(1) << (shift - 1);
         if (double_round)
         {
             if (shift > 31 && value >= 0)
-                round += (1L << 30);
+                round += (INT64_C(1) << 30);
             if (shift > 31 && value < 0)
-                round -= (1L << 30);
+                round -= (INT64_C(1) << 30);
         }
         int64_t result = (int64_t)value * multiplier + round;
         result         = result >> shift;
-        if (result < -(1L << 31) || result >= (1L << 31))
+        if (result < -(INT64_C(1) << 31) || result >= (INT64_C(1) << 31))
         {
             std::string desc = "apply_scale_32() error: scaled result exceeds int32 numeric range";
             throw desc;
@@ -95,10 +95,10 @@ public:
                 "apply_scale_16(): shift value should stay within [2, 62] but is " + std::to_string(shift);
             throw desc;
         }
-        int64_t round  = 1L << (shift - 1);
+        int64_t round  = INT64_C(1) << (shift - 1);
         int64_t result = value * (int64_t)multiplier + round;
         result         = result >> shift;
-        if (result < -(1L << 31) || result >= (1L << 31))
+        if (result < -(INT64_C(1) << 31) || result >= (INT64_C(1) << 31))
         {
             std::string desc = "apply_scale_16() error: scaled result exceeds int32 numeric range";
             throw desc;

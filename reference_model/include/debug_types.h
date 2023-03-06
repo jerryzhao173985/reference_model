@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
  *    Defines fundamental debugger datatypes for the functional model
  */
 
+#include<stdint.h>
 #ifndef DEBUG_TYPES_H_
 #define DEBUG_TYPES_H_
 
@@ -42,13 +43,13 @@ extern "C"
     typedef enum func_debug_mode_e
     {
         DEBUG_NONE = 0x0,
-#define DEBUG_MODE(NAME, BIT) DEBUG_##NAME = (1UL << BIT),
+#define DEBUG_MODE(NAME, BIT) DEBUG_##NAME = (UINT64_C(1) << BIT),
 #include "debug_modes.def"
 #undef DEBUG_MODE
-        DEBUG_ALL = 0xffffffffffffffffUL
+        DEBUG_ALL = UINT64_C(0xffffffffffffffff)
     } func_debug_mode_e;
 
-#define DEBUG_INST_ALL 0xffffffffffffffffUL
+#define DEBUG_INST_ALL UINT64_C(0xffffffffffffffff)
 
 #ifdef __cplusplus
 }
