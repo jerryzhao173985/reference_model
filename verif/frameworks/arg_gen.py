@@ -593,11 +593,7 @@ class ArgGen:
             for align_corners in [True, False]:
                 for half_pixel in [True, False]:
                     # If half_pixel_centers is True, align_corners must be False.
-                    if (
-                        (mode == "bilinear")
-                        and (align_corners is True)
-                        and (half_pixel is True)
-                    ):
+                    if (align_corners is True) and (half_pixel is True):
                         continue
 
                     for i in range(1, 4):
