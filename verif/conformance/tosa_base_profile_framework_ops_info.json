@@ -191,9 +191,12 @@
         ]
     },
     "resize_bilinear": {
+        "alternate_names": [
+            "resize"
+        ],
         "tests": [
-            "resize_bilinear_1x32x32x8_qi16",
-            "resize_bilinear_1x4x4x4_qi8"
+            "resize_bilinear_1x32x32x8_qi16_bilinear_align0_half1_scale3",
+            "resize_bilinear_1x4x4x4_qi8_bilinear_align1_half0_scale1"
         ],
         "profile": [
             "tosa-bi",
@@ -202,11 +205,11 @@
     },
     "resize_nearest_neighbor": {
         "alternate_names": [
-            "resize_nearest"
+            "resize"
         ],
         "tests": [
-            "resize_nearest_neighbor_1x4x8x19_qu8",
-            "resize_nearest_neighbor_1x8x4x17_qi8"
+            "resize_nearest_neighbor_1x4x8x19_qu8_nearest_align0_half1_scale2",
+            "resize_nearest_neighbor_1x8x4x17_qi8_nearest_align0_half0_scale3"
         ],
         "profile": [
             "tosa-bi",
@@ -226,7 +229,7 @@
     },
     "split": {
         "tests": [
-            "split_13x21x3_i32_splitv_axis0",
+            "split_3x1x1x7_i32_splitv_axis0",
             "split_13x21x3_i32_split3_axis1",
             "split_1x4x8x19_i32_splitv_axis2",
             "split_64_i32_split2_axis0"
