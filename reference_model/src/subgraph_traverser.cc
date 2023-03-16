@@ -123,11 +123,14 @@ int SubgraphTraverser::initializeGraph()
 
     std::vector<TosaSerializationTensor*> ser_tensor_vec;
     // Get all the serialized tensors from TosaSerializationHandler.
-    for (auto block: tsh->GetMainRegion()->GetBlocks())
+    for (auto region : tsh->GetRegions())
     {
-        for (auto ser_tensor : block->GetTensors())
+        for (auto block : region->GetBlocks())
         {
-            ser_tensor_vec.push_back(ser_tensor);
+            for (auto ser_tensor : block->GetTensors())
+            {
+                ser_tensor_vec.push_back(ser_tensor);
+            }
         }
     }
 
