@@ -186,13 +186,13 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
     int status = 0;
     switch (tensor->getDtype())
     {
-        case DType::DType_FP16: {
+        case TOSA_REF_TYPE_FP16: {
             auto typed_ptr     = reinterpret_cast<half_float::half*>(raw_ptr);
             const int elements = size / sizeof(half_float::half);
             status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
-        case DType::DType_FP32: {
+        case TOSA_REF_TYPE_FP32: {
             auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
             const int elements = size / sizeof(float);
             status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
@@ -252,13 +252,13 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
     int status = 0;
     switch (tensor->getDtype())
     {
-        case DType::DType_FP16: {
+        case TOSA_REF_TYPE_FP16: {
             auto typed_ptr     = reinterpret_cast<half_float::half*>(raw_ptr);
             const int elements = size / sizeof(half_float::half);
             status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
-        case DType::DType_FP32: {
+        case TOSA_REF_TYPE_FP32: {
             auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
             const int elements = size / sizeof(float);
             status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));

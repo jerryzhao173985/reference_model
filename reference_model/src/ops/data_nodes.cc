@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ int OpConst::eval()
     return GraphNode::eval();
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_,
                                     TosaAttributeBase* attribute_,
                                     uint64_t id_)
@@ -52,11 +52,11 @@ OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_,
     setRequiredRank(0, 6);
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 OpIdentity<Rank, Dtype>::~OpIdentity()
 {}
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpIdentity<Rank, Dtype>::checkTensorAttributes()
 {
 
@@ -78,7 +78,7 @@ int OpIdentity<Rank, Dtype>::checkTensorAttributes()
     return 0;
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpIdentity<Rank, Dtype>::eval()
 {
     out->getTensor() = in->getTensor();
@@ -96,3 +96,4 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, BOOL);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpIdentity, FP64);

@@ -23,7 +23,7 @@ using namespace tosa;
 namespace TosaReference
 {
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpConcat : public GraphNode
 {
 public:
@@ -45,7 +45,7 @@ protected:
     TosaReference::TensorTemplate<TOut>* out;
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpPad : public GraphNode
 {
 public:
@@ -66,7 +66,7 @@ protected:
     TosaPadAttribute* attribute;
 };
 
-template <int InRank, int OutRank, DType Dtype>
+template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
 class OpReshape : public GraphNode
 {
 public:
@@ -90,7 +90,7 @@ protected:
     TosaReference::TensorTemplate<TOut>* out;
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReverse : public GraphNode
 {
 public:
@@ -112,7 +112,7 @@ protected:
     Eigen::array<bool, Rank> reverse_array;
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpSlice : public GraphNode
 {
 public:
@@ -135,7 +135,7 @@ protected:
     TosaReference::TensorTemplate<TOut>* out;
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpTileBase : public GraphNode
 {
 public:
@@ -156,7 +156,7 @@ protected:
 };
 
 // primary template for op tile
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpTile : public OpTileBase<Rank, Dtype>
 {
 public:
@@ -170,12 +170,12 @@ protected:
 
 // partial specialization for specific rank
 #define DEF_OP_TILE_RANK(N)                                                                                            \
-    template <DType Dtype>                                                                                             \
+    template <TOSA_REF_TYPE Dtype>                                                                                     \
     class OpTile<N, Dtype> : public OpTileBase<N, Dtype>                                                               \
     {                                                                                                                  \
     public:                                                                                                            \
-        OpTile(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)        \
-            : OpTileBase<N, Dtype>(sgt_, attribute_, id_)                                                      \
+        OpTile(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)                                   \
+            : OpTileBase<N, Dtype>(sgt_, attribute_, id_)                                                              \
         {}                                                                                                             \
                                                                                                                        \
     protected:                                                                                                         \
@@ -191,7 +191,7 @@ DEF_OP_TILE_RANK(6)
 
 #undef DEF_OP_TILE_RANK
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpTranspose : public GraphNode
 {
 public:

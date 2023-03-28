@@ -30,11 +30,11 @@
 #include <fenv.h>
 #include <math.h>
 #define __STDC_LIMIT_MACROS    //enable min/max of plain data type
+#include "dtype.h"
 #include "func_config.h"
 #include "func_debug.h"
 #include "half.hpp"
 #include "inttypes.h"
-#include "tosa_generated.h"
 #include <Eigen/Core>
 #include <bitset>
 #include <cassert>
@@ -45,6 +45,7 @@
 
 using namespace tosa;
 using namespace std;
+using namespace TosaReference;
 
 inline size_t _count_one(uint64_t val)
 {
@@ -259,27 +260,27 @@ inline bool float_is_big_endian()
     return f_as_bytes[0] != f_neg_as_bytes[0];
 }
 
-template <DType Dtype>
+template <TOSA_REF_TYPE Dtype>
 float fpTrunc(float f_in)
 {
-    /* Truncates a float value based on the DType it represents.*/
+    /* Truncates a float value based on the TOSA_REF_TYPE it represents.*/
     switch (Dtype)
     {
-        case DType_BF16:
+        case TOSA_REF_TYPE_BF16:
             truncateFloatToBFloat(&f_in, 1);
             break;
-        case DType_FP16:
+        case TOSA_REF_TYPE_FP16:
             // Cast to temporary float16 value before casting back to float32
             {
                 half_float::half h = half_float::half_cast<half_float::half, float>(f_in);
                 f_in               = half_float::half_cast<float, half_float::half>(h);
                 break;
             }
-        case DType_FP32:
+        case TOSA_REF_TYPE_FP32:
             // No-op for fp32
             break;
         default:
-            ASSERT_MSG(false, "DType %s should not be float-truncated.", EnumNameDType(Dtype));
+            ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-truncated.", EnumNameTOSAREFTYPE(Dtype));
     }
     return f_in;
 }

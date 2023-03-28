@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpIdentity : public GraphNode
 {
 public:

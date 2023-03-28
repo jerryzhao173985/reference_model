@@ -57,6 +57,13 @@ def parse_args():
         help="Reference model base directory",
     )
     parser.add_argument(
+        "-p",
+        "--precise-mode",
+        dest="precise_mode",
+        action="store_true",
+        help="run in precise mode (FP64)",
+    )
+    parser.add_argument(
         "-v", "--verbose", dest="verbose", action="count", help="Verbose run"
     )
     parser.add_argument(
@@ -552,6 +559,9 @@ def run_test(args, test, framework):
     if args.debug_ref_model:
         ref_model_cmd.extend(["-D ALL", "-l high"])
 
+    if args.precise_mode:
+        ref_model_cmd.extend(["--precise_mode=1"])
+
     if args.valgrind:
         ref_model_cmd = [
             "valgrind",
@@ -594,7 +604,11 @@ def run_test(args, test, framework):
         )
         return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e)
 
-    if tf_result.dtype == np.float16:
+    if args.precise_mode == 1 and (
+        tf_result.dtype == np.float16 or tf_result.dtype == np.float32
+    ):
+        tf_result = tf_result.astype(np.float64)
+    elif tf_result.dtype == np.float16:
         tf_result = tf_result.astype(np.float32)
     elif (
         tf_result.dtype == np.uint8

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.4)
 
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -109,6 +109,7 @@ set(PUBLIC_HEADERS)
 list(APPEND PUBLIC_HEADERS
     include/debug_modes.def
     include/debug_types.h
+    include/dtype.h
     include/func_config.h
     include/func_debug.h
     include/graph_status.h

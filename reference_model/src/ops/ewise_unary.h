@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using namespace tosa;
 
 namespace TosaReference
 {
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class UnaryNode : public GraphNode
 {
 public:
@@ -45,11 +45,11 @@ protected:
 };
 
 #define DEF_TEMPLATE_UNARY_OP(Opname, OPNAME)                                                                          \
-    template <int Rank, DType Dtype>                                                                                   \
+    template <int Rank, TOSA_REF_TYPE Dtype>                                                                           \
     class Op##Opname : public UnaryNode<Rank, Dtype>                                                                   \
     {                                                                                                                  \
     public:                                                                                                            \
-        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)    \
+        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)                               \
             : UnaryNode<Rank, Dtype>(sgt_, Op_##OPNAME, id_)                                                           \
         {                                                                                                              \
             register_fcn();                                                                                            \
@@ -75,7 +75,7 @@ DEF_TEMPLATE_UNARY_OP(Rsqrt, RSQRT)
 #undef DEF_TEMPLATE_UNARY_OP
 
 // Negate is the only unary op with attributes
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpNegate : public UnaryNode<Rank, Dtype>
 {
 public:

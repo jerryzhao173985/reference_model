@@ -19,29 +19,30 @@
 #include "attribute.h"
 #include "subgraph_traverser.h"
 #include "tensor.h"
-#include "tosa_generated.h"
 #include <iostream>
 
-#define DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, RANK, DTYPE) template class TosaReference::OP<RANK, DType_##DTYPE>;
+#define DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, RANK, DTYPE)                                                             \
+    template class TosaReference::OP<RANK, TOSA_REF_TYPE_##DTYPE>;
 
 #define DEF_INSTANTIATE_ONE_RANK_TWO_TYPE(OP, RANK, DTYPE1, DTYPE2)                                                    \
-    template class TosaReference::OP<RANK, DType_##DTYPE1, DType_##DTYPE2>;
+    template class TosaReference::OP<RANK, TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2>;
 
 #define DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, RANK1, RANK2, DTYPE)                                                     \
-    template class TosaReference::OP<RANK1, RANK2, DType_##DTYPE>;
+    template class TosaReference::OP<RANK1, RANK2, TOSA_REF_TYPE_##DTYPE>;
 
 #define DEF_INSTANTIATE_TWO_RANK_TWO_TYPE(OP, RANK1, RANK2, DTYPE1, DTYPE2)                                            \
-    template class TosaReference::OP<RANK1, RANK2, DType_##DTYPE1, DType_##DTYPE2>;
+    template class TosaReference::OP<RANK1, RANK2, TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2>;
 
-#define DEF_INSTANTIATE_ONE_TYPE(OP, DTYPE) template class TosaReference::OP<DType_##DTYPE>;
+#define DEF_INSTANTIATE_ONE_TYPE(OP, DTYPE) template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE>;
 
-#define DEF_INSTANTIATE_TWO_TYPE(OP, DTYPE1, DTYPE2) template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2>;
+#define DEF_INSTANTIATE_TWO_TYPE(OP, DTYPE1, DTYPE2)                                                                   \
+    template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2>;
 
-#define DEF_INSTANTIATE_THREE_TYPE(OP, DTYPE1, DTYPE2, DTYPE3)                                                        \
-    template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2, DType_##DTYPE3>;
+#define DEF_INSTANTIATE_THREE_TYPE(OP, DTYPE1, DTYPE2, DTYPE3)                                                         \
+    template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##DTYPE3>;
 
 #define DEF_INSTANTIATE_THREE_TYPE_RESIZE(OP, DTYPE1, DTYPE2, OP_TYPE)                                                 \
-    template class TosaReference::OP<DType_##DTYPE1, DType_##DTYPE2, OP_TYPE>;
+    template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, OP_TYPE>;
 
 #define DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OP, DTYPE)                                                           \
     DEF_INSTANTIATE_ONE_RANK_ONE_TYPE(OP, 0, DTYPE)                                                                    \

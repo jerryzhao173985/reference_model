@@ -45,6 +45,9 @@ class TosaSUTRunner(TosaTestRunner):
         if args.ref_intermediates:
             cmd.extend(["--dump_intermediates", str(args.ref_intermediates)])
 
+        if args.precise_mode:
+            cmd.extend(["--precise_mode=1"])
+
         # Run command and interpret tosa graph result via process return codes
         graphMessage = None
         try:

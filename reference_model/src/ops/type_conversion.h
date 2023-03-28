@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using namespace tosa;
 
 namespace TosaReference
 {
-template <int Rank, DType InDtype, DType OutDtype>
+template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 class OpRescale : public GraphNode
 {
 public:
@@ -46,7 +46,7 @@ protected:
     TosaReference::TensorTemplate<TOut>* out;
 };
 
-template <DType InDtype, DType OutDtype>
+template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 class CastHelper
 {
 public:
@@ -64,12 +64,12 @@ private:
     FcnType fcn;
 };
 
-template <DType InDtype>
-class CastHelper<InDtype, DType_BOOL>
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_BOOL>
 {
 public:
     using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<DType_BOOL>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -81,11 +81,11 @@ private:
     FcnType fcn;
 };
 
-template <DType OutDtype>
-class CastHelper<DType_BOOL, OutDtype>
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_BOOL, OutDtype>
 {
 public:
-    using InEigenType               = typename GetEigenType<DType_BOOL>::type;
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     using OutEigenType              = typename GetEigenType<OutDtype>::type;
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
@@ -100,12 +100,12 @@ private:
     FcnType fcn;
 };
 
-template <DType InDtype>
-class CastHelper<InDtype, DType_FP16>
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_FP16>
 {
 public:
     using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<DType_FP16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -117,64 +117,11 @@ private:
     FcnType fcn;
 };
 
-template <DType OutDtype>
-class CastHelper<DType_FP16, OutDtype>
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_FP16, OutDtype>
 {
 public:
-    using InEigenType               = typename GetEigenType<DType_FP16>::type;
-    using OutEigenType              = typename GetEigenType<OutDtype>::type;
-    using FcnType                   = std::function<OutEigenType(InEigenType)>;
-    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
-    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
-    CastHelper();
-    const FcnType& get_fcn() const
-    {
-        return fcn;
-    }
-
-private:
-    FcnType fcn;
-};
-
-template <>
-class CastHelper<DType_FP32, DType_FP16>
-{
-public:
-    using InEigenType  = typename GetEigenType<DType_FP32>::type;
-    using OutEigenType = typename GetEigenType<DType_FP16>::type;
-    using FcnType      = std::function<OutEigenType(InEigenType)>;
-    CastHelper();
-    const FcnType& get_fcn() const
-    {
-        return fcn;
-    }
-
-private:
-    FcnType fcn;
-};
-
-template <DType InDtype>
-class CastHelper<InDtype, DType_BF16>
-{
-public:
-    using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<DType_BF16>::type;
-    using FcnType      = std::function<OutEigenType(InEigenType)>;
-    CastHelper();
-    const FcnType& get_fcn() const
-    {
-        return fcn;
-    }
-
-private:
-    FcnType fcn;
-};
-
-template <DType OutDtype>
-class CastHelper<DType_BF16, OutDtype>
-{
-public:
-    using InEigenType               = typename GetEigenType<DType_BF16>::type;
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
     using OutEigenType              = typename GetEigenType<OutDtype>::type;
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
@@ -190,11 +137,11 @@ private:
 };
 
 template <>
-class CastHelper<DType_FP32, DType_BF16>
+class CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP16>
 {
 public:
-    using InEigenType  = typename GetEigenType<DType_FP32>::type;
-    using OutEigenType = typename GetEigenType<DType_BF16>::type;
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -206,12 +153,12 @@ private:
     FcnType fcn;
 };
 
-template <DType InDtype>
-class CastHelper<InDtype, DType_FP32>
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_BF16>
 {
 public:
     using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<DType_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -223,45 +170,11 @@ private:
     FcnType fcn;
 };
 
-template <>
-class CastHelper<DType_FP16, DType_FP32>
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_BF16, OutDtype>
 {
 public:
-    using InEigenType  = typename GetEigenType<DType_FP16>::type;
-    using OutEigenType = typename GetEigenType<DType_FP32>::type;
-    using FcnType      = std::function<OutEigenType(InEigenType)>;
-    CastHelper();
-    const FcnType& get_fcn() const
-    {
-        return fcn;
-    }
-
-private:
-    FcnType fcn;
-};
-
-template <>
-class CastHelper<DType_BF16, DType_FP32>
-{
-public:
-    using InEigenType  = typename GetEigenType<DType_BF16>::type;
-    using OutEigenType = typename GetEigenType<DType_FP32>::type;
-    using FcnType      = std::function<OutEigenType(InEigenType)>;
-    CastHelper();
-    const FcnType& get_fcn() const
-    {
-        return fcn;
-    }
-
-private:
-    FcnType fcn;
-};
-
-template <DType OutDtype>
-class CastHelper<DType_FP32, OutDtype>
-{
-public:
-    using InEigenType               = typename GetEigenType<DType_FP32>::type;
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
     using OutEigenType              = typename GetEigenType<OutDtype>::type;
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
@@ -276,7 +189,113 @@ private:
     FcnType fcn;
 };
 
-template <int Rank, DType InDtype, DType OutDtype>
+template <>
+class CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_BF16>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_FP32>
+{
+public:
+    using InEigenType  = typename GetEigenType<InDtype>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP32>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP32>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_FP32, OutDtype>
+{
+public:
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType              = typename GetEigenType<OutDtype>::type;
+    using FcnType                   = std::function<OutEigenType(InEigenType)>;
+    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
+    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_FP64, OutDtype>
+{
+public:
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_FP64>::type;
+    using OutEigenType              = typename GetEigenType<OutDtype>::type;
+    using FcnType                   = std::function<OutEigenType(InEigenType)>;
+    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
+    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 class OpCast : public GraphNode
 {
 public:

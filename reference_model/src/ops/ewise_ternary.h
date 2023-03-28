@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace TosaReference
 //   3.   Else_val: Rank N, type=<V>
 //   4.   Result:   Rank N, type=<V>
 // Cond, Then_val, Else_val need to be mutually-broadcastable
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpSelectBase : public GraphNode
 {
 public:
@@ -39,7 +39,7 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    using CondEigenType = typename GetEigenType<DType_BOOL>::type;
+    using CondEigenType = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     using InEigenType   = typename GetEigenType<Dtype>::type;
     using TCond         = Eigen::Tensor<CondEigenType, Rank>;
     using TIn           = Eigen::Tensor<InEigenType, Rank>;
@@ -55,7 +55,7 @@ protected:
 };
 
 // primary class
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpSelect : public OpSelectBase<Rank, Dtype>
 {
 public:
@@ -69,7 +69,7 @@ public:
 };
 
 // partial specialization for rank 0
-template <DType Dtype>
+template <TOSA_REF_TYPE Dtype>
 class OpSelect<0, Dtype> : public OpSelectBase<0, Dtype>
 {
 public:

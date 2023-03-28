@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,45 +24,45 @@ using namespace tosa;
 namespace TosaReference
 {
 
-template <int Rank, DType Dtype>
-class OpEqual : public BinaryNode<Rank, Dtype, DType_BOOL>
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpEqual : public BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>
 {
 public:
     OpEqual(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_EQUAL, id_)
+        : BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>(sgt_, Op_EQUAL, id_)
     {
         register_fcn();
     }
     using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<DType_BOOL>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     virtual int register_fcn();
 };
 
-template <int Rank, DType Dtype>
-class OpGreater : public BinaryNode<Rank, Dtype, DType_BOOL>
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpGreater : public BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>
 {
 public:
     OpGreater(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_GREATER, id_)
+        : BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>(sgt_, Op_GREATER, id_)
     {
         register_fcn();
     }
     using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<DType_BOOL>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     virtual int register_fcn();
 };
 
-template <int Rank, DType Dtype>
-class OpGreaterEqual : public BinaryNode<Rank, Dtype, DType_BOOL>
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpGreaterEqual : public BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>
 {
 public:
     OpGreaterEqual(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : BinaryNode<Rank, Dtype, DType_BOOL>(sgt_, Op_EQUAL, id_)
+        : BinaryNode<Rank, Dtype, TOSA_REF_TYPE_BOOL>(sgt_, Op_EQUAL, id_)
     {
         register_fcn();
     }
     using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<DType_BOOL>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BOOL>::type;
     virtual int register_fcn();
 };
 

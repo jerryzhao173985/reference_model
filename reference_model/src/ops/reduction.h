@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ using namespace tosa;
 namespace TosaReference
 {
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class ReduceNode : public GraphNode
 {
 public:
@@ -44,7 +44,7 @@ protected:
     TosaAxisAttribute* attribute;
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceAll : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -54,7 +54,7 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceAny : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -64,7 +64,7 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceMax : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -74,7 +74,7 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceMin : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -84,7 +84,7 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceProduct : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -94,7 +94,17 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpReduceProductDouble : public ReduceNode<Rank, Dtype>
+{
+public:
+    OpReduceProductDouble(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_PRODUCT, attribute_, id_)
+    {}
+    virtual int eval();
+};
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceSum : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -104,11 +114,21 @@ public:
     virtual int eval();
 };
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceSumInt : public ReduceNode<Rank, Dtype>
 {
 public:
     OpReduceSumInt(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
+    {}
+    virtual int eval();
+};
+
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpReduceSumDouble : public ReduceNode<Rank, Dtype>
+{
+public:
+    OpReduceSumDouble(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
     {}
     virtual int eval();

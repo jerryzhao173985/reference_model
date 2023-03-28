@@ -147,6 +147,13 @@ def parseArgs(argv):
         help="A TOSA level defines operator parameter ranges that an implementation shall support."
         "Config tosa_level for running the reference model only. Default is EIGHTK",
     )
+    parser.add_argument(
+        "-p",
+        "--precise-mode",
+        dest="precise_mode",
+        action="store_true",
+        help="Run the reference model in precise mode (FP64)",
+    )
 
     args = parser.parse_args(argv)
 

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 OpSelectBase<Rank, Dtype>::OpSelectBase(SubgraphTraverser* sgt_,
                                         TosaAttributeBase* attribute_,
                                         uint64_t id_)
@@ -29,11 +29,11 @@ OpSelectBase<Rank, Dtype>::OpSelectBase(SubgraphTraverser* sgt_,
     setRequiredRank(0, 6);
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 OpSelectBase<Rank, Dtype>::~OpSelectBase()
 {}
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSelectBase<Rank, Dtype>::checkTensorAttributes()
 {
     // Check Tosa Level
@@ -66,13 +66,13 @@ int OpSelectBase<Rank, Dtype>::checkTensorAttributes()
     return 0;
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSelectBase<Rank, Dtype>::eval()
 {
     FATAL_ERROR("shouldn't be called");
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSelect<Rank, Dtype>::broadcast()
 {
     const std::vector<int>& cond_shape   = this->cond->getShape();
@@ -90,7 +90,7 @@ int OpSelect<Rank, Dtype>::broadcast()
     return 0;
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSelect<Rank, Dtype>::eval()
 {
     this->broadcast();
@@ -102,7 +102,7 @@ int OpSelect<Rank, Dtype>::eval()
     return GraphNode::eval();
 }
 
-template <DType Dtype>
+template <TOSA_REF_TYPE Dtype>
 int OpSelect<0, Dtype>::eval()
 {
     this->out->getTensor() = this->cond->getTensor().select(this->then_val->getTensor(), this->else_val->getTensor());
@@ -118,6 +118,7 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelectBase, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelectBase, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelectBase, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelectBase, BOOL);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelectBase, FP64);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, BF16);
@@ -126,3 +127,4 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, INT32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, BOOL);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpSelect, FP64);

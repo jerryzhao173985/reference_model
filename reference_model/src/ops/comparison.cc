@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpEqual<Rank, Dtype>::register_fcn()
 {
     // Check Tosa Level
@@ -31,20 +31,21 @@ int OpEqual<Rank, Dtype>::register_fcn()
 
     switch (Dtype)
     {
-        case DType_FP16:
-        case DType_BF16:
-        case DType_FP32:
-        case DType_INT32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_BF16:
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a == b; };
             break;
         default:
-            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
     }
 
     return 0;
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpGreater<Rank, Dtype>::register_fcn()
 {
     // Check Tosa Level
@@ -53,20 +54,21 @@ int OpGreater<Rank, Dtype>::register_fcn()
 
     switch (Dtype)
     {
-        case DType_FP16:
-        case DType_BF16:
-        case DType_FP32:
-        case DType_INT32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_BF16:
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b; };
             break;
         default:
-            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
     }
 
     return 0;
 }
 
-template <int Rank, DType Dtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpGreaterEqual<Rank, Dtype>::register_fcn()
 {
     // Check Tosa Level
@@ -75,14 +77,15 @@ int OpGreaterEqual<Rank, Dtype>::register_fcn()
 
     switch (Dtype)
     {
-        case DType_FP16:
-        case DType_BF16:
-        case DType_FP32:
-        case DType_INT32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_BF16:
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a >= b; };
             break;
         default:
-            ERROR_IF(true, "unsupported DType %s", EnumNamesDType()[Dtype]);
+            ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
     }
 
     return 0;
@@ -93,13 +96,16 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpEqual, FP64);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreater, FP64);
 
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, FP32);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_ONE_TYPE(OpGreaterEqual, FP64);

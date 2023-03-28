@@ -22,11 +22,14 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-TosaReference::Tensor::Tensor(std::string tensorName_, DType tensorDtype_, std::vector<int> shape_)
+TosaReference::Tensor::Tensor(const std::string tensorName_,
+                              const DType serializationDtype_,
+                              const std::vector<int> shape_)
+    : tensorName(tensorName_)
+    , serializationDtype(serializationDtype_)
+    , shape(shape_)
+    , tensorDtype(ConvertDType(serializationDtype_))
 {
-    tensorName  = std::string(tensorName_);
-    tensorDtype = tensorDtype_;
-    shape       = std::vector<int>(shape_);
     producer    = nullptr;
     isValid     = false;
     consumers.clear();
@@ -75,7 +78,7 @@ int TosaReference::Tensor::addConsumer(GraphNode* node)
 
 int TosaReference::Tensor::dumpTensorParams(FILE* out) const
 {
-    fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(), EnumNamesDType()[getDtype()],
+    fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(), EnumNameTOSAREFTYPE(getDtype()),
             getIsValid(), getRank(), getShapeAsString().c_str());
 
     return 0;
@@ -83,7 +86,7 @@ int TosaReference::Tensor::dumpTensorParams(FILE* out) const
 
 int TosaReference::Tensor::dumpTensorParams(std::ostream& out) const
 {
-    out << "Name: " << getName() << " DType=" << EnumNamesDType()[getDtype()] << " isValid=" << getIsValid()
+    out << "Name: " << getName() << " DType=" << EnumNameTOSAREFTYPE(getDtype()) << " isValid=" << getIsValid()
         << " Rank=" << getRank() << " Shape=" << getShapeAsString() << "\n";
 
     return 0;
@@ -92,28 +95,33 @@ int TosaReference::Tensor::dumpTensorParams(std::ostream& out) const
 int TosaReference::Tensor::readFromNpyFile(const char* filename)
 {
     uint32_t elements   = getElementCount();
-    float* fdatabuf     = nullptr;
+    double* f64databuf           = nullptr;
+    float* f32databuf            = nullptr;
     half_float::half* f16databuf = nullptr;
     int32_t* i32databuf = nullptr;
     int64_t* i64databuf = nullptr;
     bool* bdatabuf      = nullptr;
     NumpyUtilities::NPError nperror;
-    DType dtype = getDtype();
+    TOSA_REF_TYPE dtype          = getDtype();
+    DType serialization_dtype    = getSerializationDtype();
 
-    switch (dtype)
+    assert(dtype == ConvertDType(serialization_dtype));
+    // if dtype is FP64, serialization_dtype must be one of FP32, FP16, BF16
+    assert(dtype != TOSA_REF_TYPE_FP64 || serialization_dtype == DType_FP32 || serialization_dtype == DType_FP16 ||
+           serialization_dtype == DType_BF16);
+
+    switch (serialization_dtype)
     {
         case DType_FP32:
         case DType_BF16:
-            fdatabuf = (float*)calloc(sizeof(float), elements);
-            ASSERT_MEM(fdatabuf);
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
 
-            nperror = NumpyUtilities::readFromNpyFile(filename, elements, fdatabuf);
+            nperror = NumpyUtilities::readFromNpyFile(filename, elements, f32databuf);
             break;
         case DType_FP16:
             f16databuf = (half_float::half*)calloc(sizeof(half_float::half), elements);
             ASSERT_MEM(f16databuf);
-            fdatabuf = (float*)calloc(sizeof(float), elements);
-            ASSERT_MEM(fdatabuf);
 
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, f16databuf);
             break;
@@ -141,7 +149,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, bdatabuf);
             break;
         default:
-            FATAL_ERROR("unsupported tensor type=%s", EnumNamesDType()[getDtype()]);
+            FATAL_ERROR("unknown tensor type=%s", EnumNameDType(serialization_dtype));
     }
 
     switch (nperror)
@@ -154,7 +162,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             FATAL_ERROR("readFromNpyFile: IO error reading file: %s", filename);
         case NumpyUtilities::FILE_TYPE_MISMATCH:
             FATAL_ERROR("readFromNpyFile: Tensor type %s and Numpy file type mismatch for tensor %s filename %s",
-                        EnumNamesDType()[getDtype()], getName().c_str(), filename);
+                        EnumNameTOSAREFTYPE(getDtype()), getName().c_str(), filename);
         case NumpyUtilities::HEADER_PARSE_ERROR:
             FATAL_ERROR("Numpy header parsing error for file: %s", filename);
         case NumpyUtilities::BUFFER_SIZE_MISMATCH:
@@ -166,75 +174,133 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
 
     switch (dtype)
     {
-        case DType_FP16:
+        case TOSA_REF_TYPE_FP16:
             // Convert from fp16 to fp32 so that fp16 values can be manipulated as float
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
             for (uint32_t i=0; i < elements; i++) {
-                fdatabuf[i] = half_float::half_cast<float, half_float::half>(f16databuf[i]);
+                f32databuf[i] = half_float::half_cast<float, half_float::half>(f16databuf[i]);
             }
-            if (setTensorValueFloat(elements, fdatabuf))
+            if (setTensorValueFloat(elements, f32databuf))
             {
                 free(f16databuf);
-                free(fdatabuf);
+                free(f32databuf);
                 return 1;
             }
             break;
-        case DType_BF16:
+        case TOSA_REF_TYPE_BF16:
             for (uint32_t i=0; i < elements; i++)
             {
                 ASSERT_MSG(
-                    checkValidBFloat(fdatabuf[i]),
+                    checkValidBFloat(f32databuf[i]),
                     "Input float value not a valid bfloat16 value."
                 );
             }
-            if (setTensorValueFloat(elements, fdatabuf))
+            if (setTensorValueFloat(elements, f32databuf))
             {
-                free(fdatabuf);
+                free(f32databuf);
                 return 1;
             }
             break;
-        case DType_FP32:
-            if (setTensorValueFloat(elements, fdatabuf))
+        case TOSA_REF_TYPE_FP32:
+            if (setTensorValueFloat(elements, f32databuf))
             {
-                free(fdatabuf);
+                free(f32databuf);
                 return 1;
             }
             break;
-        case DType_INT32:
-        case DType_UINT8:
-        case DType_INT4:
-        case DType_INT8:
-        case DType_INT16:
-        case DType_UINT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_UINT16:
             if (setTensorValueInt32(elements, i32databuf))
             {
                 free(i32databuf);
                 return 1;
             }
             break;
-        case DType_INT48:
+        case TOSA_REF_TYPE_INT48:
             if (setTensorValueInt64(elements, i64databuf))
             {
                 free(i64databuf);
                 return 1;
             }
             break;
-        case DType_BOOL:
+        case TOSA_REF_TYPE_BOOL:
             if (setTensorValueBool(elements, bdatabuf))
             {
                 free(i32databuf);
                 return 1;
             }
             break;
+        case TOSA_REF_TYPE_FP64:
+            switch (serialization_dtype)
+            {
+                case DType_FP16:
+                    // FP16 -> FP64
+                    f64databuf = (double*)calloc(sizeof(double), elements);
+                    ASSERT_MEM(f64databuf);
+                    for (uint32_t i = 0; i < elements; i++)
+                    {
+                        f64databuf[i] = half_float::half_cast<double, half_float::half>(f16databuf[i]);
+                    }
+                    if (setTensorValueDouble(elements, f64databuf))
+                    {
+                        free(f16databuf);
+                        free(f64databuf);
+                        return 1;
+                    }
+                    break;
+                case DType_BF16:
+                    // BF16 -> FP64
+                    f64databuf = (double*)calloc(sizeof(double), elements);
+                    ASSERT_MEM(f64databuf);
+                    for (uint32_t i = 0; i < elements; i++)
+                    {
+                        ASSERT_MSG(checkValidBFloat(f32databuf[i]), "Input float value not a valid bfloat16 value.");
+                        f64databuf[i] = static_cast<double>(f32databuf[i]);
+                    }
+                    if (setTensorValueDouble(elements, f64databuf))
+                    {
+                        free(f32databuf);
+                        free(f64databuf);
+                        return 1;
+                    }
+                    break;
+                case DType_FP32:
+                    // FP32 -> FP64
+                    f64databuf = (double*)calloc(sizeof(double), elements);
+                    ASSERT_MEM(f64databuf);
+                    for (uint32_t i = 0; i < elements; i++)
+                    {
+                        f64databuf[i] = static_cast<double>(f32databuf[i]);
+                    }
+                    if (setTensorValueDouble(elements, f64databuf))
+                    {
+                        free(f32databuf);
+                        free(f64databuf);
+                        return 1;
+                    }
+                    break;
+                default:
+                    FATAL_ERROR("unexpected tensor type=%s and original tensor type=%s", EnumNameTOSAREFTYPE(dtype),
+                                EnumNameDType(serialization_dtype));
+            }
+            break;
         default:
-            FATAL_ERROR("unsupported tensor type=%s", EnumNamesDType()[getDtype()]);
+            FATAL_ERROR("unsupported tensor type=%s", EnumNameTOSAREFTYPE(dtype));
     }
 
     setIsValid();
 
-    if (fdatabuf)
-        free(fdatabuf);
+    if (f32databuf)
+        free(f32databuf);
     if (f16databuf)
         free(f16databuf);
+    if (f64databuf)
+        free(f64databuf);
     if (i32databuf)
         free(i32databuf);
     if (i64databuf)
@@ -247,58 +313,59 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
 
 int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 {
-    float* fdatabuf     = nullptr;
+    float* f32databuf             = nullptr;
+    double* f64databuf            = nullptr;
     half_float::half* f16databuf  = nullptr;
     int32_t* i32databuf = nullptr;
     int64_t* i64databuf = nullptr;
     bool* bdatabuf      = nullptr;
     NumpyUtilities::NPError nperror;
     uint32_t elements = getElementCount();
-    DType dtype = getDtype();
+    const TOSA_REF_TYPE dtype = getDtype();
 
     switch (dtype)
     {
-        case DType_FP32:
-        case DType_BF16:
-            fdatabuf = (float*)calloc(sizeof(float), elements);
-            ASSERT_MEM(fdatabuf);
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_BF16:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
 
-            if (getTensorValueFloat(elements, fdatabuf))
+            if (getTensorValueFloat(elements, f32databuf))
             {
-                free(fdatabuf);
+                free(f32databuf);
                 return 1;
             }
-            nperror = NumpyUtilities::writeToNpyFile(filename, shape, fdatabuf);
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, f32databuf);
 
-            free(fdatabuf);
+            free(f32databuf);
             break;
-        case DType_FP16:
-            fdatabuf = (float*)calloc(sizeof(float), elements);
-            ASSERT_MEM(fdatabuf);
+        case TOSA_REF_TYPE_FP16:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
             f16databuf = (half_float::half*)calloc(sizeof(half_float::half), elements);
             ASSERT_MEM(f16databuf);
 
-            if (getTensorValueFloat(elements, fdatabuf))
+            if (getTensorValueFloat(elements, f32databuf))
             {
-                free(fdatabuf);
+                free(f32databuf);
                 free(f16databuf);
                 return 1;
             }
             // Convert fp32 to fp16 so that output file contains valid fp16 data
             for (uint32_t i=0; i < elements; i++) {
-                f16databuf[i] = half_float::half_cast<half_float::half, float>(fdatabuf[i]);
+                f16databuf[i] = half_float::half_cast<half_float::half, float>(f32databuf[i]);
             }
             nperror = NumpyUtilities::writeToNpyFile(filename, shape, f16databuf);
 
-            free(fdatabuf);
+            free(f32databuf);
             free(f16databuf);
             break;
-        case DType_INT32:
-        case DType_UINT8:
-        case DType_INT4:
-        case DType_INT8:
-        case DType_INT16:
-        case DType_UINT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_UINT16:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
             ASSERT_MEM(i32databuf);
 
@@ -312,7 +379,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 
             free(i32databuf);
             break;
-        case DType_INT48:
+        case TOSA_REF_TYPE_INT48:
             i64databuf = (int64_t*)calloc(sizeof(int64_t), elements);
             ASSERT_MEM(i64databuf);
 
@@ -326,7 +393,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 
             free(i64databuf);
             break;
-        case DType_BOOL:
+        case TOSA_REF_TYPE_BOOL:
             bdatabuf = (bool*)calloc(sizeof(bool), elements);
             ASSERT_MEM(bdatabuf);
 
@@ -340,8 +407,22 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 
             free(bdatabuf);
             break;
-        default:
-            FATAL_ERROR("unsupported tensor type=%s", EnumNamesDType()[getDtype()]);
+        case TOSA_REF_TYPE_FP64:
+            // @todo : support FP64 dtype
+            f64databuf = (double*)calloc(sizeof(double), elements);
+            ASSERT_MEM(f64databuf);
+
+            if (getTensorValueDouble(elements, f64databuf))
+            {
+                free(f64databuf);
+                return 1;
+            }
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, f64databuf);
+
+            free(f64databuf);
+            break;
+        case TOSA_REF_TYPE_UNKNOWN:
+            FATAL_ERROR("unsupported tensor type=%s", EnumNameTOSAREFTYPE(getDtype()));
     }
 
     switch (nperror)
@@ -386,11 +467,11 @@ int TosaReference::TensorTemplate<T>::copyValueFrom(TosaReference::Tensor* src)
             return 1;                                                                                                  \
         }                                                                                                              \
                                                                                                                        \
-        uint32_t src_rank = src->getRank();                                                                            \
-        uint32_t dst_rank = this->getRank();                                                                           \
-        DType src_dtype   = src->getDtype();                                                                           \
-        DType dst_dtype   = this->getDtype();                                                                          \
-        bool tensor_match = true;                                                                                      \
+        const uint32_t src_rank       = src->getRank();                                                                \
+        const uint32_t dst_rank       = this->getRank();                                                               \
+        const TOSA_REF_TYPE src_dtype = src->getDtype();                                                               \
+        const TOSA_REF_TYPE dst_dtype = this->getDtype();                                                              \
+        bool tensor_match             = true;                                                                          \
                                                                                                                        \
         if ((src_rank != dst_rank) || (src_dtype != dst_dtype))                                                        \
         {                                                                                                              \
@@ -413,8 +494,9 @@ int TosaReference::TensorTemplate<T>::copyValueFrom(TosaReference::Tensor* src)
         {                                                                                                              \
             WARNING("source tensor %s (rank=%u, dtype=%s, shape=%s) doesn't match destination tensor %s (rank=%u, "    \
                     "dtype=%s, shape=%s)",                                                                             \
-                    src->getName().c_str(), src_rank, EnumNamesDType()[src_dtype], src->getShapeAsString().c_str(),    \
-                    this->getName().c_str(), dst_rank, EnumNamesDType()[dst_dtype], this->getShapeAsString().c_str()); \
+                    src->getName().c_str(), src_rank, EnumNameTOSAREFTYPE(src_dtype), src->getShapeAsString().c_str(), \
+                    this->getName().c_str(), dst_rank, EnumNameTOSAREFTYPE(dst_dtype),                                 \
+                    this->getShapeAsString().c_str());                                                                 \
             return 1;                                                                                                  \
         }                                                                                                              \
                                                                                                                        \
@@ -429,6 +511,13 @@ DEF_CTENSOR_COPY_VALUE_FROM(3, float)
 DEF_CTENSOR_COPY_VALUE_FROM(4, float)
 DEF_CTENSOR_COPY_VALUE_FROM(5, float)
 DEF_CTENSOR_COPY_VALUE_FROM(6, float)
+DEF_CTENSOR_COPY_VALUE_FROM(0, double)
+DEF_CTENSOR_COPY_VALUE_FROM(1, double)
+DEF_CTENSOR_COPY_VALUE_FROM(2, double)
+DEF_CTENSOR_COPY_VALUE_FROM(3, double)
+DEF_CTENSOR_COPY_VALUE_FROM(4, double)
+DEF_CTENSOR_COPY_VALUE_FROM(5, double)
+DEF_CTENSOR_COPY_VALUE_FROM(6, double)
 DEF_CTENSOR_COPY_VALUE_FROM(0, int32_t)
 DEF_CTENSOR_COPY_VALUE_FROM(1, int32_t)
 DEF_CTENSOR_COPY_VALUE_FROM(2, int32_t)
@@ -453,13 +542,37 @@ DEF_CTENSOR_COPY_VALUE_FROM(6, bool)
 
 #undef DEF_CTENSOR_COPY_VALUE_FROM
 
+int TosaReference::Tensor::readfromVector(const ArrayProxy<double> vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP64:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueDouble(elements, vals.data());
+            break;
+        default:
+            WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
 int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
 {
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
-        case DType_FP16:
-        case DType_FP32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_FP32:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -469,7 +582,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
 
             setTensorValueFloat(elements, vals.data());
             break;
-        case DType_BF16:
+        case TOSA_REF_TYPE_BF16:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -489,7 +602,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
             break;
         default:
             WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     setIsValid();
@@ -503,7 +616,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
 
     switch (getDtype())
     {
-        case DType_FP16:
+        case TOSA_REF_TYPE_FP16:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -521,7 +634,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
             break;
         default:
             WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     setIsValid();
@@ -533,12 +646,12 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<int32_t> vals)
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
-        case DType_INT32:
-        case DType_UINT8:
-        case DType_INT4:
-        case DType_INT8:
-        case DType_INT16:
-        case DType_UINT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_UINT16:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -550,7 +663,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<int32_t> vals)
             break;
         default:
             WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     setIsValid();
@@ -562,7 +675,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<int64_t> vals)
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
-        case DType_INT48:
+        case TOSA_REF_TYPE_INT48:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -574,7 +687,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<int64_t> vals)
             break;
         default:
             WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     setIsValid();
@@ -587,7 +700,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<unsigned char> vals)
 
     switch (getDtype())
     {
-        case DType_BOOL:
+        case TOSA_REF_TYPE_BOOL:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -599,10 +712,34 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<unsigned char> vals)
             break;
         default:
             WARNING("The input type (bool) doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(ArrayProxy<double> vals)
+{
+    uint32_t elements = getElementCount();
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP64:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueDouble(elements, vals.data());
+            break;
+        default:
+            WARNING("The output type (float) doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
     return 0;
 }
 
@@ -612,8 +749,8 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<float> vals)
 
     switch (getDtype())
     {
-        case DType_FP16:
-        case DType_FP32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_FP32:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -623,7 +760,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<float> vals)
 
             getTensorValueFloat(elements, vals.data());
             break;
-        case DType_BF16:
+        case TOSA_REF_TYPE_BF16:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -644,7 +781,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<float> vals)
             break;
         default:
             WARNING("The output type (float) doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     return 0;
@@ -657,7 +794,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
 
     switch (getDtype())
     {
-        case DType_FP16:
+        case TOSA_REF_TYPE_FP16:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -675,7 +812,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
             break;
         default:
             WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     return 0;
@@ -687,12 +824,12 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<int32_t> vals)
 
     switch (getDtype())
     {
-        case DType_INT32:
-        case DType_UINT8:
-        case DType_INT4:
-        case DType_INT8:
-        case DType_INT16:
-        case DType_UINT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_UINT16:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -704,7 +841,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<int32_t> vals)
             break;
         default:
             WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     return 0;
@@ -716,7 +853,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<int64_t> vals)
 
     switch (getDtype())
     {
-        case tosa::DType_INT48:
+        case TOSA_REF_TYPE_INT48:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -728,7 +865,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<int64_t> vals)
             break;
         default:
             WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
     }
     return 0;
@@ -740,7 +877,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<unsigned char> vals)
 
     switch (getDtype())
     {
-        case tosa::DType_BOOL:
+        case TOSA_REF_TYPE_BOOL:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -752,8 +889,160 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<unsigned char> vals)
             break;
         default:
             WARNING("The output type (bool) doesn't match the data type assigned to the tensor (%s).",
-                    EnumNameDType(getDtype()));
+                    EnumNameTOSAREFTYPE(getDtype()));
             return -2;
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::setTensorValueDouble(const size_t buflen, const double* vals)
+{
+    FATAL_ERROR("TensorTemplate<T>::setTensorValueFloat should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    (*tensor)(0) = vals[0];
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        (*tensor)(i0) = vals[idx++];
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            (*tensor)(i0, i1) = vals[idx++];
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                (*tensor)(i0, i1, i2) = vals[idx++];
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    (*tensor)(i0, i1, i2, i3) = vals[idx++];
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        (*tensor)(i0, i1, i2, i3, i4) = vals[idx++];
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<double>::setTensorValueDouble(const size_t bufLen, const double* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            (*tensor)(i0, i1, i2, i3, i4, i5) = vals[idx++];
+                        }
+                    }
+                }
+            }
+        }
     }
     return 0;
 }
@@ -1357,6 +1646,196 @@ int TosaReference::Tensor6<bool>::setTensorValueBool(const size_t bufLen, const 
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
                             (*tensor)(i0, i1, i2, i3, i4, i5) = vals[idx++];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    FATAL_ERROR("TensorTemplate<T>::getTensorValueDouble should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    int totalVals = 1;
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    vals[0] = (*tensor)(0);
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        vals[idx++] = (*tensor)(i0);
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            vals[idx++] = (*tensor)(i0, i1);
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                vals[idx++] = (*tensor)(i0, i1, i2);
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<double>::getTensorValueDouble(const size_t bufLen, double* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
                         }
                     }
                 }
@@ -2127,6 +2606,82 @@ int TosaReference::Tensor6<bool>::getTensorValueBool(const size_t bufLen, bool* 
 }
 
 template <>
+int TosaReference::Tensor0<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor0<double>();
+
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+template <>
+int TosaReference::Tensor1<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor1<double>(shape[0]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+template <>
+int TosaReference::Tensor2<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor2<double>(shape[0], shape[1]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+
+template <>
+int TosaReference::Tensor3<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor3<double>(shape[0], shape[1], shape[2]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+
+template <>
+int TosaReference::Tensor4<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor4<double>(shape[0], shape[1], shape[2], shape[3]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+
+template <>
+int TosaReference::Tensor5<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor5<double>(shape[0], shape[1], shape[2], shape[3], shape[4]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+
+template <>
+int TosaReference::Tensor6<double>::allocate()
+{
+    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
+    tensor = new ETensor6<double>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
+    if (tensor)
+        return 0;
+    else
+        return 1;
+}
+
+template <>
 int TosaReference::Tensor0<float>::allocate()
 {
     ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
@@ -2425,6 +2980,230 @@ int TosaReference::Tensor6<bool>::allocate()
         return 0;
     else
         return 1;
+}
+
+template <>
+int TosaReference::Tensor0<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), "[ %%%sf ]\n", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, fp_fmt, (*tensor)(0));
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, fp_fmt, (*tensor)(i0));
+    }
+    fprintf(out, "]\n");
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, "[");
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            fprintf(out, fp_fmt, (*tensor)(i0, i1));
+        }
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "]\n");
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, "[");
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            fprintf(out, "[");
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                fprintf(out, fp_fmt, (*tensor)(i0, i1, i2));
+            }
+            fprintf(out, "]\n");
+        }
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "]\n");
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, "[");
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            fprintf(out, "[");
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                fprintf(out, "[");
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    fprintf(out, fp_fmt, (*tensor)(i0, i1, i2, i3));
+                }
+                fprintf(out, "]\n");
+            }
+            fprintf(out, "]\n");
+        }
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "]\n");
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, "[");
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            fprintf(out, "[");
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                fprintf(out, "[");
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    fprintf(out, "[");
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        fprintf(out, fp_fmt, (*tensor)(i0, i1, i2, i3, i4));
+                    }
+                    fprintf(out, "]\n");
+                }
+                fprintf(out, "]\n");
+            }
+            fprintf(out, "]\n");
+        }
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "]\n");
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<double>::dumpTensor(FILE* out) const
+{
+    char fp_fmt[32];
+    snprintf(fp_fmt, sizeof(fp_fmt), " %%%sf ", g_func_config.fp_format.c_str());
+
+    if (tensor == nullptr)
+    {
+        fprintf(out, "<Not allocated>\n");
+        return 0;
+    }
+
+    fprintf(out, "[");
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        fprintf(out, "[");
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            fprintf(out, "[");
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                fprintf(out, "[");
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    fprintf(out, "[");
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        fprintf(out, "[");
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            fprintf(out, fp_fmt, (*tensor)(i0, i1, i2, i3, i4, i5));
+                        }
+                        fprintf(out, "]\n");
+                    }
+                    fprintf(out, "]\n");
+                }
+                fprintf(out, "]\n");
+            }
+            fprintf(out, "]\n");
+        }
+        fprintf(out, "]\n");
+    }
+    fprintf(out, "]\n");
+
+    return 0;
 }
 
 template <>
@@ -3342,6 +4121,14 @@ int TosaReference::TensorTemplate<T>::dumpTensor(FILE* out) const
 }
 
 // template explicit specialization
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 0>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 1>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 2>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 3>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 4>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 5>>;
+template class TosaReference::TensorTemplate<Eigen::Tensor<double, 6>>;
+
 template class TosaReference::TensorTemplate<Eigen::Tensor<float, 0>>;
 template class TosaReference::TensorTemplate<Eigen::Tensor<float, 1>>;
 template class TosaReference::TensorTemplate<Eigen::Tensor<float, 2>>;
