@@ -83,7 +83,7 @@ int main(int argc, char** argv)
         FATAL_ERROR("Unable to load graph");
     }
 
-    SubgraphTraverser main_gt(tsh.GetMainRegion()->GetBlocks().front(), &tsh, nullptr);
+    SubgraphTraverser main_gt(tsh.GetMainRegion()->GetBlockByName("main"), &tsh, nullptr);
 
     if (main_gt.initializeGraph())
     {
