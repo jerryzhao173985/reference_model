@@ -36,6 +36,7 @@ int initTestDesc(json& test_desc);
 int readInputTensors(SubgraphTraverser& gt, json test_desc);
 int writeFinalTensors(SubgraphTraverser& gt, json test_desc);
 int loadGraph(TosaSerializationHandler& tsh, json test_desc);
+void parse_value(const std::string& text, tosa_level_t& value);
 
 int main(int argc, char** argv)
 {
@@ -453,4 +454,16 @@ int initTestDesc(json& test_desc)
     }
 
     return 0;
+}
+
+void parse_value(const std::string& text, tosa_level_t& value)
+{
+
+    if (text == "NONE")
+        value = func_config_t::NONE;
+    else if (text == "EIGHTK")
+        value = func_config_t::EIGHTK;
+    else
+        throw cxxopts::argument_incorrect_type("TOSA_LEVEL");
+    return;
 }

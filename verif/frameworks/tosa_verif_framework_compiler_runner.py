@@ -74,6 +74,14 @@ def parse_args():
         help="Comparison tolerance b value",
     )
     parser.add_argument(
+        "--tosa_level",
+        dest="tosa_level",
+        default="EIGHTK",
+        type=str,
+        help="A TOSA level defines operator parameter ranges that an implementation shall support."
+        "Config tosa_level for running the reference model only. Default is EIGHTK",
+    )
+    parser.add_argument(
         "--no-compiler",
         dest="no_compiler",
         action="store_true",
@@ -551,6 +559,8 @@ def run_test(args, test, framework):
             "--log-fd=1",
             "-q",
         ] + ref_model_cmd
+
+    ref_model_cmd = ref_model_cmd + ["--tosa_level={}".format(args.tosa_level)]
 
     # Clean out any ref_model result first
     try:

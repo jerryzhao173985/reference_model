@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -111,6 +111,17 @@ struct func_debug_t
                 __func__, #COND);                                                                                      \
         fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                     \
         this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                             \
+    }
+#endif
+
+#ifndef LEVEL_CHECK
+#define LEVEL_CHECK(COND, fmt, ...)                                                                                        \
+    if (g_func_config.tosa_level != func_config_t::NONE && (!(COND)))                                                                                                           \
+    {                                                                                                                      \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL("LEVEL_CHECK() fails AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__,  \
+                __func__, #COND);                                                                                          \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                         \
+        this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                                 \
     }
 #endif
 

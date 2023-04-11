@@ -44,6 +44,10 @@ BinaryNodeBase<Rank, InDtype, OutDtype>::~BinaryNodeBase()
 template <int Rank, DType InDtype, DType OutDtype>
 int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -540,6 +544,10 @@ OpTable<Rank, InDtype>::~OpTable()
 template <int Rank, DType InDtype>
 int OpTable<Rank, InDtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 

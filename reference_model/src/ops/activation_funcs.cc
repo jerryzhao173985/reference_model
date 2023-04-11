@@ -26,6 +26,10 @@ using namespace tosa;
 template <int Rank, DType Dtype>
 int OpClamp<Rank, Dtype>::register_fcn()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     switch (Dtype)
     {
         case DType_FP16:
@@ -64,6 +68,10 @@ OpClamp<Rank, Dtype>::~OpClamp()
 template <int Rank, DType Dtype>
 int OpSigmoid<Rank, Dtype>::register_fcn()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     switch (Dtype)
     {
         case DType_FP16:
@@ -83,6 +91,10 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
 template <int Rank, DType Dtype>
 int OpTanh<Rank, Dtype>::register_fcn()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     switch (Dtype)
     {
         case DType_FP16:

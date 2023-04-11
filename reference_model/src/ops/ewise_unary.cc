@@ -42,6 +42,10 @@ UnaryNode<Rank, Dtype>::~UnaryNode()
 template <int Rank, DType Dtype>
 int UnaryNode<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 

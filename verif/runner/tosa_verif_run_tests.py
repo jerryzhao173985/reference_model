@@ -139,6 +139,14 @@ def parseArgs(argv):
         choices=["tosa-bi", "tosa-mi"],
         help="Filter tests based on profile",
     )
+    parser.add_argument(
+        "--tosa_level",
+        dest="tosa_level",
+        default="EIGHTK",
+        type=str,
+        help="A TOSA level defines operator parameter ranges that an implementation shall support."
+        "Config tosa_level for running the reference model only. Default is EIGHTK",
+    )
 
     args = parser.parse_args(argv)
 

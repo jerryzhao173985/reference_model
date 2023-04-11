@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2022, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -56,6 +56,8 @@ int func_model_parse_cmd_line(
         ("output_tensors", "Output tensors to a file (0/1)", cxxopts::value<uint32_t>(func_config.output_tensors))
         ("tosa_profile", "Set TOSA profile (0 = Base Inference, 1 = Main Inference, 2 = Main Training)",
             cxxopts::value<uint32_t>(func_config.tosa_profile))
+        ("tosa_level", "Set TOSA level (NONE, EIGHTK)",
+            cxxopts::value<tosa_level_t>(func_config.tosa_level))
         ("dump_intermediates", "Dump intermediate tensors (0/1)", cxxopts::value<uint32_t>(func_config.dump_intermediates))
         ("v,version", "print model version")
         ("i,input_tensor_file", "specify input tensor files", cxxopts::value<std::vector<std::string>>())

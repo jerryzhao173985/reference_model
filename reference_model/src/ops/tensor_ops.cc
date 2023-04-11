@@ -515,21 +515,32 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     int pad_bottom = this->attribute->pad()[1];
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
-    int kernel_h       = this->attribute->kernel()[0];
-    int kernel_w       = this->attribute->kernel()[1];
-    int stride_h       = this->attribute->stride()[0];
-    int stride_w       = this->attribute->stride()[1];
+    int kernel_y       = this->attribute->kernel()[0];
+    int kernel_x       = this->attribute->kernel()[1];
+    int stride_y       = this->attribute->stride()[0];
+    int stride_x       = this->attribute->stride()[1];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(kernel_y <= tosa_level.MAX_KERNEL, "kernel_y should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(kernel_x <= tosa_level.MAX_KERNEL, "kernel_x should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
 
     tosa::DType accum_dtype       = (tosa::DType)this->attribute->accum_dtype();
 
     DEBUG_INFO(OP,
                "perform AvgPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
                "stride=[%d,%d], pad=[%d,%d,%d,%d], accum_dtype=%s",
-               in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_h,
-               kernel_w, stride_h, stride_w, pad_top, pad_bottom, pad_left, pad_right, EnumNamesDType()[accum_dtype]);
+               in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_y,
+               kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right, EnumNamesDType()[accum_dtype]);
 
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
-    im2col_input_dims[0] = kernel_h * kernel_w;
+    im2col_input_dims[0] = kernel_y * kernel_x;
     im2col_input_dims[1] = out_batch * out_height * out_width * out_channels;
 
     Eigen::array<Eigen::Index, 4> col2im_output_dims;
@@ -560,7 +571,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     // transpose to [KH, KW, N, H * W, C]
     // reshape to [KH * KW, N * H * W * C]
     ETensor2<InEigenType> input_extract_patches =
-        input_padded.extract_image_patches(kernel_h, kernel_w, stride_h, stride_w, 1, 1, Eigen::PADDING_VALID)
+        input_padded.extract_image_patches(kernel_y, kernel_x, stride_y, stride_x, 1, 1, Eigen::PADDING_VALID)
             .shuffle(Eigen::array<Eigen::Index, 5>{ 1, 2, 0, 3, 4 })
             .reshape(im2col_input_dims);
 
@@ -571,7 +582,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     // sum pool
     for (size_t i = 0; i < this->out->getElementCount(); i++)
     {
-        for (int32_t j = 0; j < kernel_h * kernel_w; j++)
+        for (int32_t j = 0; j < kernel_y * kernel_x; j++)
         {
             out_1d(i) += (AccEigenType)input_extract_patches(j, i);
         }
@@ -582,8 +593,8 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
 
     // calculate 1d height/width div_map (number of elements this pooling window covers)
     // and outer product to get 2d div_map, then reshape/broadcast to [N, H, W, C]
-    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_h, stride_h, pad_top, pad_bottom);
-    ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_w, stride_w, pad_left, pad_right);
+    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_y, stride_x, pad_top, pad_bottom);
+    ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_x, stride_x, pad_left, pad_right);
     Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
     Eigen::array<Eigen::Index, 4> bcast{ out_batch, 1, 1, out_channels };
 
@@ -709,16 +720,27 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int stride_h       = this->attribute->stride()[0];
-    int stride_w       = this->attribute->stride()[1];
-    int dilation_h     = this->attribute->dilation()[0];
-    int dilation_w     = this->attribute->dilation()[1];
+    int stride_y       = this->attribute->stride()[0];
+    int stride_x       = this->attribute->stride()[1];
+    int dilation_y     = this->attribute->dilation()[0];
+    int dilation_x     = this->attribute->dilation()[1];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
 
     DEBUG_INFO(OP,
                "perform OpConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], "
                "stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_out_channels, out_batch,
-               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, pad_top,
+               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top,
                pad_bottom, pad_left, pad_right);
 
     // GEMM-conv2d, left matrix is input, right matrix is weight
@@ -771,7 +793,7 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
     // need to transpose to [N, H * W, KH, KW, C]
     ETensor5<InEigenType> input_extract_patches =
         input_padded
-            .extract_image_patches(f_height, f_width, stride_h, stride_w, dilation_h, dilation_w, Eigen::PADDING_VALID)
+            .extract_image_patches(f_height, f_width, stride_y, stride_x, dilation_y, dilation_x, Eigen::PADDING_VALID)
             .shuffle(Eigen::array<Eigen::Index, 5>{ 0, 3, 1, 2, 4 });
 
     // reshape input to [N * H * W, KH * KW * C]
@@ -898,20 +920,35 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_right  = this->attribute->pad()[5];
 
     int stride_d       = this->attribute->stride()[0];
-    int stride_h       = this->attribute->stride()[1];
-    int stride_w       = this->attribute->stride()[2];
+    int stride_y       = this->attribute->stride()[1];
+    int stride_x       = this->attribute->stride()[2];
 
     int dilation_d     = this->attribute->dilation()[0];
-    int dilation_h     = this->attribute->dilation()[1];
-    int dilation_w     = this->attribute->dilation()[2];
+    int dilation_y     = this->attribute->dilation()[1];
+    int dilation_x     = this->attribute->dilation()[2];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(dilation_d * f_depth <= tosa_level.MAX_KERNEL, "dilation_d * KD should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_d0 <= tosa_level.MAX_KERNEL, "pad_d0 should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_d1 <= tosa_level.MAX_KERNEL, "pad_d1 should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_d <= tosa_level.MAX_STRIDE, "stride_d should be smaller than or equal to MAX_STRIDE");
 
     DEBUG_INFO(
         OP,
         "perform OpConv3d, input.shape=[%d,%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d,%d], output.shape=[%d,%d,%d,%d,%d], "
         "stride=[%d,%d,%d], dilation=[%d,%d,%d], pad=[%d,%d,%d,%d,%d,%d]",
         in_batch, in_depth, in_height, in_width, in_channels, f_out_channels, f_depth, f_height, f_width, f_in_channels,
-        out_batch, out_depth, out_height, out_width, out_channels, stride_d, stride_h, stride_w, dilation_d, dilation_h,
-        dilation_w, pad_d0, pad_d1, pad_top, pad_bottom, pad_left, pad_right);
+        out_batch, out_depth, out_height, out_width, out_channels, stride_d, stride_y, stride_x, dilation_d, dilation_y,
+        dilation_x, pad_d0, pad_d1, pad_top, pad_bottom, pad_left, pad_right);
 
     Eigen::array<std::pair<int32_t, int32_t>, 5> pad;
     pad[0] = std::make_pair(0, 0);
@@ -964,10 +1001,10 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
                             d_idx = od * stride_d + fd * dilation_d;
                             for (int fh = 0; fh < f_height; fh++)
                             {
-                                h_idx = oh * stride_h + fh * dilation_h;
+                                h_idx = oh * stride_y + fh * dilation_y;
                                 for (int fw = 0; fw < f_width; fw++)
                                 {
-                                    w_idx = ow * stride_w + fw * dilation_w;
+                                    w_idx = ow * stride_x + fw * dilation_x;
                                     for (int ic = 0; ic < in_channels; ic++)
                                     {
                                         acc += ((AccEigenType)input_padded(ob, d_idx, h_idx, w_idx, ic) *
@@ -1081,16 +1118,27 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int stride_h       = this->attribute->stride()[0];
-    int stride_w       = this->attribute->stride()[1];
-    int dilation_h     = this->attribute->dilation()[0];
-    int dilation_w     = this->attribute->dilation()[1];
+    int stride_y       = this->attribute->stride()[0];
+    int stride_x       = this->attribute->stride()[1];
+    int dilation_y     = this->attribute->dilation()[0];
+    int dilation_x     = this->attribute->dilation()[1];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
 
     DEBUG_INFO(OP,
                "perform OpDepthwiseConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_multiplier, out_batch,
-               out_height, out_width, out_channels, stride_h, stride_w, dilation_h, dilation_w, pad_top,
+               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top,
                pad_bottom, pad_left, pad_right);
 
     Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
@@ -1115,7 +1163,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
 
     // 1. extract_image_patches() output [N, KH, KW, OH * OW, IC]
     ETensor5<InEigenType> input_extract_patches = input_padded.extract_image_patches(
-        f_height, f_width, stride_h, stride_w, dilation_h, dilation_w, Eigen::PADDING_VALID);
+        f_height, f_width, stride_y, stride_x, dilation_y, dilation_x, Eigen::PADDING_VALID);
 
     Eigen::array<Eigen::Index, 4> reshape_dim;
     reshape_dim.fill(1);
@@ -1466,19 +1514,30 @@ int OpMaxPool2d<Dtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int kernel_h       = this->attribute->kernel()[0];
-    int kernel_w       = this->attribute->kernel()[1];
-    int stride_h       = this->attribute->stride()[0];
-    int stride_w       = this->attribute->stride()[1];
+    int kernel_y       = this->attribute->kernel()[0];
+    int kernel_x       = this->attribute->kernel()[1];
+    int stride_y       = this->attribute->stride()[0];
+    int stride_x       = this->attribute->stride()[1];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(kernel_y <= tosa_level.MAX_KERNEL, "kernel_y should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(kernel_x <= tosa_level.MAX_KERNEL, "kernel_x should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
 
     DEBUG_INFO(OP,
                "perform MaxPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
                "stride=[%d,%d], pad=[%d,%d,%d,%d]",
-               in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_h,
-               kernel_w, stride_h, stride_w, pad_top, pad_bottom, pad_left, pad_right);
+               in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_y,
+               kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right);
 
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
-    im2col_input_dims[0] = kernel_h * kernel_w;
+    im2col_input_dims[0] = kernel_y * kernel_x;
     im2col_input_dims[1] = out_batch * out_height * out_width * out_channels;
 
     Eigen::array<Eigen::Index, 4> col2im_output_dims;
@@ -1504,7 +1563,7 @@ int OpMaxPool2d<Dtype>::eval()
     // to or smaller than the actual maximum in the KH x KW patch.
     ETensor2<InEigenType> input_extract_patches =
         input_padded
-            .extract_image_patches(kernel_h, kernel_w, stride_h, stride_w, 1, 1, Eigen::PADDING_VALID,
+            .extract_image_patches(kernel_y, kernel_x, stride_y, stride_x, 1, 1, Eigen::PADDING_VALID,
                                    std::numeric_limits<InEigenType>::lowest())
             .shuffle(Eigen::array<Eigen::Index, 5>{ 1, 2, 0, 3, 4 })
             .reshape(im2col_input_dims);
@@ -1602,6 +1661,11 @@ int OpFFT2d<Dtype>::eval()
     int out_imag_batch = this->out_imag->getShape()[0];
     int out_imag_height = this->out_imag->getShape()[1];
     int out_imag_width = this->out_imag->getShape()[2];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(in_real_height <= tosa_level.MAX_KERNEL, "H should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(in_real_width <= tosa_level.MAX_KERNEL, "W should be smaller than or equal to MAX_KERNEL");
 
     DEBUG_INFO(OP,
                "perform OpFFT2d, input.shapes=[[%d,%d,%d],[%d,%d,%d]], output.shapes=[[%d,%d,%d],[%d,%d,%d]]",
@@ -1709,6 +1773,11 @@ int OpRFFT2d<Dtype>::eval()
     int32_t out_imag_batch = out_imag->getShape()[0];
     int32_t out_imag_height = out_imag->getShape()[1];
     int32_t out_imag_width = out_imag->getShape()[2];
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(in_height <= tosa_level.MAX_KERNEL, "H should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(in_width <= tosa_level.MAX_KERNEL, "W should be smaller than or equal to MAX_KERNEL");
 
     DEBUG_INFO(OP,
                "perform OpRFFT2d, input.shape=[%d,%d,%d], output_real.shape=[%d,%d,%d], "
@@ -1885,8 +1954,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int out_pad_left   = this->attribute->out_pad()[2];
     int out_pad_right  = this->attribute->out_pad()[3];
 
-    int stride_h = this->attribute->stride()[0];
-    int stride_w = this->attribute->stride()[1];
+    int stride_y = this->attribute->stride()[0];
+    int stride_x = this->attribute->stride()[1];
 
     ERROR_IF(in_batch != out_batch, "OpTransposeConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
     ERROR_IF(f_in_channels != in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d", f_in_channels,
@@ -1896,11 +1965,22 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     ERROR_IF(b_out_channels != out_channels, "OpDepthwiseConv2d: bias channels mismatch %d != %d", b_out_channels,
              out_channels);
 
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(f_height <= tosa_level.MAX_KERNEL, "KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(f_width <= tosa_level.MAX_KERNEL, "KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(out_pad_top <= tosa_level.MAX_KERNEL, "out_pad_top should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(out_pad_bottom <= tosa_level.MAX_KERNEL, "out_pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(out_pad_left <= tosa_level.MAX_KERNEL, "out_pad_left should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(out_pad_right <= tosa_level.MAX_KERNEL, "out_pad_right should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
+    LEVEL_CHECK(stride_x <= tosa_level.MAX_STRIDE, "stride_x should be smaller than or equal to MAX_STRIDE");
+
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], out_pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels,
-               out_batch, out_height, out_width, out_channels, stride_h, stride_w, out_pad_top,
+               out_batch, out_height, out_width, out_channels, stride_y, stride_x, out_pad_top,
                out_pad_bottom, out_pad_left, out_pad_right);
 
     TIn input_val      = this->input->getTensor();
@@ -1934,8 +2014,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
         {
             for (int iw = 0; iw < in_width; iw++)
             {
-                out_x_origin = iw * stride_w + out_pad_left;
-                out_y_origin = ih * stride_h + out_pad_top;
+                out_x_origin = iw * stride_x + out_pad_left;
+                out_y_origin = ih * stride_y + out_pad_top;
                 for (int ic = 0; ic < in_channels; ic++)
                 {
                     for (int fh = 0; fh < f_height; fh++)

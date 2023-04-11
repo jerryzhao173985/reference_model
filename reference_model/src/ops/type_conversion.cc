@@ -45,6 +45,10 @@ OpRescale<Rank, InDtype, OutDtype>::~OpRescale()
 template <int Rank, DType InDtype, DType OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -250,6 +254,10 @@ OpCast<Rank, InDtype, OutDtype>::~OpCast()
 template <int Rank, DType InDtype, DType OutDtype>
 int OpCast<Rank, InDtype, OutDtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 

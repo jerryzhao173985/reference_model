@@ -42,6 +42,10 @@ OpConcat<Rank, Dtype>::~OpConcat()
 template <int Rank, DType Dtype>
 int OpConcat<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -140,6 +144,10 @@ OpPad<Rank, Dtype>::~OpPad()
 template <int Rank, DType Dtype>
 int OpPad<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -227,6 +235,11 @@ OpReshape<InRank, OutRank, Dtype>::~OpReshape()
 template <int InRank, int OutRank, DType Dtype>
 int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(InRank <= tosa_level.MAX_RANK, "InRank should be smaller than or equal to MAX_RANK");
+    LEVEL_CHECK(OutRank <= tosa_level.MAX_RANK, "OutRank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -322,6 +335,10 @@ OpReverse<Rank, Dtype>::~OpReverse()
 template <int Rank, DType Dtype>
 int OpReverse<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -389,6 +406,10 @@ OpSlice<Rank, Dtype>::~OpSlice()
 template <int Rank, DType Dtype>
 int OpSlice<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -458,6 +479,10 @@ OpTileBase<Rank, Dtype>::~OpTileBase()
 template <int Rank, DType Dtype>
 int OpTileBase<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
@@ -655,6 +680,10 @@ OpTranspose<Rank, Dtype>::~OpTranspose()
 template <int Rank, DType Dtype>
 int OpTranspose<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 
