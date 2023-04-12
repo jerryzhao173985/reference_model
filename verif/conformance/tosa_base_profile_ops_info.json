@@ -2958,6 +2958,22 @@
                         "9500"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--level-8k-sizes",
+                        "--tensor-dim-range",
+                        "2,10",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {

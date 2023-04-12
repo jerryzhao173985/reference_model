@@ -1905,12 +1905,28 @@ class TosaArgGen:
             return scale, offset, border
 
         def get_rand_params():
+            def fix_scale_to_max_scale(scale_n, scale_d, max_scale):
+                scale = scale_n / scale_d
+                if scale > max_scale:
+                    factor = scale / max_scale
+                    new_scale_d = math.ceil(scale_d * factor)
+                    assert scale_n / new_scale_d <= max_scale
+                    scale_d = new_scale_d
+                return scale_d
+
             # Scale
             scale_y_n = testGen.randInt(low=1, high=(1 << 11))
             scale_x_n = testGen.randInt(low=1, high=(1 << 11))
 
             scale_y_d = testGen.randInt(low=1, high=(16 * scale_y_n))
             scale_x_d = testGen.randInt(low=1, high=(16 * scale_x_n))
+
+            scale_y_d = fix_scale_to_max_scale(
+                scale_y_n, scale_y_d, testGen.TOSA_8K_LEVEL_MAX_SCALE
+            )
+            scale_x_d = fix_scale_to_max_scale(
+                scale_x_n, scale_x_d, testGen.TOSA_8K_LEVEL_MAX_SCALE
+            )
 
             # Offsets and border within the scale
             offset_y = testGen.randInt(low=-scale_y_n, high=(16 * scale_y_n))
@@ -1920,6 +1936,29 @@ class TosaArgGen:
 
             scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
             offset = (offset_y, offset_x)
+            border = (border_y, border_x)
+            return scale, offset, border
+
+        def get_level_8k_params():
+            # Create 64x scale - 64/1 to 2048/32
+            scale_d = testGen.randInt(
+                low=1, high=(1 << 11) / testGen.TOSA_8K_LEVEL_MAX_SCALE
+            )
+            scale_n = scale_d * testGen.TOSA_8K_LEVEL_MAX_SCALE
+            # Create half to fifth scaling
+            scale_d_alt = testGen.randInt(low=2, high=6)
+            scale_n_alt = 1
+            switch = testGen.rng.choice((False, True))
+            if switch:
+                scale = (scale_n_alt, scale_d_alt, scale_n, scale_d)
+            else:
+                scale = (scale_n, scale_d, scale_n_alt, scale_d_alt)
+
+            offset_y = testGen.rng.choice((-scale[0], 0, (16 * scale[0]) - 1))
+            offset_x = testGen.rng.choice((-scale[2], 0, (16 * scale[2]) - 1))
+            offset = (offset_y, offset_x)
+            border_y = testGen.rng.choice((-16 * scale[0], 0, scale[0] - 1))
+            border_x = testGen.rng.choice((-16 * scale[2], 0, scale[2] - 1))
             border = (border_y, border_x)
             return scale, offset, border
 
@@ -1952,14 +1991,17 @@ class TosaArgGen:
                 perm = 0
                 while perm < testGen.args.num_rand_permutations:
                     # Random choice of type of params we are testing
-                    _rnd_param_fn = testGen.rng.choice(
-                        (
-                            get_rand_params,
-                            get_upscale_downscale_params,
-                            get_aspect_ratio_resize_params,
+                    if not testGen.args.level8k:
+                        _rnd_param_fn = testGen.rng.choice(
+                            (
+                                get_rand_params,
+                                get_upscale_downscale_params,
+                                get_aspect_ratio_resize_params,
+                            )
                         )
-                    )
-                    scale, offset, border = _rnd_param_fn()
+                        scale, offset, border = _rnd_param_fn()
+                    else:
+                        scale, offset, border = get_level_8k_params()
 
                     # Expand params for bounds-checking
                     (scale_y_n, scale_y_d, scale_x_n, scale_x_d) = scale
@@ -1974,18 +2016,31 @@ class TosaArgGen:
                         (ifm_shape[2] - 1) * scale_x_n - offset_x + border_x
                     )
                     if error_name == ErrorIf.ResizeOutputShapeNonInteger:
+                        # Look for non-integer test
                         if (
                             partial_output_y % scale_y_d == 0
                             and partial_output_x % scale_x_d == 0
                         ):
                             # Skip this test as it doesn't produce NonInteger output
-                            perm += 1
+                            if perm > 0:
+                                perm += 1
                             continue
                     else:
+                        # Alter the scaling factors to make the output integer
                         while partial_output_y % scale_y_d != 0:
                             scale_y_d -= 1
                         while partial_output_x % scale_x_d != 0:
                             scale_x_d -= 1
+                        # Make sure we are still within max scaling
+                        if (
+                            scale_y_n / scale_y_d
+                        ) > testGen.TOSA_8K_LEVEL_MAX_SCALE or (
+                            scale_x_n / scale_x_d
+                        ) > testGen.TOSA_8K_LEVEL_MAX_SCALE:
+                            # Skip the test as it is using too large a scaling factor
+                            if perm > 0:
+                                perm += 1
+                            continue
 
                     output_y = partial_output_y // scale_y_d + 1
                     output_x = partial_output_x // scale_x_d + 1
@@ -1996,7 +2051,8 @@ class TosaArgGen:
                     ) and error_name is None:
                         # Skip positive test if output dim will be too high
                         # Avoid high test latency and OOM issues
-                        perm += 1
+                        if not testGen.args.level8k or perm > 0:
+                            perm += 1
                         continue
 
                     if (

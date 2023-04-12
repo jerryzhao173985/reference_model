@@ -27,6 +27,7 @@ class TosaTestGen:
     # Maximum rank of tensor supported by test generator.
     # This currently matches the 8K level defined in the specification.
     TOSA_TENSOR_MAX_RANK = 6
+    TOSA_8K_LEVEL_MAX_SCALE = 64
 
     def __init__(self, args):
         self.args = args

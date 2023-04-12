@@ -233,6 +233,13 @@ def parseArgs(argv):
         help="output const tensors as numpy files for inspection",
     )
 
+    parser.add_argument(
+        "--level-8k-sizes",
+        dest="level8k",
+        action="store_true",
+        help="create level 8k size tests (RESIZE)",
+    )
+
     args = parser.parse_args(argv)
 
     return args
