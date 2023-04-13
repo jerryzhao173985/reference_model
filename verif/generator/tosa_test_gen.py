@@ -28,6 +28,8 @@ class TosaTestGen:
     # This currently matches the 8K level defined in the specification.
     TOSA_TENSOR_MAX_RANK = 6
     TOSA_8K_LEVEL_MAX_SCALE = 64
+    TOSA_8K_LEVEL_MAX_KERNEL = 8192
+    TOSA_8K_LEVEL_MAX_STRIDE = 8192
 
     def __init__(self, args):
         self.args = args
@@ -2348,8 +2350,8 @@ class TosaTestGen:
                 invalid_test_validators = op["invalid_test_validators"]
                 clean_testList = []
                 for test in testList:
+                    remove_test = False
                     for validator_fcn in invalid_test_validators:
-                        remove_test = False
                         if validator_fcn(
                             opName=test[0],
                             input_dtype=test[2],
@@ -2370,6 +2372,9 @@ class TosaTestGen:
             op = self.TOSA_OP_LIST[opName]
         except KeyError:
             raise Exception("Cannot find op with name {}".format(opName))
+
+        if self.args.verbose:
+            print(f"Creating {testStr}")
 
         # Create a serializer
         self.createSerializer(opName, testStr)
@@ -2461,7 +2466,13 @@ class TosaTestGen:
             return
 
         # Dynamically create op lists for convolutions with a list of kernel sizes
-        KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
+        if not self.args.level8k:
+            KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
+            KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
+        else:
+            bigK = self.TOSA_8K_LEVEL_MAX_KERNEL
+            KERNELS_2D = [[1, bigK], [bigK, 2]]
+            KERNELS_3D = [[1, bigK, 1], [2, 2, bigK]]
 
         for k in KERNELS_2D:
             testName = "conv2d_{}x{}".format(k[0], k[1])
@@ -2483,7 +2494,6 @@ class TosaTestGen:
             self.TOSA_OP_LIST[testName]["filter"] = k
             self.TOSA_OP_LIST[testName]["template"] = False
 
-        KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
         for k in KERNELS_3D:
             testName = "conv3d_{}x{}x{}".format(k[0], k[1], k[2])
             self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv3d_TEMPLATE"].copy()

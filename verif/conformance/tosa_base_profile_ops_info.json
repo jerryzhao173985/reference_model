@@ -297,6 +297,20 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "3,10",
+                        "--level-8k-sizes"                    ]
+                ]
             }
         },
         "selection": {
@@ -316,6 +330,9 @@
                     "type",
                     "pad"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },
@@ -1079,6 +1096,21 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1101,6 +1133,9 @@
                     "type",
                     "pad"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },
@@ -1140,6 +1175,21 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1163,6 +1213,9 @@
                     "pad",
                     "stride"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },
@@ -1202,6 +1255,21 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1224,6 +1292,9 @@
                     "type",
                     "pad"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },
@@ -2207,6 +2278,21 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "3,10",
+                        "--level-8k-sizes"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -2226,6 +2312,9 @@
                     "type",
                     "pad"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },
@@ -3588,6 +3677,21 @@
                         "1"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -3610,6 +3714,9 @@
                     "stride",
                     "pad"
                 ]
+            },
+            "8k_level": {
+                "all": "true"
             }
         }
     },

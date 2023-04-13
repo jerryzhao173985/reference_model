@@ -755,7 +755,29 @@ def main():
                             gen_neg_dim_range,
                         )
 
-                        if args.convert_all_tests:
+                        # Work out which selection criteria we are using
+                        if "selector" in gen_dict:
+                            selector_name = gen_dict["selector"]
+                            if selector_name not in test_params[op]["selection"]:
+                                logger.warn(
+                                    f"Could not find {selector_name} in selection dict for {op} - using default"
+                                )
+                                selector_name = "default"
+                        else:
+                            selector_name = "default"
+                        if selector_name not in test_params[op]["selection"]:
+                            logger.error(
+                                f"Could not find {selector_name} in selection dict for {op}"
+                            )
+                            raise (GenConformanceError())
+
+                        # Selection criteria
+                        selection_config = test_params[op]["selection"][selector_name]
+
+                        if args.convert_all_tests or (
+                            "all" in selection_config
+                            and selection_config["all"] == "true"
+                        ):
                             logger.debug(f"Running and converting all {op} tests")
                             generate_results(args, profile, op, op_build_dir)
                             operator_test_list = None
@@ -763,26 +785,6 @@ def main():
                             logger.debug(
                                 f"Running and converting selection of {op} tests"
                             )
-                            # Work out which selection criteria we are using
-                            if "selector" in gen_dict:
-                                selector_name = gen_dict["selector"]
-                                if selector_name not in test_params[op]["selection"]:
-                                    logger.warn(
-                                        f"Could not find {selector_name} in selection dict for {op} - using default"
-                                    )
-                                    selector_name = "default"
-                            else:
-                                selector_name = "default"
-                            if selector_name not in test_params[op]["selection"]:
-                                logger.error(
-                                    f"Could not find {selector_name} in selection dict for {op}"
-                                )
-                                raise (GenConformanceError())
-
-                            # Selection criteria
-                            selection_config = test_params[op]["selection"][
-                                selector_name
-                            ]
                             if test_type in ["positive", "both"]:
                                 tests_gen, tests_gen2 = tee(
                                     get_op_tests_selection(

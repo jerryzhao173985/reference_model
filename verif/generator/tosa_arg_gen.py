@@ -1056,66 +1056,129 @@ class TosaArgGen:
 
     @staticmethod
     def agConv(testGen, opName, shapeList, dtypes, error_name=None):
+        # Used by CONV2D, CONV3D and DEPTHWISE_CONV2D
         arg_list = []
 
+        if testGen.args.level8k and error_name is not None:
+            # Don't produce negative large tests
+            return arg_list
+
+        # Shape: Batches, (Depth), Height, Width, Channels
         ifm_shape = shapeList[0]
+        # Shape: (OFM channels), (KD), KH, KW, IFM channels
         filter_shape = shapeList[1]
-        # determine the kernel shape from operator name (e.g. "conv2d_3x3" => [3,3])
-        k = [int(x) for x in opName.split("_")[-1].split("x")]
 
         accum_dtype = get_accum_dtype_from_tgTypes(dtypes)
 
         # Check the rank
-        rank = 5 if opName.startswith("conv3d") else 4
+        conv3d = opName.startswith("conv3d")
+        rank = 5 if conv3d else 4
         if error_name != ErrorIf.WrongRank:
             assert len(ifm_shape) == rank
             assert len(filter_shape) == rank
 
-        # kernel rank omits batch and channels
+        # kernel rank omits channels
         k_rank = rank - 2
-        assert len(k) == k_rank
+        k_pos = 0 if opName.startswith("depthwise") else 1
+        k_shape = tuple(filter_shape[k_pos : (k_pos + k_rank)])
 
-        # Generate comprehensive argument lists
-        # - except for named errors, which use specific invalid value(s)
-        if error_name == ErrorIf.PadSmallerZero:
-            p_vals = [testGen.rng.choice(range(-5, 0))]
-        else:
-            p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
-        paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
-        if error_name == ErrorIf.StrideSmallerOne:
-            # Can't use stride=0, as it is used to derive output shape, as a divisor
-            s_vals = [testGen.rng.choice(range(-5, 0))]
-        else:
-            # Stride must be greater than 1 to force non-integer error
-            startStride = 1 if error_name != ErrorIf.ConvOutputShapeNonInteger else 2
-            s_vals = [x for x in range(startStride, testGen.args.max_conv_stride + 1)]
-        strides = {x for x in itertools.product(*([s_vals] * k_rank))}
-        if error_name == ErrorIf.DilationSmallerOne:
-            d_vals = [testGen.rng.choice(range(-5, 1))]
-        else:
-            d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
-        dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
-
-        if not error_name and testGen.args.oversize:
-            # add some oversize argument values
-            if max(ifm_shape) < 64:
-                bigPadding = 9
-                paddings.update(
-                    {x for x in itertools.product(*([[0, bigPadding]] * (k_rank * 2)))}
+        if not testGen.args.level8k:
+            # Generate comprehensive argument lists
+            # - except for named errors, which use specific invalid value(s)
+            if error_name == ErrorIf.PadSmallerZero:
+                p_vals = [testGen.rng.choice(range(-5, 0))]
+            else:
+                p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
+            paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
+            if error_name == ErrorIf.StrideSmallerOne:
+                # Can't use stride=0, as it is used to derive output shape, as a divisor
+                s_vals = [testGen.rng.choice(range(-5, 0))]
+            else:
+                # Stride must be greater than 1 to force non-integer error
+                startStride = (
+                    1 if error_name != ErrorIf.ConvOutputShapeNonInteger else 2
                 )
-            bigStride = 8
-            strides.update({x for x in itertools.product(*([[1, bigStride]] * k_rank))})
-            bigDilation = 7
-            dilations.update(
-                {x for x in itertools.product(*([[1, bigDilation]] * k_rank))}
-            )
+                s_vals = [
+                    x for x in range(startStride, testGen.args.max_conv_stride + 1)
+                ]
+            strides = {x for x in itertools.product(*([s_vals] * k_rank))}
+            if error_name == ErrorIf.DilationSmallerOne:
+                d_vals = [testGen.rng.choice(range(-5, 1))]
+            else:
+                d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
+            dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
 
-        # There are too many parameter combinations, so generate them sparsely,
-        # very sparse for negative tests
-        sparsity_factor = 2 if error_name else 120
-        sparsity = TosaArgGen._calculate_sparsity(
-            len(paddings) * len(strides) * len(dilations), sparsity_factor
-        )
+            if not error_name and testGen.args.oversize:
+                # add some oversize argument values
+                if max(ifm_shape) < 64:
+                    bigPadding = 9
+                    paddings.update(
+                        {
+                            x
+                            for x in itertools.product(
+                                *([[0, bigPadding]] * (k_rank * 2))
+                            )
+                        }
+                    )
+                bigStride = 8
+                strides.update(
+                    {x for x in itertools.product(*([[1, bigStride]] * k_rank))}
+                )
+                bigDilation = 7
+                dilations.update(
+                    {x for x in itertools.product(*([[1, bigDilation]] * k_rank))}
+                )
+            max_dim_size = None
+
+            # There are too many parameter combinations, so generate them sparsely,
+            # very sparse for negative tests
+            sparsity_factor = 2 if error_name else 120
+            sparsity = TosaArgGen._calculate_sparsity(
+                len(paddings) * len(strides) * len(dilations), sparsity_factor
+            )
+        else:
+            # Only test 8k levels boundaries
+            bigStride = testGen.TOSA_8K_LEVEL_MAX_STRIDE
+            bigKernel = testGen.TOSA_8K_LEVEL_MAX_KERNEL
+            bigPadding = bigKernel
+
+            dilation_shape = [1] * k_rank
+            pad_shape = [0] * k_rank * 2
+            if conv3d:
+                # Small stride apart from for big kernel (see below) to keep
+                # tensor size/calculation small
+                stride_shape = [1] * k_rank
+                for idx in range(k_rank):
+                    pad_offset = idx * 2
+                    if k_shape[idx] == bigKernel:
+                        # Padding shape needs to account for tensor shape
+                        pad_shape[pad_offset] = bigPadding - ifm_shape[idx + 1]
+                        pad_shape[pad_offset + 1] = bigPadding - dilation_shape[idx] + 1
+                        # Big stride to reduce output size
+                        stride_shape[idx] = bigKernel
+                    else:
+                        # Account for kernel size
+                        pad_shape[pad_offset] = k_shape[idx] - 1
+            else:
+                # Always have a large stride with extra padding and dilation to keep
+                # tensor calculation reasonable
+                stride_shape = [bigKernel] * k_rank
+                for idx in range(k_rank):
+                    # Dilation shape must account for kernel size
+                    dilation_shape[idx] = bigKernel // k_shape[idx]
+                    # Padding shape needs to accommodate tensor/kernel & dilation
+                    pad_offset = idx * 2
+                    pad_shape[pad_offset] = bigPadding - ifm_shape[idx + 1]
+                    pad_shape[pad_offset + 1] = bigPadding - dilation_shape[idx] + 1
+
+            strides = {tuple(stride_shape)}
+            dilations = {tuple(dilation_shape)}
+            paddings = {tuple(pad_shape)}
+            # Create a limit for the output dimensions size
+            max_dim_size = testGen.TOSA_8K_LEVEL_MAX_KERNEL
+
+            # Currently allow all combinations that are reasonable size
+            sparsity = 1
 
         n = 0
         for s in sorted(list(strides)):
@@ -1125,26 +1188,30 @@ class TosaArgGen:
                         n % sparsity == 0
                         # the padded shape must exceed the dilation * kernel to get a positive
                         # sized output shape
-                        and (ifm_shape[1] - 1 + p[0] + p[1]) > d[0] * (k[0] - 1)
-                        and (ifm_shape[2] - 1 + p[2] + p[3]) > d[1] * (k[1] - 1)
+                        and (ifm_shape[1] - 1 + p[0] + p[1]) > d[0] * (k_shape[0] - 1)
+                        and (ifm_shape[2] - 1 + p[2] + p[3]) > d[1] * (k_shape[1] - 1)
                         and (
                             k_rank < 3
-                            or ((ifm_shape[3] - 1 + p[4] + p[5]) > d[2] * (k[2] - 1))
+                            or (
+                                (ifm_shape[3] - 1 + p[4] + p[5])
+                                > d[2] * (k_shape[2] - 1)
+                            )
                         )
                     ):
                         remainders = []
+                        outputs = []
                         for index in range(k_rank):
                             pad_offset = index * 2
-                            remainders.append(
-                                (
-                                    ifm_shape[index + 1]
-                                    - 1
-                                    + p[pad_offset]
-                                    + p[pad_offset + 1]
-                                    - (k[index] - 1) * d[index]
-                                )
-                                % s[index]
+                            partial = (
+                                ifm_shape[index + 1]
+                                - 1
+                                + p[pad_offset]
+                                + p[pad_offset + 1]
+                                - (k_shape[index] - 1) * d[index]
                             )
+                            remainders.append(partial % s[index])
+                            outputs.append((partial // s[index]) + 1)
+
                         if (
                             # the parameters must produce integer exact output
                             error_name != ErrorIf.ConvOutputShapeNonInteger
@@ -1153,13 +1220,22 @@ class TosaArgGen:
                             error_name == ErrorIf.ConvOutputShapeNonInteger
                             and max(remainders) > 0
                         ):
+                            if (
+                                max_dim_size is not None
+                                and max(outputs) >= max_dim_size
+                            ):
+                                # Test will consume too much memory - skip it
+                                continue
+
+                            # Support for larger values than 9 needs different delimiter
+                            delim = "" if max(s + p + d) <= 9 else "x"
                             arg_list.append(
                                 (
                                     "acc{}_st{}_pad{}_dilat{}".format(
                                         testGen.typeStr(accum_dtype),
-                                        "".join([str(x) for x in s]),
-                                        "".join([str(x) for x in p]),
-                                        "".join([str(x) for x in d]),
+                                        delim.join([str(x) for x in s]),
+                                        delim.join([str(x) for x in p]),
+                                        delim.join([str(x) for x in d]),
                                     ),
                                     [accum_dtype, s, p, d],
                                 )
@@ -1215,6 +1291,10 @@ class TosaArgGen:
     def agTransposeConv2D(testGen, opName, shapeList, dtypes, error_name=None):
         arg_list = []
 
+        if testGen.args.level8k and error_name is not None:
+            # Don't produce negative large tests
+            return arg_list
+
         ifm_shape = shapeList[0]
         filter_shape = shapeList[1]
 
@@ -1225,66 +1305,112 @@ class TosaArgGen:
             assert len(ifm_shape) == 4
             assert len(filter_shape) == 4
 
-        # Generate comprehensive argument lists
-        # - except for named errors, which use specific invalid value(s)
-        smallest_padding_size = -min(filter_shape[1], filter_shape[2]) + 1
-        if error_name == ErrorIf.PadLargerEqualKernel:
-            max_filter_size = -max(filter_shape[1], filter_shape[2])
-            p_vals = [testGen.rng.choice(range(max_filter_size - 10, max_filter_size))]
-        else:
-            p_vals = [
-                x
-                for x in range(smallest_padding_size, testGen.args.max_conv_padding + 1)
-            ]
-        paddings = {x for x in itertools.product(*([p_vals] * 4))}
-        if error_name == ErrorIf.StrideSmallerOne:
-            # Can't use stride=0, as it is used to derive output shape, as a divisor
-            s_vals = [testGen.rng.choice(range(-5, 0))]
-        else:
-            s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
-        strides = {x for x in itertools.product(*([s_vals] * 2))}
+        k_shape = tuple(filter_shape[1:3])
 
-        if not error_name and testGen.args.oversize:
-            # add some oversize argument values
-            if max(ifm_shape) < 64:
-                bigPadding = 9
-                paddings.update(
-                    {
-                        x
-                        for x in itertools.product(
-                            *([[smallest_padding_size, bigPadding]] * 4)
-                        )
-                    }
-                )
-            bigStride = 8
-            strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
+        if not testGen.args.level8k:
+            # Generate comprehensive argument lists
+            # - except for named errors, which use specific invalid value(s)
+            smallest_padding_size = -min(k_shape[0], k_shape[1]) + 1
+            if error_name == ErrorIf.PadLargerEqualKernel:
+                max_filter_size = -max(k_shape[0], k_shape[1])
+                p_vals = [
+                    testGen.rng.choice(range(max_filter_size - 10, max_filter_size))
+                ]
+            else:
+                p_vals = [
+                    x
+                    for x in range(
+                        smallest_padding_size, testGen.args.max_conv_padding + 1
+                    )
+                ]
+            paddings = {x for x in itertools.product(*([p_vals] * 4))}
+            if error_name == ErrorIf.StrideSmallerOne:
+                # Can't use stride=0, as it is used to derive output shape, as a divisor
+                s_vals = [testGen.rng.choice(range(-5, 0))]
+            else:
+                s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
+            strides = {x for x in itertools.product(*([s_vals] * 2))}
 
-        # There are too many parameter combinations, so generate them sparsely,
-        # very sparse for negative tests
-        sparsity_factor = 2 if error_name else 10
-        sparsity = len(paddings) * len(strides) // sparsity_factor + 1
-        # If there are only a small number of tests, just select them all
-        if sparsity < 13:
+            if not error_name and testGen.args.oversize:
+                # add some oversize argument values
+                if max(ifm_shape) < 64:
+                    bigPadding = 9
+                    paddings.update(
+                        {
+                            x
+                            for x in itertools.product(
+                                *([[smallest_padding_size, bigPadding]] * 4)
+                            )
+                        }
+                    )
+                bigStride = 8
+                strides.update({x for x in itertools.product(*([[1, bigStride]] * 2))})
+
+            # There are too many parameter combinations, so generate them sparsely,
+            # very sparse for negative tests
+            sparsity_factor = 2 if error_name else 10
+            sparsity = len(paddings) * len(strides) // sparsity_factor + 1
+            # If there are only a small number of tests, just select them all
+            if sparsity < 13:
+                sparsity = 1
+            # To get a variety of parameter combinations sparsity should not be a
+            # multiple of 2, 3 or 5
+            while sparsity % 2 == 0 or sparsity % 3 == 0 or sparsity % 5 == 0:
+                sparsity += 1
+        else:
+            # Only test 8k levels boundaries
+            bigStride = testGen.TOSA_8K_LEVEL_MAX_STRIDE
+            bigKernel = testGen.TOSA_8K_LEVEL_MAX_KERNEL
+            bigPadding = bigKernel
+
+            pad_shape = [0] * (len(k_shape) * 2)
+            stride_shape = [1] * len(k_shape)
+            # The point at which input dimension combined with the stride will
+            # create large output sizes!
+            LARGE_SIZE = 2
+            for idx in range(len(k_shape)):
+                pad_offset = idx * 2
+                if k_shape[idx] == bigKernel:
+                    # Set large stride
+                    stride_shape[idx] = bigKernel
+                    # Use negative output padding to reduce shape size
+                    pad_shape[pad_offset] = -(bigPadding - 1)
+                    if ifm_shape[idx + 1] > LARGE_SIZE:
+                        pad_shape[pad_offset + 1] = -(bigPadding - 1)
+                else:
+                    # The other dimension should be the bigKernel
+                    alt_idx = 1 - idx
+                    if (
+                        k_shape[alt_idx] == bigKernel
+                        and ifm_shape[alt_idx + 1] < LARGE_SIZE
+                    ):
+                        # As the input is small, the large stride won't
+                        # affect the output so we can add some padding
+                        pad_shape[pad_offset + 1] = bigPadding
+
+            strides = {tuple(stride_shape)}
+            paddings = {tuple(pad_shape)}
+
+            # Currently allow all combinations that are reasonable size
             sparsity = 1
-        # To get a variety of parameter combinations sparsity should not be a
-        # multiple of 2, 3 or 5
-        while sparsity % 2 == 0 or sparsity % 3 == 0 or sparsity % 5 == 0:
-            sparsity += 1
 
         n = 0
         for s in sorted(list(strides)):
             for p in sorted(list(paddings)):
                 if n % sparsity == 0:
                     # Determine the output shape
-                    oh = (ifm_shape[1] - 1) * s[0] + p[0] + p[1] + filter_shape[1]
-                    ow = (ifm_shape[2] - 1) * s[1] + p[2] + p[3] + filter_shape[2]
+                    oh = (ifm_shape[1] - 1) * s[0] + p[0] + p[1] + k_shape[0]
+                    ow = (ifm_shape[2] - 1) * s[1] + p[2] + p[3] + k_shape[1]
                     os = [ifm_shape[0], oh, ow, filter_shape[0]]
+
+                    # Support for larger values than 9 needs different delimiter
+                    delim = "" if max(s + p) <= 9 else "x"
                     arg_list.append(
                         (
                             "acc{}_st{}_pad{}_os{}".format(
                                 testGen.typeStr(accum_dtype),
-                                "".join([str(x) for x in s]),
-                                "".join([str(x) for x in p]),
+                                delim.join([str(x) for x in s]),
+                                delim.join([str(x) for x in p]),
                                 "x".join([str(x) for x in os]),
                             ),
                             [accum_dtype, s, p, os],
@@ -1364,15 +1490,49 @@ class TosaArgGen:
         if error_name != ErrorIf.WrongRank:
             assert len(shape) == 4
 
-        # Generate comprehensive argument lists
-        p_vals = [x for x in range(0, testGen.args.max_pooling_padding + 1)]
-        paddings = {x for x in itertools.product(*([p_vals] * 4))}
-        # Stride must be greater than 1 to force non-integer error
+        test_level8k = testGen.args.level8k and error_name is None
+
         startStride = 1 if error_name != ErrorIf.PoolingOutputShapeNonInteger else 2
-        s_vals = [x for x in range(startStride, testGen.args.max_pooling_stride + 1)]
-        strides = {x for x in itertools.product(*([s_vals] * 2))}
-        k_vals = [x for x in range(2, testGen.args.max_pooling_kernel + 1)]
-        kernels = {x for x in itertools.product(*([k_vals] * 2))}
+        startKernel = 2
+        startPad = 0
+        if not test_level8k:
+            # Generate comprehensive argument lists
+            p_vals = [x for x in range(startPad, testGen.args.max_pooling_padding + 1)]
+            paddings = {x for x in itertools.product(*([p_vals] * 4))}
+            # Stride must be greater than 1 to force non-integer error
+            s_vals = [
+                x for x in range(startStride, testGen.args.max_pooling_stride + 1)
+            ]
+            strides = {x for x in itertools.product(*([s_vals] * 2))}
+            k_vals = [
+                x for x in range(startKernel, testGen.args.max_pooling_kernel + 1)
+            ]
+            kernels = {x for x in itertools.product(*([k_vals] * 2))}
+            max_dim_size = None
+        else:
+            # Only test 8k levels
+            bigStride = testGen.TOSA_8K_LEVEL_MAX_STRIDE
+            bigKernel = testGen.TOSA_8K_LEVEL_MAX_KERNEL
+            strides = {(1, bigStride), (bigStride, 4)}
+            kernels = {(1, bigKernel), (bigKernel, 3)}
+            paddings = set()
+            for s in sorted(list(strides)):
+                for k in sorted(list(kernels)):
+                    padding = []
+                    for idx in range(len(k)):
+                        total_padding = s[idx] - shape[idx + 1] + k[idx]
+                        while total_padding < 0:
+                            # Must meet: shape + padding > kernel
+                            total_padding += s[idx]
+                        if total_padding < k[idx]:
+                            padding.extend([0, total_padding])
+                        else:
+                            # Note this may produce padding >= k[idx] which is not
+                            # allowed - but will be ignored in the creation loop below
+                            padding.extend([k[idx] - 1, total_padding - (k[idx] - 1)])
+                    paddings.add(tuple(padding))
+            # Create a limit for the output dimensions size
+            max_dim_size = testGen.TOSA_8K_LEVEL_MAX_KERNEL
 
         if opName == "max_pool2d":
             accum_dtypes = [None]  # max_pool has no accumulate dtype
@@ -1389,25 +1549,33 @@ class TosaArgGen:
             # incorrect input data-type
             accum_dtypes = [DType.INT32]
 
-        if testGen.args.oversize:
-            # add some oversize argument values
-            bigStride = 7
-            strides.update(
-                {x for x in itertools.product(*([[startStride, bigStride]] * 2))}
-            )
-            bigKernel = 9
-            kernels.update({x for x in itertools.product(*([[2, bigKernel]] * 2))})
-            if max(shape) < 64:
-                # padding must be less than the kernel size
-                bigPadding = bigKernel - 1
-                paddings.update(
-                    {x for x in itertools.product(*([[0, bigPadding]] * 4))}
+        if not test_level8k:
+            if testGen.args.oversize:
+                # add some oversize argument values
+                bigStride = 7
+                bigKernel = 9
+                strides.update(
+                    {x for x in itertools.product(*([[startStride, bigStride]] * 2))}
                 )
+                kernels.update(
+                    {x for x in itertools.product(*([[startKernel, bigKernel]] * 2))}
+                )
+                if max(shape) < 64:
+                    # padding must be less than the kernel size
+                    bigPadding = bigKernel - 1
+                    paddings.update(
+                        {x for x in itertools.product(*([[startPad, bigPadding]] * 4))}
+                    )
 
-        # There are too many parameter combinations, so generate them sparsely,
-        # very sparse for negative tests
-        sparsity_factor = 2 if error_name else 500
-        sparsity = len(paddings) * len(strides) * len(kernels) // sparsity_factor + 1
+            # There are too many parameter combinations, so generate them sparsely,
+            # very sparse for negative tests
+            sparsity_factor = 2 if error_name else 500
+            sparsity = (
+                len(paddings) * len(strides) * len(kernels) // sparsity_factor + 1
+            )
+        else:
+            # We have already limited test output combinations for 8k tests
+            sparsity = 1
 
         arg_str = (
             "acc{}_st{}_kern{}_pad{}"
@@ -1418,10 +1586,13 @@ class TosaArgGen:
         def get_arg_list_element(accum, stride, pad, kern):
             # Return tuple containing the formatted argument string and
             # the corresponding argument values
+
+            # Support for larger values than 9 needs different delimiter
+            delim = "" if max(stride + kern + pad) <= 9 else "x"
             arg_str_elems = [
-                "".join([str(x) for x in stride]),
-                "".join([str(x) for x in kern]),
-                "".join([str(x) for x in pad]),
+                delim.join([str(x) for x in stride]),
+                delim.join([str(x) for x in kern]),
+                delim.join([str(x) for x in pad]),
             ]
             # Note: different order to string
             arg_val_elems = [stride, pad, kern]
@@ -1459,8 +1630,13 @@ class TosaArgGen:
                             and (shape[1] + p[0] + p[1]) > k[0]
                             and (shape[2] + p[2] + p[3]) > k[1]
                         ):
-                            remainder_h = (shape[1] + p[0] + p[1] - k[0]) % s[0]
-                            remainder_w = (shape[2] + p[2] + p[3] - k[1]) % s[1]
+                            partial_h = shape[1] + p[0] + p[1] - k[0]
+                            partial_w = shape[2] + p[2] + p[3] - k[1]
+                            remainder_h = partial_h % s[0]
+                            remainder_w = partial_w % s[1]
+                            output_h = partial_h // s[0] + 1
+                            output_w = partial_w // s[1] + 1
+                            # debug print(shape, remainder_h, remainder_w, "/", output_h, output_w)
                             if (
                                 # the parameters must produce integer exact output
                                 error_name != ErrorIf.PoolingOutputShapeNonInteger
@@ -1470,6 +1646,12 @@ class TosaArgGen:
                                 error_name == ErrorIf.PoolingOutputShapeNonInteger
                                 and (remainder_h != 0 or remainder_w != 0)
                             ):
+                                if (
+                                    max_dim_size is not None
+                                    and max(output_h, output_w) > max_dim_size
+                                ):
+                                    # Test will consume too much memory - skip it
+                                    continue
                                 arg_vals = [a, s, p, k]
                                 arg_list.append(get_arg_list_element(*arg_vals))
                         n += 1
