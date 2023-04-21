@@ -81,6 +81,8 @@ class ErrorIf(object):
     KernelNotPowerOfTwo = "KernelNotPowerOfTwo"
     FFTInputShapeMismatch = "FFTInputShapeMismatch"
     FFTOutputShapeMismatch = "FFTOutputShapeMismatch"
+    ReshapeOutputSizeMultiInference = "ReshapeOutputSizeMultiInference"
+    ReshapeOutputSizeNonInteger = "ReshapeOutputSizeNonInteger"
 
 
 class TosaErrorIfArgGen:
@@ -1822,13 +1824,17 @@ class TosaErrorValidator:
         param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
         error_reason = "Input tensor size does not match output tensor size"
+        op = kwargs["op"]
 
         if check:
             input_shape = kwargs["input_shape"]
             output_shape = kwargs["output_shape"]
+            shape_inferencing = False
+            if -1 in output_shape and op["op"] == Op.RESHAPE:
+                shape_inferencing = True
             input_size = np.prod(input_shape)
             output_size = np.prod(output_shape)
-            if input_size != output_size:
+            if input_size != output_size and not shape_inferencing:
                 error_result = True
 
         info_dict = {
@@ -2501,6 +2507,56 @@ class TosaErrorValidator:
                 # Ensure sure the kernel sizes (H, W) of both outputs match the expected
                 if output_shape_0 != output_shape_1 or output_shape_0 != expected_shape:
                     error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evReshapeOutputSizeMultiInference(check=False, **kwargs):
+        error_name = ErrorIf.ReshapeOutputSizeMultiInference
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Reshape output tensor contains more than one inferred dimension"
+
+        if check:
+            output_shape = kwargs["output_shape"]
+            inferences = 0
+            for dim in output_shape:
+                if dim == -1:
+                    inferences += 1
+            if inferences > 1:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evReshapeOutputSizeNonInteger(check=False, **kwargs):
+        error_name = ErrorIf.ReshapeOutputSizeNonInteger
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Reshape inferred output tensor dimension is non-integer"
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            input_size = np.prod(input_shape)
+            output_size = 1
+            for dim in output_shape:
+                if dim != -1:
+                    output_size *= dim
+            if -1 in output_shape and input_size % output_size != 0:
+                error_result = True
 
         info_dict = {
             "error_name": error_name,

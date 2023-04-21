@@ -733,7 +733,7 @@ class ReshapeOperator(Operator):
     """Test selector for the RESHAPE operator."""
 
     name = "reshape"
-    param_names = ["shape", "type", "perm", "rank"]
+    param_names = ["shape", "type", "perm", "rank", "out"]
 
 
 class ResizeOperator(Operator):

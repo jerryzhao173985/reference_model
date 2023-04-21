@@ -63,6 +63,10 @@ public:
     {
         return block->GetRegionName();
     }
+    TosaSerializationHandler* getTsh() const
+    {
+        return tsh;
+    }
     int getNumInputTensors() const;
     Tensor* getInputTensor(const unsigned int idx) const;
     Tensor* getInputTensorByName(const std::string name) const;

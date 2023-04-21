@@ -96,6 +96,12 @@ public:
         return shape;
     }
 
+    void setDimSize(size_t dim, uint32_t new_size)
+    {
+        this->shape[dim] = new_size;
+        return;
+    }
+
     std::string getShapeAsString() const
     {
         std::string shape_str("[");
@@ -269,7 +275,7 @@ public:
 protected:
     const std::string tensorName;
     const DType serializationDtype;
-    const std::vector<int> shape;
+    std::vector<int> shape;
     const TOSA_REF_TYPE tensorDtype;
     int isValid;
     int isSubgraphInput;

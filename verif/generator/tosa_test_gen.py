@@ -3693,6 +3693,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
+                TosaErrorValidator.evReshapeOutputSizeMultiInference,
+                TosaErrorValidator.evReshapeOutputSizeNonInteger,
             ),
         },
         "reverse": {
