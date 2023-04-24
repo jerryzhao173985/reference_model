@@ -593,7 +593,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
 
     // calculate 1d height/width div_map (number of elements this pooling window covers)
     // and outer product to get 2d div_map, then reshape/broadcast to [N, H, W, C]
-    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_y, stride_x, pad_top, pad_bottom);
+    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_y, stride_y, pad_top, pad_bottom);
     ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_x, stride_x, pad_left, pad_right);
     Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
     Eigen::array<Eigen::Index, 4> bcast{ out_batch, 1, 1, out_channels };
