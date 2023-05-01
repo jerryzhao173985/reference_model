@@ -37,6 +37,7 @@ OUTPUT_RESULT_FILE = "result_numpy_pytest.npy"
 OUTPUT_CONST_GLOB = "const-*.npy"
 
 TEST_DESC_FILENAME = "desc.json"
+TOSA_LEVEL = "EIGHTK"
 
 # Conversion from refmodel type into the type abbreviation used in the test output
 REF_MODEL_TYPE_TO_OUT = {
@@ -182,6 +183,8 @@ def test_refmodel_simple_op(tosaTest):
             str(desc_file),
             "--ofm_file",
             OUTPUT_OFM_FILE,
+            "--tosa_level",
+            TOSA_LEVEL,
         ]
         try:
             run_sh_command(refmodel_cmd, verbose=True, capture_output=True)

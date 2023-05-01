@@ -29,7 +29,6 @@ BinaryNodeBase<Rank, InDtype, OutDtype>::BinaryNodeBase(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(2, 1);
-    setRequiredRank(0, 6);
 
     a = b  = nullptr;
     result = nullptr;
@@ -50,11 +49,6 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
 
     if (validateRequiredOperands())
         return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
 
     // A & B must be the same rank and types
     if (inputs[0]->matchRankType(*inputs[1]))

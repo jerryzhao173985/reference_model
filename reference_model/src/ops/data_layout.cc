@@ -27,7 +27,7 @@ OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_CONCAT, id_)
 {
     setRequiredOperands(-1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Axis);
 }
@@ -131,7 +131,7 @@ OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_PAD, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Pad);
 }
@@ -221,7 +221,6 @@ OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_RESHAPE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 6);
 
     INIT_ATTRIBUTE(Reshape);
 }
@@ -243,11 +242,6 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
 
     if (validateRequiredOperands())
         return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
 
     // output and input must be the same types
     if (inputs[0]->matchType(*outputs[0]))
@@ -321,7 +315,7 @@ OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_REVERSE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Axis);
 }
@@ -392,7 +386,7 @@ OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_SLICE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Slice);
 }
@@ -465,7 +459,7 @@ OpTileBase<Rank, Dtype>::OpTileBase(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_TILE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Tile);
 }
@@ -667,7 +661,7 @@ OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_TRANSPOSE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 6);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Transpose);
 }

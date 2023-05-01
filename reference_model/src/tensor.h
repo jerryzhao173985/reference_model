@@ -197,9 +197,9 @@ public:
     }
 
     // Unary check to make sure rank matches
-    const int checkRequiredRank(const int exactRank) const
+    const int checkRequiredRank(const int minRank) const
     {
-        return (shape.size() == (size_t)exactRank) ? 0 : 1;
+        return (shape.size() >= (size_t)minRank) ? 0 : 1;
     }
 
     const int checkRequiredRank(const int minRank, const int maxRank) const

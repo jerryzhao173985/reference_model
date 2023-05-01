@@ -26,7 +26,6 @@ OpSelectBase<Rank, Dtype>::OpSelectBase(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_SELECT, id_)
 {
     setRequiredOperands(3, 1);
-    setRequiredRank(0, 6);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -42,12 +41,6 @@ int OpSelectBase<Rank, Dtype>::checkTensorAttributes()
 
     if (validateRequiredOperands())
         return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2]) ||
-        validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
 
     // output and input must be the same types
     if (inputs[0]->matchRankShape(*outputs[0], true /* broadcastOk */) ||

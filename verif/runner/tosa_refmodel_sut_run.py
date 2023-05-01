@@ -34,6 +34,7 @@ class TosaSUTRunner(TosaTestRunner):
         # Call Reference model with description file to provide all file details
         cmd = [
             args.ref_model_path,
+            "--tosa_level={}".format(args.tosa_level),
             "--operator_fbs={}".format(args.operator_fbs),
             "--test_desc={}".format(self.descFile),
         ]

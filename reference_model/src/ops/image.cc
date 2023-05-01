@@ -113,11 +113,6 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
     int16_t border_y = border[0];
     int16_t border_x = border[1];
 
-    // Check Tosa Level
-    auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(scale_y_n / scale_y_d <= tosa_level.MAX_SCALE, "scale_y_n / scale_y_d should be smaller than or equal to MAX_SCALE");
-    LEVEL_CHECK(scale_x_n / scale_x_d <= tosa_level.MAX_SCALE, "scale_x_n / scale_x_d should be smaller than or equal to MAX_SCALE");
-
     ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
              "OpResize: exceeds maximum dimension");
     ERROR_IF(in_batch != out_batch, "OpResize: output tensor batch mismatch");
@@ -136,6 +131,11 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
              "OpResize: invalid attribute border height dimension");
     ERROR_IF((border_x < -16 * scale_x_n || border_x >= scale_x_n),
              "OpResize: invalid attribute border width dimension");
+
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(scale_y_n / scale_y_d <= tosa_level.MAX_SCALE, "scale_y_n / scale_y_d should be smaller than or equal to MAX_SCALE");
+    LEVEL_CHECK(scale_x_n / scale_x_d <= tosa_level.MAX_SCALE, "scale_x_n / scale_x_d should be smaller than or equal to MAX_SCALE");
 
     int32_t res_height = 0;
     int32_t res_width = 0;

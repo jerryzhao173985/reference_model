@@ -27,7 +27,6 @@ UnaryNode<Rank, Dtype>::UnaryNode(SubgraphTraverser* sgt_, const Op& op_, uint64
     : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 6);
 
     fcn = [](InEigenType a) -> OutEigenType {
         ASSERT_MSG(0, "In default UnaryNode function, missing function registration");
@@ -48,11 +47,6 @@ int UnaryNode<Rank, Dtype>::checkTensorAttributes()
 
     if (validateRequiredOperands())
         return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
 
     // output and input must be the same types
     if (inputs[0]->matchRankTypeShape(*outputs[0]))

@@ -25,7 +25,7 @@ ReduceNode<Rank, Dtype>::ReduceNode(SubgraphTraverser* sgt_, const Op& op_, Tosa
     : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 4);
+    setRequiredRank(1, 4);
 
     INIT_ATTRIBUTE(Axis);
 }

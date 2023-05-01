@@ -270,19 +270,15 @@ protected:
 
     int setRequiredRank(const int min, const int max = -1)
     {
-        if (max == -1)
-        {
-            requiredRankMin = requiredRankMax = min;
-        }
-        else
-        {
-            requiredRankMin = min;
-            requiredRankMax = max;
-        }
+        requiredRankMin = min;
+        requiredRankMax = max;
 
-        ASSERT_MSG(requiredRankMin <= requiredRankMax,
-                   "GraphNode::setRequiredRank: requiredRankMin %d must be <= requiredRankMax %d", requiredRankMin,
-                   requiredRankMax);
+        if (requiredRankMin >= 0 && requiredRankMax >= 0)
+        {
+            ASSERT_MSG(requiredRankMin <= requiredRankMax,
+                    "GraphNode::setRequiredRank: requiredRankMin %d must be <= requiredRankMax %d", requiredRankMin,
+                    requiredRankMax);
+        }
 
         return 0;
     }

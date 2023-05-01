@@ -31,7 +31,6 @@ OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_,
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(0, 6);
     INIT_ATTRIBUTE(Rescale);
 }
 
@@ -51,11 +50,6 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
 
     if (validateRequiredOperands())
         return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
 
     // output and input must be the same rank and size
     if (inputs[0]->matchRankSize(*outputs[0]))

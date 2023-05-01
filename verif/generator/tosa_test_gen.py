@@ -2614,7 +2614,7 @@ class TosaTestGen:
         "argmax": {
             "op": Op.ARGMAX,
             "operands": (1, 0),
-            "rank": (1, 4),
+            "rank": (1, 6),
             "build_fcn": (
                 build_argmax,
                 TosaTensorGen.tgBasic,
