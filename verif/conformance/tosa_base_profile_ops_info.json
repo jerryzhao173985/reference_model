@@ -177,6 +177,25 @@
                         "2"
                     ]
                 ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
