@@ -49,6 +49,7 @@ struct func_config_t
     uint32_t dump_intermediates = 0;
     std::string fp_format       = "0.5";
     uint32_t precise_mode       = 0;
+    bool abs_mode               = 0;      // set in main as second run of precise_mode
     bool float_is_big_endian    = false;  // Set in arith_util.h by float_is_big_endian()
 
     tosa_level_t tosa_level;

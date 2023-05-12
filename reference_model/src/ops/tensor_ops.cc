@@ -572,6 +572,12 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
 
     ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of input_padded
+        input_padded = input_padded.abs();
+    }
+
     // assuming input and output have same scales
     // so input and output scaling is not required
     // TODO: check if this assumption TOSA made
@@ -799,6 +805,16 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
 
     ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
+    TBias bias_val = this->bias->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of conv operands
+        input_padded = input_padded.abs();
+        weight_val   = weight_val.abs();
+        bias_val     = bias_val.abs();
+    }
+
     // extract_image_patches() output [N, KH, KW, H * W, C]
     // need to transpose to [N, H * W, KH, KW, C]
     ETensor5<InEigenType> input_extract_patches =
@@ -815,7 +831,8 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
 
     // don't need to apply bias_multiplier ( * bias_scale and >> bias_shift) since tflite already scale it
     // and reshaped from [C] to [1, C], and broadcast to [N * H * W, C]
-    ETensor2<OutEigenType> bias_2d = (this->bias->getTensor().reshape(bias_reshaped_dims).broadcast(bias_bcast_dims)).template cast<OutEigenType>();
+    ETensor2<OutEigenType> bias_2d =
+        (bias_val.reshape(bias_reshaped_dims).broadcast(bias_bcast_dims)).template cast<OutEigenType>();
 
     // output matrix is [N * H * W, C]
     ETensor2<OutEigenType> contracted_result =
@@ -977,6 +994,16 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
 
     ETensor5<InEigenType> input_padded = input_val.pad(pad);
 
+    TBias bias_val = this->bias->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of conv operands
+        input_padded = input_padded.abs();
+        weight_val   = weight_val.abs();
+        bias_val     = bias_val.abs();
+    }
+
     // 1. initialize with bias
     Eigen::array<Eigen::Index, 5> reshape_dim;
     reshape_dim.fill(1);
@@ -988,7 +1015,7 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
     bcast[2]                  = out_height;
     bcast[3]                  = out_width;
     bcast[4]                  = 1;
-    this->output->getTensor() = this->bias->getTensor().reshape(reshape_dim).broadcast(bcast);
+    this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     // 2. direct convolution
     AccEigenType acc(0.0);
@@ -1167,6 +1194,16 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
 
     ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
+    TBias bias_val = this->bias->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of conv operands
+        input_padded = input_padded.abs();
+        weight_val   = weight_val.abs();
+        bias_val     = bias_val.abs();
+    }
+
     // GEMM doesn't fit well with DepthwiseConv2d
     // 1. use extract_image_patches() to handle stride/dilation/pad
     // 2. perform direct convolution
@@ -1186,7 +1223,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
     bcast[3] = 1;
 
     // initialize with bias
-    this->output->getTensor() = this->bias->getTensor().reshape(reshape_dim).broadcast(bcast);
+    this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     // 2. direct depthwise convolution
     for (int ob = 0; ob < out_batch; ob++)
@@ -1307,9 +1344,20 @@ int OpFullyConnected<InDtype, WeightDtype, OutDtype>::eval()
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
     }
 
-    this->output->getTensor() =
-        input_val.template cast<AccEigenType>().contract(weight_val.template cast<AccEigenType>(), dims).template cast<OutEigenType>() +
-            this->bias->getTensor().reshape(bias_reshape).broadcast(bias_bcast);
+    TBias bias_val = this->bias->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of conv operands
+        input_val  = input_val.abs();
+        weight_val = weight_val.abs();
+        bias_val   = bias_val.abs();
+    }
+
+    this->output->getTensor() = input_val.template cast<AccEigenType>()
+                                    .contract(weight_val.template cast<AccEigenType>(), dims)
+                                    .template cast<OutEigenType>() +
+                                bias_val.reshape(bias_reshape).broadcast(bias_bcast);
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
@@ -1414,6 +1462,13 @@ int OpMatMul<Dtype, OutDtype>::eval()
     {
         a_val = a_val - (InEigenType)attribute->a_zp();
         b_val = b_val - (InEigenType)attribute->b_zp();
+    }
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of matmul operands
+        a_val = a_val.abs();
+        b_val = b_val.abs();
     }
 
     Eigen::array<Eigen::Index, 2> a_rank2_shape({ H, C });
@@ -1692,6 +1747,16 @@ int OpFFT2d<Dtype>::eval()
         sign_val = -1.0;
     }
 
+    TIn in_real_val = this->in_real->getTensor();
+    TIn in_imag_val = this->in_imag->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of real and imag operands
+        in_real_val = in_real_val.abs();
+        in_imag_val = in_imag_val.abs();
+    }
+
     for (int n = 0; n < in_real_batch; n++)
     {
         for (int oy = 0; oy < out_real_height; oy++)
@@ -1704,8 +1769,8 @@ int OpFFT2d<Dtype>::eval()
                 {
                     for (int ix = 0; ix < in_real_width; ix++)
                     {
-                        OutEigenType val_real = this->in_real->getTensor()(n, iy, ix);
-                        OutEigenType val_imag = this->in_imag->getTensor()(n, iy, ix);
+                        OutEigenType val_real = in_real_val(n, iy, ix);
+                        OutEigenType val_imag = in_imag_val(n, iy, ix);
                         // Use explicit cast to ensure intermmediate calculations are completed using OutEigenType
                         a = sign_val * 2 * M_PI * ((iy * (OutEigenType)oy) / in_real_height + (ix * (OutEigenType)ox) / in_real_width);
                         sum_real += val_real * cos(a) + val_imag * sin(a);
@@ -1800,6 +1865,14 @@ int OpRFFT2d<Dtype>::eval()
 
     OutEigenType sum_real, sum_imag, a;
 
+    TIn in_val = this->in->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of in operand
+        in_val = in_val.abs();
+    }
+
     for (int n = 0; n < in_batch; n++)
     {
         for (int oy = 0; oy < out_real_height; oy++)
@@ -1814,8 +1887,8 @@ int OpRFFT2d<Dtype>::eval()
                     {
                         // Use explicit cast to ensure intermmediate calculations are completed using OutEigenType
                         a = 2 * M_PI * ((iy * (OutEigenType)oy) / in_height + (ix * (OutEigenType)ox) / in_width);
-                        sum_real += this->in->getTensor()(n, iy, ix) * cos(a);
-                        sum_imag += -this->in->getTensor()(n, iy, ix) * sin(a);
+                        sum_real += in_val(n, iy, ix) * cos(a);
+                        sum_imag += -in_val(n, iy, ix) * sin(a);
                     }
                 }
                 this->out_real->getTensor()(n, oy, ox) = sum_real;
@@ -2005,6 +2078,16 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
     }
 
+    TBias bias_val = this->bias->getTensor();
+
+    if (g_func_config.abs_mode)
+    {
+        // in abs_mode: take abs values of conv operands
+        input_val  = input_val.abs();
+        weight_val = weight_val.abs();
+        bias_val   = bias_val.abs();
+    }
+
     Eigen::array<Eigen::Index, 4> reshape_dim;
     reshape_dim.fill(1);
     reshape_dim[3] = b_out_channels;
@@ -2016,7 +2099,7 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     bcast[3] = 1;
 
     // initialize with bias
-    this->output->getTensor() = this->bias->getTensor().reshape(reshape_dim).broadcast(bcast);
+    this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     int out_x_origin, out_y_origin;
     int out_x, out_y;
