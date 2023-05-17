@@ -50,6 +50,8 @@ tosa::DType translate_client_datatype(tosa_datatype_t type)
             return tosa::DType::DType_FP16;
         case tosa_datatype_fp32_t:
             return tosa::DType::DType_FP32;
+        case tosa_datatype_bool_t:
+            return tosa::DType::DType_BOOL;
         default:
             return tosa::DType::DType_UNKNOWN;
     }

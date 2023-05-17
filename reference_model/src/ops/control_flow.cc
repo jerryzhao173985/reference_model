@@ -172,6 +172,8 @@ OpCondIf::~OpCondIf()
 
 int OpCondIf::checkTensorAttributes()
 {
+    ERROR_IF(!tsh, "OpCondIf: tosa serialization handler must not be null");
+
     ERROR_IF(getInputs().size() < 1, "OpCondIf: must have at least 1 operand");
 
     ERROR_IF(inputs[0]->getDtype() != TOSA_REF_TYPE_BOOL || inputs[0]->getRank() != 0,
@@ -309,6 +311,11 @@ OpWhileLoop::~OpWhileLoop()
 
 int OpWhileLoop::checkTensorAttributes()
 {
+    if (!tsh) {
+        WARNING("OpWhileLoop: tosa serialization handler must not be null");
+        return 1;
+    }
+
     if (getInputs().size() <= 0)
     {
         WARNING("OpWhileLoop: must have at least 1 operands");

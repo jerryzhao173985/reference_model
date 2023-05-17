@@ -264,6 +264,12 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
             status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
+        case TOSA_REF_TYPE_BOOL: {
+            auto typed_ptr     = reinterpret_cast<unsigned char*>(raw_ptr);
+            const int elements = size / sizeof(unsigned char);
+            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            break;
+        }
         default:
             status = 1;
     }
