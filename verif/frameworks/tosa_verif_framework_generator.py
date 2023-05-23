@@ -57,11 +57,12 @@ TYPE_FHIB = [tf.float32, tf.float16, tf.int32, tf.bool]
 #            be used to restrict an operator to a particular framework.
 #
 # And optional members:
-#   'template': boolean (indicates that this is a templated op which gets further
-#               processing in createDynamicOpLists)
-#   'bias':     boolean indicating that there is a bias component to be generated
-#   'qtypes':   List of QuantType quantized types to generate for this op
-#   'rank':     tuple (lowest rank, highest rank). Dimension range of input tensor.
+#   'template':      boolean (indicates that this is a templated op which gets further
+#                    processing in createDynamicOpLists)
+#   'bias':          boolean indicating that there is a bias component to be generated
+#   'qtypes':        List of QuantType quantized types to generate for this op
+#   'rank':          tuple (lowest rank, highest rank). Dimension range of input tensor.
+#   'custom_shapes': List of custom shapes for specific operators
 
 TF_OP_LIST = {
     "add": {
@@ -783,6 +784,10 @@ TF_OP_LIST = {
                 TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
             ),
         },
+        "custom_shapes": {
+            "custom_shape_only": False,
+            "shape_list": [(3, 1, 1, 7)],
+        },
     },
     "left_shift": {
         "operands": (1, 0),
@@ -1408,6 +1413,16 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
     )
     nonquantized_dtypes = list(nonquantized_dtypes_set)
     quantized_dtypes = tflite_quantized_dtypes
+
+    # append custom_shapes or replace shape_list with custom_shapes
+    try:
+        custom_shapes = op["custom_shapes"]
+        if custom_shapes["custom_shape_only"]:
+            shape_list = custom_shapes["shape_list"]
+        else:
+            shape_list.append(custom_shapes)
+    except KeyError:
+        pass
 
     # populate non quantized unit test arguments
     for dtype in nonquantized_dtypes:
