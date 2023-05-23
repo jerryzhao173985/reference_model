@@ -85,16 +85,27 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
 }
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-int BinaryNodeBase<Rank, InDtype, OutDtype>::broadcast()
+int BinaryNodeBase<Rank, InDtype, OutDtype>::broadcast(std::vector<int>& calculated_shape)
 {
     const std::vector<int>& a_shape      = a->getShape();
     const std::vector<int>& b_shape      = b->getShape();
     const std::vector<int>& output_shape = result->getShape();
 
+    // calculates the multipliers for Eigen
     for (int i = 0; i < Rank; i++)
     {
         bcast_a[i] = (a_shape[i] != output_shape[i] && a_shape[i] == 1) ? output_shape[i] : 1;
         bcast_b[i] = (b_shape[i] != output_shape[i] && b_shape[i] == 1) ? output_shape[i] : 1;
+    }
+
+    // calculates the broadcasted output shape
+    calculated_shape = a_shape;
+    for (size_t i = 0; i < calculated_shape.size(); i++) {
+        if (calculated_shape[i] == 1) {
+            calculated_shape[i] = b_shape[i];
+        } else {
+            ERROR_IF(b_shape[i] != 1 && b_shape[i] != calculated_shape[i], "Broadcast_shape failure, input shapes are not compatible");
+        }
     }
 
     return 0;
@@ -103,7 +114,11 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::broadcast()
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int BinaryNode<Rank, InDtype, OutDtype>::eval()
 {
-    this->broadcast();
+    std::vector<int> calculated_shape;
+    this->broadcast(calculated_shape);
+
+    auto result_shape = this->result->getShape();
+    ERROR_IF(calculated_shape != result_shape, "Broadcast_shape failure, calculated_shape and result_shape don't match");
 
     Eigen::array<int, Rank> reshaper;
     reshaper.fill(1);

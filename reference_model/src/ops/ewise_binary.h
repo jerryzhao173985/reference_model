@@ -55,7 +55,7 @@ public:
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    int broadcast();
+    int broadcast(std::vector<int>& calculated_shape);
 
 protected:
     std::function<OutEigenType(InEigenType, InEigenType)> fcn;

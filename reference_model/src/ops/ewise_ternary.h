@@ -63,7 +63,7 @@ public:
         : OpSelectBase<Rank, Dtype>(sgt_, attribute_, id_)
     {}
     virtual int eval();
-    int broadcast();
+    int broadcast(std::vector<int>& calculated_shape);
 
     using InEigenType = typename OpSelectBase<Rank, Dtype>::InEigenType;
 };
