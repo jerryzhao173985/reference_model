@@ -60,13 +60,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Common sources required for TOSA Reference Model library, executable and unit tests
 set(CXX_SOURCE
-    src/model_runner.cc
-    src/model_runner_impl.cc
-    src/tensor.cc
-    src/graph_node.cc
-    src/subgraph_traverser.cc
     src/func_debug.cc
+    src/graph_node.cc
+    src/model_runner_impl.cc
+    src/model_runner.cc
     src/operators.cc
+    src/subgraph_traverser.cc
+    src/tensor.cc
+    src/verify.cc
     src/ops/op_factory.cc
     src/ops/tensor_ops.cc
     src/ops/activation_funcs.cc
@@ -115,6 +116,7 @@ list(APPEND PUBLIC_HEADERS
     include/graph_status.h
     include/model_common.h
     include/model_runner.h
+    include/verify.h
     include/version.h
 )
 
@@ -162,6 +164,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   # Sources only required for unit tests.
   set(CXX_SOURCE_TESTS
       test/model_runner_tests.cpp
+      test/verify_tests.cpp
       ${DOCTEST_DIR}/doctest.h
   )
 
