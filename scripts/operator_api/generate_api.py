@@ -192,6 +192,18 @@ def getOperators(tosaXml):
             operator["serializeAttType"] = getSerializeOpType(opName)
             tosaArgs = getTosaArgs(opXml)
             serializeArgs = getSerializeArgsForOp(opName, allSerializeArgs, tosaArgs)
+            # Handle "axis" arguments
+            axisList = [arg["name"] for arg in tosaArgs if arg["name"] == "axis"]
+            if operator["serializeAttType"] == "None" and len(axisList) > 0:
+                operator["serializeAttType"] = "Axis"
+                serializeArgs = [
+                    {
+                        "name": "axis",
+                        "dType": "int32_t",
+                        "SV": "S",
+                        "init": "= client_axis",
+                    }
+                ]
             updateTosaArgs(tosaArgs, serializeArgs, tosaXml)
             operator["arguments"] = tosaArgs
             operator["serializeArgs"] = serializeArgs
