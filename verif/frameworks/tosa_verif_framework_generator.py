@@ -860,6 +860,13 @@ TF_OP_LIST = {
             "tflite": [tf.complex64],
         },
     },
+    "broadcastto": {
+        "operands": (1, 1),
+        "build_fcn": (TBuilder.BroadcastTo, TGen.tgBroadcastTo, ArgGen.agNone),
+        "types": {
+            "tf": TYPE_FIB,
+        },
+    },
 }
 
 # Shapes to be tested; default can be overwritten

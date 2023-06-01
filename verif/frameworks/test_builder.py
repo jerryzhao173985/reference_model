@@ -1239,3 +1239,11 @@ class TBuilder:
 
         def eval(self, a):
             return tf.math.imag(a, name=self.result_name)
+
+    class BroadcastTo:
+        def __init__(self, shape, name):
+            self.shape = shape
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.broadcast_to(a, shape=self.shape, name=self.result_name)
