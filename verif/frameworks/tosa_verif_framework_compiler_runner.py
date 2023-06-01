@@ -510,7 +510,8 @@ def run_test(args, test_path, framework):
     empty_graph = True
     with open(tosa_mlir_filename, "r") as f:
         for line in f:
-            if re.search('"tosa.*"', line):
+            # TOSA assembly instructions all start with `tosa.`
+            if re.search(r"tosa\.", line):
                 empty_graph = False
 
                 break
