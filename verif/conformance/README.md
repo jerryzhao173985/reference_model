@@ -1,0 +1,83 @@
+# Conformance
+
+This directory contains the scripts and data files to generate the conformance tests.
+
+The data files are in JSON format and they describe what tests to create and/or select from the `tosa_verif_build_tests` and `tosa_verif_framework_*` generator scripts.
+
+## JSON files
+
+### TOSA ops
+
+Naming: `tosa_PPP_profile_ops_info.json`
+
+Contains a dictionary of operator names.
+Where `PPP` is the profile subset of either `base` for all integer tests, or `main` for all floating point tests.
+
+Each operator entry contains:
+
+* "group" - name of the group this operator is in, in the spec
+* "profile" - list of profiles that this operator covers
+* "generation" - dictionary of test generation details - see below
+* "selection" - dictionary of test selection details - see below
+
+In the generation dictionary each entry is a name for a generation group -
+a set of tests generated together and then selected from using the selection
+criteria.
+
+Each generation group is a dictionary that contains:
+
+* "no_negative_tests" - optional "true" indicator that no negative tests are relevant/generated
+* "negative_dim_range" - optional range of dimensions for negative tests
+* "generator_args" - list of argument lists to supply to the `tosa_verif_build_tests` (see that tool for more details)
+* "selector" - optional name for the selection criteria to use for this generation group, if not supplied "default" will be used
+
+In the selection dictionary each entry is a name for a selection criteria - there must be one called "default" which is used by default. Others may exist and be used by the different generation groups.
+
+Each selection criteria is a dictionary that contains:
+
+* "all": "true" - to select all tests (and not use test_select)
+
+or (more information for each entry in `test_select.py`):
+
+* "params" - optional dictionary with mappings of parameter names to the values to select
+* "permutes" - optional list of parameter names to be permuted
+* "preselected" - optional list of dictionaries containing parameter names and pre-chosen values
+* "sparsity" - optional dictionary of parameter names with a sparsity value
+* "exclude_patterns" - optional list of regex's whereby each match will not be considered for selection. Exclusion happens BEFORE test selection (i.e.
+before permutes are applied)
+* "errorifs" - optional list of ERRORIF case names to be selected after exclusion (negative tests)
+
+### Framework ops
+
+NOTE: Currently assumed all framework ops will be TFLite.
+
+Naming: `tosa_PPP_profile_framework_ops_info.json`
+
+Contains a dictionary of operator names.
+Where `PPP` is the profile subset of either `base` for all integer tests, or `main` for all floating point tests.
+
+Each operator entry contains:
+
+* "tests" - list of tests to be part of conformance
+* "profile" - list of profiles that these tests cover
+* "alternate_names" - optional list of names that are used by the framework test generator and can be renamed to the operator name.
+
+Example:
+```
+    "average_pool_2d": {
+        "alternate_names": [
+            "avg_pool2d"
+        ],
+        "tests": [
+            "average_pool_2d_1x4x4x4_qi8_st11_padSAME_kern11",
+            "average_pool_2d_1x4x8x19_qi16_st21_padSAME_kern22",
+            "average_pool_2d_1x7x7x9_qi8_st22_padSAME_kern11",
+            "average_pool_2d_1x32x32x8_qu8_st12_padVALID_kern12",
+            "average_pool_2d_1x8x4x17_qu8_st21_padVALID_kern21"
+        ],
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ]
+    },
+```
