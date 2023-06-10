@@ -2925,5 +2925,70 @@
                 ]
             }
         }
+    },
+    "erf": {
+        "group": "activation",
+        "profile": [
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--tensor-dim-range",
+                        "18,60",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--tensor-dim-range",
+                        "1,24",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--target-shape",
+                        "1,65535,2,1,1",
+                        "--target-shape",
+                        "1,65540,1,2"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
     }
 }

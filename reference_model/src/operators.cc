@@ -580,6 +580,37 @@ extern "C"
         return tosa_status_valid;
     }
 
+    tosa_status_t tosa_run_erf(tosa_tensor_t client_input, tosa_tensor_t client_output)
+    {
+        // Create operator attributes
+        TosaNoneAttribute attr;
+
+        // Create tensors
+        tosa::TosaSerializationTensor* input = translate_client_tensor(client_input, "input");
+        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+
+        // Create operator
+        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ERF, tosa::Attribute::Attribute_NONE, &attr,
+                                                      { input->GetName() }, { output->GetName() });
+
+        // Create a tosa single-op basic block
+        tosa::TosaSerializationBasicBlock block("erf", "main", { op }, { input, output }, { input->GetName() },
+                                                { output->GetName() });
+
+        // Setup model
+        TosaReference::ModelRunnerImpl runner;
+        TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
+        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        // Execute
+        TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
+
+        // Extract outputs
+        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+
+        return tosa_status_valid;
+    }
+
     tosa_status_t tosa_run_add(tosa_tensor_t client_input1, tosa_tensor_t client_input2, tosa_tensor_t client_output)
     {
         // Create operator attributes

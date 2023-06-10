@@ -85,6 +85,16 @@
             "tosa-mi"
         ]
     },
+    "erf": {
+        "tests": [
+            "erf_13x21x3_qu8",
+            "erf_14x19_qi8",
+            "erf_1x8x4x17_qi16"
+        ],
+        "profile": [
+            "tosa-mi"
+        ]
+    },
     "fully_connected": {
         "alternate_names": [
             "matmul"
@@ -257,7 +267,6 @@
             "tanh_1x8x4x17_qi16"
         ],
         "profile": [
-            "tosa-bi",
             "tosa-mi"
         ]
     }

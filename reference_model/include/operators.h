@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -149,6 +149,8 @@ extern "C"
     tosa_status_t tosa_run_sigmoid(tosa_tensor_t client_input, tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_tanh(tosa_tensor_t client_input, tosa_tensor_t client_output);
+
+    tosa_status_t tosa_run_erf(tosa_tensor_t client_input, tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_add(tosa_tensor_t client_input1, tosa_tensor_t client_input2, tosa_tensor_t client_output);
 

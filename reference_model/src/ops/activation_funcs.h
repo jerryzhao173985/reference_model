@@ -77,6 +77,20 @@ public:
     virtual int register_fcn();
 };
 
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpErf : public UnaryNode<Rank, Dtype>
+{
+public:
+    OpErf(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : UnaryNode<Rank, Dtype>(sgt_, Op_ERF, id_)
+    {
+        register_fcn();
+    }
+    using InEigenType             = typename GetEigenType<Dtype>::type;
+    using OutEigenType            = typename GetEigenType<Dtype>::type;
+    virtual int register_fcn();
+};
+
 };    // namespace TosaReference
 
 #endif

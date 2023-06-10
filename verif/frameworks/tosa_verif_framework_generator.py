@@ -338,6 +338,13 @@ TF_OP_LIST = {
             ),
         },
     },
+    "erf": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.Erf, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": TYPE_F,
+        },
+    },
     "sin": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Sin, TGen.tgBasic, ArgGen.agNone),

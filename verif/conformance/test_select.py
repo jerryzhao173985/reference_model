@@ -518,6 +518,12 @@ class ExpOperator(Operator):
     name = "exp"
 
 
+class ErfOperator(Operator):
+    """Test selector for the ERF operator."""
+
+    name = "erf"
+
+
 class FFT2DOperator(Operator):
     """Test selector for the FFT2D operator."""
 

@@ -161,6 +161,12 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FP32);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpTanh, FP64);
             break;
+        case Op_ERF:
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpErf, FP16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpErf, BF16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpErf, FP32);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpErf, FP64);
+            break;
 
         // ewise_binary
         case Op_ADD:

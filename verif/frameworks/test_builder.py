@@ -348,6 +348,15 @@ class TBuilder:
         def eval(self, a):
             return tf.math.tanh(a, name=self.result_name)
 
+    class Erf:
+        # tfl.ops cannot be generated right now.
+        # https://github.com/tensorflow/tensorflow/issues/60809
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a):
+            return tf.math.erf(a, name=self.result_name)
+
     class Sin:
         def __init__(self, name):
             self.result_name = name

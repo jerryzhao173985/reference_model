@@ -1177,6 +1177,37 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list)
         return result_tens
 
+    def build_erf(self, op, a, validator_fcns=None, error_name=None):
+        result_tens = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
+
+        # Invalidate Input/Output list for error if checks.
+        input_list = [a.name]
+        output_list = [result_tens.name]
+        pCount, cCount = op["operands"]
+        num_operands = pCount + cCount
+        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
+            self, error_name, input_list, output_list
+        )
+
+        if not TosaErrorValidator.evValidateErrorIfs(
+            self.ser,
+            validator_fcns,
+            error_name,
+            op=op,
+            input_shape=a.shape,
+            output_shape=result_tens.shape,
+            input_dtype=a.dtype,
+            output_dtype=result_tens.dtype,
+            result_tensors=[result_tens],
+            input_list=input_list,
+            output_list=output_list,
+            num_operands=num_operands,
+        ):
+            return None
+
+        self.ser.addOperator(op["op"], input_list, output_list)
+        return result_tens
+
     def build_concat(self, op, *a, validator_fcns=None, error_name=None):
         if error_name != ErrorIf.WrongInputType:
             assert type(a[-1]) == int
@@ -2895,6 +2926,23 @@ class TosaTestGen:
             "operands": (1, 0),
             "build_fcn": (
                 build_tanh,
+                TosaTensorGen.tgBasic,
+                TosaTensorValuesGen.tvgDefault,
+                None,
+            ),
+            "types": TYPE_FP,
+            "error_if_validators": (
+                TosaErrorValidator.evWrongInputType,
+                TosaErrorValidator.evWrongOutputType,
+                TosaErrorValidator.evWrongInputList,
+                TosaErrorValidator.evWrongOutputList,
+            ),
+        },
+        "erf": {
+            "op": Op.ERF,
+            "operands": (1, 0),
+            "build_fcn": (
+                build_erf,
                 TosaTensorGen.tgBasic,
                 TosaTensorValuesGen.tvgDefault,
                 None,
