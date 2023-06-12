@@ -1420,7 +1420,8 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
         if custom_shapes["custom_shape_only"]:
             shape_list = custom_shapes["shape_list"]
         else:
-            shape_list.append(custom_shapes)
+            shape_list = shape_list.copy()
+            shape_list.append(custom_shapes["shape_list"])
     except KeyError:
         pass
 
