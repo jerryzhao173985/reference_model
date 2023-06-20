@@ -64,7 +64,7 @@ bool tosa_validate_output_error(double err_sum, double err_sum_sq, size_t T, siz
 /// \param S Test set used as a input/weight generator
 ///
 /// \return True if the error is within margin else false
-bool tosa_validate_data_fp32(double* ref, double* bnd, float* imp, size_t T, size_t KS, int S);
+bool tosa_validate_data_fp32(const double* ref, const double* bnd, const float* imp, size_t T, size_t KS, int S);
 
 #ifdef __cplusplus
 }

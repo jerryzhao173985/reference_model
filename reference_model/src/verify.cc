@@ -74,7 +74,7 @@ std::optional<double> validate_element(double ref, double bnd, AccType imp, size
 
 // Generic data validation function
 template <typename AccType, typename std::enable_if_t<std::is_floating_point_v<AccType>, int> = 0>
-bool validate_data(double* ref, double* bnd, AccType* imp, size_t T, size_t KS, int32_t S)
+bool validate_data(const double* ref, const double* bnd, const AccType* imp, size_t T, size_t KS, int32_t S)
 {
     double out_err_sum   = 0.0;
     double out_err_sumsq = 0.0;
@@ -121,7 +121,7 @@ bool tosa_validate_output_error(double err_sum, double err_sum_sq, size_t T, siz
     return true;
 }
 
-bool tosa_validate_data_fp32(double* ref, double* bnd, float* imp, size_t T, size_t KS, int S)
+bool tosa_validate_data_fp32(const double* ref, const double* bnd, const float* imp, size_t T, size_t KS, int S)
 {
     return validate_data<float>(ref, bnd, imp, T, KS, S);
 }
