@@ -16,7 +16,15 @@ def getTosaArgTypes(tosaXml):
     """
     Returns a list of the TOSA argument types from tosa.xml.
     """
-    argTypes = {"in_t", "out_t", "mul_t", "weight_t", "in_out_t"}
+    argTypes = {
+        "tensor_t",
+        "in_t",
+        "out_t",
+        "mul_t",
+        "weight_t",
+        "in_out_t",
+        "tensor_list_t",
+    }
     argTypesXml = tosaXml.getElementsByTagName("type")
     for argTypeXml in argTypesXml:
         argTypes.add(argTypeXml.getAttribute("name"))
@@ -182,7 +190,7 @@ def getOperators(tosaXml):
     Return a list of TOSA operators as defined by tosa.xml.
     """
     operators = []
-    ignoreOps = ["while_loop", "cond_if", "const", "custom", "fft2d", "rfft2d"]
+    ignoreOps = ["while_loop", "cond_if", "const", "custom", "fft2d", "rfft2d", "erf"]
     opsXml = tosaXml.getElementsByTagName("operator")
     allSerializeArgs = getSerializeArgs()
     for opXml in opsXml:
@@ -227,7 +235,10 @@ def getTosaArgs(opXml):
     tosaTypeMap = {"bool_t": "bool", "uint6_t": "uint8_t", "mode_t": "tosa_mode_t"}
     for xmlArg in argsXml:
         argName = xmlArg.getAttribute("name").lower()
-        argType = xmlArg.getAttribute("type")
+        if xmlArg.getAttribute("tensor-element-type") == "resize_mode_t":
+            argType = "tosa_mode_t"
+        else:
+            argType = xmlArg.getAttribute("type")
         argShape = xmlArg.getAttribute("shape")
         argCategory = xmlArg.getAttribute("category")
         # Update argument type

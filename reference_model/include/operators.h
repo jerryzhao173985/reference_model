@@ -130,9 +130,7 @@ extern "C"
     tosa_status_t tosa_run_transpose_conv2d(tosa_tensor_t client_input,
                                             tosa_tensor_t client_weight,
                                             tosa_tensor_t client_bias,
-                                            const int32_t client_out_pad[4],
                                             const int32_t client_stride[2],
-                                            const int32_t client_out_shape[4],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
                                             const int32_t client_pad_len,
@@ -196,7 +194,7 @@ extern "C"
 
     tosa_status_t tosa_run_mul(tosa_tensor_t client_input1,
                                tosa_tensor_t client_input2,
-                               const uint8_t client_shift,
+                               const int32_t client_shift,
                                tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_pow(tosa_tensor_t client_input1, tosa_tensor_t client_input2, tosa_tensor_t client_output);
@@ -288,8 +286,6 @@ extern "C"
                                  tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_tile(tosa_tensor_t client_input1,
-                                const int32_t client_multiplies_len,
-                                const int32_t client_multiplies[],
                                 const int32_t client_multiples_len,
                                 const int32_t client_multiples[],
                                 tosa_tensor_t client_output);
@@ -323,7 +319,7 @@ extern "C"
                                    const int32_t client_multiplier_len,
                                    const int32_t client_multiplier[],
                                    const int32_t client_shift_len,
-                                   const uint8_t client_shift[],
+                                   const int32_t client_shift[],
                                    const bool client_scale32,
                                    const bool client_double_round,
                                    const bool client_per_channel);
