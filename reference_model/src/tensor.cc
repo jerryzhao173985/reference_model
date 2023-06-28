@@ -319,7 +319,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
     int32_t* i32databuf = nullptr;
     int64_t* i64databuf = nullptr;
     bool* bdatabuf      = nullptr;
-    NumpyUtilities::NPError nperror;
+    NumpyUtilities::NPError nperror = NumpyUtilities::NO_ERROR;
     uint32_t elements = getElementCount();
     const TOSA_REF_TYPE dtype = getDtype();
 

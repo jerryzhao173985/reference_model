@@ -75,6 +75,7 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
             return "FP64";
         default:
             assert(false);
+            return "ERROR";
     }
 }
 
