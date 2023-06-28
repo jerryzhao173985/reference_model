@@ -327,21 +327,21 @@ int OpLogicalRightShift<Rank, Dtype>::register_fcn()
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
                 REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
                 (int32_t)b);
-                return static_cast<OutEigenType>(static_cast<int8_t>(a) >> b);
+                return static_cast<OutEigenType>(static_cast<int8_t>(static_cast<uint8_t>(a) >> b));
             };
             break;
         case DType_INT16:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
                 REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
                 (int32_t)b);
-                return static_cast<OutEigenType>(static_cast<int16_t>(a) >> b);
+                return static_cast<OutEigenType>(static_cast<int16_t>(static_cast<uint16_t>(a) >> b));
             };
             break;
         case DType_INT32:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
                 REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
                 (int32_t)b);
-                return static_cast<OutEigenType>(static_cast<int32_t>(a) >> b);
+                return static_cast<OutEigenType>(static_cast<int32_t>(static_cast<uint32_t>(a) >> b));
             };
             break;
         default:
