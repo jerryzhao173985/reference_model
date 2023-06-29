@@ -369,7 +369,10 @@ TF_OP_LIST = {
     "squared_difference": {
         "operands": (2, 0),
         "build_fcn": (TBuilder.SquaredDifference, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_F,
+        "types": {
+            "tf": TYPE_F,
+            "tflite": list(TYPE_FI + [QuantType.ALL_I8]),
+        },
     },
     "equal": {
         "operands": (2, 0),
@@ -1119,7 +1122,12 @@ def run_unit_test(
                     max_val = float(qmax - qzero[idx]) * scale
                 else:
                     scale = (max_val - min_val) / float(qmax - qmin)
-                    zeropoint = int(round((-min_val) / scale)) + qmin
+                    zeropoint = -int(round((-min_val) / scale)) + qmin
+
+                # Exit if min_val <= 0.0, in order to avoid assertion error
+                # from tf.quantization.fake_quant_with_min_max_args
+                if min_val > 0.0:
+                    return True
 
                 # run through tf.fakequant first to assure quantization error aligned
                 fakequant_val = tf.quantization.fake_quant_with_min_max_args(
