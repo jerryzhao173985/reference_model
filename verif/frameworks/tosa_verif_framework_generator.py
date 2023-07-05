@@ -1130,17 +1130,15 @@ def run_unit_test(
                     name="gen_quant_npy",
                 )
 
-                quant_val = np.round(fakequant_val / scale).astype(np.int32) + zeropoint
+                quant_val = np.round(fakequant_val / scale) + zeropoint
 
                 # very few unit tests after TF hash may/2020, this quantized
                 # value for some reason exceed [0, 255] range
                 saved_val = np.clip(quant_val, qmin, qmax).astype(numpy_dtype[idx])
 
-                # saved all quantized tensor as np.int32
-                # since TOSA numpy Cpp API only supports int32
                 np.save(
                     os.path.join(test_dir, placeholder_npy_filenames[idx]),
-                    saved_val.astype(np.int32),
+                    saved_val,
                     False,
                 )
 
