@@ -420,7 +420,7 @@ int SubgraphTraverser::allocateTensor()
 
         if (!ts->GetData().empty())
         {
-            DEBUG_INFO(GT, "Allocating tensor %s", tensor->getName().c_str());
+            DEBUG_INFO(GT, "Setting data for tensor %s", tensor->getName().c_str());
             auto serialization_dtype = ts->GetDtype();
             switch (serialization_dtype)
             {

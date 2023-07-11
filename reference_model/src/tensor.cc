@@ -2605,382 +2605,69 @@ int TosaReference::Tensor6<bool>::getTensorValueBool(const size_t bufLen, bool* 
     return 0;
 }
 
-template <>
-int TosaReference::Tensor0<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor0<double>();
+#define TOSAREF_ZERORANK_TENSOR_ALLOCATE(dtype)                                                                        \
+    template <>                                                                                                        \
+    int TosaReference::Tensor0<dtype>::allocate()                                                                      \
+    {                                                                                                                  \
+        ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");                                          \
+        tensor = new ETensor0<dtype>();                                                                                \
+                                                                                                                       \
+        if (tensor)                                                                                                    \
+            return 0;                                                                                                  \
+        else                                                                                                           \
+            return 1;                                                                                                  \
+    }
 
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor1<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor1<double>(shape[0]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor2<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor2<double>(shape[0], shape[1]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
+#define TOSAREF_TENSOR_ALLOCATE(rank, dtype)                                                                           \
+    template <>                                                                                                        \
+    int TosaReference::Tensor##rank<dtype>::allocate()                                                                 \
+    {                                                                                                                  \
+        ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");                                          \
+        std::array<Eigen::DenseIndex, rank> arrshape;                                                                  \
+        std::copy_n(shape.begin(), rank, arrshape.begin());                                                            \
+        tensor = new ETensor##rank<dtype>(arrshape);                                                                   \
+                                                                                                                       \
+        if (tensor)                                                                                                    \
+            return 0;                                                                                                  \
+        else                                                                                                           \
+            return 1;                                                                                                  \
+    }
 
-template <>
-int TosaReference::Tensor3<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor3<double>(shape[0], shape[1], shape[2]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor4<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor4<double>(shape[0], shape[1], shape[2], shape[3]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor5<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor5<double>(shape[0], shape[1], shape[2], shape[3], shape[4]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor6<double>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor6<double>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor0<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor0<float>();
-
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor1<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor1<float>(shape[0]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor2<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor2<float>(shape[0], shape[1]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor3<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor3<float>(shape[0], shape[1], shape[2]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor4<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor4<float>(shape[0], shape[1], shape[2], shape[3]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor5<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor5<float>(shape[0], shape[1], shape[2], shape[3], shape[4]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor6<float>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor6<float>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor0<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor0<int32_t>();
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor1<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor1<int32_t>(shape[0]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor2<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor2<int32_t>(shape[0], shape[1]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor3<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor3<int32_t>(shape[0], shape[1], shape[2]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor4<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor4<int32_t>(shape[0], shape[1], shape[2], shape[3]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor5<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor5<int32_t>(shape[0], shape[1], shape[2], shape[3], shape[4]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor6<int32_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor6<int32_t>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor0<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor0<int64_t>();
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor1<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor1<int64_t>(shape[0]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor2<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor2<int64_t>(shape[0], shape[1]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor3<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor3<int64_t>(shape[0], shape[1], shape[2]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor4<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor4<int64_t>(shape[0], shape[1], shape[2], shape[3]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor5<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor5<int64_t>(shape[0], shape[1], shape[2], shape[3], shape[4]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor6<int64_t>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor6<int64_t>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor0<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor0<bool>();
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor1<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor1<bool>(shape[0]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-template <>
-int TosaReference::Tensor2<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor2<bool>(shape[0], shape[1]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor3<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor3<bool>(shape[0], shape[1], shape[2]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor4<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor4<bool>(shape[0], shape[1], shape[2], shape[3]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor5<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor5<bool>(shape[0], shape[1], shape[2], shape[3], shape[4]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
-
-template <>
-int TosaReference::Tensor6<bool>::allocate()
-{
-    ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");
-    tensor = new ETensor6<bool>(shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
-    if (tensor)
-        return 0;
-    else
-        return 1;
-}
+TOSAREF_ZERORANK_TENSOR_ALLOCATE(double)
+TOSAREF_TENSOR_ALLOCATE(1, double)
+TOSAREF_TENSOR_ALLOCATE(2, double)
+TOSAREF_TENSOR_ALLOCATE(3, double)
+TOSAREF_TENSOR_ALLOCATE(4, double)
+TOSAREF_TENSOR_ALLOCATE(5, double)
+TOSAREF_TENSOR_ALLOCATE(6, double)
+TOSAREF_ZERORANK_TENSOR_ALLOCATE(float)
+TOSAREF_TENSOR_ALLOCATE(1, float)
+TOSAREF_TENSOR_ALLOCATE(2, float)
+TOSAREF_TENSOR_ALLOCATE(3, float)
+TOSAREF_TENSOR_ALLOCATE(4, float)
+TOSAREF_TENSOR_ALLOCATE(5, float)
+TOSAREF_TENSOR_ALLOCATE(6, float)
+TOSAREF_ZERORANK_TENSOR_ALLOCATE(int32_t)
+TOSAREF_TENSOR_ALLOCATE(1, int32_t)
+TOSAREF_TENSOR_ALLOCATE(2, int32_t)
+TOSAREF_TENSOR_ALLOCATE(3, int32_t)
+TOSAREF_TENSOR_ALLOCATE(4, int32_t)
+TOSAREF_TENSOR_ALLOCATE(5, int32_t)
+TOSAREF_TENSOR_ALLOCATE(6, int32_t)
+TOSAREF_ZERORANK_TENSOR_ALLOCATE(int64_t)
+TOSAREF_TENSOR_ALLOCATE(1, int64_t)
+TOSAREF_TENSOR_ALLOCATE(2, int64_t)
+TOSAREF_TENSOR_ALLOCATE(3, int64_t)
+TOSAREF_TENSOR_ALLOCATE(4, int64_t)
+TOSAREF_TENSOR_ALLOCATE(5, int64_t)
+TOSAREF_TENSOR_ALLOCATE(6, int64_t)
+TOSAREF_ZERORANK_TENSOR_ALLOCATE(bool)
+TOSAREF_TENSOR_ALLOCATE(1, bool)
+TOSAREF_TENSOR_ALLOCATE(2, bool)
+TOSAREF_TENSOR_ALLOCATE(3, bool)
+TOSAREF_TENSOR_ALLOCATE(4, bool)
+TOSAREF_TENSOR_ALLOCATE(5, bool)
+TOSAREF_TENSOR_ALLOCATE(6, bool)
 
 template <>
 int TosaReference::Tensor0<double>::dumpTensor(FILE* out) const

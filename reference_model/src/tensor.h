@@ -324,6 +324,7 @@ public:
     {
         if (tensor)
         {
+            DEBUG_INFO(GT, "Deallocating tensor %s", tensorName.c_str());
             delete tensor;
         }
         tensor = nullptr;
