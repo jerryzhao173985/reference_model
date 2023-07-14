@@ -46,12 +46,28 @@ tosa::DType translate_client_datatype(tosa_datatype_t type)
 {
     switch (type)
     {
+        case tosa_datatype_bf16_t:
+            return tosa::DType::DType_BF16;
+        case tosa_datatype_bool_t:
+            return tosa::DType::DType_BOOL;
         case tosa_datatype_fp16_t:
             return tosa::DType::DType_FP16;
         case tosa_datatype_fp32_t:
             return tosa::DType::DType_FP32;
-        case tosa_datatype_bool_t:
-            return tosa::DType::DType_BOOL;
+        case tosa_datatype_int16_t:
+            return tosa::DType::DType_INT16;
+        case tosa_datatype_int32_t:
+            return tosa::DType::DType_INT32;
+        case tosa_datatype_int48_t:
+            return tosa::DType::DType_INT48;
+        case tosa_datatype_int4_t:
+            return tosa::DType::DType_INT4;
+        case tosa_datatype_int8_t:
+            return tosa::DType::DType_INT8;
+        case tosa_datatype_uint16_t:
+            return tosa::DType::DType_UINT16;
+        case tosa_datatype_uint8_t:
+            return tosa::DType::DType_UINT8;
         default:
             return tosa::DType::DType_UNKNOWN;
     }
