@@ -197,7 +197,7 @@ This executable can be run using
 
 The debugging facility can be enabled by setting a debug scope and
 debug level on the command line.  For most purposes, the following
-flags will work: `-dALL -lHIGH`.  Debug output can be directed to a
+flags will work: `-d ALL -l HIGH`.  Debug output can be directed to a
 file using the `-o` switch.
 
 ## TOSA Unit Test Infrastructure
@@ -521,5 +521,4 @@ make
 
 The *TOSA Reference Model* and TOSA Unit Tests are licensed under Apache-2.0.
 
-Copyright (c) 2020-2022 Arm Limited.
-
+Copyright (c) 2020-2023 Arm Limited.
