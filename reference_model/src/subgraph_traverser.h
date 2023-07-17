@@ -49,7 +49,8 @@ public:
 
     int linkTensorsAndNodes();
     int validateGraph();
-    int allocateTensor();
+    int allocateInputTensors();
+    int allocateTensor(std::string name);
 
     int dumpGraph(FILE* out) const;
     int dumpNextNodeList(FILE* out) const;

@@ -43,7 +43,8 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     ERROR_IF(block_sgt.linkTensorsAndNodes(), "evalBlock(): Failed to link tensors and nodes for %s",
              block_name.c_str());
     ERROR_IF(block_sgt.validateGraph(), "evalBlock(): Failed to validate subgraph for %s", block_name.c_str());
-    ERROR_IF(block_sgt.allocateTensor(), "evalBlock(): Failed to allocate tensor for %s", block_name.c_str());
+    ERROR_IF(block_sgt.allocateInputTensors(), "evalBlock(): Failed to allocate input tensors for %s",
+             block_name.c_str());
 
     int num_input_tensors  = block_sgt.getNumInputTensors();
     int num_output_tensors = block_sgt.getNumOutputTensors();

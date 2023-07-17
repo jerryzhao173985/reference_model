@@ -109,9 +109,9 @@ int main(int argc, char** argv)
             goto done;
         }
 
-        if (main_gt.allocateTensor())
+        if (main_gt.allocateInputTensors())
         {
-            WARNING("Failed to allocate tensor. Evaluation aborted.");
+            WARNING("Failed to allocate input tensors. Evaluation aborted.");
             goto done;
         }
 

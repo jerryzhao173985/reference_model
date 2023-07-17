@@ -327,9 +327,9 @@ GraphStatus ModelRunnerImpl::initialize(TosaSerializationBasicBlock* bb,
         return _main_gt->getGraphStatus();
     }
 
-    if (_main_gt->allocateTensor())
+    if (_main_gt->allocateInputTensors())
     {
-        WARNING("Failed to allocate tensor.");
+        WARNING("Failed to allocate input tensors.");
         return _main_gt->getGraphStatus();
     }
 
