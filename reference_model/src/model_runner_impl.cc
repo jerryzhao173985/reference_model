@@ -20,11 +20,10 @@ using namespace TosaReference;
 ModelRunnerImpl::ModelRunnerImpl()
 {}
 
-ModelRunnerImpl::ModelRunnerImpl(const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+ModelRunnerImpl::ModelRunnerImpl(const func_config_t& func_config, const func_debug_t& func_debug)
 {
     g_func_config = func_config;
-    g_func_debug = func_debug;
+    g_func_debug  = func_debug;
 }
 
 ModelRunnerImpl::~ModelRunnerImpl()
@@ -339,10 +338,8 @@ GraphStatus ModelRunnerImpl::initialize(TosaSerializationBasicBlock* bb,
 
 void ModelRunnerImpl::validateTosaVersion(TosaSerializationHandler& serialization_handler)
 {
-    TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR,
-                              TOSA_REFERENCE_MODEL_VERSION_MINOR,
-                              TOSA_REFERENCE_MODEL_VERSION_PATCH,
-                              TOSA_REFERENCE_MODEL_VERSION_DRAFT);
+    TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR, TOSA_REFERENCE_MODEL_VERSION_MINOR,
+                              TOSA_REFERENCE_MODEL_VERSION_PATCH, TOSA_REFERENCE_MODEL_VERSION_DRAFT);
 
     TosaVersion::compat_t is_compat = model_version.is_compatible(serialization_handler.GetVersion());
     switch (is_compat)

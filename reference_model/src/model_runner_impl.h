@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 #ifndef MODEL_RUNNER_IMPL_H_
 #define MODEL_RUNNER_IMPL_H_
 
-#include "model_runner.h"
 #include "graph_status.h"
+#include "model_runner.h"
 #include "version.h"
 
 #include "array_proxy.h"

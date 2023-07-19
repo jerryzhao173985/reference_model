@@ -14,9 +14,9 @@
 //    limitations under the License.
 
 #include "tensor_ops.h"
+#include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
-#include "half.hpp"
 
 using namespace TosaReference;
 using namespace Eigen;
@@ -96,19 +96,16 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
     int32_t full_H = IH + pad_top + pad_bottom - kernel_y;
     int32_t full_W = IW + pad_left + pad_right - kernel_x;
 
-    if ((full_H % stride_y != 0) ||
-        (full_W % stride_x != 0))
+    if ((full_H % stride_y != 0) || (full_W % stride_x != 0))
     {
         msg = "Parameters must yield exact integer output dimensions";
         return 1;
     }
 
-    if ((OH != (full_H / stride_y) + 1) ||
-        (OW != (full_W / stride_x) + 1))
+    if ((OH != (full_H / stride_y) + 1) || (OW != (full_W / stride_x) + 1))
     {
         msg = "Mismatch between output shape provided and expected output shape (" +
-            std::to_string((full_H / stride_y) + 1) + "," +
-            std::to_string((full_W / stride_x) + 1) + ")";
+              std::to_string((full_H / stride_y) + 1) + "," + std::to_string((full_W / stride_x) + 1) + ")";
         return 1;
     }
 
@@ -173,19 +170,19 @@ int check_conv_attribute(tosa::TosaConvAttribute* attribute,
     ASSERT_MSG(conv_dimension == 2 || conv_dimension == 3, "Unsupported convolution dimension")
 
     int32_t offset_d = conv_dimension == 3 ? 1 : 0;
-    int32_t ID = conv_dimension == 3 ? input_shape[1] : 1;
-    int32_t IH = input_shape[1 + offset_d];
-    int32_t IW = input_shape[2 + offset_d];
-    int32_t OD = conv_dimension == 3 ? output_shape[1] : 1;
-    int32_t OH = output_shape[1 + offset_d];
-    int32_t OW = output_shape[2 + offset_d];
+    int32_t ID       = conv_dimension == 3 ? input_shape[1] : 1;
+    int32_t IH       = input_shape[1 + offset_d];
+    int32_t IW       = input_shape[2 + offset_d];
+    int32_t OD       = conv_dimension == 3 ? output_shape[1] : 1;
+    int32_t OH       = output_shape[1 + offset_d];
+    int32_t OW       = output_shape[2 + offset_d];
 
-    int32_t stride_d = conv_dimension == 3 ? attribute->stride()[0] : 1;
-    int32_t stride_y = attribute->stride()[0 + offset_d];
-    int32_t stride_x = attribute->stride()[1 + offset_d];
-    int32_t kernel_d = conv_dimension == 3 ? weights[offset_kernel] : 1;
-    int32_t kernel_h = weights[offset_kernel + offset_d];
-    int32_t kernel_w = weights[offset_kernel + 1 + offset_d];
+    int32_t stride_d   = conv_dimension == 3 ? attribute->stride()[0] : 1;
+    int32_t stride_y   = attribute->stride()[0 + offset_d];
+    int32_t stride_x   = attribute->stride()[1 + offset_d];
+    int32_t kernel_d   = conv_dimension == 3 ? weights[offset_kernel] : 1;
+    int32_t kernel_h   = weights[offset_kernel + offset_d];
+    int32_t kernel_w   = weights[offset_kernel + 1 + offset_d];
     int32_t dilation_d = conv_dimension == 3 ? attribute->dilation()[0] : 1;
     int32_t dilation_y = attribute->dilation()[0 + offset_d];
     int32_t dilation_x = attribute->dilation()[1 + offset_d];
@@ -202,27 +199,21 @@ int check_conv_attribute(tosa::TosaConvAttribute* attribute,
     int32_t full_H = IH - 1 + pad_top + pad_bottom - (kernel_h - 1) * dilation_y;
     int32_t full_W = IW - 1 + pad_left + pad_right - (kernel_w - 1) * dilation_x;
 
-    if ((full_H % stride_y != 0) ||
-        (full_W % stride_x != 0) ||
-        (full_D % stride_d != 0))
+    if ((full_H % stride_y != 0) || (full_W % stride_x != 0) || (full_D % stride_d != 0))
     {
         msg = "Parameters must yield exact integer output dimensions";
         return 1;
     }
 
-    if ((OH != (full_H / stride_y) + 1) ||
-        (OW != (full_W / stride_x) + 1) ||
-        (OD != (full_D / stride_d) + 1))
+    if ((OH != (full_H / stride_y) + 1) || (OW != (full_W / stride_x) + 1) || (OD != (full_D / stride_d) + 1))
     {
         std::string msg_d = "";
         if (conv_dimension == 3)
         {
             msg_d += std::to_string((full_D / stride_d) + 1) + ",";
         }
-        msg = "Mismatch between output shape provided and expected output shape (" +
-            msg_d +
-            std::to_string((full_H / stride_y) + 1) + "," +
-            std::to_string((full_W / stride_x) + 1) + ")";
+        msg = "Mismatch between output shape provided and expected output shape (" + msg_d +
+              std::to_string((full_H / stride_y) + 1) + "," + std::to_string((full_W / stride_x) + 1) + ")";
         return 1;
     }
 
@@ -244,12 +235,10 @@ int check_fft_shape(const std::vector<int32_t>& in_real,
                     const std::vector<int32_t>& in_imag,
                     const std::vector<int32_t>& out_real,
                     const std::vector<int32_t>& out_imag,
-                    std::string& msg) {
-    const bool is_rfft = in_imag.empty();
-    auto is_power_of_two = [](int32_t n) -> bool
-    {
-        return (n & (n-1)) == 0 && n > 0;
-    };
+                    std::string& msg)
+{
+    const bool is_rfft   = in_imag.empty();
+    auto is_power_of_two = [](int32_t n) -> bool { return (n & (n - 1)) == 0 && n > 0; };
 
     if (!is_power_of_two(in_real[1]) || !is_power_of_two(in_real[2]))
     {
@@ -309,7 +298,9 @@ int check_fft_shape(const std::vector<int32_t>& in_real,
             msg = "Output width is expected to match input width / 2 + 1";
             return 1;
         }
-    } else {
+    }
+    else
+    {
         if (in_real[2] != out_real[2])
         {
             msg = "Input and output width don't match";
@@ -321,9 +312,7 @@ int check_fft_shape(const std::vector<int32_t>& in_real,
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_,
-                                TosaAttributeBase* attribute_,
-                                uint64_t id_)
+OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_ARGMAX, id_)
 {
     setRequiredOperands(1, 1);
@@ -417,9 +406,7 @@ int OpArgMax<Rank, Dtype>::eval()
 }
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
-OpAvgPool2d<Dtype, AccDtype>::OpAvgPool2d(SubgraphTraverser* sgt_,
-                                TosaAttributeBase* attribute_,
-                                uint64_t id_)
+OpAvgPool2d<Dtype, AccDtype>::OpAvgPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_AVG_POOL2D, id_)
 {
     setRequiredOperands(1, 1);
@@ -485,7 +472,8 @@ ETensor1<int32_t> OpAvgPool2d<Dtype, AccDtype>::calculate_div_map_1d(
     // adjust divisors on the left side for padding
     // We start at the leftmost output element, and remove pad_left - (index * stride) elements
     // until we have no more padding being used
-    for(int index = 0; (index <= pad_left / stride) && (index < out_size); index++) {
+    for (int index = 0; (index <= pad_left / stride) && (index < out_size); index++)
+    {
         int32_t adjust = pad_left - (index * stride);
         result(index) -= adjust;
     }
@@ -495,7 +483,8 @@ ETensor1<int32_t> OpAvgPool2d<Dtype, AccDtype>::calculate_div_map_1d(
     // padding is defined in the initialization of index below. Then we keep moving
     // to the right, increasing padding until we get to the last output element.
     int index = std::max(0, ((pad_left + in_size - kernel_size) / stride) + 1);
-    for (; index < out_size; index++) {
+    for (; index < out_size; index++)
+    {
         int32_t adjust = ((index * stride) + kernel_size) - (pad_left + in_size);
         result(index) -= adjust;
     }
@@ -524,10 +513,10 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     int pad_bottom = this->attribute->pad()[1];
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
-    int kernel_y       = this->attribute->kernel()[0];
-    int kernel_x       = this->attribute->kernel()[1];
-    int stride_y       = this->attribute->stride()[0];
-    int stride_x       = this->attribute->stride()[1];
+    int kernel_y   = this->attribute->kernel()[0];
+    int kernel_x   = this->attribute->kernel()[1];
+    int stride_y   = this->attribute->stride()[0];
+    int stride_x   = this->attribute->stride()[1];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
@@ -613,12 +602,11 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
     Eigen::array<Eigen::Index, 4> bcast{ out_batch, 1, 1, out_channels };
 
-    ETensor2<int32_t> dm2_w = div_map_w.reshape(Eigen::array<Eigen::Index, 2>{ 1, out_width });
-    ETensor2<int32_t> dm2_h = div_map_h.reshape(Eigen::array<Eigen::Index, 2>{ out_height, 1 });
-    ETensor4<int32_t> div_map =
-        dm2_h.contract(dm2_w, contract_dims)
-            .reshape(Eigen::array<Eigen::Index, 4>{ 1, out_height, out_width, 1 })
-            .broadcast(bcast);
+    ETensor2<int32_t> dm2_w   = div_map_w.reshape(Eigen::array<Eigen::Index, 2>{ 1, out_width });
+    ETensor2<int32_t> dm2_h   = div_map_h.reshape(Eigen::array<Eigen::Index, 2>{ out_height, 1 });
+    ETensor4<int32_t> div_map = dm2_h.contract(dm2_w, contract_dims)
+                                    .reshape(Eigen::array<Eigen::Index, 4>{ 1, out_height, out_width, 1 })
+                                    .broadcast(bcast);
     if (Dtype != TOSA_REF_TYPE_FP32 && Dtype != TOSA_REF_TYPE_FP16 && Dtype != TOSA_REF_TYPE_BF16 &&
         Dtype != TOSA_REF_TYPE_FP64)
     {
@@ -649,9 +637,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-OpConv2d<InDtype, WeightDtype, OutDtype>::OpConv2d(SubgraphTraverser* sgt_,
-                                         TosaAttributeBase* attribute_,
-                                         uint64_t id_)
+OpConv2d<InDtype, WeightDtype, OutDtype>::OpConv2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_CONV2D, id_)
 {
     setRequiredOperands(3, 1);
@@ -685,7 +671,7 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpConv2d: Output data type not supported for this configuration of operator");
+             "OpConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -694,7 +680,7 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute(attribute, 2 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
+                             weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpConv2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -736,15 +722,17 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int stride_y       = this->attribute->stride()[0];
-    int stride_x       = this->attribute->stride()[1];
-    int dilation_y     = this->attribute->dilation()[0];
-    int dilation_x     = this->attribute->dilation()[1];
+    int stride_y   = this->attribute->stride()[0];
+    int stride_x   = this->attribute->stride()[1];
+    int dilation_y = this->attribute->dilation()[0];
+    int dilation_x = this->attribute->dilation()[1];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+                "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+                "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
@@ -756,8 +744,8 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
                "perform OpConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], "
                "stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_out_channels, out_batch,
-               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top,
-               pad_bottom, pad_left, pad_right);
+               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top, pad_bottom,
+               pad_left, pad_right);
 
     // GEMM-conv2d, left matrix is input, right matrix is weight
     Eigen::array<Eigen::Index, 2> im2col_input_dims;
@@ -827,7 +815,7 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
 
     // transpose and reshape weight from [OC, H, W, IC] to [H * W * IC, OC]
     ETensor2<WeightEigenType> im2col_weight =
-    weight_val.shuffle(Eigen::array<Eigen::Index, 4>({ 1, 2, 3, 0 })).reshape(im2col_weight_dims);
+        weight_val.shuffle(Eigen::array<Eigen::Index, 4>({ 1, 2, 3, 0 })).reshape(im2col_weight_dims);
 
     // don't need to apply bias_multiplier ( * bias_scale and >> bias_shift) since tflite already scale it
     // and reshaped from [C] to [1, C], and broadcast to [N * H * W, C]
@@ -835,8 +823,9 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
         (bias_val.reshape(bias_reshaped_dims).broadcast(bias_bcast_dims)).template cast<OutEigenType>();
 
     // output matrix is [N * H * W, C]
-    ETensor2<OutEigenType> contracted_result =
-        (im2col_input.template cast<AccEigenType>().contract(im2col_weight.template cast<AccEigenType>(), contract_dims)).template cast<OutEigenType>();
+    ETensor2<OutEigenType> contracted_result = (im2col_input.template cast<AccEigenType>().contract(
+                                                    im2col_weight.template cast<AccEigenType>(), contract_dims))
+                                                   .template cast<OutEigenType>();
 
     // adding bias
     ETensor2<OutEigenType> biased_output = contracted_result + bias_2d;
@@ -854,9 +843,7 @@ int OpConv2d<InDtype, WeightDtype, OutDtype>::eval()
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-OpConv3d<InDtype, WeightDtype, OutDtype>::OpConv3d(SubgraphTraverser* sgt_,
-                                         TosaAttributeBase* attribute_,
-                                         uint64_t id_)
+OpConv3d<InDtype, WeightDtype, OutDtype>::OpConv3d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_CONV3D, id_)
 {
     setRequiredOperands(3, 1);
@@ -890,7 +877,7 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpConv3d: Output data type not supported for this configuration of operator");
+             "OpConv3d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -899,7 +886,7 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute(attribute, 3 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
+                             weight->getShape(), 1 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpConv3d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -946,19 +933,22 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_left   = this->attribute->pad()[4];
     int pad_right  = this->attribute->pad()[5];
 
-    int stride_d       = this->attribute->stride()[0];
-    int stride_y       = this->attribute->stride()[1];
-    int stride_x       = this->attribute->stride()[2];
+    int stride_d = this->attribute->stride()[0];
+    int stride_y = this->attribute->stride()[1];
+    int stride_x = this->attribute->stride()[2];
 
-    int dilation_d     = this->attribute->dilation()[0];
-    int dilation_y     = this->attribute->dilation()[1];
-    int dilation_x     = this->attribute->dilation()[2];
+    int dilation_d = this->attribute->dilation()[0];
+    int dilation_y = this->attribute->dilation()[1];
+    int dilation_x = this->attribute->dilation()[2];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_d * f_depth <= tosa_level.MAX_KERNEL, "dilation_d * KD should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_d * f_depth <= tosa_level.MAX_KERNEL,
+                "dilation_d * KD should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+                "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+                "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_d0 <= tosa_level.MAX_KERNEL, "pad_d0 should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_d1 <= tosa_level.MAX_KERNEL, "pad_d1 should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
@@ -1103,7 +1093,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpDepthwiseConv2d: Output data type not supported for this configuration of operator");
+             "OpDepthwiseConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -1112,7 +1102,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
 
     std::string msg;
     if (check_conv_attribute(attribute, 2 /* conv_dimension */, input->getShape(), output->getShape(),
-                                   weight->getShape(), 0 /* offset_kernel */, InDtype, WeightDtype, msg))
+                             weight->getShape(), 0 /* offset_kernel */, InDtype, WeightDtype, msg))
     {
         msg = "OpDepthwiseConv2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -1155,15 +1145,17 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int stride_y       = this->attribute->stride()[0];
-    int stride_x       = this->attribute->stride()[1];
-    int dilation_y     = this->attribute->dilation()[0];
-    int dilation_x     = this->attribute->dilation()[1];
+    int stride_y   = this->attribute->stride()[0];
+    int stride_x   = this->attribute->stride()[1];
+    int dilation_y = this->attribute->dilation()[0];
+    int dilation_x = this->attribute->dilation()[1];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL, "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL, "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+                "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+                "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
@@ -1175,8 +1167,8 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
                "perform OpDepthwiseConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
                in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_multiplier, out_batch,
-               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top,
-               pad_bottom, pad_left, pad_right);
+               out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top, pad_bottom,
+               pad_left, pad_right);
 
     Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
     pad[0] = std::make_pair(0, 0);
@@ -1241,9 +1233,9 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
                             for (int fw = 0; fw < f_width; fw++)
                             {
                                 // Perform multiplication in AccEigenType then cast to OutEigenType
-                                this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) +=
-                                (OutEigenType)((AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh, ic) *
-                                (AccEigenType)weight_val(fh, fw, ic, cm));
+                                this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) += (OutEigenType)(
+                                    (AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh, ic) *
+                                    (AccEigenType)weight_val(fh, fw, ic, cm));
                             }
                         }
                     }
@@ -1308,7 +1300,7 @@ int OpFullyConnected<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpFullyConnected: Output data type not supported for this configuration of operator");
+             "OpFullyConnected: Output data type not supported for this configuration of operator");
 
     output = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
@@ -1368,9 +1360,7 @@ int OpFullyConnected<InDtype, WeightDtype, OutDtype>::eval()
 }
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_,
-                          TosaAttributeBase* attribute_,
-                          uint64_t id_)
+OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_MATMUL, id_)
 {
     setRequiredOperands(2, 1);
@@ -1398,7 +1388,7 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpMatMul: Output data type not supported for this configuration of operator");
+             "OpMatMul: Output data type not supported for this configuration of operator");
 
     a      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     b      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[1]);
@@ -1513,9 +1503,7 @@ int OpMatMul<Dtype, OutDtype>::eval()
 }
 
 template <TOSA_REF_TYPE Dtype>
-OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_,
-                                TosaAttributeBase* attribute_,
-                                uint64_t id_)
+OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_MAX_POOL2D, id_)
 {
     setRequiredOperands(1, 1);
@@ -1583,10 +1571,10 @@ int OpMaxPool2d<Dtype>::eval()
     int pad_left   = this->attribute->pad()[2];
     int pad_right  = this->attribute->pad()[3];
 
-    int kernel_y       = this->attribute->kernel()[0];
-    int kernel_x       = this->attribute->kernel()[1];
-    int stride_y       = this->attribute->stride()[0];
-    int stride_x       = this->attribute->stride()[1];
+    int kernel_y = this->attribute->kernel()[0];
+    int kernel_x = this->attribute->kernel()[1];
+    int stride_y = this->attribute->stride()[0];
+    int stride_x = this->attribute->stride()[1];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
@@ -1678,14 +1666,13 @@ int OpFFT2d<Dtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) ||
-        validateRequiredRank(outputs[0]) || validateRequiredRank(outputs[1]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]) ||
+        validateRequiredRank(outputs[1]))
     {
         return 1;
     }
 
-    if (inputs[0]->matchType(*outputs[0]) || inputs[1]->matchType(*outputs[1]) ||
-        inputs[0]->matchType(*inputs[1]))
+    if (inputs[0]->matchType(*outputs[0]) || inputs[1]->matchType(*outputs[1]) || inputs[0]->matchType(*inputs[1]))
     {
         printNodeValidationError("OpFFT2d: input and output tensor type mismatch");
         return 1;
@@ -1699,8 +1686,7 @@ int OpFFT2d<Dtype>::checkTensorAttributes()
     ASSERT_MEM(in_real && in_imag && out_real && out_imag);
 
     std::string msg;
-    if (check_fft_shape(in_real->getShape(), in_imag->getShape(),
-                  out_real->getShape(), out_imag->getShape(), msg))
+    if (check_fft_shape(in_real->getShape(), in_imag->getShape(), out_real->getShape(), out_imag->getShape(), msg))
     {
         msg = "OpFFT2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -1713,37 +1699,35 @@ int OpFFT2d<Dtype>::checkTensorAttributes()
 template <TOSA_REF_TYPE Dtype>
 int OpFFT2d<Dtype>::eval()
 {
-    int in_real_batch = this->in_real->getShape()[0];
+    int in_real_batch  = this->in_real->getShape()[0];
     int in_real_height = this->in_real->getShape()[1];
-    int in_real_width = this->in_real->getShape()[2];
+    int in_real_width  = this->in_real->getShape()[2];
 
-    int in_imag_batch = this->in_imag->getShape()[0];
+    int in_imag_batch  = this->in_imag->getShape()[0];
     int in_imag_height = this->in_imag->getShape()[1];
-    int in_imag_width = this->in_imag->getShape()[2];
+    int in_imag_width  = this->in_imag->getShape()[2];
 
-    int out_real_batch = this->out_real->getShape()[0];
+    int out_real_batch  = this->out_real->getShape()[0];
     int out_real_height = this->out_real->getShape()[1];
-    int out_real_width = this->out_real->getShape()[2];
+    int out_real_width  = this->out_real->getShape()[2];
 
-    int out_imag_batch = this->out_imag->getShape()[0];
+    int out_imag_batch  = this->out_imag->getShape()[0];
     int out_imag_height = this->out_imag->getShape()[1];
-    int out_imag_width = this->out_imag->getShape()[2];
+    int out_imag_width  = this->out_imag->getShape()[2];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
     LEVEL_CHECK(in_real_height <= tosa_level.MAX_KERNEL, "H should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(in_real_width <= tosa_level.MAX_KERNEL, "W should be smaller than or equal to MAX_KERNEL");
 
-    DEBUG_INFO(OP,
-               "perform OpFFT2d, input.shapes=[[%d,%d,%d],[%d,%d,%d]], output.shapes=[[%d,%d,%d],[%d,%d,%d]]",
-               in_real_batch, in_real_height, in_real_width,
-               in_imag_batch, in_imag_height, in_imag_width,
-               out_real_batch, out_real_height, out_real_width,
-               out_imag_batch, out_imag_height, out_imag_width);
+    DEBUG_INFO(OP, "perform OpFFT2d, input.shapes=[[%d,%d,%d],[%d,%d,%d]], output.shapes=[[%d,%d,%d],[%d,%d,%d]]",
+               in_real_batch, in_real_height, in_real_width, in_imag_batch, in_imag_height, in_imag_width,
+               out_real_batch, out_real_height, out_real_width, out_imag_batch, out_imag_height, out_imag_width);
 
     OutEigenType sum_real, sum_imag, a, sign_val = 1.0;
 
-    if (attribute->inverse()) {
+    if (attribute->inverse())
+    {
         sign_val = -1.0;
     }
 
@@ -1772,7 +1756,8 @@ int OpFFT2d<Dtype>::eval()
                         OutEigenType val_real = in_real_val(n, iy, ix);
                         OutEigenType val_imag = in_imag_val(n, iy, ix);
                         // Use explicit cast to ensure intermmediate calculations are completed using OutEigenType
-                        a = sign_val * 2 * M_PI * ((iy * (OutEigenType)oy) / in_real_height + (ix * (OutEigenType)ox) / in_real_width);
+                        a = sign_val * 2 * M_PI *
+                            ((iy * (OutEigenType)oy) / in_real_height + (ix * (OutEigenType)ox) / in_real_width);
                         sum_real += val_real * cos(a) + val_imag * sin(a);
                         sum_imag += -val_real * sin(a) + val_imag * cos(a);
                     }
@@ -1787,9 +1772,7 @@ int OpFFT2d<Dtype>::eval()
 }
 
 template <TOSA_REF_TYPE Dtype>
-OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_,
-                          TosaAttributeBase* attribute_,
-                          uint64_t id_)
+OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RFFT2D, id_)
 {
     setRequiredOperands(1, 2);
@@ -1797,8 +1780,8 @@ OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_,
 }
 
 template <TOSA_REF_TYPE Dtype>
-OpRFFT2d<Dtype>::~OpRFFT2d() {}
-
+OpRFFT2d<Dtype>::~OpRFFT2d()
+{}
 
 template <TOSA_REF_TYPE Dtype>
 int OpRFFT2d<Dtype>::checkTensorAttributes()
@@ -1806,8 +1789,7 @@ int OpRFFT2d<Dtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]) ||
-    validateRequiredRank(outputs[1]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(outputs[0]) || validateRequiredRank(outputs[1]))
     {
         return 1;
     }
@@ -1818,15 +1800,14 @@ int OpRFFT2d<Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    in       = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out_real = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
     out_imag = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[1]);
 
     ASSERT_MEM(in && out_real && out_imag);
 
     std::string msg;
-    if (check_fft_shape(in->getShape(), {},
-                  out_real->getShape(), out_imag->getShape(), msg))
+    if (check_fft_shape(in->getShape(), {}, out_real->getShape(), out_imag->getShape(), msg))
     {
         msg = "OpRFFT2d: " + msg;
         printNodeValidationError(msg.c_str());
@@ -1839,17 +1820,17 @@ int OpRFFT2d<Dtype>::checkTensorAttributes()
 template <TOSA_REF_TYPE Dtype>
 int OpRFFT2d<Dtype>::eval()
 {
-    int32_t in_batch = in->getShape()[0];
+    int32_t in_batch  = in->getShape()[0];
     int32_t in_height = in->getShape()[1];
-    int32_t in_width = in->getShape()[2];
+    int32_t in_width  = in->getShape()[2];
 
-    int32_t out_real_batch = out_real->getShape()[0];
+    int32_t out_real_batch  = out_real->getShape()[0];
     int32_t out_real_height = out_real->getShape()[1];
-    int32_t out_real_width = out_real->getShape()[2];
+    int32_t out_real_width  = out_real->getShape()[2];
 
-    int32_t out_imag_batch = out_imag->getShape()[0];
+    int32_t out_imag_batch  = out_imag->getShape()[0];
     int32_t out_imag_height = out_imag->getShape()[1];
-    int32_t out_imag_width = out_imag->getShape()[2];
+    int32_t out_imag_width  = out_imag->getShape()[2];
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
@@ -1859,9 +1840,8 @@ int OpRFFT2d<Dtype>::eval()
     DEBUG_INFO(OP,
                "perform OpRFFT2d, input.shape=[%d,%d,%d], output_real.shape=[%d,%d,%d], "
                "output_imag.shape=[%d,%d,%d]",
-               in_batch, in_height, in_width,
-               out_real_batch, out_real_height, out_real_width,
-               out_imag_batch, out_imag_height, out_imag_width);
+               in_batch, in_height, in_width, out_real_batch, out_real_height, out_real_width, out_imag_batch,
+               out_imag_height, out_imag_width);
 
     OutEigenType sum_real, sum_imag, a;
 
@@ -1931,7 +1911,7 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
-                "OpTransposeConv2d: Output data type not supported for this configuration of operator");
+             "OpTransposeConv2d: Output data type not supported for this configuration of operator");
 
     input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
@@ -1955,8 +1935,6 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
         printNodeValidationError("OpTransposeConv2d: illegal size for attribute output_shape");
         return 1;
     }
-
-
 
     for (int32_t i : attribute->stride())
     {
@@ -1993,7 +1971,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
 
     for (size_t i = 0; i < attribute->out_pad().size(); i++)
     {
-        ERROR_IF(attribute->out_pad()[i] <= -(weight->getShape()[(i / 2) + 1]), "OpTransposeConv2d: At least one out_pad value is larger than kernel size");
+        ERROR_IF(attribute->out_pad()[i] <= -(weight->getShape()[(i / 2) + 1]),
+                 "OpTransposeConv2d: At least one out_pad value is larger than kernel size");
     }
 
     int32_t H = (IH - 1) * stride_y + out_pad_top + out_pad_bottom + kernel_h;
@@ -2002,8 +1981,7 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
     if ((OH != H) || (OW != W))
     {
         std::string msg = "OpTransposeConv2d: Mismatch between output shape provided and expected output shape (" +
-            std::to_string(H) + "," +
-            std::to_string(W) + ")";
+                          std::to_string(H) + "," + std::to_string(W) + ")";
         printNodeValidationError(msg.c_str());
         return 1;
     }
@@ -2057,7 +2035,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     LEVEL_CHECK(f_height <= tosa_level.MAX_KERNEL, "KH should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(f_width <= tosa_level.MAX_KERNEL, "KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(out_pad_top <= tosa_level.MAX_KERNEL, "out_pad_top should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(out_pad_bottom <= tosa_level.MAX_KERNEL, "out_pad_bottom should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(out_pad_bottom <= tosa_level.MAX_KERNEL,
+                "out_pad_bottom should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(out_pad_left <= tosa_level.MAX_KERNEL, "out_pad_left should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(out_pad_right <= tosa_level.MAX_KERNEL, "out_pad_right should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(stride_y <= tosa_level.MAX_STRIDE, "stride_y should be smaller than or equal to MAX_STRIDE");
@@ -2066,9 +2045,9 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], out_pad=[%d,%d,%d,%d]",
-               in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels,
-               out_batch, out_height, out_width, out_channels, stride_y, stride_x, out_pad_top,
-               out_pad_bottom, out_pad_left, out_pad_right);
+               in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels, out_batch,
+               out_height, out_width, out_channels, stride_y, stride_x, out_pad_top, out_pad_bottom, out_pad_left,
+               out_pad_right);
 
     TIn input_val      = this->input->getTensor();
     TWeight weight_val = this->weight->getTensor();
@@ -2126,8 +2105,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
                                 if ((out_x >= 0 && out_x < out_width) && (out_y >= 0 && out_y < out_height))
                                 {
                                     this->output->getTensor()(ob, out_y, out_x, oc) +=
-                                        (OutEigenType) ((AccEigenType)input_val(ob, ih, iw, ic) *
-                                            (AccEigenType)weight_val(oc, fh, fw, ic));
+                                        (OutEigenType)((AccEigenType)input_val(ob, ih, iw, ic) *
+                                                       (AccEigenType)weight_val(oc, fh, fw, ic));
                                 }
                             }
                         }
@@ -2162,7 +2141,7 @@ DEF_INSTANTIATE_TWO_TYPE(OpAvgPool2d, INT8, INT32);
 DEF_INSTANTIATE_TWO_TYPE(OpAvgPool2d, INT16, INT32);
 DEF_INSTANTIATE_TWO_TYPE(OpAvgPool2d, FP64, FP64);
 
-                                // [in_t, weight_t, out_t]
+// [in_t, weight_t, out_t]
 DEF_INSTANTIATE_THREE_TYPE(OpConv2d, FP16, FP16, FP16);
 DEF_INSTANTIATE_THREE_TYPE(OpConv2d, FP16, FP16, FP32);
 DEF_INSTANTIATE_THREE_TYPE(OpConv2d, BF16, BF16, FP32);

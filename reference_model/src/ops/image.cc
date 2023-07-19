@@ -24,9 +24,7 @@ using namespace Eigen;
 using namespace tosa;
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype, typename resize_t>
-OpResize<InDtype, OutDtype, resize_t>::OpResize(SubgraphTraverser* sgt_,
-                                                TosaAttributeBase* attribute_,
-                                                uint64_t id_)
+OpResize<InDtype, OutDtype, resize_t>::OpResize(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESIZE, id_)
 {
     setRequiredOperands(1, 1);
@@ -134,17 +132,19 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(scale_y_n / scale_y_d <= tosa_level.MAX_SCALE, "scale_y_n / scale_y_d should be smaller than or equal to MAX_SCALE");
-    LEVEL_CHECK(scale_x_n / scale_x_d <= tosa_level.MAX_SCALE, "scale_x_n / scale_x_d should be smaller than or equal to MAX_SCALE");
+    LEVEL_CHECK(scale_y_n / scale_y_d <= tosa_level.MAX_SCALE,
+                "scale_y_n / scale_y_d should be smaller than or equal to MAX_SCALE");
+    LEVEL_CHECK(scale_x_n / scale_x_d <= tosa_level.MAX_SCALE,
+                "scale_x_n / scale_x_d should be smaller than or equal to MAX_SCALE");
 
     int32_t res_height = 0;
-    int32_t res_width = 0;
+    int32_t res_width  = 0;
 
     if (idiv_check((in_height - 1) * scale_y_n - offset_y + border_y, scale_y_d, res_height))
-       return 1;
+        return 1;
 
     if (idiv_check((in_width - 1) * scale_x_n - offset_x + border_x, scale_x_d, res_width))
-       return 1;
+        return 1;
 
     ERROR_IF(out_height != res_height + 1,
              "OpResize: mismatch between output height dimension provided and expected shape");
@@ -247,8 +247,10 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         }
                         acc = in->getTensor()(b, iy, ix, c);
                     }
-                    if ((typeid(resize_t) == typeid(Eigen::bfloat16))) {
-                        ASSERT_MSG(checkValidBFloat(acc), "Resize accumulator float value is not a valid bfloat16 value.");
+                    if ((typeid(resize_t) == typeid(Eigen::bfloat16)))
+                    {
+                        ASSERT_MSG(checkValidBFloat(acc),
+                                   "Resize accumulator float value is not a valid bfloat16 value.");
                     }
                     out->getTensor()(b, oy, ox, c) = acc;
                 }

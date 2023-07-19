@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ using namespace TosaReference;
 func_config_t g_func_config;
 func_debug_t g_func_debug;
 
-IModelRunner::IModelRunner() : model_runner_impl(new ModelRunnerImpl())
+IModelRunner::IModelRunner()
+    : model_runner_impl(new ModelRunnerImpl())
 {}
 
-IModelRunner::IModelRunner(const func_config_t& func_config,
-                           const func_debug_t& func_debug)
+IModelRunner::IModelRunner(const func_config_t& func_config, const func_debug_t& func_debug)
     : model_runner_impl(new ModelRunnerImpl(func_config, func_debug))
 {}
 

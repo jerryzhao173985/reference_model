@@ -237,9 +237,7 @@ int OpLogicalNot<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpNegate<Rank, Dtype>::OpNegate(SubgraphTraverser* sgt_,
-                                TosaAttributeBase* attribute_,
-                                uint64_t id_)
+OpNegate<Rank, Dtype>::OpNegate(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : UnaryNode<Rank, Dtype>(sgt_, Op_NEGATE, id_)
 {
     INIT_ATTRIBUTE(Negate);
@@ -279,10 +277,11 @@ int OpNegate<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_INT16:
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                int64_t res_in_64 = 0L - a;
+                int64_t res_in_64     = 0L - a;
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-                REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64, "OpNegate: result not in acc type range (int32)");
+                REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64,
+                        "OpNegate: result not in acc type range (int32)");
 
                 int64_t max_clip_in_64, min_clip_in_64;
                 if (Dtype == TOSA_REF_TYPE_INT16)
@@ -295,17 +294,20 @@ int OpNegate<Rank, Dtype>::register_fcn()
                     max_clip_in_64 = i32_max_in_64;
                     min_clip_in_64 = i32_min_in_64;
                 }
-                return static_cast<InEigenType>(std::min<int64_t>(max_clip_in_64, std::max<int64_t>(min_clip_in_64, res_in_64)));
+                return static_cast<InEigenType>(
+                    std::min<int64_t>(max_clip_in_64, std::max<int64_t>(min_clip_in_64, res_in_64)));
             };
             break;
         case TOSA_REF_TYPE_INT8:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                int64_t res_in_64 = 0 - (a - attribute->input1_zp());
+                int64_t res_in_64     = 0 - (a - attribute->input1_zp());
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-                REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64, "OpNegate: result not in acc type range (int32)");
+                REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64,
+                        "OpNegate: result not in acc type range (int32)");
                 res_in_64 += attribute->output_zp();
-                InEigenType result = static_cast<InEigenType>(std::min(std::max(res_in_64, static_cast<int64_t>(QMin)), static_cast<int64_t>(QMax)));
+                InEigenType result = static_cast<InEigenType>(
+                    std::min(std::max(res_in_64, static_cast<int64_t>(QMin)), static_cast<int64_t>(QMax)));
                 return result;
             };
             break;

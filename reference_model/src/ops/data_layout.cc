@@ -21,9 +21,7 @@ using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_,
-                                TosaAttributeBase* attribute_,
-                                uint64_t id_)
+OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_CONCAT, id_)
 {
     setRequiredOperands(-1, 1);
@@ -125,9 +123,7 @@ int OpConcat<Rank, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
-                          TosaAttributeBase* attribute_,
-                          uint64_t id_)
+OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_PAD, id_)
 {
     setRequiredOperands(1, 1);
@@ -138,8 +134,7 @@ OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_,
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpPad<Rank, Dtype>::~OpPad()
-{
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpPad<Rank, Dtype>::checkTensorAttributes()
@@ -215,9 +210,7 @@ int OpPad<Rank, Dtype>::eval()
 }
 
 template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
-OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_,
-                                             TosaAttributeBase* attribute_,
-                                             uint64_t id_)
+OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESHAPE, id_)
 {
     setRequiredOperands(1, 1);
@@ -251,40 +244,47 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
     }
 
     // -1 shape inferencing
-    auto inferred_size = -1;
-    auto inferred_dim = -1;
-    auto total_size = getInputs()[0]->getElementCount();
+    auto inferred_size  = -1;
+    auto inferred_dim   = -1;
+    auto total_size     = getInputs()[0]->getElementCount();
     uint32_t accum_size = 1;
 
     for (int32_t d = 0; d < OutRank; d++)
     {
         auto curr_new_shape = attribute->new_shape()[d];
-        if (curr_new_shape != -1) {
+        if (curr_new_shape != -1)
+        {
             accum_size *= curr_new_shape;
-        } else {
+        }
+        else
+        {
             ERROR_IF(inferred_dim != -1, "OpReshape: only 1 inferred dimension in output shape is supported");
             inferred_dim = d;
         }
     }
 
-    ERROR_IF((total_size % accum_size) != 0, "OpReshape: shape inference failed, missing dimension would be non-integer");
+    ERROR_IF((total_size % accum_size) != 0,
+             "OpReshape: shape inference failed, missing dimension would be non-integer");
     inferred_size = total_size / accum_size;
 
-    if (inferred_dim != -1) {
+    if (inferred_dim != -1)
+    {
         getOutputs()[0]->setDimSize(inferred_dim, inferred_size);
 
         // Need to also edit the serializedTensor's shape at inferred_dim
         TosaSerializationTensor* serializedTensor;
-        for (auto region : parent_sgt->getTsh()->GetRegions()) {
-            for (auto block : region->GetBlocks()) {
-                if (block->GetTensorByName(getOutputs()[0]->getName())) {
+        for (auto region : parent_sgt->getTsh()->GetRegions())
+        {
+            for (auto block : region->GetBlocks())
+            {
+                if (block->GetTensorByName(getOutputs()[0]->getName()))
+                {
                     serializedTensor = block->GetTensorByName(getOutputs()[0]->getName());
                     serializedTensor->SetDimSize(inferred_dim, inferred_size);
                     break;
                 }
             }
         }
-
     }
 
     ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
@@ -294,7 +294,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
     {
         auto curr_new_shape = attribute->new_shape()[d];
         ERROR_IF(curr_new_shape != -1 && curr_new_shape != outputs[0]->getShape()[d],
-                    "OpReshape: new_shape doesn't match output shape");
+                 "OpReshape: new_shape doesn't match output shape");
     }
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
@@ -308,7 +308,7 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 {
     for (int32_t d = 0; d < OutRank; d++)
     {
-        array_shape[d] = getOutputs()[0]->getShape()[OutRank - 1 - d];
+        array_shape[d]  = getOutputs()[0]->getShape()[OutRank - 1 - d];
         out_reverser[d] = OutRank - 1 - d;
     }
 
@@ -347,9 +347,7 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_,
-                                  TosaAttributeBase* attribute_,
-                                  uint64_t id_)
+OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_REVERSE, id_)
 {
     setRequiredOperands(1, 1);
@@ -418,9 +416,7 @@ int OpReverse<Rank, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_,
-                              TosaAttributeBase* attribute_,
-                              uint64_t id_)
+OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_SLICE, id_)
 {
     setRequiredOperands(1, 1);
@@ -491,9 +487,7 @@ int OpSlice<Rank, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpTileBase<Rank, Dtype>::OpTileBase(SubgraphTraverser* sgt_,
-                                    TosaAttributeBase* attribute_,
-                                    uint64_t id_)
+OpTileBase<Rank, Dtype>::OpTileBase(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_TILE, id_)
 {
     setRequiredOperands(1, 1);
@@ -693,9 +687,7 @@ int OpTile<6, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
-                                      TosaAttributeBase* attribute_,
-                                      uint64_t id_)
+OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_TRANSPOSE, id_)
 {
     setRequiredOperands(1, 1);
@@ -707,7 +699,8 @@ OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_,
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpTranspose<Rank, Dtype>::~OpTranspose()
 {
-    if (attribute) delete attribute;
+    if (attribute)
+        delete attribute;
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>

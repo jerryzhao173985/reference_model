@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Arm Limited.
+# Copyright (c) 2021-2023 Arm Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 # See https://pre-commit.com for more information
@@ -28,3 +28,13 @@ repos:
         entry: pytest -m "not postcommit"
         types: [python]
         pass_filenames: false
+
+-   repo: local
+    hooks:
+    -   id: clang-format
+        name: clang-format
+        exclude: build|third_party
+        language: system
+        entry: clang-format
+        types: ["c++"]
+        args: ["-i"]

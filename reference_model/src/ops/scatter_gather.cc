@@ -21,9 +21,7 @@ using namespace Eigen;
 using namespace tosa;
 
 template <TOSA_REF_TYPE Dtype>
-OpGather<Dtype>::OpGather(SubgraphTraverser* sgt_,
-                          TosaAttributeBase* attribute_,
-                          uint64_t id_)
+OpGather<Dtype>::OpGather(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_GATHER, id_)
 {
     setRequiredOperands(2, 1);
@@ -117,9 +115,7 @@ int OpGather<Dtype>::eval()
 }
 
 template <TOSA_REF_TYPE Dtype>
-OpScatter<Dtype>::OpScatter(SubgraphTraverser* sgt_,
-                            TosaAttributeBase* attribute_,
-                            uint64_t id_)
+OpScatter<Dtype>::OpScatter(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_SCATTER, id_)
 {
     setRequiredOperands(3, 1);

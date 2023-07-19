@@ -42,7 +42,8 @@ public:
     int setIsSubgraphOutput();
     int setIsParentGraphOutput();
 
-    int getIsParentGraphOutput() const {
+    int getIsParentGraphOutput() const
+    {
         return isParentGraphOutput;
     }
 

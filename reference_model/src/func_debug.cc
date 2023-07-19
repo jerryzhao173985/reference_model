@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 
 #include <ctype.h>
 #include <signal.h>
+#include <sstream>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sstream>
 
 #ifndef _MSC_VER
 #include <execinfo.h>
@@ -164,7 +164,7 @@ int func_debug_t::init_debug(uint64_t inst_id)
     set_verbosity(DEBUG_VERB_NONE);
     set_inst_mask(DEBUG_INST_ALL);
     func_debug_file = stderr;
-    this->inst_id = inst_id;
+    this->inst_id   = inst_id;
 
     return 0;
 }
@@ -268,7 +268,7 @@ void func_debug_t::set_inst_mask(const uint64_t mask)
 }
 
 std::vector<std::pair<std::string, int>> debug_str_table = {
-#define DEBUG_MODE(NAME, BIT) {#NAME, DEBUG_##NAME},
+#define DEBUG_MODE(NAME, BIT) { #NAME, DEBUG_##NAME },
 #include "debug_modes.def"
 #undef DEBUG_MODE
 };
@@ -327,7 +327,8 @@ void func_debug_warning(
 std::string func_debug_t::get_debug_mask_help_string()
 {
     std::string rval = "Set debug mask. Valid values are: ";
-    for (auto& mask : debug_str_table) {
+    for (auto& mask : debug_str_table)
+    {
         rval += mask.first + " ";
     }
     rval += "ALL";

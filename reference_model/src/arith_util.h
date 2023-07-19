@@ -218,7 +218,8 @@ inline void float_trunc_bytes(float* src)
     memcpy(src, &src_as_bytes, sizeof(float));
 }
 
-inline void truncateFloatToBFloat(float* src, int64_t size) {
+inline void truncateFloatToBFloat(float* src, int64_t size)
+{
     /* Set the least significant two bytes to zero for each float
     value in the input src buffer. */
     ASSERT_MEM(src);

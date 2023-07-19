@@ -60,12 +60,12 @@ void func_enable_signal_handlers();
 
 struct func_debug_t
 {
-    uint32_t func_debug_verbosity = 0;             // What verbosity level is set? (bitmask)
-    uint64_t func_debug_mask = 0;                  // Which units have debugging enabled? (bitmask)
-    uint64_t func_debug_inst_mask = 0;             // Which instances have debugging enabled (bitmask)
-    uint64_t inst_id = 0;                          // The instance id for multiple model instances
-    FILE* func_debug_file = stderr;                     // Output file
-    bool is_output_unbuffered = false;    // should log files be opened with unbuffered I/O.
+    uint32_t func_debug_verbosity = 0;         // What verbosity level is set? (bitmask)
+    uint64_t func_debug_mask      = 0;         // Which units have debugging enabled? (bitmask)
+    uint64_t func_debug_inst_mask = 0;         // Which instances have debugging enabled (bitmask)
+    uint64_t inst_id              = 0;         // The instance id for multiple model instances
+    FILE* func_debug_file         = stderr;    // Output file
+    bool is_output_unbuffered     = false;     // should log files be opened with unbuffered I/O.
 
     int init_debug(uint64_t inst_id);
     int fini_debug();
@@ -115,13 +115,13 @@ struct func_debug_t
 #endif
 
 #ifndef LEVEL_CHECK
-#define LEVEL_CHECK(COND, fmt, ...)                                                                                        \
-    if (g_func_config.tosa_level != func_config_t::NONE && (!(COND)))                                                                                                           \
-    {                                                                                                                      \
-        fprintf(g_func_debug.func_debug_file, COL_FATAL("LEVEL_CHECK() fails AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__,  \
-                __func__, #COND);                                                                                          \
-        fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                         \
-        this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                                 \
+#define LEVEL_CHECK(COND, fmt, ...)                                                                                    \
+    if (g_func_config.tosa_level != func_config_t::NONE && (!(COND)))                                                  \
+    {                                                                                                                  \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL("LEVEL_CHECK() fails AT %s:%d %s(): (%s)\n"), __FILE__,        \
+                __LINE__, __func__, #COND);                                                                            \
+        fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                     \
+        this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                             \
     }
 #endif
 
@@ -173,8 +173,6 @@ void func_debug_warning(
     fprintf(stderr, COL_WARN("WARNING AT %s:%d %s():\n"), __FILE__, __LINE__, __func__);                               \
     fprintf(stderr, COL_WARN(fmt) "\n", ##__VA_ARGS__);
 #endif
-
-
 
 // Is this debug verbosity and unit level enabled?
 // Provide compiler hints that this is unlikely

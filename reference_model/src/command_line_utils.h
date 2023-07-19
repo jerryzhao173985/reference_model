@@ -19,8 +19,8 @@
 #include "func_config.h"
 #include "func_debug.h"
 
-#include <stdint.h>
 #include <cxxopts.hpp>
+#include <stdint.h>
 
 // Read the command line arguments
 int func_model_parse_cmd_line(
@@ -69,30 +69,36 @@ int func_model_parse_cmd_line(
         // clang-format on
 
         auto result = options.parse(argc, argv);
-        if (result.count("help")) {
+        if (result.count("help"))
+        {
             std::cout << options.help() << std::endl;
             return 1;
         }
-        if (result.count("debugmask")) {
+        if (result.count("debugmask"))
+        {
             auto& v = result["debugmask"].as<std::vector<std::string>>();
             for (const std::string& s : v)
                 func_debug.set_mask(s);
         }
-        if (result.count("loglevel")) {
+        if (result.count("loglevel"))
+        {
             const std::string& levelstr = result["loglevel"].as<std::string>();
             func_debug.set_verbosity(levelstr);
         }
-        if (result.count("logfile")) {
+        if (result.count("logfile"))
+        {
             func_debug.set_file(result["logfile"].as<std::string>());
         }
-        if (result.count("input_tensor_file")) {
+        if (result.count("input_tensor_file"))
+        {
             func_config.ifm_name = result["input_tensor_file"].as<std::string>();
         }
-        if (result.count("version")) {
+        if (result.count("version"))
+        {
             std::cout << "Model version " << version << std::endl;
         }
     }
-    catch(const std::exception& e)
+    catch (const std::exception& e)
     {
         std::cerr << e.what() << '\n';
         return 1;

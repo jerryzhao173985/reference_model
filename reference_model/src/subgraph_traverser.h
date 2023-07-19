@@ -16,8 +16,8 @@
 #ifndef SUBGRAPH_TRAVERSER_H
 #define SUBGRAPH_TRAVERSER_H
 
-#include "graph_status.h"
 #include "graph_node.h"
+#include "graph_status.h"
 #include "model_common.h"
 #include "ops/op_factory.h"
 #include "tensor.h"

@@ -55,11 +55,11 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    using InEigenType               = typename GetEigenType<Dtype>::type;
-    using AccEigenType              = typename GetAccEigenType<AccDtype>::type; // Note: different from GetEigenType
-    using OutEigenType              = typename GetEigenType<Dtype>::type;
-    using TIn                       = Eigen::Tensor<InEigenType, 4>;
-    using TOut                      = Eigen::Tensor<OutEigenType, 4>;
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using AccEigenType = typename GetAccEigenType<AccDtype>::type;    // Note: different from GetEigenType
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    using TIn          = Eigen::Tensor<InEigenType, 4>;
+    using TOut         = Eigen::Tensor<OutEigenType, 4>;
 
     static constexpr int64_t QMin = GetQMin<Dtype>::value;
     static constexpr int64_t QMax = GetQMax<Dtype>::value;
@@ -71,7 +71,8 @@ protected:
 
 protected:
     // return a 1D [N] tensor that describes a how many valid elements covered in the input space
-    ETensor1<int32_t> calculate_div_map_1d(int in_size, int out_size, int kernel_size, int stride, int32_t padding_left, int32_t padding_right);
+    ETensor1<int32_t> calculate_div_map_1d(
+        int in_size, int out_size, int kernel_size, int stride, int32_t padding_left, int32_t padding_right);
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
@@ -86,7 +87,7 @@ public:
 
     using InEigenType     = typename GetEigenType<InDtype>::type;
     using WeightEigenType = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType    = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
+    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType    = typename GetEigenType<OutDtype>::type;
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
@@ -116,7 +117,7 @@ public:
 
     using InEigenType     = typename GetEigenType<InDtype>::type;
     using WeightEigenType = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType    = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
+    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType    = typename GetEigenType<OutDtype>::type;
     using TIn             = Eigen::Tensor<InEigenType, 5>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 5>;
@@ -146,7 +147,7 @@ public:
 
     using InEigenType     = typename GetEigenType<InDtype>::type;
     using WeightEigenType = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType    = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
+    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType    = typename GetEigenType<OutDtype>::type;
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
@@ -174,14 +175,14 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using InEigenType               = typename GetEigenType<InDtype>::type;
-    using WeightEigenType           = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType              = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
-    using OutEigenType              = typename GetEigenType<OutDtype>::type;
-    using TIn                       = Eigen::Tensor<InEigenType, 2>;
-    using TWeight                   = Eigen::Tensor<WeightEigenType, 2>;
-    using TBias                     = Eigen::Tensor<OutEigenType, 1>;
-    using TOut                      = Eigen::Tensor<OutEigenType, 2>;
+    using InEigenType     = typename GetEigenType<InDtype>::type;
+    using WeightEigenType = typename GetEigenType<WeightDtype>::type;
+    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
+    using OutEigenType    = typename GetEigenType<OutDtype>::type;
+    using TIn             = Eigen::Tensor<InEigenType, 2>;
+    using TWeight         = Eigen::Tensor<WeightEigenType, 2>;
+    using TBias           = Eigen::Tensor<OutEigenType, 1>;
+    using TOut            = Eigen::Tensor<OutEigenType, 2>;
 
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;
@@ -206,7 +207,7 @@ public:
     virtual int eval() final;
 
     using InEigenType                = typename GetEigenType<Dtype>::type;
-    using AccEigenType               = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
+    using AccEigenType               = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType               = typename GetEigenType<OutDtype>::type;
     using TIn                        = Eigen::Tensor<InEigenType, 3>;
     using TOut                       = Eigen::Tensor<OutEigenType, 3>;
@@ -258,10 +259,10 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using InEigenType   = typename GetEigenType<Dtype>::type;
-    using OutEigenType  = typename GetEigenType<Dtype>::type;
-    using TIn           = Eigen::Tensor<InEigenType, 3>;
-    using TOut          = Eigen::Tensor<OutEigenType, 3>;
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    using TIn          = Eigen::Tensor<InEigenType, 3>;
+    using TOut         = Eigen::Tensor<OutEigenType, 3>;
 
 protected:
     TosaReference::TensorTemplate<TIn>* in_real;
@@ -281,10 +282,10 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using InEigenType   = typename GetEigenType<Dtype>::type;
-    using OutEigenType  = typename GetEigenType<Dtype>::type;
-    using TIn           = Eigen::Tensor<InEigenType, 3>;
-    using TOut          = Eigen::Tensor<OutEigenType, 3>;
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    using TIn          = Eigen::Tensor<InEigenType, 3>;
+    using TOut         = Eigen::Tensor<OutEigenType, 3>;
 
 protected:
     TosaReference::TensorTemplate<TIn>* in;
@@ -304,7 +305,7 @@ public:
 
     using InEigenType     = typename GetEigenType<InDtype>::type;
     using WeightEigenType = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType    = typename GetAccEigenType<OutDtype>::type; // Note: different from GetEigenType
+    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType    = typename GetEigenType<OutDtype>::type;
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;

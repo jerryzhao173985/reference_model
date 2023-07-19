@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -22,4 +22,4 @@ enum class GraphStatus : int
     TOSA_ERROR         = 2,
 };
 
-#endif  // GRAPH_STATUS_H
+#endif    // GRAPH_STATUS_H

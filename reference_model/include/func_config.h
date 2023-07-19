@@ -19,29 +19,31 @@
 #include <iostream>
 #include <stdio.h>
 
-struct tosa_level_t {
+struct tosa_level_t
+{
     int32_t MAX_RANK   = 0;
     int32_t MAX_KERNEL = 0;
     int32_t MAX_STRIDE = 0;
     int32_t MAX_SCALE  = 0;
 
-    bool operator!=(const tosa_level_t &rhs) {
-        return !(MAX_RANK == rhs.MAX_RANK && MAX_KERNEL == rhs.MAX_KERNEL &&
-                 MAX_STRIDE == rhs.MAX_STRIDE && MAX_SCALE == rhs.MAX_SCALE);
+    bool operator!=(const tosa_level_t& rhs)
+    {
+        return !(MAX_RANK == rhs.MAX_RANK && MAX_KERNEL == rhs.MAX_KERNEL && MAX_STRIDE == rhs.MAX_STRIDE &&
+                 MAX_SCALE == rhs.MAX_SCALE);
     }
 };
 
 struct func_config_t
 {
-    std::string operator_fbs = "tosa.fbs";
-    std::string test_desc    = "desc.json";
-    std::string flatbuffer_dir = "";
-    std::string output_dir = "";
-    std::string tosa_file = "";
-    std::string ifm_name = "";
-    std::string ifm_file = "";
-    std::string ofm_name = "";
-    std::string ofm_file = "";
+    std::string operator_fbs    = "tosa.fbs";
+    std::string test_desc       = "desc.json";
+    std::string flatbuffer_dir  = "";
+    std::string output_dir      = "";
+    std::string tosa_file       = "";
+    std::string ifm_name        = "";
+    std::string ifm_file        = "";
+    std::string ofm_name        = "";
+    std::string ofm_file        = "";
     uint32_t eval               = 1;
     uint32_t validate_only      = 0;
     uint32_t output_tensors     = 1;
@@ -49,12 +51,12 @@ struct func_config_t
     uint32_t dump_intermediates = 0;
     std::string fp_format       = "0.5";
     uint32_t precise_mode       = 0;
-    bool abs_mode               = 0;      // set in main as second run of precise_mode
-    bool float_is_big_endian    = false;  // Set in arith_util.h by float_is_big_endian()
+    bool abs_mode               = 0;        // set in main as second run of precise_mode
+    bool float_is_big_endian    = false;    // Set in arith_util.h by float_is_big_endian()
 
     tosa_level_t tosa_level;
     static constexpr tosa_level_t EIGHTK = { 6, 8192, 8192, 64 };
-    static constexpr tosa_level_t NONE = { 0, 0, 0, 0 };
+    static constexpr tosa_level_t NONE   = { 0, 0, 0, 0 };
 };
 
 #endif

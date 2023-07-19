@@ -14,20 +14,18 @@
 //    limitations under the License.
 
 #include "type_conversion.h"
-#include "quant_util.h"
 #include "arith_util.h"
+#include "half.hpp"
+#include "quant_util.h"
 #include "template_types.h"
 #include <cmath>
-#include "half.hpp"
 
 using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_,
-                                              TosaAttributeBase* attribute_,
-                                              uint64_t id_)
+OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
     setRequiredOperands(1, 1);
@@ -160,12 +158,13 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         else
                             scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
                                                                               channel_shift);
-                        int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp;
+                        int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp;
                         int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                         int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
                         if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
                         {
-                            std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" + std::to_string(output_zp) + "] not in i32 range";
+                            std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
+                                               std::to_string(output_zp) + "] not in i32 range";
                             throw desc;
                         }
                         OutEigenType out_val = static_cast<OutEigenType>(res_in_64);
@@ -201,12 +200,13 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 else
                     scaled =
                         TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
-                int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp;
+                int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp;
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
                 if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
                 {
-                    std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" + std::to_string(output_zp) + "] not in i32 range";
+                    std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
+                                       std::to_string(output_zp) + "] not in i32 range";
                     throw desc;
                 }
 
@@ -234,9 +234,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-OpCast<Rank, InDtype, OutDtype>::OpCast(SubgraphTraverser* sgt_,
-                                        TosaAttributeBase* attribute_,
-                                        uint64_t id_)
+OpCast<Rank, InDtype, OutDtype>::OpCast(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_CAST, id_)
 {
     setRequiredOperands(1, 1);
@@ -315,7 +313,7 @@ CastHelper<InDtype, TOSA_REF_TYPE_FP16>::CastHelper()
     // Integer data converted to fp16 (stored as fp32)
     fcn = [](InEigenType in) -> float {
         half_float::half h = half_float::half(in);
-        float out = half_float::half_cast<float, half_float::half>(h);
+        float out          = half_float::half_cast<float, half_float::half>(h);
         return out;
     };
 }
@@ -354,10 +352,10 @@ CastHelper<TOSA_REF_TYPE_FP16, OutDtype>::CastHelper()
     fcn = [](float in) -> OutEigenType {
         // Cast from float representation back to half_float before rounding
         half_float::half h = half_float::half(in);
-        h = std::rint(h);
-        OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
-        out              = std::max<OutEigenType>(out, OutMin);
-        out              = std::min<OutEigenType>(out, OutMax);
+        h                  = std::rint(h);
+        OutEigenType out   = half_float::half_cast<OutEigenType, half_float::half>(h);
+        out                = std::max<OutEigenType>(out, OutMin);
+        out                = std::min<OutEigenType>(out, OutMax);
         return out;
     };
 }
@@ -365,9 +363,7 @@ CastHelper<TOSA_REF_TYPE_FP16, OutDtype>::CastHelper()
 CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP32>::CastHelper()
 {
     // No-op since fp16 values treated internally as their fp32 representation
-    fcn = [](float in) -> OutEigenType {
-        return in;
-    };
+    fcn = [](float in) -> OutEigenType { return in; };
 }
 
 template <TOSA_REF_TYPE OutDtype>
@@ -385,9 +381,7 @@ CastHelper<TOSA_REF_TYPE_BF16, OutDtype>::CastHelper()
 CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP32>::CastHelper()
 {
     // No-op since bf16 values treated as truncated fp32 internally
-    fcn = [](InEigenType in) -> OutEigenType {
-        return in;
-    };
+    fcn = [](InEigenType in) -> OutEigenType { return in; };
 }
 
 template <TOSA_REF_TYPE InDtype>

@@ -100,31 +100,32 @@ CheckResult from_optional(const std::optional<double>& res)
 }
 }    // namespace
 
-extern "C" {
-
-CheckResult tosa_validate_element_accfp32(double ref, double bnd, float imp, size_t KS)
+extern "C"
 {
-    auto err = validate_element<float>(ref, bnd, imp, KS);
-    return from_optional(err);
-}
 
-bool tosa_validate_output_error(double err_sum, double err_sum_sq, size_t T, size_t KS, int S)
-{
-    if (S != 1 && S != 2)
+    CheckResult tosa_validate_element_accfp32(double ref, double bnd, float imp, size_t KS)
     {
-        // Check error bias magnitude for data sets S which are not positive biased
-        REQUIRE(abs(err_sum) <= 2 * sqrt(KS * T));
+        auto err = validate_element<float>(ref, bnd, imp, KS);
+        return from_optional(err);
     }
-    // Check error variance magnitude
-    REQUIRE(err_sum_sq <= 0.4 * KS * T);
 
-    return true;
-}
+    bool tosa_validate_output_error(double err_sum, double err_sum_sq, size_t T, size_t KS, int S)
+    {
+        if (S != 1 && S != 2)
+        {
+            // Check error bias magnitude for data sets S which are not positive biased
+            REQUIRE(abs(err_sum) <= 2 * sqrt(KS * T));
+        }
+        // Check error variance magnitude
+        REQUIRE(err_sum_sq <= 0.4 * KS * T);
 
-bool tosa_validate_data_fp32(const double* ref, const double* bnd, const float* imp, size_t T, size_t KS, int S)
-{
-    return validate_data<float>(ref, bnd, imp, T, KS, S);
-}
+        return true;
+    }
 
-} // extern "C"
+    bool tosa_validate_data_fp32(const double* ref, const double* bnd, const float* imp, size_t T, size_t KS, int S)
+    {
+        return validate_data<float>(ref, bnd, imp, T, KS, S);
+    }
+
+}    // extern "C"
 #undef REQUIRE

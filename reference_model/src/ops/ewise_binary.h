@@ -137,9 +137,7 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 class OpArithmeticRightShift : public BinaryNode<Rank, Dtype, Dtype>
 {
 public:
-    OpArithmeticRightShift(SubgraphTraverser* sgt_,
-                           TosaAttributeBase* attribute_,
-                           uint64_t id_)
+    OpArithmeticRightShift(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_ARITHMETIC_RIGHT_SHIFT, id_)
     {
         INIT_ATTRIBUTE(ArithmeticRightShift);

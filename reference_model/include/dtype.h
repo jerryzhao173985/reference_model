@@ -82,7 +82,7 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
 // return corresponding TOSA_REF_TYPE for DType
 inline TOSA_REF_TYPE ConvertDType(const DType dtype)
 {
-    assert(DType_MAX == DType_BF16);  // must update whenever DType_MAX changes
+    assert(DType_MAX == DType_BF16);    // must update whenever DType_MAX changes
 
     if (g_func_config.precise_mode)
     {

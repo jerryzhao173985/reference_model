@@ -1,4 +1,4 @@
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -20,4 +20,4 @@
 #define TOSA_REFERENCE_MODEL_VERSION_PATCH 0
 #define TOSA_REFERENCE_MODEL_VERSION_DRAFT true
 
-#endif  //VERSION_H
+#endif    //VERSION_H

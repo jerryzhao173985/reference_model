@@ -276,8 +276,8 @@ protected:
         if (requiredRankMin >= 0 && requiredRankMax >= 0)
         {
             ASSERT_MSG(requiredRankMin <= requiredRankMax,
-                    "GraphNode::setRequiredRank: requiredRankMin %d must be <= requiredRankMax %d", requiredRankMin,
-                    requiredRankMax);
+                       "GraphNode::setRequiredRank: requiredRankMin %d must be <= requiredRankMax %d", requiredRankMin,
+                       requiredRankMax);
         }
 
         return 0;

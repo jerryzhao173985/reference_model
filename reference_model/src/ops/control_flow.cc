@@ -95,20 +95,17 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     // pass block status back
     switch (block_sgt.getGraphStatus())
     {
-        case GraphStatus::TOSA_VALID:
-        {
+        case GraphStatus::TOSA_VALID: {
             DEBUG_MED(OP, "Successfully evaluating block %s", block_name.c_str());
             break;
         }
-        case GraphStatus::TOSA_UNPREDICTABLE:
-        {
+        case GraphStatus::TOSA_UNPREDICTABLE: {
             DEBUG_MED(OP, "Finish evaluating block %s but result is UNPREDICTABLE", block_name.c_str());
             DEBUG_MED(OP, "Setting parent graph status to UNPREDICTABLE");
             parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
             break;
         }
-        case GraphStatus::TOSA_ERROR:
-        {
+        case GraphStatus::TOSA_ERROR: {
             DEBUG_MED(OP, "Fail evaluating block %s. Result is ERROR", block_name.c_str());
             if (parent_sgt->getGraphStatus() != GraphStatus::TOSA_UNPREDICTABLE)
             {
@@ -311,7 +308,8 @@ OpWhileLoop::~OpWhileLoop()
 
 int OpWhileLoop::checkTensorAttributes()
 {
-    if (!tsh) {
+    if (!tsh)
+    {
         WARNING("OpWhileLoop: tosa serialization handler must not be null");
         return 1;
     }

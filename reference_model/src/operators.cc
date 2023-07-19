@@ -602,7 +602,7 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input = translate_client_tensor(client_input, "input");
+        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
         tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
 
         // Create operator

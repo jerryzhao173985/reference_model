@@ -43,9 +43,7 @@ int OpConst::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_,
-                                    TosaAttributeBase* attribute_,
-                                    uint64_t id_)
+OpIdentity<Rank, Dtype>::OpIdentity(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_IDENTITY, id_)
 {
     setRequiredOperands(1, 1);

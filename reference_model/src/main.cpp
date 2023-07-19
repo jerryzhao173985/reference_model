@@ -16,17 +16,17 @@
 #include "model_runner.h"
 #include "version.h"
 
+#include "arith_util.h"
 #include "command_line_utils.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
-#include "arith_util.h"
 
+#include <Eigen/CXX11/Tensor>
 #include <fstream>
 #include <iostream>
-#include <stdio.h>
-#include <Eigen/CXX11/Tensor>
 #include <nlohmann/json.hpp>
+#include <stdio.h>
 
 using namespace TosaReference;
 using namespace tosa;
@@ -42,10 +42,8 @@ bool isComplianceModeDotProduct(json& test_desc);
 
 int main(int argc, char** argv)
 {
-    TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR,
-                              TOSA_REFERENCE_MODEL_VERSION_MINOR,
-                              TOSA_REFERENCE_MODEL_VERSION_PATCH,
-                              TOSA_REFERENCE_MODEL_VERSION_DRAFT);
+    TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR, TOSA_REFERENCE_MODEL_VERSION_MINOR,
+                              TOSA_REFERENCE_MODEL_VERSION_PATCH, TOSA_REFERENCE_MODEL_VERSION_DRAFT);
 
     // Initialize configuration and debug subsystems
     g_func_debug.init_debug(0);
@@ -245,7 +243,8 @@ int loadGraph(TosaSerializationHandler& tsh, json& test_desc)
     {
         if (tsh.LoadFileSchema(g_func_config.operator_fbs.c_str()))
         {
-            FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck --operator_fbs is set correctly",
+            FATAL_ERROR("\nJSON file detected.  Unable to load TOSA flatbuffer schema from: %s\nCheck --operator_fbs "
+                        "is set correctly",
                         g_func_config.operator_fbs.c_str());
         }
 
@@ -259,9 +258,8 @@ int loadGraph(TosaSerializationHandler& tsh, json& test_desc)
     {
         if (tsh.LoadFileTosaFlatbuffer(graph_fullname))
         {
-            FATAL_ERROR(
-                "\nError loading TOSA flatbuffer file: %s\n%s%s",
-                graph_fullname, error_msg1.c_str(), error_msg2.c_str());
+            FATAL_ERROR("\nError loading TOSA flatbuffer file: %s\n%s%s", graph_fullname, error_msg1.c_str(),
+                        error_msg2.c_str());
         }
     }
 

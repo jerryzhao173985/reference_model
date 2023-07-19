@@ -14,9 +14,9 @@
 //    limitations under the License.
 
 #include "activation_funcs.h"
+#include "arith_util.h"
 #include "quant_util.h"
 #include "template_types.h"
-#include "arith_util.h"
 #include <cmath>
 
 using namespace TosaReference;
@@ -34,17 +34,17 @@ int OpClamp<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
-        case TOSA_REF_TYPE_FP32:
-        {
+        case TOSA_REF_TYPE_FP32: {
             InEigenType min = (InEigenType)attribute->min_fp();
             InEigenType max = (InEigenType)attribute->max_fp();
             ERROR_IF(max < min, "OpClamp: max smaller than min");
 
-            this->fcn = [min, max](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(a <= min ? min : a >= max ? max : a); };
+            this->fcn = [min, max](InEigenType a) -> OutEigenType {
+                return fpTrunc<Dtype>(a <= min ? min : a >= max ? max : a);
+            };
         }
         break;
-        case TOSA_REF_TYPE_FP64:
-        {
+        case TOSA_REF_TYPE_FP64: {
             InEigenType min = (InEigenType)attribute->min_fp();
             InEigenType max = (InEigenType)attribute->max_fp();
             ERROR_IF(max < min, "OpClamp: max smaller than min");
@@ -53,8 +53,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
         }
         break;
         case TOSA_REF_TYPE_INT8:
-        case TOSA_REF_TYPE_INT16:
-        {
+        case TOSA_REF_TYPE_INT16: {
             InEigenType min = (InEigenType)attribute->min_int();
             InEigenType max = (InEigenType)attribute->max_int();
             ERROR_IF(max < min, "OpClamp: max smaller than min");
@@ -71,7 +70,8 @@ int OpClamp<Rank, Dtype>::register_fcn()
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpClamp<Rank, Dtype>::~OpClamp()
 {
-    if (attribute) delete attribute;
+    if (attribute)
+        delete attribute;
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -86,9 +86,7 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType {
-                return fpTrunc<Dtype>(1.f / (1.f + (expf(-1.f * a))));
-            };
+            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.f / (1.f + (expf(-1.f * a)))); };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a) -> OutEigenType { return (1.L / (1.L + (exp(-1.L * a)))); };

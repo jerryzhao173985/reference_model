@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022, ARM Limited.
+// Copyright (c) 2022-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,24 +27,24 @@ int main()
     std::string expected_output_file(test_root + "tflite_result.npy");
 
     std::vector<std::string> input_names = { "TosaInput_0", "TosaInput_1" };
-    std::string output_name = "TosaOutput_0";
+    std::string output_name              = "TosaOutput_0";
 
     std::vector<int32_t> input0_shape = { 1, 4, 4, 1 };
     std::vector<int32_t> input1_shape = { 1, 4, 4, 4 };
     std::vector<int32_t> output_shape = { 1, 4, 4, 4 };
 
     std::vector<std::vector<float>> inputs(input_names.size());
-    std::vector<float> expected_outputs = { };
-    std::vector<float> actual_outputs = { };
+    std::vector<float> expected_outputs = {};
+    std::vector<float> actual_outputs   = {};
 
     // Read in inputs and expected outputs for sample purposes.
-    inputs[0] = readFromNpyFile<float>(input0_file.c_str(), input0_shape);
-    inputs[1] = readFromNpyFile<float>(input1_file.c_str(), input1_shape);
+    inputs[0]        = readFromNpyFile<float>(input0_file.c_str(), input0_shape);
+    inputs[1]        = readFromNpyFile<float>(input1_file.c_str(), input1_shape);
     expected_outputs = readFromNpyFile<float>(expected_output_file.c_str(), output_shape);
 
     tosa::TosaSerializationHandler handler;
     tosa::tosa_err_t error = handler.LoadFileTosaFlatbuffer(tosa_model_file.c_str());
-    if(error != tosa::TOSA_OK)
+    if (error != tosa::TOSA_OK)
     {
         WARNING("An error occurred while loading the model from file.");
         return 1;
@@ -54,7 +54,7 @@ int main()
     // Initialize the ModelRunner with configurations.
     IModelRunner runner;
     status = runner.initialize(handler);
-    if(status != GraphStatus::TOSA_VALID)
+    if (status != GraphStatus::TOSA_VALID)
     {
         WARNING("An error occurred while initializing.");
         return 1;
@@ -66,7 +66,7 @@ int main()
 
     // Run the ModelRunner using test inputs.
     status = runner.run();
-    if(status != GraphStatus::TOSA_VALID)
+    if (status != GraphStatus::TOSA_VALID)
     {
         WARNING("An error occurred when running the model.");
         return 1;
@@ -79,14 +79,14 @@ int main()
     bool if_accurate = true;
     for (size_t i = 0; i < expected_outputs.size(); ++i)
     {
-        if(actual_outputs[i] != expected_outputs[i])
+        if (actual_outputs[i] != expected_outputs[i])
         {
             WARNING("Actual output (%f) doesn't match expected output (%f).");
             if_accurate = false;
         }
     }
 
-    if(!if_accurate)
+    if (!if_accurate)
     {
         WARNING("There were mismatches in actual vs expected output, see above output for more details.");
         return 1;

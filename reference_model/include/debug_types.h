@@ -19,7 +19,7 @@
  *    Defines fundamental debugger datatypes for the functional model
  */
 
-#include<stdint.h>
+#include <stdint.h>
 #ifndef DEBUG_TYPES_H_
 #define DEBUG_TYPES_H_
 

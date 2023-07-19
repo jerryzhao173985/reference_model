@@ -83,27 +83,44 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
 // These 2 reducers are to overcome a bug introduced in Eigen between 3.3.7 and 3.4.0
 // The in-built .any and .all operations now fail on an assert in TensorMorphing.h:150
 // which seems to be due to incorrect data being passed internally as m_impl
-struct AllReducer {
+struct AllReducer
+{
     static const bool PacketAccess = false;
-    void reduce(const bool val, bool* accum) {
+    void reduce(const bool val, bool* accum)
+    {
         *accum = *accum && val;
     }
-    bool initialize() const { return true; }
-    bool finalize(const bool accum) const { return accum; }
+    bool initialize() const
+    {
+        return true;
+    }
+    bool finalize(const bool accum) const
+    {
+        return accum;
+    }
 };
-struct AnyReducer {
+struct AnyReducer
+{
     static const bool PacketAccess = false;
-    void reduce(const bool val, bool* accum) {
+    void reduce(const bool val, bool* accum)
+    {
         *accum = *accum || val;
     }
-    bool initialize() const { return false; }
-    bool finalize(const bool accum) const { return accum; }
+    bool initialize() const
+    {
+        return false;
+    }
+    bool finalize(const bool accum) const
+    {
+        return accum;
+    }
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceAll<Rank, Dtype>::eval()
 {
-    this->out->getTensor() = this->in->getTensor().reduce(this->dims, AllReducer()).reshape(this->out->getTensor().dimensions());
+    this->out->getTensor() =
+        this->in->getTensor().reduce(this->dims, AllReducer()).reshape(this->out->getTensor().dimensions());
 
     return GraphNode::eval();
 }
@@ -111,7 +128,8 @@ int OpReduceAll<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceAny<Rank, Dtype>::eval()
 {
-    this->out->getTensor() = this->in->getTensor().reduce(this->dims, AnyReducer()).reshape(this->out->getTensor().dimensions());
+    this->out->getTensor() =
+        this->in->getTensor().reduce(this->dims, AnyReducer()).reshape(this->out->getTensor().dimensions());
 
     return GraphNode::eval();
 }
@@ -135,14 +153,18 @@ int OpReduceMin<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceProduct<Rank, Dtype>::eval()
 {
-    switch(Dtype)
+    switch (Dtype)
     {
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
-            this->out->getTensor() = this->in->getTensor().prod(this->dims).reshape(this->out->getTensor().dimensions()).unaryExpr([](float f){return fpTrunc<Dtype>(f);});
+            this->out->getTensor() = this->in->getTensor()
+                                         .prod(this->dims)
+                                         .reshape(this->out->getTensor().dimensions())
+                                         .unaryExpr([](float f) { return fpTrunc<Dtype>(f); });
             break;
         case TOSA_REF_TYPE_FP32:
-            this->out->getTensor() = this->in->getTensor().prod(this->dims).reshape(this->out->getTensor().dimensions());
+            this->out->getTensor() =
+                this->in->getTensor().prod(this->dims).reshape(this->out->getTensor().dimensions());
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -188,7 +210,7 @@ int OpReduceProductDouble<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceSum<Rank, Dtype>::eval()
 {
-    switch(Dtype)
+    switch (Dtype)
     {
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
@@ -208,20 +230,30 @@ int OpReduceSum<Rank, Dtype>::eval()
     return GraphNode::eval();
 }
 
-struct SumRequiresReducer {
+struct SumRequiresReducer
+{
     static const bool PacketAccess = false;
-    SumRequiresReducer(SubgraphTraverser* parent_sgt) : parent_sgt(parent_sgt) {}
-    void reduce(const int32_t val, int32_t* accum) {
+    SumRequiresReducer(SubgraphTraverser* parent_sgt)
+        : parent_sgt(parent_sgt)
+    {}
+    void reduce(const int32_t val, int32_t* accum)
+    {
         int64_t res_in_64     = static_cast<int64_t>(*accum) + val;
         int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
         int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
         REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64, "OpReduceSum: result not in i32 range");
         *accum = static_cast<int32_t>(res_in_64);
     }
-    int32_t initialize() const { return 0; }
-    int32_t finalize(const int32_t accum) const { return accum; }
+    int32_t initialize() const
+    {
+        return 0;
+    }
+    int32_t finalize(const int32_t accum) const
+    {
+        return accum;
+    }
 
-    private:
+private:
     SubgraphTraverser* parent_sgt;
 };
 

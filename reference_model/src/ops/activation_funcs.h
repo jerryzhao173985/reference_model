@@ -86,8 +86,8 @@ public:
     {
         register_fcn();
     }
-    using InEigenType             = typename GetEigenType<Dtype>::type;
-    using OutEigenType            = typename GetEigenType<Dtype>::type;
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
     virtual int register_fcn();
 };
 
