@@ -14,6 +14,7 @@ import traceback
 from datetime import datetime
 from enum import IntEnum
 from enum import unique
+from pathlib import Path
 
 import numpy as np
 from checker.tosa_result_checker import LogColors
@@ -278,29 +279,24 @@ def write_reference_runner_json(
 
 def run_test(args, test, framework):
 
-    # parse test_name from test directory path
-    test_path = test.split("/")
+    test_path = Path(test)
+    msg = ""
+
+    try:
+        with open(test_path / "test.json", "r") as f:
+            test_desc = json.load(f)
+    except Exception:
+        raise Exception(f"Could not load or parse test from {test_path / 'test.json'}")
+
     test_name = None
-    for t in test_path[::-1]:
-        if len(t) != 0:
-            test_name = t
-            break
+    if "name" in test_desc:
+        test_name = test_desc["name"]
+    else:
+        test_name = test_path.name
     if not test_name:
         raise Exception("Could not parse test_name from {}".format(test))
 
     print_color(LogColors.GREEN, "## Running {} test {}".format(framework, test_name))
-
-    msg = ""
-
-    try:
-        with open(os.path.join(test, "test.json"), "r") as f:
-            test_desc = json.load(f)
-    except Exception:
-        raise Exception(
-            "Could not load or parse test from {}".format(
-                os.path.join(test, "test.json")
-            )
-        )
 
     try:
         if not args.override_exclusions:

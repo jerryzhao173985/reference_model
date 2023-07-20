@@ -18,9 +18,13 @@ def write_test_json(
     ifm_shape=None,
     framework_exclusions=None,
     quantized=False,
+    test_name=None,
 ):
 
     test_desc = dict()
+
+    if test_name:
+        test_desc["name"] = test_name
 
     if tf_model_filename:
         test_desc["tf_model_filename"] = tf_model_filename

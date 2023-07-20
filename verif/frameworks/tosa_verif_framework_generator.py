@@ -1288,6 +1288,8 @@ def run_unit_test(
             # Assume single result tensor now
             tflite_result_name = output_details[0]["name"]
 
+        _, test_name = os.path.split(test_dir)
+
         # Write out test descriptor
         write_test_json(
             filename=os.path.join(test_dir, "test.json"),
@@ -1302,6 +1304,7 @@ def run_unit_test(
             ifm_shape=placeholder_shapes,
             framework_exclusions=excluded_framework_list,
             quantized=is_quantized,
+            test_name=test_name,
         )
     except Exception as e:
         msg = "Error running task: {}".format(e)
