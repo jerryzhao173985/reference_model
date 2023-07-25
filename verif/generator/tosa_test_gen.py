@@ -51,7 +51,11 @@ class TosaTestGen:
 
         fullPath = os.path.join(self.basePath, self.testPath)
         os.makedirs(fullPath, exist_ok=True)
-        self.ser = ts.TosaSerializer(fullPath, saveConstsToFile=self.args.dump_consts)
+        # Embed const data in the flatbuffer
+        constMode = ts.ConstMode.EMBED
+        if self.args.dump_consts:
+            constMode = ts.ConstMode.EMBED_DUMP
+        self.ser = ts.TosaSerializer(fullPath, constMode)
 
     def getSerializer(self):
         return self.ser
