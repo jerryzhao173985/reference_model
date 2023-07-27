@@ -109,6 +109,8 @@ extern "C"
                                             tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_fully_connected(tosa_tensor_t client_input,
+                                           tosa_tensor_t client_weight,
+                                           tosa_tensor_t client_bias,
                                            const int32_t client_input_zp,
                                            const int32_t client_weight_zp,
                                            tosa_tensor_t client_output);
