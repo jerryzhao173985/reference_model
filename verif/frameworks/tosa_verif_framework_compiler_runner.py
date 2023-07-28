@@ -2,7 +2,6 @@
 # Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
-import glob
 import json
 import math
 import os
@@ -32,7 +31,7 @@ def parse_args():
         "--test",
         dest="test",
         default=[],
-        type=str,
+        type=Path,
         nargs="+",
         help="Test(s) to run",
     )
@@ -53,7 +52,7 @@ def parse_args():
     parser.add_argument(
         "--tools-base-dir",
         dest="tools_base_dir",
-        type=str,
+        type=Path,
         required=True,
         help="Reference model base directory",
     )
@@ -175,7 +174,7 @@ def parse_args():
     parser.add_argument(
         "--test-dir",
         dest="test_dir",
-        default="",
+        type=Path,
         help="Path to prepend to paths in test.json",
     )
 
@@ -277,9 +276,7 @@ def write_reference_runner_json(
         json.dump(test_desc, f, indent="  ")
 
 
-def run_test(args, test, framework):
-
-    test_path = Path(test)
+def run_test(args, test_path, framework):
     msg = ""
 
     try:
@@ -294,29 +291,29 @@ def run_test(args, test, framework):
     else:
         test_name = test_path.name
     if not test_name:
-        raise Exception("Could not parse test_name from {}".format(test))
+        raise Exception(f"Could not parse test_name from {test_path}")
 
-    print_color(LogColors.GREEN, "## Running {} test {}".format(framework, test_name))
+    print_color(LogColors.GREEN, f"## Running {framework} test {test_name}")
 
     try:
         if not args.override_exclusions:
             for excl in test_desc["framework_exclusions"]:
                 if excl == framework:
                     print_color(LogColors.GREEN, "Results SKIPPED")
-                    return (TestResult.SKIPPED, 0.0, "")
+                    return (TestResult.SKIPPED, 0.0, "", test_name)
     except KeyError:
         pass
 
-    tf_tools_dir = os.path.abspath(
-        "{}/bazel-bin/tensorflow/compiler/mlir".format(args.tf_base_dir)
-    )
+    tf_tools_dir = Path(
+        f"{args.tf_base_dir}/bazel-bin/tensorflow/compiler/mlir"
+    ).resolve()
 
-    pre_opt_filename = os.path.join(test, "test_{}.preopt.mlir".format(framework))
-    post_opt_filename = os.path.join(test, "test_{}.postopt.mlir".format(framework))
+    pre_opt_filename = str(test_path / f"test_{framework}.preopt.mlir")
+    post_opt_filename = str(test_path / f"test_{framework}.postopt.mlir")
     if args.test_dir:
         test_path_prepend = args.test_dir
     else:
-        test_path_prepend = test
+        test_path_prepend = test_path
 
     # 1. Framework to MLIR translator command
     if framework == "tf":
@@ -325,11 +322,11 @@ def run_test(args, test, framework):
             translate_mlir_cmd = []
         else:
             translate_mlir_cmd = [
-                os.path.join(tf_tools_dir, "tf-mlir-translate"),
+                str(tf_tools_dir / "tf-mlir-translate"),
                 "--graphdef-to-mlir",
                 "--tf-enable-shape-inference-on-import",
-                "--tf-output-arrays={}".format(test_desc["tf_result_name"]),
-                os.path.join(test_path_prepend, test_desc["tf_model_filename"]),
+                f"--tf-output-arrays={test_desc['tf_result_name']}",
+                str(test_path_prepend / test_desc["tf_model_filename"]),
                 "-o",
                 pre_opt_filename,
             ]
@@ -339,25 +336,25 @@ def run_test(args, test, framework):
             translate_mlir_cmd = []
         else:
             translate_mlir_cmd = [
-                os.path.join(tf_tools_dir, "lite", "flatbuffer_translate"),
+                str(tf_tools_dir / "lite" / "flatbuffer_translate"),
                 "--tflite-flatbuffer-to-mlir",
-                os.path.join(test_path_prepend, test_desc["tflite_model_filename"]),
-                "--output-arrays={}".format(test_desc["tflite_result_name"]),
+                str(test_path_prepend / test_desc["tflite_model_filename"]),
+                f"--output-arrays={test_desc['tflite_result_name']}",
                 "-o",
                 pre_opt_filename,
             ]
     else:
-        raise Exception("Unknown framwork: {}".format(framework))
+        raise Exception(f"Unknown framwork: {framework}")
 
     # Any additional inputs to the translator?
     input_tensor_prefix = "TosaInput_"
-    flatbuffer_dir = "flatbuffer-{}".format(framework)
+    flatbuffer_dir = f"flatbuffer-{framework}"
     mlir_opts = []
 
     # Temporary hack: MLIR's new hex encoding of large tensors does not work for
     # boolean types
     # for TF hash 8e8041d594a888eb67eafa5cc62627d7e9ca8082
-    if test.endswith("_bool") and args.hex_bool_hack:
+    if str(test_path).endswith("_bool") and args.hex_bool_hack:
         mlir_opts.append("--mlir-print-elementsattrs-with-hex-if-larger=-1")
 
     try:
@@ -380,11 +377,10 @@ def run_test(args, test, framework):
         # the file that compiler specified.
         reference_runner_ifm_name = []
         for i in range(len(test_desc["ifm_file"])):
-
-            ifm_tensor_name = "{}{}".format(input_tensor_prefix, i)
+            ifm_tensor_name = f"{input_tensor_prefix}{i}"
 
             assert test_desc["ifm_file"][i].endswith(".npy")
-            ifm_np = np.load(os.path.join(test, test_desc["ifm_file"][i]))
+            ifm_np = np.load(test_path / test_desc["ifm_file"][i])
 
             # We sometimes encounter input shape/expected input shape mismatches
             # due to a missing batch dimension on the input (e.g. a single 3D image).
@@ -398,7 +394,7 @@ def run_test(args, test, framework):
             # After legalization, complex tensors are expected to be represented
             # as a single floating point tensor of shape [?, ..., ?, 2].
             expected_shape = test_desc["ifm_shape"][i]
-            if test.endswith("c64"):
+            if str(test_path).endswith("c64"):
                 expected_shape.append(2)
 
             assert list(ifm_np.shape) == expected_shape
@@ -410,7 +406,7 @@ def run_test(args, test, framework):
         pass
 
     tf_opt_cmd = [
-        os.path.join(tf_tools_dir, "tf-opt"),
+        str(tf_tools_dir / "tf-opt"),
         "--tf-executor-to-functional-conversion",
         "--verify-each",
         pre_opt_filename,
@@ -421,7 +417,7 @@ def run_test(args, test, framework):
     translate_mlir_cmd.extend(mlir_opts)
     tf_opt_cmd.extend(mlir_opts)
 
-    compiler_cmd = [os.path.join(tf_tools_dir, "tf-opt")]
+    compiler_cmd = [str(tf_tools_dir / "tf-opt")]
 
     if framework == "tf":
         compiler_cmd.append("--tf-to-tosa-pipeline")
@@ -429,11 +425,11 @@ def run_test(args, test, framework):
         compiler_cmd.append("--tfl-to-tosa-pipeline")
         compiler_cmd.append("--tosa-strip-quant-types")
 
-    tosa_mlir_filename = os.path.join(test, "output_{}.tosa.mlir".format(framework))
+    tosa_mlir_filename = str(test_path / f"output_{framework}.tosa.mlir")
 
-    flatbuffer_dir_fullpath = os.path.join(test, flatbuffer_dir)
+    flatbuffer_dir_fullpath = test_path / flatbuffer_dir
 
-    os.makedirs(flatbuffer_dir_fullpath, exist_ok=True)
+    flatbuffer_dir_fullpath.mkdir(exist_ok=True)
 
     compiler_cmd.extend(
         [
@@ -442,9 +438,7 @@ def run_test(args, test, framework):
             "-o",
             tosa_mlir_filename,
             "--tosa-serialize",
-            "--tosa-flatbuffer-filename={}".format(
-                os.path.join(flatbuffer_dir_fullpath, "{}.tosa".format(test_name))
-            ),
+            f"--tosa-flatbuffer-filename={flatbuffer_dir_fullpath / f'{test_name}.tosa'}",
         ]
     )
 
@@ -455,13 +449,10 @@ def run_test(args, test, framework):
             if tf_opt_cmd:
                 run_sh_command(tf_opt_cmd, args.verbose, True)
         except Exception as e:
-            print_color(
-                LogColors.RED, "Results INVALID_MLIR {}: {}".format(test_name, e)
-            )
-            return (TestResult.INVALID_MLIR, 0.0, e)
+            print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
+            return (TestResult.INVALID_MLIR, 0.0, e, test_name)
 
         try:
-
             compiler_stdout, compiler_stderr = run_sh_command(
                 compiler_cmd, args.verbose, True
             )
@@ -469,34 +460,28 @@ def run_test(args, test, framework):
             if compiler_rc == TestResult.NOT_LOWERED:
                 print_color(
                     LogColors.RED,
-                    "Results NOT_LOWERED {}, framework {}".format(test_name, framework),
+                    f"Results NOT_LOWERED {test_name}, framework {framework}",
                 )
-                return (TestResult.NOT_LOWERED, 0.0, "")
+                return (TestResult.NOT_LOWERED, 0.0, "", test_name)
 
             pass
 
         except Exception as e:
             if "same scale constraint" in str(e):
-                print_color(
-                    LogColors.RED, "Results INVALID_MLIR {}: {}".format(test_name, e)
-                )
-                return (TestResult.INVALID_MLIR, 0.0, e)
+                print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
+                return (TestResult.INVALID_MLIR, 0.0, e, test_name)
             else:
-                print_color(
-                    LogColors.RED, "Results COMPILER_ERROR {}: {}".format(test_name, e)
-                )
-                return (TestResult.COMPILER_ERROR, 0.0, e)
+                print_color(LogColors.RED, f"Results COMPILER_ERROR {test_name}: {e}")
+                return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
 
     if framework == "tf":
         try:
-            tf_result = np.load(os.path.join(test, test_desc["tf_result_npy_filename"]))
+            tf_result = np.load(test_path / test_desc["tf_result_npy_filename"])
         except KeyError:
             assert 0, "fail to load tf result numpy"
     elif framework == "tflite":
         try:
-            tf_result = np.load(
-                os.path.join(test, test_desc["tflite_result_npy_filename"])
-            )
+            tf_result = np.load(test_path / test_desc["tflite_result_npy_filename"])
         except KeyError:
             assert 0, "fail to load tflite result numpy"
 
@@ -518,7 +503,7 @@ def run_test(args, test, framework):
     # Input .npy will be shared across different frameworks
     # Output .npy will be generated in its corresponding flatbuffer
     reference_runner_ifm_file = [
-        os.path.join("..", ifm_file) for ifm_file in test_desc["ifm_file"]
+        str(Path("..") / ifm_file) for ifm_file in test_desc["ifm_file"]
     ]
 
     # Check if there's any operator in output graph.
@@ -537,8 +522,8 @@ def run_test(args, test, framework):
         reference_runner_ofm_name = ["TosaOutput_0"]
 
     write_reference_runner_json(
-        filename=os.path.join(test, flatbuffer_dir, "desc.json"),
-        tosa_filename="{}.tosa".format(test_name),
+        filename=str(test_path / flatbuffer_dir / "desc.json"),
+        tosa_filename=f"{test_name}.tosa",
         ifm_name=reference_runner_ifm_name,
         ifm_file=reference_runner_ifm_file,
         ofm_name=reference_runner_ofm_name,
@@ -546,10 +531,8 @@ def run_test(args, test, framework):
     )
 
     ref_model_cmd = [
-        os.path.join(
-            args.tools_base_dir, "build", "reference_model", "tosa_reference_model"
-        ),
-        "--test_desc={}".format(os.path.join(test, flatbuffer_dir, "desc.json")),
+        str(args.tools_base_dir / "build" / "reference_model" / "tosa_reference_model"),
+        f"--test_desc={test_path / flatbuffer_dir / 'desc.json'}",
     ]
 
     if args.debug_ref_model:
@@ -566,13 +549,11 @@ def run_test(args, test, framework):
             "-q",
         ] + ref_model_cmd
 
-    ref_model_cmd = ref_model_cmd + ["--tosa_level={}".format(args.tosa_level)]
+    ref_model_cmd = ref_model_cmd + [f"--tosa_level={args.tosa_level}"]
 
     # Clean out any ref_model result first
-    try:
-        os.remove(os.path.join(test, flatbuffer_dir, "ref_model_*.npy"))
-    except FileNotFoundError:
-        pass
+    for f in (test_path / flatbuffer_dir).glob("ref_model_*.npy"):
+        f.unlink()
 
     if args.no_ref:
         return (TestResult.PASS, 0.0, msg)
@@ -589,16 +570,11 @@ def run_test(args, test, framework):
         if ref_model_rc != TestResult.PASS:
             print_color(
                 LogColors.RED,
-                "Results {} {}: {}".format(
-                    TestResultErrorStr[ref_model_rc], test_name, e
-                ),
+                f"Results {TestResultErrorStr[ref_model_rc]} {test_name}: {e}",
             )
             return (ref_model_rc, 0.0, "")
-        print_color(
-            LogColors.RED,
-            "Results REF_MODEL_RUNTIME_ERROR {}: {}".format(test_name, e),
-        )
-        return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e)
+        print_color(LogColors.RED, f"Results REF_MODEL_RUNTIME_ERROR {test_name}: {e}")
+        return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e, test_name)
 
     if args.precise_mode == 1 and (
         tf_result.dtype == np.float16 or tf_result.dtype == np.float32
@@ -614,17 +590,13 @@ def run_test(args, test, framework):
     ):
         tf_result = tf_result.astype(np.int32)
 
-    # For now, search for the output from ref_model
-    ref_model_result_files = glob.glob(
-        os.path.join(test, flatbuffer_dir, "ref_model_*.npy")
-    )
+    # For now, search for the first output from ref_model
+    ref_model_result_files = list((test_path / flatbuffer_dir).glob("ref_model_*.npy"))
     ref_model_result = np.load(ref_model_result_files[0])
 
     assert (
         tf_result.dtype == ref_model_result.dtype
-    ), "Numpy type mismatch {} != {} when comparing result".format(
-        tf_result.dtype, ref_model_result.dtype
-    )
+    ), f"Numpy type mismatch {tf_result.dtype} != {ref_model_result.dtype} when comparing result"
 
     # Size comparison
     # Size = 1 tensors can be equivalently represented as having rank 0 or rank
@@ -633,21 +605,19 @@ def run_test(args, test, framework):
     ref_model_result = np.squeeze(ref_model_result)
 
     if np.shape(tf_result) != np.shape(ref_model_result):
-        print_color(LogColors.RED, "Results MISCOMPARE {}".format(test_name))
-        msg = "Shapes mismatch: Reference {} vs {}".format(
-            np.shape(tf_result), np.shape(ref_model_result)
-        )
+        print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
+        msg = f"Shapes mismatch: Reference {np.shape(tf_result)} vs {np.shape(ref_model_result)}"
         print(msg)
-        return (TestResult.MISMATCH, 0.0, msg)
+        return (TestResult.MISMATCH, 0.0, msg, test_name)
 
     # for quantized test, allow +-(args.quantize_tolerance) error
     if ref_model_result.dtype == np.int32:
         assert tf_result.dtype == np.int32
 
         if np.all(np.absolute(ref_model_result - tf_result) <= args.quantize_tolerance):
-            print_color(LogColors.GREEN, "Results PASS {}".format(test_name))
+            print_color(LogColors.GREEN, f"Results PASS {test_name}")
         else:
-            print_color(LogColors.RED, "Results MISCOMPARE {}".format(test_name))
+            print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
 
             tolerance = args.quantize_tolerance + 1
             while not np.all(
@@ -657,23 +627,23 @@ def run_test(args, test, framework):
                 if tolerance >= 10:
                     break
 
-            msg = "Result is within {} {}".format(tolerance, test)
+            msg = f"Result is within {tolerance} {test_path}"
             print(msg)
 
             np.set_printoptions(threshold=128)
-            print("tf_result: {}\n".format(tf_result.shape))
+            print(f"tf_result: {tf_result.shape}\n")
             print(tf_result)
-            print("ref_model_result: {}\n".format(ref_model_result.shape))
+            print(f"ref_model_result: {ref_model_result.shape}\n")
             print(ref_model_result)
             # print(tf_result - ref_model_result)
-            return (TestResult.MISMATCH, tolerance, msg)
+            return (TestResult.MISMATCH, tolerance, msg, test_name)
     else:
         if np.allclose(
             ref_model_result, tf_result, atol=args.tolerance, equal_nan=True
         ):
-            print_color(LogColors.GREEN, "Results PASS {}".format(test_name))
+            print_color(LogColors.GREEN, f"Results PASS {test_name}")
         else:
-            print_color(LogColors.RED, "Results MISCOMPARE {}".format(test_name))
+            print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
 
             # Many of these tests would match with a reasonable looser tolerence.
             # Determine what would have worked.
@@ -686,18 +656,18 @@ def run_test(args, test, framework):
                     tolerance = math.inf
                     break
 
-            msg = "Result is within {:.0e} {}".format(tolerance, test_name)
+            msg = f"Result is within {tolerance:.0e} {test_name}"
             print(msg)
 
             np.set_printoptions(precision=4, threshold=128)
-            print("tf_result: {}\n".format(tf_result.shape))
+            print(f"tf_result: {tf_result.shape}\n")
             print(tf_result)
-            print("ref_model_result: {}\n".format(ref_model_result.shape))
+            print(f"ref_model_result: {ref_model_result.shape}\n")
             print(ref_model_result)
             # print(tf_result - ref_model_result)
-            return (TestResult.MISMATCH, tolerance, msg)
+            return (TestResult.MISMATCH, tolerance, msg, test_name)
 
-    return (TestResult.PASS, args.tolerance, msg)
+    return (TestResult.PASS, args.tolerance, msg, test_name)
 
 
 def worker_thread(task_queue, args, result_queue):
@@ -713,9 +683,9 @@ def worker_thread(task_queue, args, result_queue):
         msg = ""
         start_time = datetime.now()
         try:
-            (rc, tolerance, msg) = run_test(args, test, framework)
+            (rc, tolerance, msg, test_name) = run_test(args, test, framework)
         except Exception as e:
-            print("Internal regression error: {}".format(e))
+            print(f"Internal regression error: {e}")
             print(
                 "".join(
                     traceback.format_exception(
@@ -728,7 +698,9 @@ def worker_thread(task_queue, args, result_queue):
 
         end_time = datetime.now()
 
-        result_queue.put((test, framework, rc, tolerance, msg, end_time - start_time))
+        result_queue.put(
+            (test, framework, rc, tolerance, msg, end_time - start_time, test_name)
+        )
         task_queue.task_done()
 
     return True
@@ -736,11 +708,11 @@ def worker_thread(task_queue, args, result_queue):
 
 def getTestsInDir(directory):
     # Recursively find any tests in this directory
-    if os.path.isfile(os.path.join(directory, "test.json")):
+    if (directory / "test.json").is_file():
         return [directory]
-    elif os.path.isdir(directory):
+    elif directory.is_dir():
         test_list = []
-        for d in glob.glob(os.path.join(directory, "*")):
+        for d in directory.glob("*"):
             test_list.extend(getTestsInDir(d))
         return test_list
     else:
@@ -768,7 +740,6 @@ def main():
     results = [0] * len(TestResult)
 
     for tdir in args.test:
-
         if args.recursive_tests:
             tdirList = getTestsInDir(tdir)
         else:
@@ -794,22 +765,22 @@ def main():
     result_list = []
     while True:
         try:
-            test, framework, rc, tol, msg, time_delta = result_queue.get(block=False)
+            test, framework, rc, tol, msg, time_delta, test_name = result_queue.get(
+                block=False
+            )
         except queue.Empty:
             break
 
-        result_list.append((test, framework, rc, tol, msg, time_delta))
+        result_list.append((test, framework, rc, tol, msg, time_delta, test_name))
         results[rc] = results[rc] + 1
 
     xunit_result = xunit_results()
     xunit_suite = xunit_result.create_suite(args.xunit_classname_prefix)
 
     # Sort by test name
-    for test, framework, rc, tol, err_msg, time_delta in sorted(
+    for test, framework, rc, tol, err_msg, time_delta, test_name in sorted(
         result_list, key=lambda tup: tup[0]
     ):
-
-        test_name = os.path.basename(test)
         class_name = f"{args.xunit_classname_prefix}.{framework}"
 
         xt = xunit_test(test_name, class_name)
@@ -821,11 +792,11 @@ def main():
         )
 
         if len(msg) > 0:
-            print("{} on {} {}".format(msg, framework, test))
+            print(f"{msg} on {framework} {test}")
 
         # Add any more verbose messaging for the xml log
         if err_msg:
-            msg = "{} {}".format(msg, err_msg)
+            msg = f"{msg} {err_msg}"
 
         if rc == TestResult.PASS:
             pass
@@ -842,7 +813,7 @@ def main():
 
     print("Totals: ", end="")
     for result in TestResult:
-        print("{} {}, ".format(results[result], result.name.lower()), end="")
+        print(f"{results[result]} {result.name.lower()}, ", end="")
     print()
 
     if not args.regression_mode and (
