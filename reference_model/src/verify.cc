@@ -114,7 +114,7 @@ extern "C"
         if (S != 1 && S != 2)
         {
             // Check error bias magnitude for data sets S which are not positive biased
-            REQUIRE(abs(err_sum) <= 2 * sqrt(KS * T));
+            REQUIRE(std::abs(err_sum) <= 2 * sqrt(KS * T));
         }
         // Check error variance magnitude
         REQUIRE(err_sum_sq <= 0.4 * KS * T);

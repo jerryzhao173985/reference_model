@@ -450,10 +450,10 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [shift](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a * b); };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a * b); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [shift](InEigenType a, InEigenType b) -> OutEigenType { return a * b; };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a * b; };
             break;
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this, shift](InEigenType a, InEigenType b) -> OutEigenType {
@@ -481,7 +481,7 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_INT8:
         case TOSA_REF_TYPE_INT16:
-            this->fcn = [this](InEigenType lhs, InEigenType rhs) -> OutEigenType {
+            this->fcn = [](InEigenType lhs, InEigenType rhs) -> OutEigenType {
                 OutEigenType raw_output = (OutEigenType)lhs * (OutEigenType)rhs;
 
                 OutEigenType clamped_output = std::min<OutEigenType>(QMax, std::max<OutEigenType>(raw_output, QMin));
