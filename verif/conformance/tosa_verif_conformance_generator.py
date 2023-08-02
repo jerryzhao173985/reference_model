@@ -572,6 +572,9 @@ def main():
             )
             return 2
     if args.unit_tests in ["framework", "both"]:
+        logger.warning(
+            "DEPRECATION - Framework tests are not part of TOSA conformance testing"
+        )
         if not args.framework_schema:
             logger.error(
                 "Need to supply location of Framework flatbuffers schema via --framework-schema"

@@ -438,25 +438,28 @@ tosa_verif_framework_compiler_runner \
 
 ### TOSA Conformance Generator
 
-This script enables creation of part or all of the *TOSA conformance tests
-<https://git.mlplatform.org/tosa/conformance_tests.git/>*, to
-enable development of these tests.
+This script enables creation of part or all of the *TOSA conformance tests*, to enable running or development of these tests.
 
-Currently only the Base Profile of TOSA is supported by the generator.
+Currently only the Base Profile of TOSA is fully supported by the generator.
+
+**DEPRECATION NOTES:**
+
+* The repository *TOSA conformance tests - <https://git.mlplatform.org/tosa/conformance_tests.git/>* - has been DEPRECATED, tests need to be
+generated using the script detailed in this section.
+* The framework tests are DEPRECATED as part of the conformance testing, so there is no need to follow the TOSA Framework Unit Tests instructions above for this section.
 
 #### Setup
 
-To enable selection of the framework tests for conformance, the TOSA Framework
-Unit Tests (see above) must have been pre-generated and there is access to the
-framework schema from TensorFlow Lite.
+The generation of conformance tests is dependent on the FlatBuffers
+command `flatc` - please follow the section on the FlatBuffers compiler below.
 
 #### Usage
 
 These are the main script options for controlling the types of tests produced:
 
-* `--profile` - controls the TOSA profile, only `base` is currently supported.
-* `--unit-tests` - choose either `operator`, `framework` or `both` tests.
-* `--test-type` - selects `postive`, `negative` or `both` types of test.
+* `--profile` - controls the TOSA profile, only `base` - for base inference tests - is fully supported, but other options are `main` - for the floating point main inference tests - or `all` - for both.
+* `--unit-tests` - choose which tests to produce, only `operator` should be used as `framework` (and `both`) tests are DEPRECATED.
+* `--test-type` - selects `positive`, `negative` or `both` types of test.
 
 
 An example to create the TOSA operator unit tests for ADD and SUB:
@@ -464,7 +467,6 @@ An example to create the TOSA operator unit tests for ADD and SUB:
 ```bash
 tosa_verif_conformance_generator        \
   --profile base                        \
-  --unit-tests operator                 \
   --ref-model-directory reference_model \
   --operator add sub
 ```
@@ -478,13 +480,9 @@ temporary build and output directories:
 
 ```bash
 tosa_verif_conformance_generator        \
-  --profile base                        \
-  --unit-tests both                     \
   --ref-model-directory reference_model \
   --build-directory tmp_build           \
-  --output-directory conf_tests         \
-  --framework-tests-directory tests     \
-  --framework-schema tensorflow/lite/schema/schema.fbs
+  --output-directory conf_tests
 ```
 
 ## Other tools
