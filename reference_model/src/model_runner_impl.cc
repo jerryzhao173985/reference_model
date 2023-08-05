@@ -341,13 +341,14 @@ void ModelRunnerImpl::validateTosaVersion(TosaSerializationHandler& serializatio
     TosaVersion model_version(TOSA_REFERENCE_MODEL_VERSION_MAJOR, TOSA_REFERENCE_MODEL_VERSION_MINOR,
                               TOSA_REFERENCE_MODEL_VERSION_PATCH, TOSA_REFERENCE_MODEL_VERSION_DRAFT);
 
-    TosaVersion::compat_t is_compat = model_version.is_compatible(serialization_handler.GetVersion());
+    TosaVersion::compat_t is_compat = TosaVersion::is_compatible(model_version, serialization_handler.GetVersion());
+
     switch (is_compat)
     {
         case TosaVersion::compat_t::COMPLETELY_COMPATIBLE:
             break;
-        case TosaVersion::compat_t::PARTIALLY_COMPATIBLE:
-            WARNING("Reference model version %s is partially compatible with serializer version %s.",
+        case TosaVersion::compat_t::BACKWARD_COMPATIBLE:
+            WARNING("Reference model version %s is backward compatible with serializer version %s.",
                     model_version.to_string().c_str(), serialization_handler.GetVersion().to_string().c_str());
             break;
         case TosaVersion::compat_t::NOT_COMPATIBLE:

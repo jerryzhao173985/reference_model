@@ -54,13 +54,14 @@ int main(int argc, char** argv)
     }
 
     TosaSerializationHandler tsh;
-    TosaVersion::compat_t is_compat = model_version.is_compatible(tsh.GetVersion());
+    TosaVersion::compat_t is_compat = TosaVersion::is_compatible(model_version, tsh.GetVersion());
+
     switch (is_compat)
     {
         case TosaVersion::compat_t::COMPLETELY_COMPATIBLE:
             break;
-        case TosaVersion::compat_t::PARTIALLY_COMPATIBLE:
-            printf("WARNING: Reference model version %s is partially compatible with serializer version %s\n",
+        case TosaVersion::compat_t::BACKWARD_COMPATIBLE:
+            printf("WARNING: Reference model version %s is backward compatible with serializer version %s\n",
                    model_version.to_string().c_str(), tsh.GetVersion().to_string().c_str());
             break;
         case TosaVersion::compat_t::NOT_COMPATIBLE:
