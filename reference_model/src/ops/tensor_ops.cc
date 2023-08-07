@@ -1233,9 +1233,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
                             for (int fw = 0; fw < f_width; fw++)
                             {
                                 // Perform multiplication in AccEigenType then cast to OutEigenType
-                                this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) += (OutEigenType)(
-                                    (AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh, ic) *
-                                    (AccEigenType)weight_val(fh, fw, ic, cm));
+                                this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) +=
+                                    (OutEigenType)((AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh,
+                                                                                       ic) *
+                                                   (AccEigenType)weight_val(fh, fw, ic, cm));
                             }
                         }
                     }
