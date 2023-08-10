@@ -40,6 +40,7 @@ enum TOSA_REF_TYPE : uint32_t
     TOSA_REF_TYPE_UINT16  = 9,
     TOSA_REF_TYPE_FP16    = 10,
     TOSA_REF_TYPE_BF16    = 11,
+    TOSA_REF_TYPE_SHAPE   = 12,
     TOSA_REF_TYPE_FP64    = 99,    // FP64 is special: add new data types above
 };
 
@@ -71,6 +72,8 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
             return EnumNameDType(DType_FP16);
         case TOSA_REF_TYPE_BF16:
             return EnumNameDType(DType_BF16);
+        case TOSA_REF_TYPE_SHAPE:
+            return EnumNameDType(DType_SHAPE);
         case TOSA_REF_TYPE_FP64:
             return "FP64";
         default:
@@ -82,7 +85,7 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
 // return corresponding TOSA_REF_TYPE for DType
 inline TOSA_REF_TYPE ConvertDType(const DType dtype)
 {
-    assert(DType_MAX == DType_BF16);    // must update whenever DType_MAX changes
+    assert(DType_MAX == DType_SHAPE);    // must update whenever DType_MAX changes
 
     if (g_func_config.precise_mode)
     {
@@ -122,6 +125,8 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
             return TOSA_REF_TYPE_FP16;
         case DType_BF16:
             return TOSA_REF_TYPE_BF16;
+        case DType_SHAPE:
+            return TOSA_REF_TYPE_SHAPE;
         default:
             break;
     }

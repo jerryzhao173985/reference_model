@@ -478,7 +478,8 @@ int SubgraphTraverser::allocateTensor(std::string name)
                 tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
             }
             break;
-            case DType_INT48: {
+            case DType_INT48:
+            case DType_SHAPE: {
                 std::vector<int64_t> i64_data;
                 TosaSerializationHandler::ConvertU8toI48(ts->GetData(), tensor->getElementCount(), i64_data);
                 tensor->setTensorValueInt64(i64_data.size(), i64_data.data());

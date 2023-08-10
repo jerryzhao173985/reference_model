@@ -1317,6 +1317,60 @@
             }
         }
     },
+    "dim": {
+        "group": "data_layout",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--target-dtype",
+                        "int32",
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "1,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "selector": "8k_level",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
+    },
     "equal": {
         "group": "comparison",
         "profile": [

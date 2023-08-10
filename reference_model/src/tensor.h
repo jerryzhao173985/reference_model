@@ -811,6 +811,13 @@ public:
                         return new Tensor6<int64_t>(tensorName_, dtype_, shape_);
                 }
                 break;
+            case TOSA_REF_TYPE_SHAPE:
+                // if shape information is not already set, set it here.
+                if (shape_.size() == 0)
+                {
+                    shape_ = { 1 };
+                }
+                return new Tensor0<int64_t>(tensorName_, dtype_, shape_);
             case TOSA_REF_TYPE_BOOL:
                 switch (rank)
                 {

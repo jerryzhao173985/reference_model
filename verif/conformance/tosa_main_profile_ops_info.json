@@ -787,6 +787,45 @@
             }
         }
     },
+    "dim": {
+        "group": "data_layout",
+        "profile": [
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--tensor-dim-range",
+                        "1,65",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
+    },
     "equal": {
         "group": "comparison",
         "profile": [

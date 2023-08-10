@@ -506,6 +506,13 @@ class DepthwiseConv2dOperator(Operator):
     param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
 
 
+class DimOeprator(Operator):
+    """Test selector for the DIM operator."""
+
+    name = "dim"
+    param_names = ["shape", "type", "axis"]
+
+
 class EqualOperator(Operator):
     """Test selector for the EQUAL operator."""
 

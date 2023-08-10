@@ -18,6 +18,7 @@ DTYPE_ATTRIBUTES = {
     DType.UINT16: {"str": "u16", "width": 16},
     DType.INT32: {"str": "i32", "width": 32},
     DType.INT48: {"str": "i48", "width": 48},
+    DType.SHAPE: {"str": "i64", "width": 64},
     DType.FP16: {"str": "f16", "width": 16},
     DType.BF16: {"str": "bf16", "width": 16},
     DType.FP32: {"str": "f32", "width": 32},

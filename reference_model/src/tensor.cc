@@ -137,6 +137,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, i32databuf);
             break;
         case DType_INT48:
+        case DType_SHAPE:
             i64databuf = (int64_t*)calloc(sizeof(int64_t), elements);
             ASSERT_MEM(i64databuf);
 
@@ -220,6 +221,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             }
             break;
         case TOSA_REF_TYPE_INT48:
+        case TOSA_REF_TYPE_SHAPE:
             if (setTensorValueInt64(elements, i64databuf))
             {
                 free(i64databuf);
@@ -379,6 +381,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
             free(i32databuf);
             break;
         case TOSA_REF_TYPE_INT48:
+        case TOSA_REF_TYPE_SHAPE:
             i64databuf = (int64_t*)calloc(sizeof(int64_t), elements);
             ASSERT_MEM(i64databuf);
 
@@ -672,6 +675,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<int64_t> vals)
     switch (getDtype())
     {
         case TOSA_REF_TYPE_INT48:
+        case TOSA_REF_TYPE_SHAPE:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
@@ -847,6 +851,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<int64_t> vals)
     switch (getDtype())
     {
         case TOSA_REF_TYPE_INT48:
+        case TOSA_REF_TYPE_SHAPE:
             if (vals.size() != elements)
             {
                 WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",

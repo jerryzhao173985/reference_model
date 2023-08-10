@@ -98,6 +98,11 @@ struct GetEigenType<TOSA_REF_TYPE_INT48>
     using type = int64_t;
 };
 template <>
+struct GetEigenType<TOSA_REF_TYPE_SHAPE>
+{
+    using type = int64_t;
+};
+template <>
 struct GetEigenType<TOSA_REF_TYPE_BOOL>
 {
     using type = bool;

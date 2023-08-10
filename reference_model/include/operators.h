@@ -57,6 +57,7 @@ extern "C"
         tosa_datatype_int8_t   = 8,
         tosa_datatype_uint16_t = 9,
         tosa_datatype_uint8_t  = 10,
+        tosa_datatype_shape_t  = 11,
     };
 
     struct tosa_tensor_t
@@ -274,6 +275,8 @@ extern "C"
                                const int32_t client_pad_const_int,
                                const float client_pad_const_fp,
                                tosa_tensor_t client_output);
+
+    tosa_status_t tosa_run_dim(tosa_tensor_t client_input1, const int32_t client_axis, tosa_tensor_t client_output);
 
     tosa_status_t tosa_run_reshape(tosa_tensor_t client_input1,
                                    const int32_t client_new_shape_len,

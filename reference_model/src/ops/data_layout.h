@@ -66,6 +66,27 @@ protected:
     TosaPadAttribute* attribute;
 };
 
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpDim : public GraphNode
+{
+public:
+    OpDim(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
+    virtual ~OpDim();
+
+    virtual int checkTensorAttributes();
+    virtual int eval();
+
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using TIn          = Eigen::Tensor<InEigenType, Rank>;
+    using TOut         = Eigen::Tensor<OutEigenType, 0>;
+
+protected:
+    TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TOut>* out;
+    TosaAxisAttribute* attribute;
+};
+
 template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
 class OpReshape : public GraphNode
 {

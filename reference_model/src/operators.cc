@@ -68,6 +68,8 @@ tosa::DType translate_client_datatype(tosa_datatype_t type)
             return tosa::DType::DType_UINT16;
         case tosa_datatype_uint8_t:
             return tosa::DType::DType_UINT8;
+        case tosa_datatype_shape_t:
+            return tosa::DType::DType_SHAPE;
         default:
             return tosa::DType::DType_UNKNOWN;
     }
@@ -1973,6 +1975,34 @@ extern "C"
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
+        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+
+        return tosa_status_valid;
+    }
+
+    tosa_status_t tosa_run_dim(tosa_tensor_t client_input1, const int32_t client_axis, tosa_tensor_t client_output)
+    {
+        // Create operator attributes
+        TosaAxisAttribute attr(client_axis);
+
+        // Create tensors
+        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
+        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+
+        // Create operator
+        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_DIM, tosa::Attribute::Attribute_AxisAttribute, &attr,
+                                                      { input1->GetName() }, { output->GetName() });
+
+        // Create a tosa single-op basic block
+        tosa::TosaSerializationBasicBlock block("dim", "main", { op }, { input1, output }, { input1->GetName() },
+                                                { output->GetName() });
+
+        // Setup model
+        TosaReference::ModelRunnerImpl runner;
+        TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
+        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        // Execute
         TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
 
         return tosa_status_valid;
