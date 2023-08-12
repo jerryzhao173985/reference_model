@@ -24,7 +24,9 @@
 
 #ifndef _MSC_VER
 #include <execinfo.h>
+#if !defined(__APPLE__) && !defined(__MACH__)
 #include <sys/prctl.h>
+#endif
 #include <sys/ptrace.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -40,13 +42,13 @@ static bool str_case_equal(const std::string& a, const std::string& b)
                       [](char ac, char bc) { return tolower(ac) == tolower(bc); });
 }
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
 pid_t func_print_backtrace_helper(int num_tries, int sig);
 #endif
 
 void func_print_backtrace(FILE* out, int sig)
 {
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
     for (int i = 0; i < 2; i++)
     {
         const pid_t child_pid = func_print_backtrace_helper(i, sig);
@@ -66,7 +68,7 @@ void func_print_backtrace(FILE* out, int sig)
 #endif
 }
 
-#ifndef _MSC_VER
+#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
 pid_t func_print_backtrace_helper(int num_tries, int sig)
 {
     const pid_t child_pid = fork();
