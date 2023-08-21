@@ -43,11 +43,6 @@ struct AccPrecision<float>
 {
     static constexpr double precision = (double)(1 << 24);
 };
-template <>
-struct AccPrecision<half_float::half>
-{
-    static constexpr double precision = (double)(1 << 11);
-};
 
 // Generic element validation function
 template <typename AccType, typename std::enable_if_t<std::is_floating_point_v<AccType>, int> = 0>
