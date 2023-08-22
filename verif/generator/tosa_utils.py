@@ -93,7 +93,7 @@ def usableDTypes(*, excludes=None):
     Returns:
         A set of DType values
     """
-    omit = {DType.UNKNOWN, DType.UINT8, DType.UINT16}
+    omit = {DType.UNKNOWN, DType.UINT8, DType.UINT16, DType.SHAPE}
     omit.update(excludes if excludes else ())
     return allDTypes(excludes=omit)
 
