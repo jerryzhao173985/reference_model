@@ -21,6 +21,7 @@
 
 #include "func_config.h"
 #include "func_debug.h"
+#include "types.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -29,48 +30,6 @@
 extern "C"
 {
 #endif /* __cplusplus */
-
-    // Note status needs to be aligned with graph_status
-    enum tosa_status_t
-    {
-        tosa_status_valid         = 0,
-        tosa_status_unpredictable = 1,
-        tosa_status_error         = 2
-    };
-
-    enum tosa_mode_t
-    {
-        tosa_mode_unknown  = 0,
-        tosa_mode_nearest  = 1,
-        tosa_mode_bilinear = 2,
-        tosa_mode_min      = 3,
-        tosa_mode_max      = 4
-    };
-
-    enum tosa_datatype_t
-    {
-        tosa_datatype_bf16_t   = 0,
-        tosa_datatype_bool_t   = 1,
-        tosa_datatype_fp16_t   = 2,
-        tosa_datatype_fp32_t   = 3,
-        tosa_datatype_int16_t  = 4,
-        tosa_datatype_int32_t  = 5,
-        tosa_datatype_int48_t  = 6,
-        tosa_datatype_int4_t   = 7,
-        tosa_datatype_int8_t   = 8,
-        tosa_datatype_uint16_t = 9,
-        tosa_datatype_uint8_t  = 10,
-        tosa_datatype_shape_t  = 11,
-    };
-
-    struct tosa_tensor_t
-    {
-        int32_t* shape;
-        int32_t num_dims;
-        tosa_datatype_t data_type;
-        uint8_t* data;
-        size_t size;
-    };
 
     tosa_status_t tosa_run_argmax(tosa_tensor_t client_input,
                                   const int32_t client_axis,
