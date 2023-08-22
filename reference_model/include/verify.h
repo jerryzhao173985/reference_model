@@ -18,54 +18,29 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <cstddef>
+#include "types.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
-    // Check result
-    //
-    // Error is valid only and only if is_valid is true
-    struct CheckResult
-    {
-        bool is_valid;
-        double error;
-    };
-
-    /// Validate and calculate tensor element error when using an fp32 accumulator
+    /// \brief Perform compliance validation between a reference and a target output
     ///
-    /// \param ref Tensor element calculated using fp64
-    /// \param bnd Tensor element calculated using fp64 on abs(input, weights)
-    /// \param imp Tensor element calculated through the implementation
-    /// \param KS The kernel size
+    /// A compliance configuration is expected as it provides information about
+    /// the type of validation to be performed alongside with all the relevant
+    /// meta-data. Configuration is provided in JSON format.
     ///
-    /// \return Output error
-    CheckResult tosa_validate_element_accfp32(double ref, double bnd, float imp, size_t KS);
-
-    /// Validate the accumulated output error
+    /// \param ref         Reference tensor to compare against
+    /// \param ref_bnd     (Optional) Reference tensor when run on absolute inputs
+    /// \param imp         Implementation resulting tensor
+    /// \param config_json Compliance configuration that indicates how and what compliance need to be performed
     ///
-    /// \param err_sum Sum of error of all the tensor elements within a tensor
-    /// \param err_sum_sq Sum of error squares of all the tensor elements within a tensor
-    /// \param T Number of output (dot-product) elements
-    /// \param KS The kernel size
-    /// \param S Test set used as a input/weight generator
-    ///
-    /// \return True if the error is within margin else false
-    bool tosa_validate_output_error(double err_sum, double err_sum_sq, size_t T, size_t KS, int S);
-
-    /// Validate error of whole vector of output data
-    ///
-    /// \param ref Output elements calculated using fp64
-    /// \param bnd Output elements calculated using fp64 on abs(input, weights)
-    /// \param imp Output elements calculated using the implementation
-    /// \param T Number of elements in outputs (need to match)
-    /// \param KS The kernel size
-    /// \param S Test set used as a input/weight generator
-    ///
-    /// \return True if the error is within margin else false
-    bool tosa_validate_data_fp32(const double* ref, const double* bnd, const float* imp, size_t T, size_t KS, int S);
+    /// \return True in case of successful validation else false
+    bool tvf_verify_data(const tosa_tensor_t* ref,
+                         const tosa_tensor_t* ref_bnd,
+                         const tosa_tensor_t* imp,
+                         const char* config_json);
 
 #ifdef __cplusplus
 }

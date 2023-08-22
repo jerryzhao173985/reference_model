@@ -56,6 +56,10 @@ if(NOT HALF_DIR)
   set(HALF_DIR "../thirdparty/serialization_lib/third_party/half")
 endif()
 
+if(NOT JSON_DIR)
+  set(JSON_DIR "../thirdparty/json")
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Common sources required for TOSA Reference Model library, executable and unit tests
@@ -67,7 +71,9 @@ set(CXX_SOURCE
     src/operators.cc
     src/subgraph_traverser.cc
     src/tensor.cc
-    src/verify.cc
+    src/verify/verify_dot_product.cc
+    src/verify/verify_entry.cc
+    src/verify/verify_utils.cc
     src/ops/op_factory.cc
     src/ops/tensor_ops.cc
     src/ops/activation_funcs.cc
@@ -99,6 +105,7 @@ target_include_directories(tosa_reference_model_lib
     ${EIGEN_DIR}/unsupported/
     ${SERIALIZATION_DIR}/include
     ${HALF_DIR}/include
+    ${JSON_DIR}/single_include
 )
 
 target_link_libraries(tosa_reference_model_lib
@@ -116,6 +123,7 @@ list(APPEND PUBLIC_HEADERS
     include/graph_status.h
     include/model_common.h
     include/model_runner.h
+    include/types.h
     include/verify.h
     include/version.h
 )
@@ -140,6 +148,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
       ${EIGEN_DIR}/unsupported/
       ${SERIALIZATION_DIR}/include
       ${HALF_DIR}/include
+      ${JSON_DIR}/single_include
   )
 
   target_link_libraries(tosa_reference_model
@@ -184,6 +193,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       ${SERIALIZATION_DIR}/include
       ${HALF_DIR}/include
       ${DOCTEST_DIR}
+      ${JSON_DIR}/single_include
     )
 
   target_link_libraries(unit_tests
