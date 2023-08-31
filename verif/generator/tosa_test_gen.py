@@ -4732,7 +4732,7 @@ class OutputShaper:
 
     @staticmethod
     def dimOp(ser, rng, a, axis, error_name=None):
-        output_shape = [1]
+        output_shape = []
 
         if error_name == ErrorIf.WrongOutputType:
             all_dtypes = [
