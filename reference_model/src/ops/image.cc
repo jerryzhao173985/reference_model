@@ -159,16 +159,15 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                     int32_t y = oy * scale_y_d + offset_y;
                     int32_t x = ox * scale_x_d + offset_x;
 
-                    int32_t iy;
-                    int32_t ix;
+                    int16_t iy = idiv_floor(y, scale_y_n);
+                    int16_t ix = idiv_floor(x, scale_x_n);
+
                     resize_t dy;
                     resize_t dx;
                     if (std::is_same<resize_t, double>::value)
                     {
                         const double fy_double = static_cast<double>(y) / static_cast<double>(scale_y_n);
                         const double fx_double = static_cast<double>(x) / static_cast<double>(scale_x_n);
-                        iy                     = floor(fy_double);
-                        ix                     = floor(fx_double);
 
                         dy = (resize_t)(fy_double - iy);
                         dx = (resize_t)(fx_double - ix);
@@ -177,8 +176,6 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                     {
                         const float fy = static_cast<float>(y) / static_cast<float>(scale_y_n);
                         const float fx = static_cast<float>(x) / static_cast<float>(scale_x_n);
-                        iy             = floor(fy);
-                        ix             = floor(fx);
 
                         if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(Eigen::bfloat16)) ||
                             (typeid(resize_t) == typeid(half_float::half)))

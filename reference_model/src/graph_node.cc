@@ -229,3 +229,16 @@ int GraphNode::idiv_check(int input1, int input2, int& result)
     result = input1 / input2;
     return 0;
 }
+
+// perform an integer division with rounding towards minus infinity
+int GraphNode::idiv_floor(int input1, int input2)
+{
+    ERROR_IF(input2 == 0, "idiv_floor: input2 must not be zero");
+    int result = input1 / input2;
+
+    if (result * input2 > input1)
+    {
+        result--;
+    }
+    return result;
+}

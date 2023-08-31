@@ -256,6 +256,7 @@ public:
 
     // Helper functions.
     int idiv_check(int input1, int input2, int& result);
+    int idiv_floor(int input1, int input2);
 
 protected:
     // Print out a node validation error
