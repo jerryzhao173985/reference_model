@@ -489,12 +489,13 @@ tosa_verif_conformance_generator        \
 
 Included in this repository are some support utilities used by the test runner:
 
-* `json2numpy` - converts from JSON format to numpy array or the reverse operation.
-* `json2fbbin` - converts from JSON flatbuffer format to flatbuffer
+* `tosa_json2numpy` - converts from JSON format to numpy array or the reverse operation.
+* `tosa_json2fbbin` - converts from JSON flatbuffer format to flatbuffer
     binary format or the reverse operation. This is dependent on the FlatBuffers
     command `flatc` - see the section on the FlatBuffers compiler below.
 * `tosa_verif_result_check` - compares two results files.
-* `convert2conformance` - converts a unit test into a conformance suitable test.
+* `tosa_convert2conformance` - converts a unit test into a conformance suitable test.
+* `tosa_schemavalidation` - validates a test desc.json against the schema.
 
 Please see the respective `--help` of each utility for more information on using
 them standalone.
@@ -502,8 +503,8 @@ them standalone.
 ### FlatBuffers compiler
 
 The FlatBuffers compiler tool (`flatc`) is only needed if you want to use
-json2fbbin to convert the TOSA flatbuffer binary test files (.tosa) to JSON
-or from JSON to binary.
+tosa_json2fbbin to convert the TOSA flatbuffer binary test files (.tosa) to
+JSON or from JSON to binary.
 It is best to use the flatbuffer version that comes with the reference model.
 After following the reference model compilation instructions, you can build
 the FlatBuffers tool using:

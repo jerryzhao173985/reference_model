@@ -1,0 +1,79 @@
+ {
+    "$comment": "Copyright (c) 2024, ARM Limited.",
+    "$comment": "SPDX-License-Identifier: Apache-2.0",
+    "$id": "compliance-config.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "compliance-config",
+    "description": "Compliance configuration for verifying TOSA tensor data outputs from a test",
+    "type": "object",
+    "properties": {
+        "version": {
+            "description": "version string X.Y of this config data",
+            "type": "string"
+        },
+        "tensors": {
+            "type": "object",
+            "description": "dictionary of output tensors - keys are the tosa network names",
+            "patternProperties":
+            {
+                "^.*$":
+                {
+                    "description": "per named tensor config for compliance checking",
+                    "type": "object",
+                    "properties": {
+                        "mode": {
+                            "description": "verifier mode EXACT, DOT_PRODUCT, ULP, REDUCE_PRODUCT, or FP_SPECIAL",
+                            "type": "string"
+                        },
+                        "ulp_info": {
+                            "description": "info required for the ULP mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "ulp": {
+                                    "description": "ulp range limit - such as 1 or 0.5",
+                                    "type": "string"
+                                }
+                            },
+                            "required": [ "ulp" ]
+                        },
+                        "dot_product_info": {
+                            "description": "info required for the DOT_PRODUCT mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "s": {
+                                    "description": "test set 0 to 5 or -1 for other data",
+                                    "type": "integer"
+                                },
+                                "ks": {
+                                    "description": "kernel size for this dot product operation",
+                                    "type": "integer"
+                                },
+                                "data_type": {
+                                    "description": "tensor data type, such as: BOOL, INT16, FP32",
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "s",
+                                "ks",
+                                "data_type"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "mode"
+                    ]
+                }
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "version",
+        "tensors"
+    ]
+}
