@@ -1,0 +1,165 @@
+ {
+    "$comment": "Copyright (c) 2023, ARM Limited.",
+    "$comment": "SPDX-License-Identifier: Apache-2.0",
+    "$id": "datagen-config.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "datagen-config",
+    "description": "Data generator configuration for generating TOSA tensor data",
+    "type": "object",
+    "properties": {
+        "version": {
+            "description": "version string X.Y of this config data",
+            "type": "string"
+        },
+        "tensors": {
+            "type": "object",
+            "description": "dictionary of input tensors - keys are the tosa network names",
+            "patternProperties":
+            {
+                "^.*$":
+                {
+                    "description": "per named tensor config for data generation",
+                    "type": "object",
+                    "properties": {
+                        "generator": {
+                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT or OP_SPECIFIC",
+                            "type": "string"
+                        },
+                        "data_type": {
+                            "description": "tensor data type, such as: BOOL, INT16, FP32",
+                            "type": "string"
+                        },
+                        "input_type": {
+                            "description": "input is variable or constant",
+                            "type": "string"
+                        },
+                        "shape": {
+                            "description": "tensor shape array (rank 0 should be [])",
+                            "type": "array",
+                            "items": {
+                                "description": "shape dimension",
+                                "type": "integer",
+                                "minimum": 1
+                            }
+                        },
+                        "op": {
+                            "description": "operator name the tensor is initially used with",
+                            "type": "string"
+                        },
+                        "input_pos": {
+                            "description": "tensor input position for the operator (starts at 0)",
+                            "type": "integer",
+                            "minimum": 0
+                        },
+                        "pseudo_random_info": {
+                            "description": "info required for the PSEUDO_RANDOM generator",
+                            "type": "object",
+                            "properties":
+                            {
+                                "rng_seed": {
+                                    "description": "random number generator seed",
+                                    "type": "integer"
+                                },
+                                "range": {
+                                    "type": "array",
+                                    "description": "range of random numbers from low to high inclusively",
+                                    "minItems": 2,
+                                    "maxItems": 2,
+                                    "items": {
+                                        "description": "[low value, high value] as strings to allow ints and floats",
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [ "rng_seed" ]
+                        },
+                        "dot_product_info": {
+                            "description": "info required for the DOT_PRODUCT generator",
+                            "type": "object",
+                            "properties":
+                            {
+                                "s": {
+                                    "description": "test set 0 to 5 or -1 for other data",
+                                    "type": "integer"
+                                },
+                                "ks": {
+                                    "description": "kernel size for this dot product operation",
+                                    "type": "integer"
+                                },
+                                "acc_type": {
+                                    "description": "operator accumulator type (like tensor data_type)",
+                                    "type": "string"
+                                },
+                                "kernel": {
+                                    "type": "array",
+                                    "description": "kernel x, y sizes (for avg_pool2d)",
+                                    "minItems": 2,
+                                    "maxItems": 2,
+                                    "items": {
+                                        "description": "kernel dimension",
+                                        "type": "integer",
+                                        "minimum": 1
+                                    }
+                                },
+                                "axis": {
+                                    "description": "axis dimension (for reduce_sum)",
+                                    "type": "integer",
+                                    "minimum": 0
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "s",
+                                "ks",
+                                "acc_type"
+                            ]
+                        },
+                        "op_specific_info": {
+                            "description": "info required for the OP_SPECIFIC generator",
+                            "type": "object",
+                            "properties":
+                            {
+                                "sub_generator": {
+                                    "description": "sub generator type for this op - FULL, SPECIAL or BOUNDARY",
+                                    "type": "string"
+                                },
+                                "offset": {
+                                    "description": "starting offset within the test data",
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "attributes": {
+                                    "description": "attribute data from the op needed to compute the data",
+                                    "type": "object",
+                                    "properties": {
+                                        "TBD": {
+                                            "description": "Probably needed for RESCALE and MUL",
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [ "sub_generator" ]
+                        }
+                    },
+                    "additionalProperties": false,
+                    "required": [
+                        "generator",
+                        "data_type",
+                        "input_type",
+                        "shape",
+                        "op",
+                        "input_pos"
+                    ]
+                }
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "version",
+        "tensors"
+    ]
+}

@@ -1,0 +1,111 @@
+ {
+    "$comment": "Copyright (c) 2023, ARM Limited.",
+    "$comment": "SPDX-License-Identifier: Apache-2.0",
+    "$id": "desc.schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "desc",
+    "description": "Test description",
+    "type": "object",
+    "properties": {
+        "tosa_file": {
+            "description": "tosa flatbuffer file",
+            "type": "string"
+        },
+        "ifm_name": {
+            "description": "list of input tensors",
+            "type": "array",
+            "items": {
+                "description": "tensor name",
+                "type": "string"
+            }
+        },
+        "ifm_file": {
+            "description": "list of input files, one for each tensor in ifm_name",
+            "type": "array",
+            "items": {
+                "description": "file name",
+                "type": "string"
+            }
+        },
+        "ofm_name": {
+            "description": "list of output tensors",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "description": "tensor name",
+                "type": "string"
+            }
+        },
+        "ofm_file": {
+            "description": "list of output files, one for each tensor in ofm_name",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "description": "file name",
+                "type": "string"
+            }
+        },
+        "expected_failure": {
+            "description": "if the test is expected to fail - used for test filtering",
+            "type": "boolean"
+        },
+        "expected_failure_desc": {
+            "description": "summary of expected failure test",
+            "type": "string"
+        },
+        "expected_return_code": {
+            "description": "DEPRECATED (unused): expected return code from ref-model",
+            "type": "integer"
+        },
+        "expected_result_file": {
+            "description": "DEPRECATED: list of expected result files, one for each tensor in ofm_name",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "description": "file name",
+                "type": "string"
+            }
+        },
+        "profile": {
+            "description": "list of profiles this test is valid for",
+            "type": "array",
+            "minItems": 1,
+            "items": {
+                "description": "profile name - tosa_bi or tosa_mi",
+                "type": "string"
+            }
+        },
+        "tags": {
+            "description": "list of string tags that can be used for test filtering",
+            "type": "array",
+            "items": {
+                "description": "test tag for filtering",
+                "type": "string"
+            }
+        },
+        "meta": {
+            "description": "meta-data for test libraries",
+            "type": "object",
+            "properties":
+            {
+                "data_gen": {
+                    "description": "data generation meta-data",
+                    "$ref": "datagen-config.schema.json"
+                },
+                "compliance": {
+                    "description": "compliance meta-data",
+                    "$ref": "compliance-config.schema.json"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "tosa_file",
+        "ifm_name",
+        "ifm_file",
+        "ofm_name",
+        "ofm_file"
+    ]
+}
