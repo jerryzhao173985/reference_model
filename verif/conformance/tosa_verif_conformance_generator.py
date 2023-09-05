@@ -84,7 +84,14 @@ def _run_sh_command(args, cwd, full_cmd):
 
 
 def build_op_tests(
-    args, test_type, profile, operator, group, gen_args_list, gen_neg_dim_range
+    args,
+    test_type,
+    profile,
+    operator,
+    group,
+    gen_args_list,
+    gen_neg_dim_range,
+    supports=[],
 ):
     """Build tests for a given operator.
 
@@ -104,6 +111,9 @@ def build_op_tests(
         "--seed",
         str(args.random_seed),
     ]
+
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        build_cmd_base.append("--lazy-data-generation")
 
     build_cmds_list = []
 
@@ -198,8 +208,12 @@ def _get_all_tests_list(
     return tests
 
 
-def generate_results(args, profile, operator, op_build_dir, tests=None):
+def generate_results(args, profile, operator, op_build_dir, supports=[], tests=None):
     """Run tests on reference model and save result to the test directory."""
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        logger.info("Skipping running tests due to lazy data gen")
+        return
+
     num_cores = args.num_cores
     run_tests_cmd = "tosa_verif_run_tests"
 
@@ -254,6 +268,7 @@ def convert_tests(
     op_build_dir,
     output_dir,
     op_profiles_list,
+    supports=[],
     tests=None,
     group=None,
     trim_op_subdir=False,
@@ -275,6 +290,8 @@ def convert_tests(
             c2c_args_base.extend(["--tag", tag])
     if args.framework_schema:
         c2c_args_base.extend(["--framework-schema", str(args.framework_schema)])
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        c2c_args_base.append("--lazy-data-generation")
     c2c_args_base.append("--output-directory")
 
     c2c_args_list = []
@@ -472,6 +489,11 @@ def parse_args(argv=None):
         default="both",
         type=str,
         help="Type of tests produced (default is both)",
+    )
+    parser.add_argument(
+        "--lazy-data-generation",
+        action="store_true",
+        help="Enable lazy data generation (only for tosa-mi)",
     )
     parser.add_argument(
         "--ref-model-directory",
@@ -718,6 +740,11 @@ def main():
 
                     operator_group = test_params[op]["group"]
                     root_output_dir = args.output_dir / "operators"
+                    supports = (
+                        test_params[op]["support_for"]
+                        if "support_for" in test_params[op]
+                        else []
+                    )
 
                     # Iterate through the generation groups selecting tests from each
                     for gen_name, gen_dict in test_params[op]["generation"].items():
@@ -756,6 +783,7 @@ def main():
                             gen_name,
                             gen_dict["generator_args"],
                             gen_neg_dim_range,
+                            supports=supports,
                         )
 
                         # Work out which selection criteria we are using
@@ -782,7 +810,9 @@ def main():
                             and selection_config["all"] == "true"
                         ):
                             logger.debug(f"Running and converting all {op} tests")
-                            generate_results(args, profile, op, op_build_dir)
+                            generate_results(
+                                args, profile, op, op_build_dir, supports=supports
+                            )
                             operator_test_list = None
                         else:
                             logger.debug(
@@ -800,7 +830,12 @@ def main():
                                     )
                                 )
                                 generate_results(
-                                    args, profile, op, op_build_dir, tests_gen
+                                    args,
+                                    profile,
+                                    op,
+                                    op_build_dir,
+                                    supports=supports,
+                                    tests=tests_gen,
                                 )
                                 operator_test_list = list(tests_gen2)
                             else:
@@ -823,6 +858,7 @@ def main():
                             op_build_dir,
                             root_output_dir,
                             op_profiles_list,
+                            supports=supports,
                             tests=operator_test_list,
                             group=operator_group,
                             tags=tags,

@@ -51,6 +51,10 @@ def parseArgs(argv):
         argv = new_argv
 
     parser = argparse.ArgumentParser()
+
+    ops_group = parser.add_argument_group("operator options")
+    tens_group = parser.add_argument_group("tensor options")
+
     parser.add_argument(
         "-o", dest="output_dir", type=str, default="vtest", help="Test output directory"
     )
@@ -75,8 +79,15 @@ def parseArgs(argv):
         "-v", "--verbose", dest="verbose", action="count", help="Verbose operation"
     )
 
-    # Constraints on tests
     parser.add_argument(
+        "--lazy-data-generation",
+        dest="lazy_data_gen",
+        action="store_true",
+        help="Tensor data generation is delayed til test running",
+    )
+
+    # Constraints on tests
+    tens_group.add_argument(
         "--tensor-dim-range",
         dest="tensor_shape_range",
         default="1,64",
@@ -84,7 +95,7 @@ def parseArgs(argv):
         help="Min,Max range of tensor shapes",
     )
 
-    parser.add_argument(
+    tens_group.add_argument(
         OPTION_FP_VALUES_RANGE,
         dest="tensor_fp_value_range",
         default="0.0,1.0",
@@ -92,7 +103,7 @@ def parseArgs(argv):
         help="Min,Max range of floating point tensor values",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-batch-size",
         dest="max_batch_size",
         default=1,
@@ -100,7 +111,7 @@ def parseArgs(argv):
         help="Maximum batch size for NHWC tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-conv-padding",
         dest="max_conv_padding",
         default=1,
@@ -108,7 +119,7 @@ def parseArgs(argv):
         help="Maximum padding for Conv tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-conv-dilation",
         dest="max_conv_dilation",
         default=2,
@@ -116,7 +127,7 @@ def parseArgs(argv):
         help="Maximum dilation for Conv tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-conv-stride",
         dest="max_conv_stride",
         default=2,
@@ -124,7 +135,7 @@ def parseArgs(argv):
         help="Maximum stride for Conv tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-pooling-padding",
         dest="max_pooling_padding",
         default=1,
@@ -132,7 +143,7 @@ def parseArgs(argv):
         help="Maximum padding for pooling tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-pooling-stride",
         dest="max_pooling_stride",
         default=2,
@@ -140,7 +151,7 @@ def parseArgs(argv):
         help="Maximum stride for pooling tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-pooling-kernel",
         dest="max_pooling_kernel",
         default=3,
@@ -148,7 +159,7 @@ def parseArgs(argv):
         help="Maximum kernel for pooling tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--num-rand-permutations",
         dest="num_rand_permutations",
         default=6,
@@ -156,7 +167,7 @@ def parseArgs(argv):
         help="Number of random permutations for a given shape/rank for randomly-sampled parameter spaces",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--max-resize-output-dim",
         dest="max_resize_output_dim",
         default=1000,
@@ -165,7 +176,7 @@ def parseArgs(argv):
     )
 
     # Targeting a specific shape/rank/dtype
-    parser.add_argument(
+    tens_group.add_argument(
         "--target-shape",
         dest="target_shapes",
         action="append",
@@ -174,7 +185,7 @@ def parseArgs(argv):
         help="Create tests with a particular input tensor shape, e.g., 1,4,4,8 (may be repeated for tests that require multiple input shapes)",
     )
 
-    parser.add_argument(
+    tens_group.add_argument(
         "--target-rank",
         dest="target_ranks",
         action="append",
@@ -184,7 +195,7 @@ def parseArgs(argv):
     )
 
     # Used for parsing a comma-separated list of integers in a string
-    parser.add_argument(
+    tens_group.add_argument(
         "--target-dtype",
         dest="target_dtypes",
         action="append",
@@ -193,7 +204,7 @@ def parseArgs(argv):
         help=f"Create test with a particular DType: [{', '.join([d.lower() for d in DTypeNames[1:]])}] (may be repeated)",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--num-const-inputs-concat",
         dest="num_const_inputs_concat",
         default=0,
@@ -211,14 +222,14 @@ def parseArgs(argv):
         help="type of tests produced, positive, negative, or both",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--allow-pooling-and-conv-oversizes",
         dest="oversize",
         action="store_true",
         help="allow oversize padding, stride and kernel tests",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--zero-point",
         dest="zeropoint",
         default=None,
@@ -233,11 +244,11 @@ def parseArgs(argv):
         help="output const tensors as numpy files for inspection",
     )
 
-    parser.add_argument(
+    ops_group.add_argument(
         "--level-8k-sizes",
         dest="level8k",
         action="store_true",
-        help="create level 8k size tests (RESIZE)",
+        help="create level 8k size tests",
     )
 
     args = parser.parse_args(argv)

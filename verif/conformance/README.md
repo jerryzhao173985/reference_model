@@ -17,6 +17,7 @@ Each operator entry contains:
 
 * "group" - name of the group this operator is in, in the spec
 * "profile" - list of profiles that this operator covers
+* "support_for" - optional list of supported creation modes out of: lazy_data_gen (data generation just before test run)
 * "generation" - dictionary of test generation details - see below
 * "selection" - dictionary of test selection details - see below
 
@@ -48,6 +49,8 @@ before permutes are applied)
 * "errorifs" - optional list of ERRORIF case names to be selected after exclusion (negative tests)
 
 ### Framework ops
+
+DEPRECATED - not supported for conformance testing.
 
 NOTE: Currently assumed all framework ops will be TFLite.
 

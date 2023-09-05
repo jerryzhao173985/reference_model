@@ -11,11 +11,13 @@ import argparse
 import json
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Optional
 
 from json2fbbin.json2fbbin import fbbin_to_json
 from json2numpy.json2numpy import npy_to_json
+from schemavalidation.schemavalidation import TestDescSchemaValidator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("convert2conformance")
@@ -35,7 +37,8 @@ PROFILES_LIST = ["tosa-bi", "tosa-mi"]
 
 def parse_args(argv):
     """Parse the arguments."""
-    parser = argparse.ArgumentParser()
+    # Set prog for when we are called via tosa_verif_conformance_generator
+    parser = argparse.ArgumentParser(prog="convert2conformance")
     parser.add_argument(
         "test_dir",
         default=Path.cwd(),
@@ -90,6 +93,11 @@ def parse_args(argv):
         dest="strict",
         action="store_true",
         help="Output directory must not contain the same test directory",
+    )
+    parser.add_argument(
+        "--lazy-data-generation",
+        action="store_true",
+        help="Enable lazy data generation (only for tosa-mi)",
     )
     parser.add_argument(
         "-v", "--verbose", dest="verbose", action="store_true", help="Verbose operation"
@@ -191,14 +199,15 @@ def update_desc_json(
                 else:
                     logger.error(f"Missing result file {ofm_path}")
                     return None
-            cfm_files.append(cfm + ".npy")
+                cfm_files.append(cfm + ".npy")
         # Remove path and "ref-"/"ref_model_" from output filenames
         ofm_files.append(strip_ref_output_name(ofm_path.name))
 
     # Rewrite output file names as they can be relative, but keep them npys
     test_desc["ofm_file"] = ofm_files
-    if not test_desc["expected_failure"]:
-        # Output expected result file for conformance if expected pass
+    if not test_desc["expected_failure"] and cfm_files:
+        # Output expected result file for conformance if expected pass and we
+        # have some files!
         test_desc["expected_result_file"] = cfm_files
 
     # Add supported profiles
@@ -319,29 +328,41 @@ def main(argv=None):
     # Convert input files to JSON
     ifm_files = []
     for file in test_desc["ifm_file"]:
-        if file is None:
-            ifm_files.append(None)
-        else:
+        if file:
             path = desc_filename.parent / file
-            convert_numpy_file(path, args.output_dir)
             ifm_files.append(path.name)
+            if path.is_file():
+                convert_numpy_file(path, args.output_dir)
+            else:
+                if not args.lazy_data_generation:
+                    logger.error(f"Missing input file {path.name}")
+                    return 1
+
     # Rewrite input file names to make sure the paths are correct,
     # but keep them numpys as the test runner will convert them back
     # before giving them to the SUT
     test_desc["ifm_file"] = ifm_files
+
+    # Check for cpp files for data-generator/verifier
+    cpp_files = args.test_dir.glob("*.cpp")
+    for cpp in cpp_files:
+        shutil.copy(str(cpp), str(args.output_dir))
 
     # Update desc.json and convert result files to JSON
     test_desc = update_desc_json(
         desc_filename.parent,
         test_desc,
         output_dir=args.output_dir,
-        create_result=True,
+        create_result=(not args.lazy_data_generation),
         profiles=args.profile,
         tags=args.tag,
     )
     if not test_desc:
         # Error from conversion/update
         return 1
+
+    # Validate the desc.json schema
+    TestDescSchemaValidator().validate_config(test_desc)
 
     # Output new desc.json
     new_desc_filename = args.output_dir / NAME_DESC_FILENAME
