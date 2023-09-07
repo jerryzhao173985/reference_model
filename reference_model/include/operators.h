@@ -329,6 +329,8 @@ extern "C"
                                    const int32_t client_shift[],
                                    const bool client_scale32,
                                    const bool client_double_round,
+                                   const bool client_input_unsigned,
+                                   const bool client_output_unsigned,
                                    const bool client_per_channel);
 
     tosa_status_t tosa_run_identity(tosa_tensor_t client_input1, tosa_tensor_t client_output);

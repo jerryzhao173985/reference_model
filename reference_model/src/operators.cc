@@ -2339,6 +2339,8 @@ extern "C"
                                    const int32_t client_shift[],
                                    const bool client_scale32,
                                    const bool client_double_round,
+                                   const bool client_input_unsigned,
+                                   const bool client_output_unsigned,
                                    const bool client_per_channel)
     {
         // Create operator attributes
@@ -2346,10 +2348,13 @@ extern "C"
         const int32_t output_zp = client_output_zp;
         const std::vector<int32_t> multiplier(&client_multiplier[0], &client_multiplier[0] + client_multiplier_len);
         const std::vector<int32_t> shift(&client_shift[0], &client_shift[0] + client_shift_len);
-        const bool scale32      = client_scale32;
-        const bool double_round = client_double_round;
-        const bool per_channel  = client_per_channel;
-        TosaRescaleAttribute attr(input_zp, output_zp, multiplier, shift, scale32, double_round, per_channel);
+        const bool scale32         = client_scale32;
+        const bool double_round    = client_double_round;
+        const bool per_channel     = client_per_channel;
+        const bool input_unsigned  = client_input_unsigned;
+        const bool output_unsigned = client_output_unsigned;
+        TosaRescaleAttribute attr(input_zp, output_zp, multiplier, shift, scale32, double_round, per_channel,
+                                  input_unsigned, output_unsigned);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
