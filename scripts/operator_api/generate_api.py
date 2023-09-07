@@ -4,12 +4,17 @@
 import copy
 import os
 import subprocess
+from pathlib import Path
 from xml.dom import minidom
 
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
 # Note: main script designed to be run from the scripts/operator_api/ directory
+
+
+def getBasePath():
+    return Path(__file__).resolve().parent.parent.parent
 
 
 def getTosaArgTypes(tosaXml):
@@ -326,7 +331,11 @@ def getSerialLibAtts():
     The values are the arguments required by each Serialization library operator.
     """
     serialLibAtts = {}
-    with open("../../thirdparty/serialization_lib/include/attribute.def") as file:
+    base_path = getBasePath()
+    attr_def = (
+        base_path / "thirdparty" / "serialization_lib" / "include" / "attribute.def"
+    )
+    with open(attr_def) as file:
         preamble = True
         inAtt = False
         opName = ""
@@ -368,15 +377,15 @@ def renderTemplate(environment, dataTypes, operators, template, outfile):
     clangFormat(outfile)
 
 
-def generate(environment, dataTypes, operators):
+def generate(environment, dataTypes, operators, base_path):
     # Generate include/operators.h
     template = environment.get_template("operators_h.j2")
-    outfile = os.path.join("..", "..", "reference_model", "include", "operators.h")
+    outfile = base_path / "reference_model/include/operators.h"
     renderTemplate(environment, dataTypes, operators, template, outfile)
 
     # Generate src/operators.cc
     template = environment.get_template("operators_cc.j2")
-    outfile = os.path.join("..", "..", "reference_model", "src", "operators.cc")
+    outfile = base_path / "reference_model/src/operators.cc"
     renderTemplate(environment, dataTypes, operators, template, outfile)
 
 
@@ -392,7 +401,8 @@ def getSerializeOpTypeMap():
         for name in allSerialLibAtts.keys()
     ]
     serAtts = sorted(serAtts, key=len, reverse=True)
-    tosaXml = minidom.parse("../../thirdparty/specification/tosa.xml")
+    base_path = getBasePath()
+    tosaXml = minidom.parse(base_path / "thirdparty/specification/tosa.xml")
     opsXml = tosaXml.getElementsByTagName("operator")
     opNames = [
         op.getElementsByTagName("name")[0].firstChild.data.lower() for op in opsXml
@@ -407,8 +417,11 @@ def getSerializeOpTypeMap():
 
 
 if __name__ == "__main__":
-    environment = Environment(loader=FileSystemLoader("templates/"))
-    tosaXml = minidom.parse("../../thirdparty/specification/tosa.xml")
+    base_path = getBasePath()
+    environment = Environment(
+        loader=FileSystemLoader(Path(__file__).resolve().parent / "templates")
+    )
+    tosaXml = minidom.parse(str(base_path / "thirdparty/specification/tosa.xml"))
     dataTypes = getTosaDataTypes(tosaXml)
     operators = getOperators(tosaXml)
-    generate(environment, dataTypes, operators)
+    generate(environment, dataTypes, operators, base_path)

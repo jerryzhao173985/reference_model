@@ -38,3 +38,12 @@ repos:
         entry: clang-format
         types: ["c++"]
         args: ["-i"]
+
+-   repo: local
+    hooks:
+    -   id: check-operator-api
+        name: check-operator-api
+        language: system
+        entry: python3 scripts/operator_api/generate_api.py
+        pass_filenames: false
+        always_run: true
