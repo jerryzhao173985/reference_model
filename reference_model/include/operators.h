@@ -465,6 +465,8 @@ extern "C"
                                    const int32_t client_shift[],
                                    const bool client_scale32,
                                    const bool client_double_round,
+                                   const bool client_input_unsigned,
+                                   const bool client_output_unsigned,
                                    const bool client_per_channel,
                                    const func_config_t& func_config = func_config_t{},
                                    const func_debug_t& func_debug   = func_debug_t{});
