@@ -42,19 +42,25 @@ public:
     int setIsSubgraphOutput();
     int setIsParentGraphOutput();
 
-    int getIsParentGraphOutput() const
+    bool getIsParentGraphOutput() const
     {
         return isParentGraphOutput;
     }
+    int setIsVariable();
 
-    int getIsSubgraphInput() const
+    bool getIsSubgraphInput() const
     {
         return isSubgraphInput;
     }
 
-    int getIsSubgraphOutput() const
+    bool getIsSubgraphOutput() const
     {
         return isSubgraphOutput;
+    }
+
+    bool getIsVariable() const
+    {
+        return isVariable;
     }
 
     int setProducer(GraphNode* node);
@@ -269,18 +275,19 @@ public:
         return in ? true_str : false_str;
     }
 
-    virtual int allocate()      = 0;
-    virtual int deallocate()    = 0;
-    virtual bool is_allocated() = 0;
+    virtual int allocate()            = 0;
+    virtual int deallocate()          = 0;
+    virtual bool is_allocated() const = 0;
 
 protected:
     const std::string tensorName;
     const DType serializationDtype;
     std::vector<int> shape;
     const TOSA_REF_TYPE tensorDtype;
-    int isValid;
-    int isSubgraphInput;
-    int isSubgraphOutput;
+    bool isValid;
+    bool isSubgraphInput;
+    bool isSubgraphOutput;
+    bool isVariable;
     bool isAllocated;
 
     bool isParentGraphOutput;
@@ -332,7 +339,7 @@ public:
         return 0;
     }
 
-    virtual bool is_allocated()
+    virtual bool is_allocated() const
     {
         if (tensor)
         {
