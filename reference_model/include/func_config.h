@@ -59,7 +59,7 @@ struct func_config_t
     bool float_is_big_endian                       = false;    // Set in arith_util.h by float_is_big_endian()
 
     tosa_level_t tosa_level;
-    static constexpr tosa_level_t EIGHTK = { 6, 8192, 8192, 64 };
+    static constexpr tosa_level_t EIGHTK = { 6, 8192, 8192, 256 };
     static constexpr tosa_level_t NONE   = { 0, 0, 0, 0 };
 };
 
