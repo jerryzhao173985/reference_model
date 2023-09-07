@@ -36,6 +36,7 @@ TosaReference::Tensor::Tensor(const std::string tensorName_,
     isSubgraphInput     = false;
     isSubgraphOutput    = false;
     isParentGraphOutput = false;
+    isVariable          = false;
 }
 
 TosaReference::Tensor::~Tensor()
@@ -56,6 +57,12 @@ int TosaReference::Tensor::setIsSubgraphInput()
 int TosaReference::Tensor::setIsSubgraphOutput()
 {
     isSubgraphOutput = true;
+    return 0;
+}
+
+int TosaReference::Tensor::setIsVariable()
+{
+    isVariable = true;
     return 0;
 }
 

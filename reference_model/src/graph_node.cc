@@ -31,6 +31,7 @@ GraphNode::GraphNode(SubgraphTraverser* parent_sgt_, const Op& nodeType_, const 
     clearNodeMarked();
     evalCount = 0;
     clearOnNextNodeList();
+    clearEvaluated();
     setRequiredOperands(-1, -1);
     setRequiredRank(-1);
     inMainBlock = false;
@@ -102,6 +103,12 @@ int GraphNode::hasAllOutputsReady() const
     {
         if (!outputs[i]->getIsValid())
             return false;
+        if (outputs[i]->getIsVariable())
+        {
+            // when output is a variable tensor
+            // isValid is not reliable indicator of this node having been evaluated
+            return false;
+        }
     }
 
     return true;
@@ -110,8 +117,8 @@ int GraphNode::hasAllOutputsReady() const
 int GraphNode::dumpNode(FILE* out)
 {
     int i;
-    fprintf(out, "Node type: %s ID: %lu Eval Count: %d On next node list: %d Is marked: %d\n", EnumNamesOp()[nodeType],
-            nodeId, evalCount, onNextNodeList, isMarked);
+    fprintf(out, "Node type: %s ID: %lu Eval Count: %d On next node list: %d Evaluated: %d Is marked: %d\n",
+            EnumNamesOp()[nodeType], nodeId, evalCount, onNextNodeList, evaluated, isMarked);
 
     i = 0;
     for (Tensor* ins : inputs)
@@ -135,7 +142,8 @@ int GraphNode::dumpNode(std::ostream& out)
     int i;
 
     out << "Node type: " << EnumNamesOp()[nodeType] << " ID: " << nodeId << " Eval count: " << evalCount
-        << " On next node list: " << onNextNodeList << " Is marked: " << isMarked << std::endl;
+        << " On next node list: " << onNextNodeList << "Evaluated: " << evaluated << " Is marked: " << isMarked
+        << std::endl;
 
     out << "  Inputs:";
     for (std::string& name : inputNames)

@@ -254,6 +254,23 @@ public:
         return inMainBlock;
     }
 
+    int getEvaluated() const
+    {
+        return evaluated;
+    }
+
+    int setEvaluated()
+    {
+        evaluated = true;
+        return 0;
+    }
+
+    int clearEvaluated()
+    {
+        evaluated = false;
+        return 0;
+    }
+
     // Helper functions.
     int idiv_check(int input1, int input2, int& result);
 
@@ -316,6 +333,9 @@ protected:
     // Flag indicating that this node is ready and is on the
     // next-node list.
     int onNextNodeList;
+
+    // Flag indicating that this node has been evaluated before
+    int evaluated;
 
     // Required input/output tensor counts for node validation
     // -1 means any number is allowed

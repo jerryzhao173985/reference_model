@@ -1175,11 +1175,28 @@ class TBuilder:
 
             return result[0]
 
-    class LSTM:
+    class LSTM(tf.Module):
         def __init__(self, name):
             self.result_name = name
             self.lstm = tf.keras.layers.LSTM(
                 2,
+                activation="tanh",
+                unroll=False,
+                recurrent_activation="sigmoid",
+                use_bias=True,
+                recurrent_initializer="ones",
+                kernel_initializer="ones",
+            )
+
+        def eval(self, a):
+            return self.lstm(a)
+
+    class SLSTM(tf.Module):
+        def __init__(self, name):
+            self.result_name = name
+            self.lstm = tf.keras.layers.LSTM(
+                2,
+                stateful=True,
                 activation="tanh",
                 unroll=False,
                 recurrent_activation="sigmoid",
@@ -1256,3 +1273,22 @@ class TBuilder:
 
         def eval(self, a):
             return tf.broadcast_to(a, shape=self.shape, name=self.result_name)
+
+    class CallOnce(tf.Module):
+        def __init__(self, name):
+            print(tf.__version__)
+            self.result_name = name
+            self.var = tf.Variable([1.0])
+
+        @tf.function(
+            input_signature=[
+                tf.TensorSpec(
+                    shape=[
+                        1,
+                    ],
+                    dtype=tf.float32,
+                )
+            ]
+        )
+        def eval(self, a):
+            return self.var.assign([2.0])

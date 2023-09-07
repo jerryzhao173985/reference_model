@@ -48,6 +48,10 @@ int func_model_parse_cmd_line(
             cxxopts::value<std::string>(func_config.ofm_name))
         ("ofm_file", "Output tensor numpy file to be generated. Comma(,) seperated. Specifying this will overwrite the one initialized by --test_desc.",
             cxxopts::value<std::string>(func_config.ofm_file))
+        ("variable_name", "Region tensor name. Comma(,) seperated. Specifying this will overwrite the one initialized by --test_desc.",
+            cxxopts::value<std::string>(func_config.variable_name))
+        ("variable_file", "Region tensor numpy file to be generated. Comma(,) seperated. Specifying this will overwrite the one initialized by --test_desc.",
+            cxxopts::value<std::string>(func_config.variable_file))
         ("eval", "Evaluate the network (0/1)", cxxopts::value<uint32_t>(func_config.eval))
         ("fp_format", "Floating-point number dump format string (printf-style format, e.g. 0.5)",
             cxxopts::value<std::string>(func_config.fp_format))
@@ -60,6 +64,7 @@ int func_model_parse_cmd_line(
             cxxopts::value<tosa_level_t>(func_config.tosa_level))
         ("dump_intermediates", "Dump intermediate tensors (0/1)", cxxopts::value<uint32_t>(func_config.dump_intermediates))
         ("p,precise_mode", "Calculate floating point operations in FP64 (0/1)", cxxopts::value<uint32_t>(func_config.precise_mode))
+        ("initialize_variable_tensor_from_numpy", "Initialize variable tensors from flatbuffer (0, default) or numpy (1)", cxxopts::value<uint32_t>(func_config.initialize_variable_tensor_from_numpy))
         ("v,version", "print model version")
         ("i,input_tensor_file", "specify input tensor files", cxxopts::value<std::vector<std::string>>())
         ("l,loglevel", func_debug.get_debug_verbosity_help_string(), cxxopts::value<std::string>())
