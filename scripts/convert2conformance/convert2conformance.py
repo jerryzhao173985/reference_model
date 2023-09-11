@@ -83,10 +83,10 @@ def parse_args(argv):
     )
     parser.add_argument(
         "--tag",
-        dest="tag",
+        dest="tags",
         action="append",
         type=str,
-        help="Optional string tag mark this test with. May be repeated",
+        help="Optional string tag to mark this test with. May be repeated",
     )
     parser.add_argument(
         "--strict",
@@ -218,7 +218,7 @@ def update_desc_json(
 
     # Add tags (if any)
     if tags is not None:
-        test_desc["tag"] = tags
+        test_desc["tags"] = tags
 
     return test_desc
 
@@ -355,14 +355,18 @@ def main(argv=None):
         output_dir=args.output_dir,
         create_result=(not args.lazy_data_generation),
         profiles=args.profile,
-        tags=args.tag,
+        tags=args.tags,
     )
     if not test_desc:
         # Error from conversion/update
         return 1
 
     # Validate the desc.json schema
-    TestDescSchemaValidator().validate_config(test_desc)
+    try:
+        TestDescSchemaValidator().validate_config(test_desc)
+    except Exception as e:
+        logger.error(e)
+        return 1
 
     # Output new desc.json
     new_desc_filename = args.output_dir / NAME_DESC_FILENAME

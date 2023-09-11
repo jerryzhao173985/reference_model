@@ -805,10 +805,7 @@ def main():
                         # Selection criteria
                         selection_config = test_params[op]["selection"][selector_name]
 
-                        if args.convert_all_tests or (
-                            "all" in selection_config
-                            and selection_config["all"] == "true"
-                        ):
+                        if args.convert_all_tests:
                             logger.debug(f"Running and converting all {op} tests")
                             generate_results(
                                 args, profile, op, op_build_dir, supports=supports
@@ -819,16 +816,31 @@ def main():
                                 f"Running and converting selection of {op} tests"
                             )
                             if test_type in ["positive", "both"]:
-                                tests_gen, tests_gen2 = tee(
-                                    get_op_tests_selection(
-                                        args,
-                                        profile,
-                                        op,
-                                        op_build_dir,
-                                        selection_config,
-                                        ignore_missing=ignore_missing,
+                                if (
+                                    "all" in selection_config
+                                    and selection_config["all"] == "true"
+                                ):
+                                    # Just get all the positive tests
+                                    tests_gen, tests_gen2 = tee(
+                                        _get_all_tests_list(
+                                            profile,
+                                            op_build_dir,
+                                            op,
+                                            exclude_negative_tests=True,
+                                        )
                                     )
-                                )
+                                else:
+                                    # Get a selection of positive tests
+                                    tests_gen, tests_gen2 = tee(
+                                        get_op_tests_selection(
+                                            args,
+                                            profile,
+                                            op,
+                                            op_build_dir,
+                                            selection_config,
+                                            ignore_missing=ignore_missing,
+                                        )
+                                    )
                                 generate_results(
                                     args,
                                     profile,
