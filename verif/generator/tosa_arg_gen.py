@@ -1137,7 +1137,7 @@ class TosaArgGen:
                     dot_products = kwargs["dot_products"]
                     if dot_products < testGen.TOSA_MI_DOT_PRODUCT_MIN:
                         print(
-                            f"Skipping dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
+                            f"Skipping {opName} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
                         )
                         continue
                     arg_dict["ks"] = kwargs["ks"]
