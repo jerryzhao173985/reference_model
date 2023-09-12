@@ -95,14 +95,11 @@ set(CXX_SOURCE
     src/ops/control_flow.cc
 )
 
-# Build TOSA Reference Model library
-add_library(tosa_reference_model_lib ${CXX_SOURCE})
-
-target_include_directories(tosa_reference_model_lib
-  PUBLIC
+set(PUBLIC_INCLUDE_DIRS
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
-  PRIVATE
+)
+set(PRIVATE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${FLATBUFFERS_DIR}/include
     ${EIGEN_DIR}
@@ -110,6 +107,16 @@ target_include_directories(tosa_reference_model_lib
     ${SERIALIZATION_DIR}/include
     ${HALF_DIR}/include
     ${JSON_DIR}/single_include
+)
+
+# Build TOSA Reference Model library
+add_library(tosa_reference_model_lib STATIC ${CXX_SOURCE})
+
+target_include_directories(tosa_reference_model_lib
+  PUBLIC
+    ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+    ${PRIVATE_INCLUDE_DIRS}
 )
 
 target_link_libraries(tosa_reference_model_lib
@@ -134,6 +141,21 @@ list(APPEND PUBLIC_HEADERS
 
 set_target_properties(tosa_reference_model_lib PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}")
 
+# Build TOSA verification library
+add_library(tosa_reference_verify_lib SHARED
+  src/verify/verify_dot_product.cc
+  src/verify/verify_entry.cc
+  src/verify/verify_utils.cc
+  src/verify/verify_config.cc
+  src/func_debug.cc
+)
+target_include_directories(tosa_reference_verify_lib
+  PUBLIC
+    ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+    ${PRIVATE_INCLUDE_DIRS}
+)
+
 # Build TOSA Refererence Model executable
 if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
   set(CXX_SOURCE_EX src/main.cpp)
@@ -143,16 +165,9 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
 
   target_include_directories(tosa_reference_model
     PUBLIC
-      $<INSTALL_INTERFACE:include>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+      ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/src
-      ${FLATBUFFERS_DIR}/include
-      ${EIGEN_DIR}
-      ${EIGEN_DIR}/unsupported/
-      ${SERIALIZATION_DIR}/include
-      ${HALF_DIR}/include
-      ${JSON_DIR}/single_include
+      ${PRIVATE_INCLUDE_DIRS}
   )
 
   target_link_libraries(tosa_reference_model
@@ -187,17 +202,10 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
 
   target_include_directories(unit_tests
     PUBLIC
-      $<INSTALL_INTERFACE:include>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+      ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/src
-      ${FLATBUFFERS_DIR}/include
-      ${EIGEN_DIR}
-      ${EIGEN_DIR}/unsupported/
-      ${SERIALIZATION_DIR}/include
-      ${HALF_DIR}/include
+      ${PRIVATE_INCLUDE_DIRS}
       ${DOCTEST_DIR}
-      ${JSON_DIR}/single_include
     )
 
   target_link_libraries(unit_tests
@@ -221,15 +229,9 @@ if(BUILD_MODEL_RUNNER_SAMPLE)
 
   target_include_directories(model_runner_sample
     PUBLIC
-      $<INSTALL_INTERFACE:include>
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+      ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/src
-      ${FLATBUFFERS_DIR}/include
-      ${EIGEN_DIR}
-      ${EIGEN_DIR}/unsupported/
-      ${SERIALIZATION_DIR}/include
-      ${HALF_DIR}/include
+      ${PRIVATE_INCLUDE_DIRS}
   )
 
   target_link_libraries(model_runner_sample

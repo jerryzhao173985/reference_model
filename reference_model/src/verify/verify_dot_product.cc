@@ -89,7 +89,7 @@ bool validateData(const double* ref, const double* bnd, const AccType* imp, size
     for (size_t i = 0; i < T; ++i)
     {
         auto out_err = validateElement<AccType>(ref[i], bnd[i], imp[i], KS);
-        TOSA_REF_REQUIRE(out_err, "output error is 0");
+        TOSA_REF_REQUIRE(out_err, "data required to be zero or error within range");
         out_err_sum += out_err.value();
         out_err_sumsq += out_err.value() * out_err.value();
     }
