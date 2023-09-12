@@ -1,5 +1,5 @@
 """Tests for tosa_reference_model."""
-# Copyright (c) 2022, ARM Limited.
+# Copyright (c) 2022-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 import re
@@ -14,15 +14,15 @@ from generator.tosa_verif_build_tests import main as tosa_builder
 from runner.run_command import run_sh_command
 from runner.run_command import RunShCommandError
 
-# Note: Must rename imports so that pytest doesn't assume its a test function/class
+# Note: Must rename imports (like test_check) so that pytest doesn't assume its a test function/class
+
+# Location of reference model binaries
+REF_MODEL_BUILD_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
+REF_MODEL_EXE = "tosa_reference_model"
+REF_MODEL_EXE_PATH = REF_MODEL_BUILD_PATH / REF_MODEL_EXE
 
 # Set this to False if you want ot preserve the test directories after running
 CLEAN_UP_TESTS = True
-
-# Location of reference model binary
-REF_MODEL_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
-REF_MODEL_EXE = "tosa_reference_model"
-REF_MODEL = REF_MODEL_PATH / REF_MODEL_EXE
 
 # Default tensor shape information
 SHAPE_LIST = ["10", "5"]
@@ -51,11 +51,13 @@ REF_MODEL_TYPE_TO_OUT = {
     "bf16": "bf16",
 }
 
+# NOTE: These tests are set to POST COMMIT - so will only run on the CI
+
 
 @pytest.mark.postcommit
 def test_refmodel_built():
     """First test to check the reference model has been built."""
-    assert REF_MODEL.is_file()
+    assert REF_MODEL_EXE_PATH.is_file()
 
 
 class BuildTosaTest:
@@ -178,7 +180,7 @@ def test_refmodel_simple_op(tosaTest):
         desc_file = test_dir / TEST_DESC_FILENAME
         assert desc_file.is_file()
         refmodel_cmd = [
-            str(REF_MODEL),
+            str(REF_MODEL_EXE_PATH),
             "--test_desc",
             str(desc_file),
             "--ofm_file",
