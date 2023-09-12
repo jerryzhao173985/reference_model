@@ -75,7 +75,7 @@ TEST_SUITE("model_runner")
         output.size      = dstData.size() * sizeof(float);
 
         // Execution
-        auto status = tosa_run_add(input1, input2, output);
+        auto status = tosa_run_add(input1, input2, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -112,7 +112,7 @@ TEST_SUITE("model_runner")
         output.size      = dstData.size() * sizeof(float);
 
         // Execution
-        auto status = tosa_run_avg_pool2d(input, kernel, stride, pad, 0, 0, output);
+        auto status = tosa_run_avg_pool2d(input, kernel, stride, pad, 0, 0, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -170,7 +170,7 @@ TEST_SUITE("model_runner")
         const int32_t weight_zp = 0;
 
         // Execution
-        auto status = tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output);
+        auto status = tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -228,10 +228,10 @@ TEST_SUITE("model_runner")
         const int32_t weight_zp = 0;
 
         // Execution
-        func_config_t func_config;
-        func_config.abs_mode = true;
+        func_ctx_t func_ctx;
+        func_ctx.func_config.abs_mode = true;
         auto status =
-            tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output, func_config);
+            tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output, func_ctx);
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -269,7 +269,7 @@ TEST_SUITE("model_runner")
         output.size      = dstData.size() * sizeof(float);
 
         // Execution
-        auto status = tosa_run_max_pool2d(input, kernel, stride, pad, 0, 0, output);
+        auto status = tosa_run_max_pool2d(input, kernel, stride, pad, 0, 0, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -280,10 +280,12 @@ TEST_SUITE("model_runner")
     TEST_CASE("op_entry_pad")
     {
         // Inputs/Outputs
-        tosa_datatype_t dt                = tosa_datatype_fp32_t;
-        std::vector<int32_t> input_shape  = { 2, 2 };
-        std::vector<int32_t> output_shape = { 4, 4 };
+        tosa_datatype_t dt                 = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape   = { 2, 2 };
+        std::vector<int32_t> padding_shape = { 1, 4 };
+        std::vector<int32_t> output_shape  = { 4, 4 };
         std::vector<float> srcData1(4, 4.0f);
+        std::vector<int32_t> padData(4, 1);
         std::vector<float> dstData(16, 0.0f);
 
         tosa_tensor_t input1;
@@ -293,6 +295,13 @@ TEST_SUITE("model_runner")
         input1.data      = reinterpret_cast<uint8_t*>(srcData1.data());
         input1.size      = srcData1.size() * sizeof(float);
 
+        tosa_tensor_t padding;
+        padding.shape     = padding_shape.data();
+        padding.num_dims  = padding_shape.size();
+        padding.data_type = tosa_datatype_int32_t;
+        padding.data      = reinterpret_cast<uint8_t*>(padData.data());
+        padding.size      = padData.size() * sizeof(int32_t);
+
         tosa_tensor_t output;
         output.shape     = output_shape.data();
         output.num_dims  = output_shape.size();
@@ -301,11 +310,9 @@ TEST_SUITE("model_runner")
         output.size      = dstData.size() * sizeof(float);
 
         // Execution
-        int32_t padding[4]    = { 1, 1, 1, 1 };
-        int32_t padding_len   = 4;
         int32_t pad_const_int = 0;
         float pad_const_fp    = 5.0f;
-        auto status           = tosa_run_pad(input1, padding_len, padding, pad_const_int, pad_const_fp, output);
+        auto status           = tosa_run_pad(input1, padding, pad_const_int, pad_const_fp, output, func_ctx_t{});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -315,6 +322,47 @@ TEST_SUITE("model_runner")
         expectedData[6]  = 4.0f;
         expectedData[9]  = 4.0f;
         expectedData[10] = 4.0f;
+        compareOutput(dstData, expectedData, expectedData.size());
+    }
+
+    TEST_CASE("op_entry_tile")
+    {
+        // Inputs/Outputs
+        tosa_datatype_t dt                   = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape     = { 2, 3 };
+        std::vector<int32_t> multiples_shape = { 1, 2 };
+        std::vector<int32_t> output_shape    = { 2, 6 };
+        std::vector<float> srcData1          = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+        std::vector<int32_t> multiples_data  = { 1, 2 };
+        std::vector<float> dstData(12, 0.0f);
+
+        tosa_tensor_t input1;
+        input1.shape     = input_shape.data();
+        input1.num_dims  = input_shape.size();
+        input1.data_type = dt;
+        input1.data      = reinterpret_cast<uint8_t*>(srcData1.data());
+        input1.size      = srcData1.size() * sizeof(float);
+
+        tosa_tensor_t multiples;
+        multiples.shape     = multiples_shape.data();
+        multiples.num_dims  = multiples_shape.size();
+        multiples.data_type = tosa_datatype_int32_t;
+        multiples.data      = reinterpret_cast<uint8_t*>(multiples_data.data());
+        multiples.size      = multiples_data.size() * sizeof(int32_t);
+
+        tosa_tensor_t output;
+        output.shape     = output_shape.data();
+        output.num_dims  = output_shape.size();
+        output.data_type = dt;
+        output.data      = reinterpret_cast<uint8_t*>(dstData.data());
+        output.size      = dstData.size() * sizeof(float);
+
+        // Execution
+        auto status = tosa_run_tile(input1, multiples, output, {});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedData = { 1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 4.0, 5.0, 6.0 };
         compareOutput(dstData, expectedData, expectedData.size());
     }
 

@@ -103,12 +103,10 @@ extern "C"
     tosa_status_t tosa_run_argmax(tosa_tensor_t client_input,
                                   const int32_t client_axis,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -123,7 +121,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -143,17 +141,14 @@ extern "C"
                                       const int32_t client_input_zp,
                                       const int32_t client_output_zp,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> kernel(&client_kernel[0], &client_kernel[2]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t output_zp       = client_output_zp;
         const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaPoolAttribute attr(pad, kernel, stride, input_zp, output_zp, accum_dtype);
+        TosaPoolAttribute attr(pad, kernel, stride, client_input_zp, client_output_zp, accum_dtype);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -168,7 +163,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -190,16 +185,13 @@ extern "C"
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        const int32_t input_zp  = client_input_zp;
-        const int32_t weight_zp = client_weight_zp;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -218,7 +210,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
@@ -242,16 +234,13 @@ extern "C"
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[6]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[3]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[3]);
-        const int32_t input_zp  = client_input_zp;
-        const int32_t weight_zp = client_weight_zp;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -270,7 +259,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
@@ -294,16 +283,13 @@ extern "C"
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
                                             tosa_tensor_t client_output,
-                                            const func_config_t& func_config,
-                                            const func_debug_t& func_debug)
+                                            const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        const int32_t input_zp  = client_input_zp;
-        const int32_t weight_zp = client_weight_zp;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -322,7 +308,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
@@ -343,13 +329,10 @@ extern "C"
                                            const int32_t client_input_zp,
                                            const int32_t client_weight_zp,
                                            tosa_tensor_t client_output,
-                                           const func_config_t& func_config,
-                                           const func_debug_t& func_debug)
+                                           const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t input_zp  = client_input_zp;
-        const int32_t weight_zp = client_weight_zp;
-        TosaFullyConnectedAttribute attr(input_zp, weight_zp);
+        TosaFullyConnectedAttribute attr(client_input_zp, client_weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -368,7 +351,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
@@ -388,13 +371,10 @@ extern "C"
                                   const int32_t client_a_zp,
                                   const int32_t client_b_zp,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t a_zp = client_a_zp;
-        const int32_t b_zp = client_b_zp;
-        TosaMatMulAttribute attr(a_zp, b_zp);
+        TosaMatMulAttribute attr(client_a_zp, client_b_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* a      = translate_client_tensor(client_a, "a");
@@ -410,7 +390,7 @@ extern "C"
                                                 { a->GetName(), b->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(a->GetName(), client_a.data, client_a.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(b->GetName(), client_b.data, client_b.size));
@@ -431,17 +411,14 @@ extern "C"
                                       const int32_t client_input_zp,
                                       const int32_t client_output_zp,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> kernel(&client_kernel[0], &client_kernel[2]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
-        const int32_t input_zp        = client_input_zp;
-        const int32_t output_zp       = client_output_zp;
         const tosa::DType accum_dtype = tosa::DType::DType_FP32;
-        TosaPoolAttribute attr(pad, kernel, stride, input_zp, output_zp, accum_dtype);
+        TosaPoolAttribute attr(pad, kernel, stride, client_input_zp, client_output_zp, accum_dtype);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -456,7 +433,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -480,16 +457,13 @@ extern "C"
                                             const int32_t client_dilation_len,
                                             const int32_t client_dilation[],
                                             tosa_tensor_t client_output,
-                                            const func_config_t& func_config,
-                                            const func_debug_t& func_debug)
+                                            const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[0] + client_pad_len);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[0] + client_dilation_len);
-        const int32_t input_zp  = client_input_zp;
-        const int32_t weight_zp = client_weight_zp;
-        TosaConvAttribute attr(pad, stride, dilation, input_zp, weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -508,7 +482,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
@@ -529,15 +503,10 @@ extern "C"
                                  const float client_min_fp,
                                  const float client_max_fp,
                                  tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+                                 const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t min_int = client_min_int;
-        const int32_t max_int = client_max_int;
-        const float min_fp    = client_min_fp;
-        const float max_fp    = client_max_fp;
-        TosaClampAttribute attr(min_int, max_int, min_fp, max_fp);
+        TosaClampAttribute attr(client_min_int, client_max_int, client_min_fp, client_max_fp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -552,7 +521,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -565,10 +534,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_erf(tosa_tensor_t client_input,
-                               tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+    tosa_status_t tosa_run_erf(tosa_tensor_t client_input, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -586,7 +552,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -599,10 +565,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_sigmoid(tosa_tensor_t client_input,
-                                   tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+    tosa_status_t tosa_run_sigmoid(tosa_tensor_t client_input, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -620,7 +583,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -633,10 +596,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_tanh(tosa_tensor_t client_input,
-                                tosa_tensor_t client_output,
-                                const func_config_t& func_config,
-                                const func_debug_t& func_debug)
+    tosa_status_t tosa_run_tanh(tosa_tensor_t client_input, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -654,7 +614,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -670,8 +630,7 @@ extern "C"
     tosa_status_t tosa_run_add(tosa_tensor_t client_input1,
                                tosa_tensor_t client_input2,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -690,7 +649,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -708,12 +667,10 @@ extern "C"
                                                   tosa_tensor_t client_input2,
                                                   const bool client_round,
                                                   tosa_tensor_t client_output,
-                                                  const func_config_t& func_config,
-                                                  const func_debug_t& func_debug)
+                                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const bool round = client_round;
-        TosaArithmeticRightShiftAttribute attr(round);
+        TosaArithmeticRightShiftAttribute attr(client_round);
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
@@ -730,7 +687,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -747,8 +704,7 @@ extern "C"
     tosa_status_t tosa_run_bitwise_and(tosa_tensor_t client_input1,
                                        tosa_tensor_t client_input2,
                                        tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+                                       const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -767,7 +723,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -784,8 +740,7 @@ extern "C"
     tosa_status_t tosa_run_bitwise_or(tosa_tensor_t client_input1,
                                       tosa_tensor_t client_input2,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -804,7 +759,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -821,8 +776,7 @@ extern "C"
     tosa_status_t tosa_run_bitwise_xor(tosa_tensor_t client_input1,
                                        tosa_tensor_t client_input2,
                                        tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+                                       const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -841,7 +795,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -858,8 +812,7 @@ extern "C"
     tosa_status_t tosa_run_intdiv(tosa_tensor_t client_input1,
                                   tosa_tensor_t client_input2,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -878,7 +831,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -895,8 +848,7 @@ extern "C"
     tosa_status_t tosa_run_logical_and(tosa_tensor_t client_input1,
                                        tosa_tensor_t client_input2,
                                        tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+                                       const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -915,7 +867,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -932,8 +884,7 @@ extern "C"
     tosa_status_t tosa_run_logical_left_shift(tosa_tensor_t client_input1,
                                               tosa_tensor_t client_input2,
                                               tosa_tensor_t client_output,
-                                              const func_config_t& func_config,
-                                              const func_debug_t& func_debug)
+                                              const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -953,7 +904,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -970,8 +921,7 @@ extern "C"
     tosa_status_t tosa_run_logical_right_shift(tosa_tensor_t client_input1,
                                                tosa_tensor_t client_input2,
                                                tosa_tensor_t client_output,
-                                               const func_config_t& func_config,
-                                               const func_debug_t& func_debug)
+                                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -991,7 +941,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1008,8 +958,7 @@ extern "C"
     tosa_status_t tosa_run_logical_or(tosa_tensor_t client_input1,
                                       tosa_tensor_t client_input2,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1028,7 +977,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1045,8 +994,7 @@ extern "C"
     tosa_status_t tosa_run_logical_xor(tosa_tensor_t client_input1,
                                        tosa_tensor_t client_input2,
                                        tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+                                       const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1065,7 +1013,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1082,8 +1030,7 @@ extern "C"
     tosa_status_t tosa_run_maximum(tosa_tensor_t client_input1,
                                    tosa_tensor_t client_input2,
                                    tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1102,7 +1049,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1119,8 +1066,7 @@ extern "C"
     tosa_status_t tosa_run_minimum(tosa_tensor_t client_input1,
                                    tosa_tensor_t client_input2,
                                    tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1139,7 +1085,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1157,12 +1103,10 @@ extern "C"
                                tosa_tensor_t client_input2,
                                const int32_t client_shift,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t shift = client_shift;
-        TosaMulAttribute attr(shift);
+        TosaMulAttribute attr(client_shift);
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
@@ -1178,7 +1122,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1195,8 +1139,7 @@ extern "C"
     tosa_status_t tosa_run_pow(tosa_tensor_t client_input1,
                                tosa_tensor_t client_input2,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1215,7 +1158,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1232,8 +1175,7 @@ extern "C"
     tosa_status_t tosa_run_sub(tosa_tensor_t client_input1,
                                tosa_tensor_t client_input2,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1252,7 +1194,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1270,8 +1212,7 @@ extern "C"
                                  const int32_t client_table_len,
                                  const int16_t client_table[],
                                  tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+                                 const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int16_t> table(&client_table[0], &client_table[0] + client_table_len);
@@ -1290,7 +1231,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -1303,10 +1244,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_abs(tosa_tensor_t client_input1,
-                               tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+    tosa_status_t tosa_run_abs(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1324,7 +1262,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1337,10 +1275,8 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_bitwise_not(tosa_tensor_t client_input1,
-                                       tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+    tosa_status_t
+        tosa_run_bitwise_not(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1358,7 +1294,7 @@ extern "C"
                                                 { input1->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1371,10 +1307,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_ceil(tosa_tensor_t client_input1,
-                                tosa_tensor_t client_output,
-                                const func_config_t& func_config,
-                                const func_debug_t& func_debug)
+    tosa_status_t tosa_run_ceil(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1392,7 +1325,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1405,10 +1338,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_clz(tosa_tensor_t client_input1,
-                               tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+    tosa_status_t tosa_run_clz(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1426,7 +1356,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1439,10 +1369,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_exp(tosa_tensor_t client_input1,
-                               tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+    tosa_status_t tosa_run_exp(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1460,7 +1387,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1473,10 +1400,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_floor(tosa_tensor_t client_input1,
-                                 tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+    tosa_status_t tosa_run_floor(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1494,7 +1418,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1507,10 +1431,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_log(tosa_tensor_t client_input1,
-                               tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+    tosa_status_t tosa_run_log(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1528,7 +1449,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1541,10 +1462,8 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_logical_not(tosa_tensor_t client_input1,
-                                       tosa_tensor_t client_output,
-                                       const func_config_t& func_config,
-                                       const func_debug_t& func_debug)
+    tosa_status_t
+        tosa_run_logical_not(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1562,7 +1481,7 @@ extern "C"
                                                 { input1->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1579,13 +1498,10 @@ extern "C"
                                   const int32_t client_input1_zp,
                                   const int32_t client_output_zp,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t input1_zp = client_input1_zp;
-        const int32_t output_zp = client_output_zp;
-        TosaNegateAttribute attr(input1_zp, output_zp);
+        TosaNegateAttribute attr(client_input1_zp, client_output_zp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
@@ -1600,7 +1516,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1613,10 +1529,8 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_reciprocal(tosa_tensor_t client_input1,
-                                      tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+    tosa_status_t
+        tosa_run_reciprocal(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1634,7 +1548,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1647,10 +1561,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_rsqrt(tosa_tensor_t client_input1,
-                                 tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+    tosa_status_t tosa_run_rsqrt(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1668,7 +1579,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -1685,8 +1596,7 @@ extern "C"
                                   tosa_tensor_t client_input2,
                                   tosa_tensor_t client_input3,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1708,7 +1618,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1726,8 +1636,7 @@ extern "C"
     tosa_status_t tosa_run_equal(tosa_tensor_t client_input1,
                                  tosa_tensor_t client_input2,
                                  tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+                                 const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1746,7 +1655,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1763,8 +1672,7 @@ extern "C"
     tosa_status_t tosa_run_greater(tosa_tensor_t client_input1,
                                    tosa_tensor_t client_input2,
                                    tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1783,7 +1691,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1800,8 +1708,7 @@ extern "C"
     tosa_status_t tosa_run_greater_equal(tosa_tensor_t client_input1,
                                          tosa_tensor_t client_input2,
                                          tosa_tensor_t client_output,
-                                         const func_config_t& func_config,
-                                         const func_debug_t& func_debug)
+                                         const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -1821,7 +1728,7 @@ extern "C"
                                                 { input1->GetName(), input2->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
@@ -1838,12 +1745,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_all(tosa_tensor_t client_input,
                                       const int32_t client_axis,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -1858,7 +1763,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -1874,12 +1779,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_any(tosa_tensor_t client_input,
                                       const int32_t client_axis,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -1894,7 +1797,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -1910,12 +1813,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_max(tosa_tensor_t client_input,
                                       const int32_t client_axis,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -1930,7 +1831,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -1946,12 +1847,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_min(tosa_tensor_t client_input,
                                       const int32_t client_axis,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -1966,7 +1865,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -1982,12 +1881,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_product(tosa_tensor_t client_input,
                                           const int32_t client_axis,
                                           tosa_tensor_t client_output,
-                                          const func_config_t& func_config,
-                                          const func_debug_t& func_debug)
+                                          const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -2003,7 +1900,7 @@ extern "C"
                                                 { input->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2019,12 +1916,10 @@ extern "C"
     tosa_status_t tosa_run_reduce_sum(tosa_tensor_t client_input,
                                       const int32_t client_axis,
                                       tosa_tensor_t client_output,
-                                      const func_config_t& func_config,
-                                      const func_debug_t& func_debug)
+                                      const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -2039,7 +1934,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2055,12 +1950,10 @@ extern "C"
     tosa_status_t tosa_run_concat(tosa_tensor_t client_input1,
                                   const int32_t client_axis,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
@@ -2075,7 +1968,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -2089,19 +1982,18 @@ extern "C"
     }
 
     tosa_status_t tosa_run_pad(tosa_tensor_t client_input1,
-                               const int32_t client_padding_len,
-                               const int32_t client_padding[],
+                               tosa_tensor_t client_padding,
                                const int32_t client_pad_const_int,
                                const float client_pad_const_fp,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const std::vector<int32_t> padding(&client_padding[0], &client_padding[0] + client_padding_len);
-        const int32_t pad_const_int = client_pad_const_int;
-        const float pad_const_fp    = client_pad_const_fp;
-        TosaPadAttribute attr(padding, pad_const_int, pad_const_fp);
+        std::vector<int32_t> padding;
+        size_t padding_size   = client_padding.size / sizeof(int32_t);
+        int32_t* padding_data = reinterpret_cast<int32_t*>(client_padding.data);
+        padding.assign(padding_data, padding_data + padding_size);
+        TosaPadAttribute attr(padding, client_pad_const_int, client_pad_const_fp);
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
@@ -2116,7 +2008,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -2132,8 +2024,7 @@ extern "C"
     tosa_status_t tosa_run_dim(tosa_tensor_t client_input1,
                                const int32_t client_axis,
                                tosa_tensor_t client_output,
-                               const func_config_t& func_config,
-                               const func_debug_t& func_debug)
+                               const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaAxisAttribute attr(client_axis);
@@ -2151,22 +2042,25 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
         // Execute
+        TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
+
+        // Extract outputs
         TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
 
         return tosa_status_valid;
     }
 
     tosa_status_t tosa_run_reshape(tosa_tensor_t client_input1,
+                                   tosa_tensor_t client_shape,
                                    const int32_t client_new_shape_len,
                                    const int32_t client_new_shape[],
                                    tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> new_shape(&client_new_shape[0], &client_new_shape[0] + client_new_shape_len);
@@ -2174,20 +2068,23 @@ extern "C"
 
         // Create tensors
         tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
+        tosa::TosaSerializationTensor* shape  = translate_client_tensor(client_shape, "shape");
         tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RESHAPE, tosa::Attribute::Attribute_ReshapeAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_RESHAPE, tosa::Attribute::Attribute_ReshapeAttribute,
+                                                &attr, { input1->GetName(), shape->GetName() }, { output->GetName() });
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reshape", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reshape", "main", { op }, { input1, shape, output },
+                                                { input1->GetName(), shape->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+        TOSA_RETURN_ON_ERROR(runner.setInput(shape->GetName(), client_shape.data, client_shape.size));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
@@ -2201,12 +2098,10 @@ extern "C"
     tosa_status_t tosa_run_reverse(tosa_tensor_t client_input,
                                    const int32_t client_axis,
                                    tosa_tensor_t client_output,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t axis = client_axis;
-        TosaAxisAttribute attr(axis);
+        TosaAxisAttribute attr(client_axis);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -2221,7 +2116,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2240,8 +2135,7 @@ extern "C"
                                  const int32_t client_size_len,
                                  const int32_t client_size[],
                                  tosa_tensor_t client_output,
-                                 const func_config_t& func_config,
-                                 const func_debug_t& func_debug)
+                                 const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> start(&client_start[0], &client_start[0] + client_start_len);
@@ -2261,7 +2155,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -2275,14 +2169,15 @@ extern "C"
     }
 
     tosa_status_t tosa_run_tile(tosa_tensor_t client_input1,
-                                const int32_t client_multiples_len,
-                                const int32_t client_multiples[],
+                                tosa_tensor_t client_multiples,
                                 tosa_tensor_t client_output,
-                                const func_config_t& func_config,
-                                const func_debug_t& func_debug)
+                                const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const std::vector<int32_t> multiples(&client_multiples[0], &client_multiples[0] + client_multiples_len);
+        std::vector<int32_t> multiples;
+        size_t multiples_size   = client_multiples.size / sizeof(int32_t);
+        int32_t* multiples_data = reinterpret_cast<int32_t*>(client_multiples.data);
+        multiples.assign(multiples_data, multiples_data + multiples_size);
         TosaTileAttribute attr(multiples);
 
         // Create tensors
@@ -2298,7 +2193,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -2315,8 +2210,7 @@ extern "C"
                                      const int32_t client_perms_len,
                                      const int32_t client_perms[],
                                      tosa_tensor_t client_output,
-                                     const func_config_t& func_config,
-                                     const func_debug_t& func_debug)
+                                     const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         const std::vector<int32_t> perms(&client_perms[0], &client_perms[0] + client_perms_len);
@@ -2336,7 +2230,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
@@ -2352,8 +2246,7 @@ extern "C"
     tosa_status_t tosa_run_gather(tosa_tensor_t client_values,
                                   tosa_tensor_t client_indices,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -2372,7 +2265,7 @@ extern "C"
                                                 { values->GetName(), indices->GetName() }, { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(values->GetName(), client_values.data, client_values.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(indices->GetName(), client_indices.data, client_indices.size));
@@ -2390,8 +2283,7 @@ extern "C"
                                    tosa_tensor_t client_indices,
                                    tosa_tensor_t client_input,
                                    tosa_tensor_t client_values_out,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -2413,7 +2305,7 @@ extern "C"
                                                 { values_out->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(values_in->GetName(), client_values_in.data, client_values_in.size));
         TOSA_RETURN_ON_ERROR(runner.setInput(indices->GetName(), client_indices.data, client_indices.size));
@@ -2429,18 +2321,26 @@ extern "C"
     }
 
     tosa_status_t tosa_run_resize(tosa_tensor_t client_input,
-                                  const int16_t client_scale[4],
-                                  const int16_t client_offset[2],
-                                  const int16_t client_border[2],
+                                  tosa_tensor_t client_scale,
+                                  tosa_tensor_t client_offset,
+                                  tosa_tensor_t client_border,
                                   const tosa_mode_t client_mode,
                                   tosa_tensor_t client_output,
-                                  const func_config_t& func_config,
-                                  const func_debug_t& func_debug)
+                                  const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const std::vector<int16_t> scale(&client_scale[0], &client_scale[4]);
-        const std::vector<int16_t> offset(&client_offset[0], &client_offset[2]);
-        const std::vector<int16_t> border(&client_border[0], &client_border[2]);
+        std::vector<int16_t> scale;
+        size_t scale_size   = client_scale.size / sizeof(int16_t);
+        int16_t* scale_data = reinterpret_cast<int16_t*>(client_scale.data);
+        scale.assign(scale_data, scale_data + scale_size);
+        std::vector<int16_t> offset;
+        size_t offset_size   = client_offset.size / sizeof(int16_t);
+        int16_t* offset_data = reinterpret_cast<int16_t*>(client_offset.data);
+        offset.assign(offset_data, offset_data + offset_size);
+        std::vector<int16_t> border;
+        size_t border_size   = client_border.size / sizeof(int16_t);
+        int16_t* border_data = reinterpret_cast<int16_t*>(client_border.data);
+        border.assign(border_data, border_data + border_size);
         const ResizeMode mode = translate_client_tosa_mode(client_mode);
         TosaResizeAttribute attr(scale, offset, border, mode);
 
@@ -2457,7 +2357,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2470,10 +2370,7 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_cast(tosa_tensor_t client_input,
-                                tosa_tensor_t client_output,
-                                const func_config_t& func_config,
-                                const func_debug_t& func_debug)
+    tosa_status_t tosa_run_cast(tosa_tensor_t client_input, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -2491,7 +2388,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2517,21 +2414,14 @@ extern "C"
                                    const bool client_input_unsigned,
                                    const bool client_output_unsigned,
                                    const bool client_per_channel,
-                                   const func_config_t& func_config,
-                                   const func_debug_t& func_debug)
+                                   const func_ctx_t& func_ctx)
     {
         // Create operator attributes
-        const int32_t input_zp  = client_input_zp;
-        const int32_t output_zp = client_output_zp;
         const std::vector<int32_t> multiplier(&client_multiplier[0], &client_multiplier[0] + client_multiplier_len);
         const std::vector<int32_t> shift(&client_shift[0], &client_shift[0] + client_shift_len);
-        const bool scale32         = client_scale32;
-        const bool double_round    = client_double_round;
-        const bool per_channel     = client_per_channel;
-        const bool input_unsigned  = client_input_unsigned;
-        const bool output_unsigned = client_output_unsigned;
-        TosaRescaleAttribute attr(input_zp, output_zp, multiplier, shift, scale32, double_round, per_channel,
-                                  input_unsigned, output_unsigned);
+        TosaRescaleAttribute attr(client_input_zp, client_output_zp, multiplier, shift, client_scale32,
+                                  client_double_round, client_per_channel, client_input_unsigned,
+                                  client_output_unsigned);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -2546,7 +2436,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
 
@@ -2559,10 +2449,8 @@ extern "C"
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_identity(tosa_tensor_t client_input1,
-                                    tosa_tensor_t client_output,
-                                    const func_config_t& func_config,
-                                    const func_debug_t& func_debug)
+    tosa_status_t
+        tosa_run_identity(tosa_tensor_t client_input1, tosa_tensor_t client_output, const func_ctx_t& func_ctx)
     {
         // Create operator attributes
         TosaNoneAttribute attr;
@@ -2580,7 +2468,7 @@ extern "C"
                                                 { output->GetName() });
 
         // Setup model
-        TosaReference::ModelRunnerImpl runner(func_config, func_debug);
+        TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
         TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
 
