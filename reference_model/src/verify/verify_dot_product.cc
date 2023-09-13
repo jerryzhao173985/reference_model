@@ -20,13 +20,6 @@
 #include <optional>
 #include <type_traits>
 
-#define TOSA_REF_REQUIRE(COND, MESSAGE)                                                                                \
-    if (!(COND))                                                                                                       \
-    {                                                                                                                  \
-        WARNING(MESSAGE);                                                                                              \
-        return false;                                                                                                  \
-    }
-
 namespace TosaReference
 {
 namespace
@@ -139,5 +132,3 @@ bool verifyDotProduct(const CTensor* ref, const CTensor* refBnd, const CTensor* 
 }
 
 }    // namespace TosaReference
-
-#undef TOSA_REF_REQUIRE

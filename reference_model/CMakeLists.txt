@@ -73,6 +73,7 @@ set(CXX_SOURCE
     src/tensor.cc
     src/verify/verify_dot_product.cc
     src/verify/verify_entry.cc
+    src/verify/verify_exact.cc
     src/verify/verify_utils.cc
     src/ops/op_factory.cc
     src/ops/tensor_ops.cc
@@ -141,6 +142,7 @@ set_target_properties(tosa_reference_model_lib PROPERTIES PUBLIC_HEADER "${PUBLI
 add_library(tosa_reference_verify_lib SHARED
   src/verify/verify_dot_product.cc
   src/verify/verify_entry.cc
+  src/verify/verify_exact.cc
   src/verify/verify_utils.cc
   src/verify/verify_config.cc
   src/func_debug.cc

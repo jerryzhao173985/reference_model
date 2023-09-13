@@ -30,7 +30,9 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
     {
         case VerifyMode::DotProduct: {
             return verifyDotProduct(ref, refBnd, imp, cfg.dotProductInfo);
-            break;
+        }
+        case VerifyMode::Exact: {
+            return verifyExact(ref, imp);
         }
         default: {
             WARNING("unsupported verification mode.");
