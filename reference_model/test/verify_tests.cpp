@@ -14,6 +14,8 @@
 #include "verify.h"
 
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <doctest.h>
 
 #include <array>
@@ -54,6 +56,14 @@ private:
     std::vector<int32_t> _shape;
     tosa_tensor_t _tensor;
 };
+
+template <typename FP>
+std::enable_if_t<std::is_floating_point_v<FP>, FP> increment(FP input, uint64_t steps)
+{
+    for (uint64_t step = 0; step < steps; ++step)
+        input = std::nextafter(input, std::numeric_limits<FP>::infinity());
+    return input;
+}
 
 auto& getRandomGenerator()
 {
@@ -217,6 +227,51 @@ TEST_CASE("positive - exact")
             auto oldIndex = i++;
             return oldIndex % 2 ? data[oldIndex] : static_cast<float>(oldIndex);
         });
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+        REQUIRE_FALSE(
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+    }
+}
+
+TEST_CASE("positive - ulp")
+{
+    std::string json_cfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "ULP",
+                "ulp_info": {
+                "ulp": 5
+                }
+            }
+        }
+    })";
+
+    const auto shape        = std::vector<int32_t>{ 8, 8, 8 };
+    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+
+    // Generate some random floats using the full range of fp32.
+    auto data = generateRandomTensorData<float>(elementCount, false);
+    SUBCASE("same")
+    {
+        // Generate some data that meets the ULP requirements of the result.
+        auto otherData = data;
+        std::for_each(std::begin(otherData), std::end(otherData), [](auto& value) { value = increment(value, 5); });
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+    }
+
+    SUBCASE("different")
+    {
+        // Generate some data that exceeds a specified number of ULP for each value in the tensor.
+        auto otherData = std::vector<float>(elementCount);
+        std::for_each(std::begin(otherData), std::end(otherData), [](auto& value) { value = increment(value, 6); });
 
         const auto referenceTensor =
             TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));

@@ -51,7 +51,7 @@ struct UlpInfo
 {
     UlpInfo() = default;
 
-    float ulp;
+    uint64_t ulp;
 };
 
 /// \brief Dot-product verification meta-data
