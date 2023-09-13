@@ -34,6 +34,9 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
         case VerifyMode::Exact: {
             return verifyExact(ref, imp);
         }
+        case VerifyMode::Ulp: {
+            return verifyULP(ref, imp, cfg.ulpInfo.ulp);
+        }
         default: {
             WARNING("unsupported verification mode.");
             break;

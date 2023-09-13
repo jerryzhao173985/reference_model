@@ -41,6 +41,15 @@ bool verifyDotProduct(const CTensor* ref,
 /// \return True if compliant else false
 bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTensor);
 
+/// \brief Perform ULP result verification
+///
+/// \param referenceTensor    Reference tensor
+/// \param implementationTensor    Implementation resulting tensor
+/// \param ulp    The ULP tolerence for the comparison of the two tensors
+///
+/// \return True if compliant else false
+bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, uint64_t ulp);
+
 };    // namespace TosaReference
 
 #endif    // VERIFIERS_H_
