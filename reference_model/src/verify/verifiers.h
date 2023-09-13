@@ -33,6 +33,14 @@ bool verifyDotProduct(const CTensor* ref,
                       const CTensor* imp,
                       const DotProductVerifyInfo& dpInfo);
 
+/// \brief Perform exact result verification
+///
+/// \param referenceTensor    Reference tensor
+/// \param implementationTensor    Implementation resulting tensor
+///
+/// \return True if compliant else false
+bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTensor);
+
 };    // namespace TosaReference
 
 #endif    // VERIFIERS_H_

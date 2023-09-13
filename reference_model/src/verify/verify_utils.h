@@ -23,6 +23,13 @@
 #include <optional>
 #include <vector>
 
+#define TOSA_REF_REQUIRE(COND, MESSAGE)                                                                                \
+    if (!(COND))                                                                                                       \
+    {                                                                                                                  \
+        WARNING(MESSAGE);                                                                                              \
+        return false;                                                                                                  \
+    }
+
 namespace TosaReference
 {
 
