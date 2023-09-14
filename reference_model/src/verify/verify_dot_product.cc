@@ -105,9 +105,6 @@ bool verifyDotProduct(const CTensor* ref, const CTensor* refBnd, const CTensor* 
     TOSA_REF_REQUIRE(refBnd != nullptr, "reference bounds tensor is missing");
     TOSA_REF_REQUIRE(imp != nullptr, "implementation tensor is missing");
 
-    // Validate data-type
-    TOSA_REF_REQUIRE(dpInfo.dataType == mapToDType(imp->data_type), "invalid data type in config");
-
     // Get number of dot-product elements
     const int64_t T = numElements(std::vector<int32_t>(ref->shape, ref->shape + ref->num_dims));
     TOSA_REF_REQUIRE(T > 0, "invalid shape for reference tensor");
@@ -124,8 +121,10 @@ bool verifyDotProduct(const CTensor* ref, const CTensor* refBnd, const CTensor* 
             return validateData(refData, refBndData, impData, static_cast<size_t>(T), dpInfo);
             break;
         }
-        default:
+        default: {
+            WARNING("tosa verifier: data-type not supported.");
             break;
+        }
     }
 
     return false;

@@ -72,11 +72,7 @@ def test_schemavalidation_full_unexpected():
 def test_schemavalidation_compliance_minimal():
     json = {
         "version": "v",
-        "tensors": {
-            "output": {
-                "mode": "mode",
-            }
-        },
+        "tensors": {"output": {"mode": "mode", "data_type": "type"}},
     }
 
     sv = sch.TestDescSchemaValidator()

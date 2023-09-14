@@ -145,6 +145,7 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
                               });
         }
         default:
+            WARNING("tosa verifier: data-type not supported.");
             break;
     }
 

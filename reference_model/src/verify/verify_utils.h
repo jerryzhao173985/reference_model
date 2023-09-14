@@ -26,7 +26,7 @@
 #define TOSA_REF_REQUIRE(COND, MESSAGE)                                                                                \
     if (!(COND))                                                                                                       \
     {                                                                                                                  \
-        WARNING(MESSAGE);                                                                                              \
+        WARNING("tosa verifier: " MESSAGE ".");                                                                        \
         return false;                                                                                                  \
     }
 
@@ -43,7 +43,8 @@ enum class VerifyMode
     Ulp,
     DotProduct,
     ReduceProduct,
-    FpSpecial
+    FpSpecial,
+    Round
 };
 
 /// \brief ULP verification meta-data
@@ -59,7 +60,6 @@ struct DotProductVerifyInfo
 {
     DotProductVerifyInfo() = default;
 
-    DType dataType;
     int32_t s;
     int32_t ks;
 };
@@ -70,6 +70,7 @@ struct VerifyConfig
     VerifyConfig() = default;
 
     VerifyMode mode;
+    DType dataType;
     UlpInfo ulpInfo;
     DotProductVerifyInfo dotProductInfo;
 };

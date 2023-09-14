@@ -48,6 +48,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::DotProduct, "DOT_PRODUCT" },
                                  { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
                                  { VerifyMode::FpSpecial, "FP_SPECIAL" },
+                                 { VerifyMode::Round, "ROUND" },
                              })
 
 void from_json(const nlohmann::json& j, UlpInfo& ulpInfo)
@@ -57,7 +58,6 @@ void from_json(const nlohmann::json& j, UlpInfo& ulpInfo)
 
 void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 {
-    j.at("data_type").get_to(dotProductInfo.dataType);
     j.at("s").get_to(dotProductInfo.s);
     j.at("ks").get_to(dotProductInfo.ks);
 }
@@ -65,6 +65,7 @@ void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
+    j.at("data_type").get_to(cfg.dataType);
     if (j.contains("ulp_info"))
     {
         j.at("ulp_info").get_to(cfg.ulpInfo);

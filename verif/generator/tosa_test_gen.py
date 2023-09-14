@@ -282,17 +282,21 @@ class TosaTestGen:
         )
 
     def tensorComplianceMetaData(self, op, argsDict, outputTensor, errorName):
-        if errorName:
-            # No compliance for error tests
+        if errorName or not gtu.dtypeIsFloat(outputTensor.dtype):
+            # No compliance for error tests or integer tests currently
             return None
+
         # Create compliance meta data for expected output tensor
-        compliance_tens = {"mode": None}
+        compliance_tens = {
+            "mode": None,
+            # Data type is needed for all FP runs, as refmodel precise mode produces FP64
+            "data_type": gtu.DTYPE_ATTRIBUTES[outputTensor.dtype]["json"],
+        }
         if argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
                 "s": argsDict["s"],
                 "ks": argsDict["ks"],
-                "data_type": gtu.DTYPE_ATTRIBUTES[outputTensor.dtype]["json"],
             }
         elif argsDict["dg_type"] == gtu.DataGenType.OP_SPECIAL:
             mode = gtu.ComplianceMode.FP_SPECIAL
@@ -301,6 +305,8 @@ class TosaTestGen:
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
+        elif op["op"] in (Op.ADD, Op.MUL, Op.SUB, Op.CEIL, Op.FLOOR, Op.CAST):
+            mode = gtu.ComplianceMode.ROUND
         else:
             mode = gtu.ComplianceMode.EXACT
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name

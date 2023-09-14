@@ -135,8 +135,8 @@ TEST_CASE("negative - api")
         "tensors" : {
             "out1" : {
                 "mode": "DOT_PRODUCT",
+                "data_type": "FP32",
                 "dot_product_info" : {
-                    "data_type": "FP32",
                     "s": 2,
                     "ks": 9
                 }
@@ -199,7 +199,8 @@ TEST_CASE("positive - exact")
     std::string json_cfg = R"({
         "tensors" : {
             "out1" : {
-                "mode": "EXACT"
+                "mode": "EXACT",
+                "data_type": "FP32"
             }
         }
     })";
@@ -243,6 +244,7 @@ TEST_CASE("positive - ulp")
         "tensors" : {
             "out1" : {
                 "mode": "ULP",
+                "data_type": "FP32",
                 "ulp_info": {
                 "ulp": 5
                 }

@@ -38,7 +38,7 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
             return verifyULP(ref, imp, cfg.ulpInfo.ulp);
         }
         default: {
-            WARNING("unsupported verification mode.");
+            WARNING("tosa verifier: unsupported verification mode.");
             break;
         }
     }
@@ -57,38 +57,56 @@ extern "C"
         // Check inputs for nullptr
         if (!ref || !imp || !config_json)
         {
-            WARNING("one of the inputs is missing.");
+            WARNING("tosa verifier: one of the inputs is missing.");
             return false;
         }
 
         // Extract verification config
         if (!ref->name)
         {
-            WARNING("tensor name is not specified.");
+            WARNING("tosa verifier: tensor name is not specified.");
             return false;
         }
         auto cfg = TosaReference::parseVerifyConfig(ref->name, config_json);
         if (!cfg)
         {
-            WARNING("invalid json config.");
+            WARNING("tosa verifier: invalid json config.");
             return false;
         }
 
         // Validate shape
         if (ref->num_dims != imp->num_dims)
         {
-            WARNING("tensors have different number of dimensions.");
+            WARNING("tosa verifier: tensors have different number of dimensions.");
             return false;
         }
         if (!ref->shape || !imp->shape)
         {
-            WARNING("one of tensors' shape is missing.");
+            WARNING("tosa verifier: one of tensors' shape is missing.");
             return false;
         }
         if (std::vector(ref->shape, ref->shape + ref->num_dims) != std::vector(imp->shape, imp->shape + imp->num_dims))
         {
-            WARNING("tensors have different shapes.");
+            WARNING("tosa verifier: tensors have different shapes.");
             return false;
+        }
+
+        // Validate data-type
+        if (ref->data_type == tosa_datatype_fp64_t)
+        {
+            if (cfg->dataType != TosaReference::mapToDType(imp->data_type))
+            {
+                WARNING("tosa verifier: incorrect tensor data type.");
+                return false;
+            }
+        }
+        else
+        {
+            if (ref->data_type != imp->data_type)
+            {
+                WARNING("tosa verifier: tensors have different data types.");
+                return false;
+            }
         }
 
         // Run verification
