@@ -162,11 +162,11 @@ def update_desc_json(
     test_dir: Path,
     test_desc,
     output_dir: Optional[Path] = None,
-    create_result=True,
+    record_result=True,
     profiles=None,
     tags=None,
 ):
-    """Update the desc.json format for conformance and optionally create result."""
+    """Update the desc.json format for conformance and optionally record result."""
     ofm_files = []
     cfm_files = []
     if not output_dir:
@@ -175,7 +175,7 @@ def update_desc_json(
         ofm_path = test_dir / ofm
         if not test_desc["expected_failure"]:
             cfm = NAME_CONFORMANCE_RESULT_PREFIX + test_desc["ofm_name"][index]
-            if create_result:
+            if record_result:
                 if ofm_path.is_file():
                     # Use the desc.json name
                     ofm_refmodel = ofm_path
@@ -338,12 +338,18 @@ def main(argv=None):
     for cpp in cpp_files:
         shutil.copy(str(cpp), str(args.output_dir))
 
+    # Work out if we have a result to record
+    record_result = not args.lazy_data_generation
+    if "meta" in test_desc and "compliance" in test_desc["meta"]:
+        # We don't have pre-generated results for compliance tests
+        record_result = False
+
     # Update desc.json and convert result files to JSON
     test_desc = update_desc_json(
         desc_filename.parent,
         test_desc,
         output_dir=args.output_dir,
-        create_result=(not args.lazy_data_generation),
+        record_result=record_result,
         profiles=args.profile,
         tags=args.tags,
     )

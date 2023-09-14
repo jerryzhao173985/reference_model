@@ -16,9 +16,9 @@ from enum import unique
 from pathlib import Path
 
 import numpy as np
-from checker.tosa_result_checker import LogColors
-from checker.tosa_result_checker import print_color
-from checker.tosa_result_checker import set_print_in_color
+from checker.color_print import LogColors
+from checker.color_print import print_color
+from checker.color_print import set_print_in_color
 from runner.run_command import run_sh_command
 from xunit.xunit import xunit_results
 from xunit.xunit import xunit_test

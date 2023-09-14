@@ -25,6 +25,9 @@ class TosaSUTRunner(TosaTestRunner):
         """Initialize using the given test details."""
         super().__init__(args, runnerArgs, testDirPath)
 
+        # Don't do any compliance runs
+        self.compliance = False
+
     def runTestGraph(self):
         """Run the test on the reference model."""
         # Build up the TOSA reference command line
@@ -46,7 +49,7 @@ class TosaSUTRunner(TosaTestRunner):
         if args.ref_intermediates:
             cmd.extend(["--dump_intermediates", str(args.ref_intermediates)])
 
-        if args.precise_mode:
+        if args.precise_mode or self.compliance:
             cmd.extend(["--precise_mode=1"])
 
         # Run command and interpret tosa graph result via process return codes

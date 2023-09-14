@@ -234,6 +234,14 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
         )
 
     for test in tests:
+        desc = test / "desc.json"
+        with desc.open("r") as fd:
+            test_desc = json.load(fd)
+        if "meta" in test_desc and "compliance" in test_desc["meta"]:
+            logger.info(
+                f"Skipping generating results for new compliance test - {str(test)}"
+            )
+            continue
         ref_cmd = ref_cmd_base.copy()
         ref_cmd.append(str(test))
         ref_cmds.append(ref_cmd)
