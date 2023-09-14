@@ -25,14 +25,19 @@
                             "description": "verifier mode EXACT, DOT_PRODUCT, ULP, REDUCE_PRODUCT, or FP_SPECIAL",
                             "type": "string"
                         },
+                        "data_type": {
+                            "description": "tensor data type, such as: BOOL, INT16, FP32",
+                            "type": "string"
+                        },
                         "ulp_info": {
                             "description": "info required for the ULP mode",
                             "type": "object",
                             "properties":
                             {
                                 "ulp": {
-                                    "description": "ulp range limit - such as 1 or 0.5",
-                                    "type": "string"
+                                    "description": "ulp range limit - positive number",
+                                    "type": "integer",
+                                    "minimum": 0
                                 }
                             },
                             "required": [ "ulp" ]
@@ -49,23 +54,19 @@
                                 "ks": {
                                     "description": "kernel size for this dot product operation",
                                     "type": "integer"
-                                },
-                                "data_type": {
-                                    "description": "tensor data type, such as: BOOL, INT16, FP32",
-                                    "type": "string"
                                 }
                             },
                             "additionalProperties": false,
                             "required": [
                                 "s",
-                                "ks",
-                                "data_type"
+                                "ks"
                             ]
                         }
                     },
                     "additionalProperties": false,
                     "required": [
-                        "mode"
+                        "mode",
+                        "data_type"
                     ]
                 }
             }

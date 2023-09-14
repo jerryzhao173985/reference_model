@@ -72,7 +72,7 @@ class VerifierLibrary:
             ct.cast(shape, ct.POINTER(ct.c_int32)),
             ct.c_int32(len(array.shape)),
             ct.c_int(NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["type"]),
-            ct.cast(np.ctypeslib.as_ctypes(array), ct.POINTER(ct.c_uint8)),
+            array.ctypes.data_as(ct.POINTER(ct.c_uint8)),
             ct.c_size_t(size_in_bytes),
         )
         return tensor

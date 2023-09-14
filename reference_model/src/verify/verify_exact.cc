@@ -44,7 +44,7 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
                               });
         }
         default:
-            WARNING("data-type not supported.");
+            WARNING("tosa verifier: data-type not supported.");
             break;
     }
 

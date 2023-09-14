@@ -40,7 +40,8 @@ JSON_COMPLIANCE_DOT_PRODUCT = {
     "tensors": {
         "output1": {
             "mode": "DOT_PRODUCT",
-            "dot_product_info": {"ks": 1000, "s": 0, "data_type": "FP32"},
+            "data_type": "FP32",
+            "dot_product_info": {"ks": 1000, "s": 0},
         }
     },
 }
