@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import importlib
+import json
 import os
 import queue
 import threading
@@ -11,13 +12,11 @@ from datetime import datetime
 from pathlib import Path
 
 import conformance.model_files as cmf
+import runner.tosa_test_presets as ttp
 from json2numpy import json2numpy
 from runner.tosa_test_runner import TosaTestInvalid
 from runner.tosa_test_runner import TosaTestRunner
 from xunit import xunit
-
-TOSA_REFMODEL_RUNNER = "runner.tosa_refmodel_sut_run"
-MAX_XUNIT_TEST_MESSAGE = 1000
 
 
 def parseArgs(argv):
@@ -104,7 +103,7 @@ def parseArgs(argv):
         dest="sut_module",
         type=str,
         nargs="+",
-        default=[TOSA_REFMODEL_RUNNER],
+        default=[ttp.TOSA_REFMODEL_RUNNER],
         help="System under test module to load (derives from TosaTestRunner).  May be repeated",
     )
     parser.add_argument(
@@ -175,18 +174,20 @@ EXCLUSION_PREFIX = ["test", "model", "desc"]
 def convert2Numpy(test_path):
     """Convert all the JSON numpy files back into binary numpy."""
     jsons = test_path.glob("*.json")
-    for json in jsons:
+    for j in jsons:
         for exclude in EXCLUSION_PREFIX:
-            if json.name.startswith(exclude):
-                json = None
+            if j.name.startswith(exclude):
+                j = None
                 break
-        if json:
+        if j:
             # debug print(f"Converting {json}")
-            json2numpy.json_to_npy(json)
+            json2numpy.json_to_npy(j)
 
 
-def workerThread(task_queue, runnerList, args, result_queue):
+def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
     """Worker thread that runs the next test from the queue."""
+    complianceRunnerList = runnerList.copy()
+    complianceRunnerList.insert(0, (complianceRunner, []))
     while True:
         try:
             test_path = task_queue.get(block=False)
@@ -196,9 +197,24 @@ def workerThread(task_queue, runnerList, args, result_queue):
         if test_path is None:
             break
 
+        try:
+            # Check for compliance test
+            desc = test_path / "desc.json"
+            with desc.open("r") as fd:
+                j = json.load(fd)
+                compliance = "compliance" in j["meta"]
+        except Exception:
+            compliance = False
+
+        if compliance:
+            # Run compliance first to create output files!
+            currentRunners = complianceRunnerList
+        else:
+            currentRunners = runnerList
+
         msg = ""
         converted = False
-        for runnerModule, runnerArgs in runnerList:
+        for runnerModule, runnerArgs in currentRunners:
             try:
                 start_time = datetime.now()
                 # Set up system under test runner
@@ -358,8 +374,11 @@ def main(argv=None):
             cmf.TosaFileType.SCHEMA, args.ref_model_path
         )
 
-    if TOSA_REFMODEL_RUNNER in args.sut_module and not args.ref_model_path.is_file():
-        print(f"Argument error: Reference Model not found - {str(args.ref_model_path)}")
+    # Always check as it will be needed for compliance
+    if not args.ref_model_path.is_file():
+        print(
+            f"Argument error: Reference Model not found - ({str(args.ref_model_path)})"
+        )
         exit(2)
 
     if args.test_list_file:
@@ -374,7 +393,12 @@ def main(argv=None):
             )
             exit(2)
 
+    # Load in the runner modules and the ref model compliance module
     runnerList = loadSUTRunnerModules(args)
+    complianceRunner = importlib.import_module(ttp.TOSA_REFCOMPLIANCE_RUNNER)
+    # Create a separate reporting runner list as the compliance runner may not
+    # be always run - depends on compliance testing
+    fullRunnerList = runnerList + [(complianceRunner, [])]
 
     threads = []
     taskQueue = queue.Queue()
@@ -404,7 +428,8 @@ def main(argv=None):
 
     for i in range(args.jobs):
         t = threading.Thread(
-            target=workerThread, args=(taskQueue, runnerList, args, resultQueue)
+            target=workerThread,
+            args=(taskQueue, runnerList, complianceRunner, args, resultQueue),
         )
         t.setDaemon(True)
         t.start()
@@ -415,7 +440,7 @@ def main(argv=None):
     # Set up results lists for each system under test
     resultLists = {}
     results = {}
-    for runnerModule, _ in runnerList:
+    for runnerModule, _ in fullRunnerList:
         runner = runnerModule.__name__
         resultLists[runner] = []
         results[runner] = [0] * len(TosaTestRunner.Result)
@@ -428,19 +453,19 @@ def main(argv=None):
             break
 
         # Limit error messages to make results easier to digest
-        if msg and len(msg) > MAX_XUNIT_TEST_MESSAGE:
-            half = int(MAX_XUNIT_TEST_MESSAGE / 2)
-            trimmed = len(msg) - MAX_XUNIT_TEST_MESSAGE
+        if msg and len(msg) > ttp.MAX_XUNIT_TEST_MESSAGE:
+            half = int(ttp.MAX_XUNIT_TEST_MESSAGE / 2)
+            trimmed = len(msg) - ttp.MAX_XUNIT_TEST_MESSAGE
             msg = "{} ...\nskipped {} bytes\n... {}".format(
                 msg[:half], trimmed, msg[-half:]
             )
         resultLists[runner].append((test_path, rc, msg, time_delta))
         results[runner][rc] += 1
 
-    createXUnitResults(args.xunit_file, runnerList, resultLists, args.verbose)
+    createXUnitResults(args.xunit_file, fullRunnerList, resultLists, args.verbose)
 
     # Print out results for each system under test
-    for runnerModule, _ in runnerList:
+    for runnerModule, _ in fullRunnerList:
         runner = runnerModule.__name__
         resultSummary = []
         for result in TosaTestRunner.Result:

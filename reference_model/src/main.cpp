@@ -90,6 +90,12 @@ int main(int argc, char** argv)
 
     GraphStatus status = GraphStatus::TOSA_VALID;
 
+    if (isComplianceModeDotProduct(test_desc) && !g_func_config.precise_mode)
+    {
+        // Warn about precise mode for dot product compliance
+        DEBUG_INFO(CONFIG, "DOT_PRODUCT compliance: NOTE - enable precise mode for compliance results")
+    }
+
     // max of 2 runs, second run only happens when precise_mode is set, to do an abs_mode run
     for (int run = 0; run < 2; run++)
     {
@@ -213,10 +219,11 @@ int main(int argc, char** argv)
                 fprintf(stderr, "Unknown graph status code=%d.\n", (int)main_gt.getGraphStatus());
         }
 
-        if (status == GraphStatus::TOSA_VALID && g_func_config.eval && g_func_config.precise_mode &&
+        if (run == 0 && status == GraphStatus::TOSA_VALID && g_func_config.precise_mode && g_func_config.eval &&
             isComplianceModeDotProduct(test_desc))
         {
-            // first run result is valid, in precise mode and eval is true: turn on abs_mode for second run
+            // first run result is valid and precise mode and eval is true: turn on abs_mode for second run
+            DEBUG_INFO(CONFIG, "DOT_PRODUCT compliance: Evaluating the graph again to produce bounds results")
             g_func_config.abs_mode = true;
             continue;
         }
@@ -354,14 +361,21 @@ const std::string getResultFilenamePrefix()
     return g_func_config.abs_mode ? "bounds_" : "";
 }
 
-// returns true iff test_desc contains a dictionay, "compliance",
-// which contains entry "mode" whose value is "dot product"
+// returns true iff test_desc contains a "meta" object containing a "compliance"
+// object which contains "tensors" and one of those has a "mode" whose value is
+// "DOT_PRODUCT"
 bool isComplianceModeDotProduct(json& test_desc)
 {
-    if (test_desc.contains("compliance") && test_desc["compliance"].contains("mode") &&
-        test_desc["compliance"]["mode"] == "dot product")
+    if (test_desc.contains("meta") && test_desc["meta"].contains("compliance") &&
+        test_desc["meta"]["compliance"].contains("tensors"))
     {
-        return true;
+        for (auto t : test_desc["meta"]["compliance"]["tensors"])
+        {
+            if (t.contains("mode") && t["mode"] == "DOT_PRODUCT")
+            {
+                return true;
+            }
+        }
     }
     return false;
 }
