@@ -75,7 +75,7 @@
                 "type": "string"
             }
         },
-        "tags": {
+        "tag": {
             "description": "list of string tags that can be used for test filtering",
             "type": "array",
             "items": {

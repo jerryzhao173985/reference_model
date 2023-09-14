@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2022, ARM Limited.
+# Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """This script converts generated tests into conformance tests.
 
@@ -218,7 +218,7 @@ def update_desc_json(
 
     # Add tags (if any)
     if tags is not None:
-        test_desc["tags"] = tags
+        test_desc["tag"] = tags
 
     return test_desc
 
