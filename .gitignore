@@ -1,8 +1,11 @@
-# Copyright (c) 2021-2022 Arm Limited.
+# Copyright (c) 2021-2023 Arm Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 __pycache__/
 build/
+build-debug/
+.cache
+compile_commands.json
 dist/
 *.egg-info
 verif/tests/test-result-*.tests.tosa_mock_sut_run.npy
