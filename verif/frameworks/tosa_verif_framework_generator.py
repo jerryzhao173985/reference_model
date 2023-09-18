@@ -174,6 +174,11 @@ TF_OP_LIST = {
         "operands": (2, 0),
         "build_fcn": (TBuilder.Concat, TGen.tgBasic, ArgGen.agAxes),
         "types": TYPE_FI,
+        "rank": (0, 4),
+        "custom_shapes": {
+            "custom_shape_only": False,
+            "shape_list": [()],
+        },
     },
     "bitwise_and": {
         "operands": (2, 0),
@@ -635,6 +640,11 @@ TF_OP_LIST = {
         "operands": (4, 0),
         "build_fcn": (TBuilder.Concatv2, TGen.tgBasic, ArgGen.agAxes),
         "types": TYPE_FI,
+        "rank": (0, 4),
+        "custom_shapes": {
+            "custom_shape_only": False,
+            "shape_list": [()],
+        },
     },
     "stack": {
         "operands": (4, 0),
@@ -1473,7 +1483,7 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
             shape_list = custom_shapes["shape_list"]
         else:
             shape_list = shape_list.copy()
-            shape_list.append(custom_shapes["shape_list"])
+            shape_list.extend(custom_shapes["shape_list"])
     except KeyError:
         pass
 

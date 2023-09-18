@@ -9,6 +9,9 @@ import tensorflow as tf
 # Get a string name for a given shape
 def get_shape_str(shape, dtype):
     shape_name = None
+    if len(shape) == 0:
+        shape_name = "0"
+
     for dim in shape:
         shape_name = (shape_name + "x" + str(dim)) if shape_name else str(dim)
 

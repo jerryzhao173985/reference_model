@@ -41,8 +41,12 @@ class TGen:
             RAND_SHIFT_FACTOR = 0.5
 
         if dtype == tf.float32:
-            return np.float32(
-                (rng.random(size=shape) - RAND_SHIFT_FACTOR) * RAND_SCALE_FACTOR
+            return (
+                np.float32(
+                    (rng.random(size=shape) - RAND_SHIFT_FACTOR) * RAND_SCALE_FACTOR
+                )
+                if shape != ()
+                else np.float32(rng.random())
             )
         if dtype == tf.float16:
             return np.float16(

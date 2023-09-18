@@ -45,6 +45,10 @@ class ArgGen:
     @staticmethod
     def agAxes(op, shapes, rng):
         axes = []
+        if shapes == ():
+            axes.append(["_axis_0", [0]])
+            return axes
+
         for i in range(-len(shapes), len(shapes), 1):
             if i >= 0:
                 axes.append(["_axis_{}".format(i), [i]])
