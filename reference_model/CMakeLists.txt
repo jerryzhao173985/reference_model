@@ -78,6 +78,7 @@ set(CXX_SOURCE
     src/verify/verify_dot_product.cc
     src/verify/verify_entry.cc
     src/verify/verify_exact.cc
+    src/verify/verify_reduce_product.cc
     src/verify/verify_ulp.cc
     src/verify/verify_utils.cc
     src/ops/op_factory.cc
@@ -148,6 +149,7 @@ add_library(tosa_reference_verify_lib SHARED
   src/verify/verify_dot_product.cc
   src/verify/verify_entry.cc
   src/verify/verify_exact.cc
+  src/verify/verify_reduce_product.cc
   src/verify/verify_ulp.cc
   src/verify/verify_utils.cc
   src/verify/verify_config.cc
