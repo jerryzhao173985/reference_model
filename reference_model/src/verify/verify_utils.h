@@ -64,6 +64,15 @@ struct DotProductVerifyInfo
     int32_t ks;
 };
 
+/// \brief reduce-product verification meta-data
+struct ReduceProductVerifyInfo
+{
+    ReduceProductVerifyInfo() = default;
+
+    int64_t m;
+    int64_t n;
+};
+
 /// \brief Verification meta-data
 struct VerifyConfig
 {
@@ -73,6 +82,7 @@ struct VerifyConfig
     DType dataType;
     UlpInfo ulpInfo;
     DotProductVerifyInfo dotProductInfo;
+    ReduceProductVerifyInfo reduceProductInfo;
 };
 
 /// \brief Parse the verification config for a tensor when given in JSON form

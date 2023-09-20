@@ -125,6 +125,26 @@ std::enable_if_t<std::is_floating_point_v<FP>, std::vector<FP>> generateRandomTe
     return data;
 }
 
+// Calculates the "error" in the tolerance calculation as: E = pow(1 + pow(2, -M-1), N) - 1.
+// where M is the number of mantisa bits in the floating point representation and N is the number
+// of elements in the product.
+constexpr auto reduceProductError(uint64_t M, uint64_t N)
+{
+    return std::pow(1 + std::pow(2, -static_cast<int64_t>(M) - 1), N) - 1;
+}
+
+template <typename FP>
+auto reduceProductTolerance(uint64_t M, uint64_t N, const std::vector<FP>& results)
+{
+    const auto error = reduceProductError(M, N);
+    auto tolerances  = std::vector<FP>(results.size());
+    for (unsigned i = 0, end = results.size(); i < end; ++i)
+    {
+        tolerances[i] = std::abs(results[i]) * error;
+    }
+    return tolerances;
+}
+
 }    // namespace
 
 TEST_SUITE_BEGIN("verify");
@@ -233,6 +253,88 @@ TEST_CASE("positive - exact")
             TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+        REQUIRE_FALSE(
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+    }
+}
+
+TEST_CASE("positive - reduce product")
+{
+    std::string json_cfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "REDUCE_PRODUCT",
+                "reduce_product_info": {
+                "m": 23,
+                "n": 8
+                }
+            }
+        }
+    })";
+
+    const auto inputShape    = std::vector<int32_t>{ 8, 8, 8 };
+    const auto outputShape   = std::vector<int32_t>{ 8, 8, 1 };
+    const auto reductionSize = inputShape[2];
+    const auto elementCount  = std::accumulate(std::begin(inputShape), std::end(inputShape), 1, std::multiplies<>());
+
+    // Generate some random floats using the full range of fp32. This will be the "result" of our
+    // dot product. Here we "reduced" over the z-axis of our shape.
+    auto data = generateRandomTensorData<float>(elementCount / reductionSize, false);
+    // Calculate the tolerances for each element in the result.
+    // A float has 23 bit dedicated to the fraction.
+    constexpr uint64_t mantisa_count = 23;
+    const auto tolerances            = reduceProductTolerance(mantisa_count, reductionSize, data);
+
+    SUBCASE("same")
+    {
+        // TODO: Generate some new floats that are as far away as possible from each result without
+        // exceeding the tolerance.
+        auto otherData = std::vector<float>(elementCount / reductionSize);
+        for (unsigned i = 0; i < data.size(); ++i)
+        {
+            auto newValue     = data[i];
+            auto oldValue     = newValue;
+            const auto target = tolerances[i] + newValue;
+
+            // Here we just increment the value until we exceed the tolerance. For simplicity we go up.
+            while (newValue < target)
+            {
+                oldValue = newValue;
+                newValue = std::nextafter(newValue, std::numeric_limits<float>::infinity());
+            }
+
+            otherData[i] = oldValue;
+        }
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+    }
+
+    SUBCASE("different")
+    {
+        // TODO: Generate some new floats that exceed the tolerance.
+        auto otherData = std::vector<float>(elementCount / reductionSize);
+        for (unsigned i = 0; i < data.size(); ++i)
+        {
+            auto newValue     = data[i];
+            const auto target = tolerances[i] + newValue;
+
+            // Here we just increment the value until we exceed the tolerance. For simplicity we go up.
+            while (newValue < target)
+            {
+                newValue = std::nextafter(newValue, std::numeric_limits<float>::infinity());
+            }
+
+            otherData[i] = newValue;
+        }
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
     }

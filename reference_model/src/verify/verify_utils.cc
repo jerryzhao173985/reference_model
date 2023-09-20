@@ -62,6 +62,12 @@ void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
     j.at("ks").get_to(dotProductInfo.ks);
 }
 
+void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceInfo)
+{
+    j.at("m").get_to(reduceProduceInfo.m);
+    j.at("n").get_to(reduceProduceInfo.n);
+}
+
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
@@ -73,6 +79,10 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);
+    }
+    if (j.contains("reduce_product_info"))
+    {
+        j.at("reduce_product_info").get_to(cfg.reduceProductInfo);
     }
 }
 
