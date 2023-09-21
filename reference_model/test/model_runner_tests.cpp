@@ -111,8 +111,10 @@ TEST_SUITE("model_runner")
         output.data      = reinterpret_cast<uint8_t*>(dstData.data());
         output.size      = dstData.size() * sizeof(float);
 
+        tosa_acc_size_t acc_size = tosa_acc_size_fp32_t;
+
         // Execution
-        auto status = tosa_run_avg_pool2d(input, kernel, stride, pad, 0, 0, output, {});
+        auto status = tosa_run_avg_pool2d(input, kernel, stride, pad, acc_size, 0, 0, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results

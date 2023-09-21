@@ -58,6 +58,13 @@ extern "C"
         tosa_datatype_fp64_t   = 99
     };
 
+    enum tosa_acc_size_t
+    {
+        tosa_acc_size_int32_t = 0,
+        tosa_acc_size_fp16_t  = 1,
+        tosa_acc_size_fp32_t  = 2
+    };
+
     struct tosa_tensor_t
     {
         const char* name;

@@ -46,6 +46,7 @@ extern "C"
                                       const int32_t client_kernel[2],
                                       const int32_t client_stride[2],
                                       const int32_t client_pad[4],
+                                      const tosa_acc_size_t client_acc_size,
                                       const int32_t client_input_zp,
                                       const int32_t client_output_zp,
                                       tosa_tensor_t client_output,
