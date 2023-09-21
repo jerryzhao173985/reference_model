@@ -92,6 +92,19 @@ tosa::ResizeMode translate_client_tosa_mode(tosa_mode_t mode) {
     }
 }
 
+tosa::DType translate_client_acc_size(tosa_acc_size_t acc_size) {
+    switch(acc_size) {
+        case tosa_acc_size_int32_t:
+            return tosa::DType::DType_INT32;
+        case tosa_acc_size_fp16_t:
+            return tosa::DType::DType_FP16;
+        case tosa_acc_size_fp32_t:
+            return tosa::DType::DType_FP32;
+        default:
+            return tosa::DType::DType_UNKNOWN;
+    }
+}
+
 }    // namespace
 
 extern "C"
