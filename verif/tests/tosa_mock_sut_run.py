@@ -1,5 +1,5 @@
 """TOSA test runner module for a mock System Under Test (SUT)."""
-# Copyright (c) 2021, ARM Limited.
+# Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import os
 
@@ -33,7 +33,7 @@ class TosaSUTRunner(TosaTestRunner):
         print(f"MOCK SUT: Runner argument dictionary: {sutArgs}")
 
         # Useful meta data and arguments
-        tosaFlatbufferSchema = self.args.operator_fbs
+        tosaFlatbufferSchema = str(self.args.schema_path)
         tosaSubgraphFile = self.testDesc["tosa_file"]
         tosaTestDirectory = self.testDir
         tosaTestDescFile = self.descFile

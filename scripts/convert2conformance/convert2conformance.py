@@ -22,10 +22,6 @@ from schemavalidation.schemavalidation import TestDescSchemaValidator
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("convert2conformance")
 
-LOCATION_REF_MODEL_SCHEMA = Path("thirdparty/serialization_lib/schema/tosa.fbs")
-LOCATION_REF_MODEL_FLATC = Path(
-    "build/thirdparty/serialization_lib/third_party/flatbuffers/flatc"
-)
 
 NAME_FLATBUFFER_DIR = ["flatbuffer-", "_FW_"]
 NAME_DESC_FILENAME = "desc.json"
@@ -47,11 +43,19 @@ def parse_args(argv):
         help="The test directory to convert (default is CWD)",
     )
     parser.add_argument(
-        "--ref-model-directory",
-        dest="ref_model_dir",
+        "--schema-path",
+        "--operator-fbs",
+        dest="schema_path",
         type=Path,
         required=True,
-        help="Reference Model directory (must be pre-built)",
+        help=("Path to reference model schema."),
+    )
+    parser.add_argument(
+        "--flatc-path",
+        dest="flatc_path",
+        type=Path,
+        required=True,
+        help=("Path to flatc executable."),
     )
     parser.add_argument(
         "--output-directory",
@@ -105,21 +109,6 @@ def parse_args(argv):
     args = parser.parse_args(argv)
 
     return args
-
-
-def find_ref_model_artifacts(path: Path):
-    """Check the location of the flatc compiler and schema artifacts."""
-    flatc = path / LOCATION_REF_MODEL_FLATC
-    schema = path / LOCATION_REF_MODEL_SCHEMA
-    if not flatc.is_file():
-        raise Exception(
-            f"flatc not found in {flatc}\nHave you built the flatbuffers compiler?"
-        )
-    if not schema.is_file():
-        raise Exception(
-            f"TOSA schema not found at {schema}\nHave you checked out the submodules?"
-        )
-    return flatc, schema
 
 
 def find_framework_artifacts(framework: str, schema_path: Path, desc_file: Path):
@@ -240,10 +229,11 @@ def main(argv=None):
         logger.setLevel(logging.DEBUG)
 
     # Check we can get the files we need
-    try:
-        flatc, schema = find_ref_model_artifacts(args.ref_model_dir)
-    except Exception as err:
-        logger.error(err)
+    if not args.flatc_path.is_file():
+        logger.error("flatc not found at %s", args.flatc_path)
+        return 2
+    if not args.schema_path.is_file():
+        logger.error("TOSA schema not found at %s", args.schema_path)
         return 2
 
     # Work out where the desc.json file is
@@ -307,7 +297,7 @@ def main(argv=None):
     # Convert the TOSA flatbuffer binary
     tosa_filename = desc_filename.parent / test_desc["tosa_file"]
     tosa_filename = convert_flatbuffer_file(
-        flatc, schema, tosa_filename, args.output_dir
+        args.flatc_path, args.schema_path, tosa_filename, args.output_dir
     )
     if not tosa_filename:
         # Failed to convert the file, json2fbbin will have printed an error
@@ -319,7 +309,7 @@ def main(argv=None):
     if framework_conversion and framework_filename:
         # Convert the framework flatbuffer binary
         framework_filename = convert_flatbuffer_file(
-            flatc, framework_schema, framework_filename, args.output_dir
+            args.flatc_path, framework_schema, framework_filename, args.output_dir
         )
         if not framework_filename:
             # Failed to convert the file, json2fbbin will have printed an error

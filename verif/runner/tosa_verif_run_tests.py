@@ -1,5 +1,5 @@
 """TOSA verification runner script."""
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import importlib
@@ -10,6 +10,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
+import conformance.model_files as cmf
 from json2numpy import json2numpy
 from runner.tosa_test_runner import TosaTestInvalid
 from runner.tosa_test_runner import TosaTestRunner
@@ -46,25 +47,29 @@ def parseArgs(argv):
         help="Recursively search for tests",
     )
     parser.add_argument(
-        "--operator-fbs",
-        dest="operator_fbs",
-        default="conformance_tests/third_party/serialization_lib/schema/tosa.fbs",
-        type=str,
-        help="flat buffer syntax file",
-    )
-    parser.add_argument(
         "--ref-model-path",
         dest="ref_model_path",
-        default="reference_model/build/reference_model/tosa_reference_model",
-        type=str,
-        help="Path to reference model executable",
+        type=Path,
+        help="Path to TOSA reference model executable",
+    )
+    parser.add_argument(
+        "--operator-fbs",
+        "--schema-path",
+        dest="schema_path",
+        type=Path,
+        help=(
+            "Path to TOSA reference model flat buffer schema. Defaults to "
+            f"`{cmf.DEFAULT_REF_MODEL_SCHEMA_PATH}` in parents parent directory of `ref-model-path`"
+        ),
     )
     parser.add_argument(
         "--flatc-path",
         dest="flatc_path",
-        default="reference_model/build/thirdparty/serialization_lib/third_party/flatbuffers/flatc",
-        type=str,
-        help="Path to flatc compiler executable",
+        type=Path,
+        help=(
+            "Path to flatc executable. Defaults to "
+            f"`{cmf.DEFAULT_REF_MODEL_BUILD_FLATC_PATH}` in parent directory of `ref-model-path`"
+        ),
     )
     parser.add_argument(
         "--ref-debug",
@@ -339,13 +344,22 @@ def main(argv=None):
     """Start worker threads to do the testing and outputs the results."""
     args = parseArgs(argv)
 
-    if (
-        TOSA_REFMODEL_RUNNER in args.sut_module
-        and not Path(args.ref_model_path).is_file()
-    ):
-        print(
-            "Argument error: Reference Model not found ({})".format(args.ref_model_path)
+    # Set up some defaults
+    if args.ref_model_path is None:
+        args.ref_model_path = cmf.find_tosa_file(
+            cmf.TosaFileType.REF_MODEL, Path("reference_model"), False
         )
+    if args.flatc_path is None:
+        args.flatc_path = cmf.find_tosa_file(
+            cmf.TosaFileType.FLATC, args.ref_model_path
+        )
+    if args.schema_path is None:
+        args.schema_path = cmf.find_tosa_file(
+            cmf.TosaFileType.SCHEMA, args.ref_model_path
+        )
+
+    if TOSA_REFMODEL_RUNNER in args.sut_module and not args.ref_model_path.is_file():
+        print(f"Argument error: Reference Model not found - {str(args.ref_model_path)}")
         exit(2)
 
     if args.test_list_file:

@@ -1,5 +1,5 @@
 """Tests for tosa_verif_run_tests.py."""
-# Copyright (c) 2021-2022, ARM Limited.
+# Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 from runner.tosa_verif_run_tests import parseArgs
 
@@ -15,7 +15,7 @@ def test_args_ref_model_path():
     """Test arguments - ref_model_path."""
     args = ["--ref-model-path", "ref_model_path", "-t", "test"]
     parsed_args = parseArgs(args)
-    assert parsed_args.ref_model_path == "ref_model_path"
+    assert str(parsed_args.ref_model_path) == "ref_model_path"
 
 
 def test_args_ref_debug():
