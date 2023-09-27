@@ -4,19 +4,9 @@
 import ctypes as ct
 import json
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import schemavalidation.schemavalidation as sch
-
-
-# Default library info
-SCRIPT = Path(__file__).absolute()
-# NOTE: This REFMODEL_DIR default only works for the python developer environment
-# i.e. when using the scripts/py-dev-env.* scripts
-# otherwise use the command line option --ref-model-directory to specify path
-REFMODEL_DIR = SCRIPT.parents[2]
-LIBRARY = "libtosa_reference_verify_lib.so"
 
 # Type conversion from numpy to tosa_datatype_t
 # "type" matches enum - see include/types.h
@@ -55,18 +45,12 @@ class VerifierError(Exception):
 class VerifierLibrary:
     """Python interface to the C verify library."""
 
-    def __init__(self, path: Optional[Path] = None):
+    def __init__(self, verify_lib_path):
         """Find the library and set up the interface."""
-        if path is None:
-            path = REFMODEL_DIR
-        lib_paths = sorted(path.glob(f"**/{LIBRARY}"))
+        self.lib_path = verify_lib_path
+        if not self.lib_path.is_file():
+            raise VerifierError(f"Could not find verify library - {self.lib_path}")
 
-        if len(lib_paths) < 1:
-            raise VerifierError(
-                f"Could not find {LIBRARY} - have you built the ref-model?"
-            )
-
-        self.lib_path = lib_paths[0]
         self.lib = ct.cdll.LoadLibrary(self.lib_path)
 
         self.tvf_verify_data = self.lib.tvf_verify_data
@@ -122,14 +106,14 @@ class VerifierLibrary:
 def main(argv=None):
     """Simple command line interface for the verifier library."""
     import argparse
+    import conformance.model_files as cmf
 
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
-        "--ref-model-directory",
-        dest="ref_model_dir",
-        default=REFMODEL_DIR,
+        "--verify-lib-path",
         type=Path,
-        help="Path to pre-built reference model directory",
+        help="Path to TOSA verify lib",
     )
     parser.add_argument(
         "--test-desc",
@@ -158,6 +142,16 @@ def main(argv=None):
         help="path to the implementation result numpy file",
     )
     args = parser.parse_args(argv)
+
+    if args.verify_lib_path is None:
+        # Try to work out ref model directory and find the verify library
+        # but this default only works for the python developer environment
+        # i.e. when using the scripts/py-dev-env.* scripts
+        # otherwise use the command line option --verify-lib-path to specify path
+        ref_model_dir = Path(__file__).absolute().parents[2]
+        args.verify_lib_path = cmf.find_tosa_file(
+            cmf.TosaFileType.VERIFY_LIBRARY, ref_model_dir, False
+        )
 
     if args.test_desc:
         json_path = args.test_desc
@@ -192,7 +186,7 @@ def main(argv=None):
         arrays[idx] = array
 
     print("Load verifier library")
-    vlib = VerifierLibrary(args.ref_model_dir)
+    vlib = VerifierLibrary(args.verify_lib_path)
 
     print("Verify data")
     if vlib.verify_data(output_name, test_desc["meta"]["compliance"], *arrays):

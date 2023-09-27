@@ -26,12 +26,12 @@ def test_verifier_lib_built():
 def test_checker_verifier_load_fail():
     with pytest.raises(VerifierError) as excinfo:
         VerifierLibrary(Path("/place-that-does-not-exist"))
-    assert str(excinfo.value).startswith(f"Could not find {VERIFIER_LIB}")
+    assert str(excinfo.value).startswith("Could not find verify library")
 
 
 @pytest.mark.postcommit
 def test_checker_verifier_load():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH.parent)
+    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
     assert vlib
 
 
@@ -48,7 +48,7 @@ JSON_COMPLIANCE_DOT_PRODUCT = {
 
 @pytest.mark.postcommit
 def test_checker_verifier_dot_product_check():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH.parent)
+    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
     assert vlib
 
     imp_arr = np.zeros((10, 10, 10), dtype=np.float32)
@@ -63,7 +63,7 @@ def test_checker_verifier_dot_product_check():
 
 @pytest.mark.postcommit
 def test_checker_verifier_dot_product_check_fail():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH.parent)
+    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
     assert vlib
 
     imp_arr = np.zeros((10, 10, 10), dtype=np.float32)

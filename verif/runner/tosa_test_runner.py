@@ -1,9 +1,8 @@
 """Template test runner class for running TOSA tests."""
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 from enum import IntEnum
-from pathlib import Path
 
 from checker.tosa_result_checker import LogColors
 from checker.tosa_result_checker import print_color
@@ -62,8 +61,8 @@ class TosaTestRunner:
         if args.binary and tosaFilePath.suffix == ".json":
             # Convert tosa JSON to binary
             json2fbbin.json_to_fbbin(
-                Path(args.flatc_path),
-                Path(args.operator_fbs),
+                args.flatc_path,
+                args.schema_path,
                 tosaFilePath,
                 testDirPath,
             )

@@ -23,6 +23,7 @@ from functools import partial
 from itertools import tee
 from pathlib import Path
 
+import conformance.model_files as cmf
 from conformance.test_select import Operator
 from convert2conformance.convert2conformance import main as c2c_main
 from distutils.dir_util import copy_tree
@@ -43,8 +44,6 @@ PROFILE_OPS_INFO = {
     },
 }
 PROFILES_ALL = "all"
-
-LOCATION_REF_MODEL_BINARY = Path("build/reference_model/tosa_reference_model")
 
 DEFAULT_SEED = 42
 
@@ -155,7 +154,7 @@ def build_op_tests(
     error = False
     for i, cmd in enumerate(build_cmds_list):
         try:
-            _run_sh_command(args, args.ref_model_dir.absolute(), cmd)
+            _run_sh_command(args, args.ref_model_path.parent.absolute(), cmd)
             logger.info(
                 f"{operator} test batch {(i+1)}/{len(build_cmds_list)} created successfully"
             )
@@ -217,11 +216,10 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
     num_cores = args.num_cores
     run_tests_cmd = "tosa_verif_run_tests"
 
-    ref_model_path = args.ref_model_dir / LOCATION_REF_MODEL_BINARY
     ref_cmd_base = ref_cmd = [
         run_tests_cmd,
         "--ref-model-path",
-        str(ref_model_path.absolute()),
+        str(args.ref_model_path.absolute()),
         "-j",
         str(num_cores),
         "-v",
@@ -244,7 +242,7 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
     failed_counter = 0
 
     job_pool = mp.Pool(args.num_cores)
-    sh_partial = partial(_run_sh_command, args, args.ref_model_dir.absolute())
+    sh_partial = partial(_run_sh_command, args, args.ref_model_path.parent.absolute())
     pool_results = job_pool.map(sh_partial, ref_cmds)
     job_pool.close()
     job_pool.join()
@@ -275,12 +273,12 @@ def convert_tests(
     tags=None,
 ):
     """Convert tests to JSON and save to output directory."""
-    ref_model_dir = args.ref_model_dir
-
     if group:
         output_dir = output_dir / group
 
-    c2c_args_base = ["--strict", "--ref-model-directory", str(ref_model_dir)]
+    c2c_args_base = ["--strict"]
+    c2c_args_base.extend(["--schema-path", str(args.schema_path)])
+    c2c_args_base.extend(["--flatc-path", str(args.flatc_path)])
     # This op maybe in more than one profile - e.g. tosa_bi and tosa_mi
     # even if we are only producing tests for tosa_mi
     for op_profile in op_profiles_list:
@@ -470,6 +468,7 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "--operators",
+        "--op",
         type=str,
         nargs="*",
         help="The operator(s) to create tests for, if not supplied all tests will be created",
@@ -495,12 +494,37 @@ def parse_args(argv=None):
         action="store_true",
         help="Enable lazy data generation (only for tosa-mi)",
     )
-    parser.add_argument(
+    rm_group = parser.add_mutually_exclusive_group(required=True)
+    rm_group.add_argument(
         "--ref-model-directory",
         dest="ref_model_dir",
         type=Path,
-        required=True,
-        help="Reference Model directory (must be pre-built)",
+        help="(DEPRECATED - use ref-model-path) Reference Model directory - with build directory",
+    )
+    rm_group.add_argument(
+        "--ref-model-path",
+        dest="ref_model_path",
+        type=Path,
+        help="Path to TOSA reference model executable",
+    )
+    parser.add_argument(
+        "--schema-path",
+        "--operator-fbs",
+        dest="schema_path",
+        type=Path,
+        help=(
+            "Path to TOSA reference model flat buffer schema. Defaults to "
+            f"`{cmf.DEFAULT_REF_MODEL_SCHEMA_PATH}` in parents parent directory of `ref-model-path`"
+        ),
+    )
+    parser.add_argument(
+        "--flatc-path",
+        dest="flatc_path",
+        type=Path,
+        help=(
+            "Path to flatc executable. Defaults to "
+            f"`{cmf.DEFAULT_REF_MODEL_BUILD_FLATC_PATH}` in parent directory of `ref-model-path`"
+        ),
     )
     parser.add_argument(
         "--seed",
@@ -581,18 +605,35 @@ def parse_args(argv=None):
 def main():
     args = parse_args()
 
-    if not args.ref_model_dir.is_dir():
+    if args.ref_model_dir is not None:
+        # Assume the ref model exe path based on the ref model directory
+        args.ref_model_path = cmf.find_tosa_file(
+            cmf.TosaFileType.REF_MODEL, args.ref_model_dir, False
+        )
+    if not args.ref_model_path.is_file():
         logger.error(
-            f"Missing or invalid reference model directory: {args.ref_model_dir}"
+            f"Missing reference model binary (--ref-model-path): {args.ref_model_path}"
         )
         return 2
-    else:
-        ref_model = args.ref_model_dir / LOCATION_REF_MODEL_BINARY
-        if not ref_model.is_file():
-            logger.error(
-                f"{LOCATION_REF_MODEL_BINARY} not found in {args.ref_model_dir}\nHave you built the reference model?"
-            )
-            return 2
+
+    if args.schema_path is None:
+        args.schema_path = cmf.find_tosa_file(
+            cmf.TosaFileType.SCHEMA, args.ref_model_path
+        )
+    if not args.schema_path.is_file():
+        logger.error(
+            f"Missing reference model schema (--schema-path): {args.schema_path}"
+        )
+        return 2
+
+    if args.flatc_path is None:
+        args.flatc_path = cmf.find_tosa_file(
+            cmf.TosaFileType.FLATC, args.ref_model_path
+        )
+    if not args.flatc_path.is_file():
+        logger.error(f"Missing flatc binary (--flatc-path): {args.flatc_path}")
+        return 2
+
     if args.unit_tests in ["framework", "both"]:
         logger.warning(
             "DEPRECATION - Framework tests are not part of TOSA conformance testing"
