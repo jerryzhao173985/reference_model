@@ -138,6 +138,8 @@ def build_op_tests(
 
     if "lazy_data_gen" in supports and args.lazy_data_generation:
         build_cmd_base.append("--lazy-data-generation")
+    if "stable_random_gen" in supports and not args.global_random_generation:
+        build_cmd_base.append("--stable-random-generation")
 
     if "generator_select" in supports:
         if selector_info is None:
@@ -543,6 +545,11 @@ def parse_args(argv=None):
         default="both",
         type=str,
         help="Type of tests produced (default is both)",
+    )
+    parser.add_argument(
+        "--global-random-generation",
+        action="store_true",
+        help="Disable stable random generation of tests that support this mode",
     )
     parser.add_argument(
         "--lazy-data-generation",

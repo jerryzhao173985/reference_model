@@ -30,48 +30,48 @@ class TosaQuantGen:
         pass
 
     @staticmethod
-    def getZeroPoint(testGen, dtype, error_name=None):
+    def getZeroPoint(rng, zeropoint, dtype, error_name=None):
 
         if dtype == DType.INT8:
-            if testGen.args.zeropoint is not None:
-                return min(127, max(-128, testGen.args.zeropoint))
-            return testGen.randInt(-128, 128)
+            if zeropoint is not None:
+                return min(127, max(-128, zeropoint))
+            return rng.randInt(-128, 128)
         elif dtype == DType.UINT8:
-            if testGen.args.zeropoint is not None:
-                return min(255, max(0, testGen.args.zeropoint))
-            return testGen.randInt(0, 256)
+            if zeropoint is not None:
+                return min(255, max(0, zeropoint))
+            return rng.randInt(0, 256)
         elif error_name in [
             ErrorIf.InputZeroPointNotZero,
             ErrorIf.WeightZeroPointNotZero,
             ErrorIf.OutputZeroPointNotZero,
         ]:
-            zero_point = testGen.randInt(-128, 128)
+            zero_point = rng.randInt(-128, 128)
             if zero_point == 0:
                 zero_point = 1
             return zero_point
         return 0
 
     @staticmethod
-    def qgUnary(testGen, op, dtype, error_name=None):
+    def qgUnary(rng, zeropoint, op, dtype, error_name=None):
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtype, error_name),
-                TosaQuantGen.getZeroPoint(testGen, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
             ]
         elif error_name == ErrorIf.OutputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtype),
-                TosaQuantGen.getZeroPoint(testGen, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtype),
-                TosaQuantGen.getZeroPoint(testGen, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
             ]
         return qinfo
 
     @staticmethod
-    def qgConv(testGen, op, dtype_or_dtypeList, error_name=None):
+    def qgConv(rng, zeropoint, op, dtype_or_dtypeList, error_name=None):
         if isinstance(dtype_or_dtypeList, list):
             # a list of [input, weights, accumulator] dtypes
             dtypeList = dtype_or_dtypeList
@@ -81,32 +81,32 @@ class TosaQuantGen:
 
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[0], error_name),
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[1]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0], error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1]),
             ]
         elif error_name == ErrorIf.WeightZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[0]),
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[1], error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1], error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[0]),
-                TosaQuantGen.getZeroPoint(testGen, dtypeList[1]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1]),
             ]
         return qinfo
 
     @staticmethod
-    def qgMatmul(testGen, op, dtype, error_name=None):
+    def qgMatmul(rng, zeropoint, op, dtype, error_name=None):
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtype, error_name),
-                TosaQuantGen.getZeroPoint(testGen, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(testGen, dtype),
-                TosaQuantGen.getZeroPoint(testGen, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
             ]
         return qinfo
 
@@ -166,9 +166,9 @@ class TosaTensorGen:
         pass
 
     @staticmethod
-    def tgBasic(testGen, opName, rank, error_name=None):
-        pl, const = opName["operands"]
-        shape = testGen.makeShape(rank)
+    def tgBasic(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+        shape = testGen.makeShape(rng, rank)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
         if error_name:
@@ -181,20 +181,20 @@ class TosaTensorGen:
             # Generates an input rank mismatch for operators with more than one input
             if error_name == ErrorIf.RankMismatch:
                 if rank == 1 and i != 1:
-                    shape = testGen.makeShape(rank + testGen.rng.choice([1, 2, 3]))
+                    shape = testGen.makeShape(rng, rank + rng.choice([1, 2, 3]))
                 elif i != 1:
-                    shape = testGen.makeShape(rank + testGen.rng.choice([-1, 1]))
+                    shape = testGen.makeShape(rng, rank + rng.choice([-1, 1]))
 
         return shape_list
 
     @staticmethod
-    def tgNHWC(testGen, opName, rank, error_name=None):
-        pl, const = opName["operands"]
+    def tgNHWC(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 4
 
-        shape = testGen.makeShape(rank)
+        shape = testGen.makeShape(rng, rank)
         shape = testGen.constrictBatchSize(shape)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
@@ -208,7 +208,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgGather(testGen, opName, rank, error_name=None):
+    def tgGather(testGen, rng, opName, rank, error_name=None):
         pl, const = opName["operands"]
 
         assert pl == 2
@@ -216,18 +216,18 @@ class TosaTensorGen:
         if error_name != ErrorIf.WrongRank:
             assert rank == 3
 
-        values_shape = testGen.makeShape(rank)
+        values_shape = testGen.makeShape(rng, rank)
         values_shape = testGen.constrictBatchSize(values_shape)
 
         N = values_shape[0]
-        W = testGen.makeDimension()
+        W = testGen.makeDimension(rng)
         indices_shape = [N, W]
 
         shape_list = [values_shape, indices_shape]
         return shape_list
 
     @staticmethod
-    def tgScatter(testGen, opName, rank, error_name=None):
+    def tgScatter(testGen, rng, opName, rank, error_name=None):
         pl, const = opName["operands"]
 
         assert pl == 3
@@ -235,7 +235,7 @@ class TosaTensorGen:
         if error_name != ErrorIf.WrongRank:
             assert rank == 3
 
-        values_in_shape = testGen.makeShape(rank)
+        values_in_shape = testGen.makeShape(rng, rank)
         values_in_shape = testGen.constrictBatchSize(values_in_shape)
 
         N = values_in_shape[0]
@@ -246,7 +246,7 @@ class TosaTensorGen:
         # once (having a W greater than K means that you have to repeat a K index)
         W_min = min(testGen.args.tensor_shape_range[0], K)
         W_max = min(testGen.args.tensor_shape_range[1], K)
-        W = testGen.randInt(W_min, W_max) if W_min < W_max else W_min
+        W = rng.randInt(W_min, W_max) if W_min < W_max else W_min
 
         input_shape = [N, W, C]
 
@@ -258,14 +258,14 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def _get_broadcast_shapes(testGen, num_shapes, rank, error_name=None):
-        shape = testGen.makeShape(rank)
+    def _get_broadcast_shapes(testGen, rng, num_shapes, rank, error_name=None):
+        shape = testGen.makeShape(rng, rank)
         shape_list = []
 
         # Choose one of the inputs to broadcast
         # Note: Simplifies OutputShaper code if we don't change first shape for errors
-        bcast_idx = testGen.randInt(0 if error_name is None else 1, num_shapes)
-        fuzz_idx = testGen.randInt(0, rank)
+        bcast_idx = rng.randInt(0 if error_name is None else 1, num_shapes)
+        fuzz_idx = rng.randInt(0, rank)
 
         for i in range(num_shapes):
             shape_bcast = shape.copy()
@@ -278,13 +278,13 @@ class TosaTensorGen:
             if i == bcast_idx:
                 if error_name == ErrorIf.RankMismatch:
                     # Add one rank to the shape (or more for rank of 1)
-                    extra_ranks = testGen.rng.choice([1, 2, 3]) if rank == 1 else 1
+                    extra_ranks = rng.choice([1, 2, 3]) if rank == 1 else 1
                     shape_bcast = np.concatenate(
-                        (shape_bcast, testGen.makeShape(extra_ranks))
+                        (shape_bcast, testGen.makeShape(rng, extra_ranks))
                     )
                     if rank != 1:
                         # Either keep the extra rank, or remove it
-                        new_len = testGen.rng.choice([-2, len(shape_bcast)])
+                        new_len = rng.choice([-2, len(shape_bcast)])
                         shape_bcast = shape_bcast[:new_len]
                 elif error_name == ErrorIf.BroadcastShapesMismatch:
                     shape_bcast[fuzz_idx] += 2
@@ -296,30 +296,32 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgBroadcastFuzz(testGen, op, rank, error_name=None):
+    def tgBroadcastFuzz(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
         num_shapes = pl + const
         return TosaTensorGen._get_broadcast_shapes(
-            testGen, num_shapes, rank, error_name
+            testGen, rng, num_shapes, rank, error_name
         )
 
     @staticmethod
-    def tgMul(testGen, op, rank, error_name=None):
+    def tgMul(testGen, rng, op, rank, error_name=None):
         # Get broadcast shapes for the first 2 inputs as the 3rd is shift
-        shape_list = TosaTensorGen._get_broadcast_shapes(testGen, 2, rank, error_name)
+        shape_list = TosaTensorGen._get_broadcast_shapes(
+            testGen, rng, 2, rank, error_name
+        )
         # Add a single dimension tensor for shift
         shape_list.append([1])
         return shape_list
 
     @staticmethod
-    def tgConv2D(testGen, op, rank, error_name=None):
+    def tgConv2D(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 4
 
         # IFM dimensions are NHWC
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
         ifm_shape = testGen.constrictBatchSize(ifm_shape)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
@@ -332,7 +334,7 @@ class TosaTensorGen:
         filter_hw = op["filter"]
 
         # Generate a random OFM depth
-        ofm_depth = testGen.makeDimension()
+        ofm_depth = testGen.makeDimension(rng)
 
         # The filter dimensions are OHWI
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
@@ -343,14 +345,14 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgConv3D(testGen, op, rank, error_name=None):
+    def tgConv3D(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 5
 
         # IFM dimensions are NDHWC
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
         ifm_shape = testGen.constrictBatchSize(ifm_shape)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
@@ -363,7 +365,7 @@ class TosaTensorGen:
         filter_dhw = op["filter"]
 
         # Generate a random OFM channel
-        ofm_channel = testGen.makeDimension()
+        ofm_channel = testGen.makeDimension(rng)
 
         # The filter dimensions are ODHWI
         filter_shape = np.asarray(
@@ -376,14 +378,14 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgTransposeConv2D(testGen, op, rank, error_name=None):
+    def tgTransposeConv2D(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 4
 
         # IFM dimensions are NHWC
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
         ifm_shape = testGen.constrictBatchSize(ifm_shape)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
@@ -396,7 +398,7 @@ class TosaTensorGen:
         filter_hw = op["filter"]
 
         # Generate a random OFM depth
-        ofm_depth = testGen.makeDimension()
+        ofm_depth = testGen.makeDimension(rng)
 
         # The filter dimensions are OHWI
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
@@ -407,7 +409,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgDepthwiseConv2D(testGen, op, rank, error_name=None):
+    def tgDepthwiseConv2D(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
@@ -415,7 +417,7 @@ class TosaTensorGen:
         assert pl == 1 and const == 2
 
         # IFM dimensions are NHWC
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
         ifm_shape = testGen.constrictBatchSize(ifm_shape)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
@@ -431,7 +433,7 @@ class TosaTensorGen:
         # Generate a random OFM depth, but don't let it get too big because
         # the output depth is M * C
         filter_m = (
-            testGen.makeDimension() % (testGen.args.tensor_shape_range[1] // 4)
+            testGen.makeDimension(rng) % (testGen.args.tensor_shape_range[1] // 4)
         ) + 1
 
         # The filter dimensions are HWCM
@@ -443,7 +445,7 @@ class TosaTensorGen:
         return [ifm_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgFFT2d(testGen, op, rank, error_name=None):
+    def tgFFT2d(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
@@ -451,7 +453,7 @@ class TosaTensorGen:
         assert pl == 2 and const == 0
 
         # IFM dimensions are NHW
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
 
         # Select nearest lower power of two from input height and width
         ifm_shape[1] = 2 ** int(math.log(ifm_shape[1], 2))
@@ -466,7 +468,7 @@ class TosaTensorGen:
             inc_h = 2 if ifm_shape[1] == 1 else 1
             inc_w = 2 if ifm_shape[2] == 1 else 1
             inc_choices = [(inc_h, 0), (0, inc_w), (inc_h, inc_w)]
-            selected_inc = testGen.rng.choice(inc_choices)
+            selected_inc = rng.choice(inc_choices)
             ifm_shape[1] += selected_inc[0]
             ifm_shape[2] += selected_inc[1]
 
@@ -474,15 +476,15 @@ class TosaTensorGen:
 
         ifm_shapes = [ifm_shape.copy(), ifm_shape.copy()]
         if error_name == ErrorIf.FFTInputShapeMismatch:
-            modify_shape = testGen.rng.choice([0, 1])
+            modify_shape = rng.choice([0, 1])
             # Only modify kernel (H, W)
-            modify_dim = testGen.rng.choice([1, 2])
+            modify_dim = rng.choice([1, 2])
             ifm_shapes[modify_shape][modify_dim] *= 2
 
         return [ifm_shapes[0], ifm_shapes[1]]
 
     @staticmethod
-    def tgRFFT2d(testGen, op, rank, error_name=None):
+    def tgRFFT2d(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
@@ -490,7 +492,7 @@ class TosaTensorGen:
         assert pl == 1 and const == 0
 
         # IFM dimensions are NHW
-        ifm_shape = testGen.makeShape(rank)
+        ifm_shape = testGen.makeShape(rng, rank)
 
         # Select nearest lower power of two from input height and width
         ifm_shape[1] = 2 ** int(math.log(ifm_shape[1], 2))
@@ -506,7 +508,7 @@ class TosaTensorGen:
             inc_h = 2 if ifm_shape[1] == 1 else 1
             inc_w = 2 if ifm_shape[2] == 1 else 1
             inc_choices = [(inc_h, 0), (0, inc_w), (inc_h, inc_w)]
-            selected_inc = testGen.rng.choice(inc_choices)
+            selected_inc = rng.choice(inc_choices)
             ifm_shape[1] += selected_inc[0]
             ifm_shape[2] += selected_inc[1]
 
@@ -515,19 +517,19 @@ class TosaTensorGen:
         return [ifm_shape]
 
     @staticmethod
-    def tgFullyConnected(testGen, op, rank, error_name=None):
+    def tgFullyConnected(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 2
 
-        input_shape = testGen.makeShape(rank)
+        input_shape = testGen.makeShape(rng, rank)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
         if error_name:
             input_shape = TosaErrorIfArgGen.eiRestrictDimensions(input_shape)
 
-        filter_oc = testGen.rng.integers(
+        filter_oc = rng.integers(
             low=testGen.args.tensor_shape_range[0],
             high=testGen.args.tensor_shape_range[1],
             size=1,
@@ -539,14 +541,14 @@ class TosaTensorGen:
         return [input_shape, filter_shape, bias_shape]
 
     @staticmethod
-    def tgMatmul(testGen, op, rank, error_name=None):
+    def tgMatmul(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 3
         assert pl == 2 and const == 0
 
-        a_shape = testGen.makeShape(rank)
+        a_shape = testGen.makeShape(rng, rank)
 
         # Constrict the overall size of the shape when creating ERROR_IF tests
         if error_name:
@@ -554,7 +556,7 @@ class TosaTensorGen:
 
         # Get a random number for b_oc even if target shape is defined
         b_oc = np.int32(
-            testGen.rng.integers(
+            rng.integers(
                 low=testGen.args.tensor_shape_range[0],
                 high=testGen.args.tensor_shape_range[1],
                 size=1,
@@ -568,24 +570,24 @@ class TosaTensorGen:
         return [a_shape, b_shape]
 
     @staticmethod
-    def tgConcat(testGen, opName, rank, error_name=None):
-        pl, const = opName["operands"]
-        shape = testGen.makeShape(rank)
+    def tgConcat(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+        shape = testGen.makeShape(rng, rank)
 
         # Create extra tensors to concat.
         # Take into account value of pl when getting maximum number of concats
-        num_tensors = testGen.randInt(0, 4)
+        num_tensors = rng.randInt(0, 4)
         shape_list = []
         for i in range(pl + const + num_tensors):
             if error_name == ErrorIf.ConcatInputRankMismatch and i != 0:
-                remove = testGen.rng.choice([True, False])
+                remove = rng.choice([True, False])
                 wrongShape = shape.copy()
 
                 if remove and len(shape) > 1:
                     wrongShape = wrongShape[1:]
                 else:
                     wrongShape = list(wrongShape)
-                    wrongShape.append(testGen.rng.integers(1, 10))
+                    wrongShape.append(rng.integers(1, 10))
 
                 shape_list.append(wrongShape)
             else:
@@ -594,7 +596,7 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
-    def tgConcatConstInput(testGen, shapeList, axis, error_name=None):
+    def tgConcatConstInput(rng, shapeList, axis, error_name=None):
         if error_name in [
             ErrorIf.AxisSmallerZero,
             ErrorIf.AxisLargerRank,
@@ -610,7 +612,7 @@ class TosaTensorGen:
                 for shape in shapeList[1:]:
                     # Negative test shapeLists are created individually for each test,
                     # so no need to copy the shape before altering it.
-                    shape[(axis + 1) % len(shape)] += testGen.rng.integers(5, 10)
+                    shape[(axis + 1) % len(shape)] += rng.integers(5, 10)
             return shapeList
 
         # Create copy of shape we are going to split (so we don't alter shapeList)
@@ -630,7 +632,7 @@ class TosaTensorGen:
 
             # invalidate dimensions
             if error_name == ErrorIf.ConcatInputDimMismatch:
-                shape[(axis + 1) % len(shape)] += testGen.rng.integers(5, 10)
+                shape[(axis + 1) % len(shape)] += rng.integers(5, 10)
             else:
                 shape[axis] = remaining_length
 
@@ -672,12 +674,12 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def _get_data_range(testGen, dtype, highValueLookup, lowValueLookup=None):
+    def _get_data_range(rng, dtype, highValueLookup, lowValueLookup=None):
         # Return a tuple of (low,high) data range values for the given data
         # type using a combination of per operator table limits, data limits
         # and user supplied ranges for FP numbers
         if dtype in highValueLookup:
-            type_range = testGen.getDTypeRange(dtype, high_inclusive=True)
+            type_range = rng.dTypeRange(dtype, high_inclusive=True)
             high_val = highValueLookup[dtype]
             if lowValueLookup is not None and dtype in lowValueLookup:
                 low_val = lowValueLookup[dtype]
@@ -703,7 +705,7 @@ class TosaTensorValuesGen:
 
     @staticmethod
     def tvgLazyGenDefault(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
@@ -742,8 +744,8 @@ class TosaTensorValuesGen:
                 ):
                     # Change from inclusive to exclusive range
                     data_range = (data_range[0], data_range[1] + 1)
-                # Ignore lazy data gen option and create data array using any range limits
 
+                # Ignore lazy data gen option and create data array using any range limits
                 if "fixed_data" in argsDict and argsDict["fixed_data"][idx] is not None:
                     if dtype == DType.SHAPE:
                         arr = np.int64(argsDict["fixed_data"][idx])
@@ -756,7 +758,7 @@ class TosaTensorValuesGen:
                     else:
                         assert False, "Unsupported fixed_data type"
                 else:
-                    arr = testGen.getRandTensor(shape, dtype, data_range)
+                    arr = rng.randTensor(shape, dtype, data_range)
                 if roundMode:
                     arr = np.round(arr)
                 if idx < pCount:
@@ -802,8 +804,7 @@ class TosaTensorValuesGen:
                     info["data"] = [int(i) for i in argsDict["fixed_data"][idx]]
                     tens_meta["fixed_data_info"] = info
                 else:
-                    # TODO - generate seed for this generator based on test
-                    info["rng_seed"] = 42
+                    info["rng_seed"] = rng.seed
 
                     data_range = None
                     if "data_range_list" in argsDict:
@@ -814,9 +815,7 @@ class TosaTensorValuesGen:
                         data_range = argsDict["data_range"]
 
                     if data_range is None:
-                        data_range = testGen.getDTypeRange(
-                            dtypeList[idx], high_inclusive=True
-                        )
+                        data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
                     info["range"] = [str(v) for v in data_range]
                     tens_meta["pseudo_random_info"] = info
             elif dg_type == gtu.DataGenType.DOT_PRODUCT:
@@ -836,7 +835,7 @@ class TosaTensorValuesGen:
             elif dg_type == gtu.DataGenType.FULL_RANGE:
                 info = {}
                 info["start_val"] = int(
-                    testGen.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
+                    rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
                 )
                 tens_meta["full_range_info"] = info
             else:
@@ -883,7 +882,9 @@ class TosaTensorValuesGen:
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, tens_data)
 
     @staticmethod
-    def tvgNegate(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgNegate(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         if dtypeList[0] == DType.INT32 and error_name is None:
             # Integer test
             op = testGen.TOSA_OP_LIST[opName]
@@ -896,7 +897,7 @@ class TosaTensorValuesGen:
             max_val = (1 << 31) - 1
             min_val = -max_val
             arr = np.int32(
-                testGen.rng.integers(low=min_val, high=(max_val + 1), size=shapeList[0])
+                rng.integers(low=min_val, high=(max_val + 1), size=shapeList[0])
             )
             tens_ser_list = []
             tens_ser_list.append(
@@ -906,7 +907,7 @@ class TosaTensorValuesGen:
         else:
             # ERROR_IF or floating point test
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     # Set the ADD/SUB data range to half the largest value to avoid infinities
@@ -917,7 +918,9 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgAddSub(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgAddSub(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         if dtypeList[0] in (DType.INT32, DType.SHAPE) and error_name is None:
             # Make sure the integer operation does not cause value saturation - where
             # the number wraps due to limited number of bits to store the answer
@@ -929,8 +932,8 @@ class TosaTensorValuesGen:
             tens_ser_list = []
             add = op["op"] in (Op.ADD, Op.ADD_SHAPE)
             data_range = testGen.args.tensor_shape_range
-            a_arr = testGen.getRandTensor(shapeList[0], dtypeList[0], data_range)
-            b_arr = testGen.getRandTensor(shapeList[1], dtypeList[1], data_range)
+            a_arr = rng.randTensor(shapeList[0], dtypeList[0], data_range)
+            b_arr = rng.randTensor(shapeList[1], dtypeList[1], data_range)
             if add:
                 res_arr = np.add(a_arr, b_arr, dtype=np.int64)
             else:
@@ -985,18 +988,18 @@ class TosaTensorValuesGen:
         else:
             # ERROR_IF or floating point test
             data_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_ADDSUB
+                rng, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_ADDSUB
             )
             if data_range:
                 argsDict["data_range"] = data_range
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
     def tvgCondIfWhileLoop(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         if dtypeList[0] in (
             DType.INT32,
@@ -1012,11 +1015,9 @@ class TosaTensorValuesGen:
             tens_ser_list = []
             for idx, shape in enumerate(shapeList[:]):
                 if dtypeList[0] == DType.INT32:
-                    arr = testGen.getRandTensor(shapeList[idx], DType.INT16)
+                    arr = rng.randTensor(shapeList[idx], DType.INT16)
                 else:
-                    arr = np.int32(
-                        testGen.rng.integers(low=0, high=32, size=shapeList[idx])
-                    )
+                    arr = np.int32(rng.integers(low=0, high=32, size=shapeList[idx]))
                 if pRemain > 0:
                     tens_ser_list.append(
                         testGen.ser.addPlaceholder(shape, dtypeList[idx], arr)
@@ -1030,12 +1031,12 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
     def tvgArithmeticRightShift(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         op = testGen.TOSA_OP_LIST[opName]
         pCount, cCount = op["operands"]
@@ -1048,34 +1049,38 @@ class TosaTensorValuesGen:
         for idx, shape in enumerate(shapeList[:]):
             if idx == 1:
                 if dtypeList[idx] == DType.INT8:
-                    arr = np.int32(testGen.rng.integers(low=0, high=8, size=shape))
+                    arr = np.int32(rng.integers(low=0, high=8, size=shape))
                 elif dtypeList[idx] == DType.INT16:
-                    arr = np.int32(testGen.rng.integers(low=0, high=16, size=shape))
+                    arr = np.int32(rng.integers(low=0, high=16, size=shape))
                 elif dtypeList[idx] == DType.INT32:
-                    arr = np.int32(testGen.rng.integers(low=0, high=32, size=shape))
+                    arr = np.int32(rng.integers(low=0, high=32, size=shape))
                 elif error_name == ErrorIf.WrongInputType:
-                    arr = np.int32(testGen.rng.integers(low=0, high=8, size=shape))
+                    arr = np.int32(rng.integers(low=0, high=8, size=shape))
                 else:
                     raise Exception("OpArithmeticRightShift: invalid input dtype")
             else:
-                arr = testGen.getRandTensor(shape, dtypeList[idx])
+                arr = rng.randTensor(shape, dtypeList[idx])
             tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtypeList[idx], arr))
 
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgReshape(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgReshape(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(argsDict["new_shape"])]
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [None, argsDict["new_shape"]]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgRescale(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgRescale(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         scale32 = argsDict["scale"]
         multiplier_arr = argsDict["multiplier"]
         shift_arr = argsDict["shift"]
@@ -1091,11 +1096,11 @@ class TosaTensorValuesGen:
         argsDict["fixed_data"] = [None, multiplier_arr, shift_arr]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgPad(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgPad(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         # argsDict["pad"] is 2D array, need to flatten it to get list of values
         pad_values = argsDict["pad"].flatten()
         dtypeList[1] = DType.SHAPE
@@ -1104,11 +1109,11 @@ class TosaTensorValuesGen:
         argsDict["fixed_data"] = [None, pad_values]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgSlice(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgSlice(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(argsDict["start"])]
         dtypeList[2] = DType.SHAPE
@@ -1117,30 +1122,34 @@ class TosaTensorValuesGen:
         argsDict["fixed_data"] = [None, argsDict["start"], argsDict["size"]]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgTile(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgTile(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(argsDict["multiples"])]
         argsDict["fixed_data"] = [None, argsDict["multiples"]]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgSelect(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgSelect(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         # Set datatype of condition tensor to boolean
         dtypeList[0] = DType.BOOL
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgIntDiv(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgIntDiv(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         if error_name is None:
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
@@ -1154,8 +1163,8 @@ class TosaTensorValuesGen:
             # 1. divisor == 0
             # 2. dividend == -(1<<31) and divisor == -1
             while True:
-                dividend_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
-                divisor_arr = testGen.getRandTensor(shapeList[1], dtypeList[1])
+                dividend_arr = rng.randTensor(shapeList[0], dtypeList[0])
+                divisor_arr = rng.randTensor(shapeList[1], dtypeList[1])
 
                 if (divisor_arr == 0).any():
                     continue
@@ -1175,7 +1184,7 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     # Set the MUL data range to the square root of the largest value
@@ -1187,7 +1196,7 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgMul(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgMul(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         if error_name is not None or dtypeList[0] in (
             DType.FP16,
             DType.BF16,
@@ -1195,7 +1204,7 @@ class TosaTensorValuesGen:
         ):
             # ERROR_IF or floating point test
             data_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL
+                rng, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL
             )
             if data_range:
                 argsDict["data_range"] = data_range
@@ -1208,10 +1217,9 @@ class TosaTensorValuesGen:
                 argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
         else:
-            # Integer test
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
 
@@ -1231,7 +1239,9 @@ class TosaTensorValuesGen:
             elif error_name == ErrorIf.WrongInputType:
                 num_bits = 8
             else:
-                raise Exception("OpMul: invalid input dtype")
+                raise Exception(
+                    f"OpMul: invalid input dtype {gtu.DTYPE_ATTRIBUTES[dtypeList[0]]['str']}"
+                )
 
             for idx, shape in enumerate(shapeList[:]):
                 if dtypeList[idx] == DType.SHAPE:
@@ -1241,12 +1251,8 @@ class TosaTensorValuesGen:
                     low = -(2 ** (num_bits - 1))
                     high = (2 ** (num_bits - 1)) - 1
 
-                a_arr = np.int32(
-                    testGen.rng.integers(low=low, high=high, size=shapeList[0])
-                )
-                b_arr = np.int32(
-                    testGen.rng.integers(low=low, high=high, size=shapeList[1])
-                )
+                a_arr = np.int32(rng.integers(low=low, high=high, size=shapeList[0]))
+                b_arr = np.int32(rng.integers(low=low, high=high, size=shapeList[1]))
 
             i = 0
             while True:
@@ -1292,7 +1298,9 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgConcat(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgConcat(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         count = len(shapeList) - testGen.args.num_const_inputs_concat
         if count < 1:
             count = 1
@@ -1302,12 +1310,10 @@ class TosaTensorValuesGen:
         op = testGen.TOSA_OP_LIST[opName]
         if op["op"] == Op.CONCAT_SHAPE:
             # Set the axis to 0
-            shapeList = TosaTensorGen.tgConcatConstInput(
-                testGen, shapeList, 0, error_name
-            )
+            shapeList = TosaTensorGen.tgConcatConstInput(rng, shapeList, 0, error_name)
         else:
             shapeList = TosaTensorGen.tgConcatConstInput(
-                testGen, shapeList, argsDict["axis"], error_name
+                rng, shapeList, argsDict["axis"], error_name
             )
 
         # Override default pCount/cCount for operator
@@ -1315,20 +1321,20 @@ class TosaTensorValuesGen:
         argsDict["c_count"] = len(shapeList) - count
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
     def tvgLogicalShift(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         op = testGen.TOSA_OP_LIST[opName]
         pCount, cCount = op["operands"]
         assert (
             pCount == 2 and cCount == 0
         ), "Op.LOGICAL_LEFT_SHIFT or Op.LOGICAL_RIGHT_SHIFT must have 2 placeholders, 0 consts"
-        values_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
-        shift_arr = np.int32(testGen.rng.integers(low=0, high=32, size=shapeList[1]))
+        values_arr = rng.randTensor(shapeList[0], dtypeList[0])
+        shift_arr = np.int32(rng.integers(low=0, high=32, size=shapeList[1]))
         tens_ser_list = []
         tens_ser_list.append(
             testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
@@ -1340,7 +1346,7 @@ class TosaTensorValuesGen:
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgEqual(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgEqual(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         if error_name is None and not gtu.dtypeIsSupportedByCompliance(dtypeList[0]):
             # Integer
             op = testGen.TOSA_OP_LIST[opName]
@@ -1349,8 +1355,8 @@ class TosaTensorValuesGen:
                 pCount == 2 and cCount == 0
             ), "Op.EQUAL must have 2 placeholders, 0 consts"
 
-            a_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
-            b_arr = testGen.getRandTensor(shapeList[1], dtypeList[1])
+            a_arr = rng.randTensor(shapeList[0], dtypeList[0])
+            b_arr = rng.randTensor(shapeList[1], dtypeList[1])
 
             # Using random numbers means that it will be very unlikely that
             # there are any matching (equal) values, therefore force that
@@ -1362,9 +1368,7 @@ class TosaTensorValuesGen:
                 for axis in range(0, len(shapeList[0])):
                     # Index can be up to the largest dimension in both shapes
                     index = np.int32(
-                        testGen.rng.integers(
-                            0, max(shapeList[0][axis], shapeList[1][axis])
-                        )
+                        rng.integers(0, max(shapeList[0][axis], shapeList[1][axis]))
                     )
                     # Reduce the index down to a shape's dim for broadcasting
                     a_index.append(min(shapeList[0][axis] - 1, index))
@@ -1383,11 +1387,13 @@ class TosaTensorValuesGen:
         else:
             # ERROR_IF or floating point test
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
-    def tvgReduceSum(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgReduceSum(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         dtype = dtypeList[0]
         if dtype == DType.INT32:
             op = testGen.TOSA_OP_LIST[opName]
@@ -1399,7 +1405,7 @@ class TosaTensorValuesGen:
             # summation of any axis
             range_val = int((1 << 31) / max(shapeList[0]))
             values_arr = np.int32(
-                testGen.rng.integers(low=-range_val, high=range_val, size=shapeList[0])
+                rng.integers(low=-range_val, high=range_val, size=shapeList[0])
             )
             tens_ser_list = []
             tens_ser_list.append(
@@ -1419,18 +1425,18 @@ class TosaTensorValuesGen:
                     / max(shapeList[0])
                 }
                 data_range = TosaTensorValuesGen._get_data_range(
-                    testGen, dtype, highval_lookup
+                    rng, dtype, highval_lookup
                 )
                 assert data_range is not None
                 argsDict["data_range"] = data_range
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
     def tvgReduceProduct(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         dtype = dtypeList[0]
         if error_name is None:
@@ -1442,20 +1448,20 @@ class TosaTensorValuesGen:
                     1 / max(shapeList[0]),
                 )
             }
-            data_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtype, highval_lookup
-            )
+            data_range = TosaTensorValuesGen._get_data_range(rng, dtype, highval_lookup)
             assert data_range is not None
             argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgResize(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgResize(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         data_range = TosaTensorValuesGen._get_data_range(
-            testGen,
+            rng,
             dtypeList[0],
             TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
         )
@@ -1476,7 +1482,7 @@ class TosaTensorValuesGen:
         argsDict["fixed_data"] = [None, scale_values, offset_values, border_values]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     # Set the POW exponent high data range
@@ -1537,10 +1543,10 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgPow(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgPow(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         if error_name is not None:
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
         dtype = dtypeList[0]
         # Different ranges for POW
@@ -1548,25 +1554,25 @@ class TosaTensorValuesGen:
         if test_set == 0:
             # Positive base with fractional exponent
             base_range = TosaTensorValuesGen._get_data_range(
-                testGen,
+                rng,
                 dtype,
                 TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
                 TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
             )
             exp_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+                rng, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
             )
             exp_round = False
         else:
             # Integer exponent
             exp_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+                rng, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
             )
             exp_round = True
             if test_set == 1:
                 # Positive base
                 base_range = TosaTensorValuesGen._get_data_range(
-                    testGen,
+                    rng,
                     dtype,
                     TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
                     TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
@@ -1576,7 +1582,7 @@ class TosaTensorValuesGen:
                 # Negative base
                 # Supply new look up tables with negative values
                 base_range = TosaTensorValuesGen._get_data_range(
-                    testGen,
+                    rng,
                     dtype,
                     {dtype: -TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE[dtype]},
                     {dtype: -TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE[dtype]},
@@ -1593,15 +1599,17 @@ class TosaTensorValuesGen:
         )
         argsDict["data_range_list"] = data_range_list
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgLogRsqrt(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgLogRsqrt(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         # LOG & RSQRT data range from lowest expressible positive number to
         # largest to avoid NaNs
         data_range = TosaTensorValuesGen._get_data_range(
-            testGen,
+            rng,
             dtypeList[0],
             TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
             TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE,
@@ -1610,7 +1618,7 @@ class TosaTensorValuesGen:
             argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     # Set the EXP data range to the log of the largest to smallest values
@@ -1627,9 +1635,9 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgExp(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgExp(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         data_range = TosaTensorValuesGen._get_data_range(
-            testGen,
+            rng,
             dtypeList[0],
             TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_EXP,
             TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_EXP,
@@ -1638,12 +1646,12 @@ class TosaTensorValuesGen:
             argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
     def tvgFullyConnected(
-        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         dtype = dtypeList[0]
         if (
@@ -1658,26 +1666,24 @@ class TosaTensorValuesGen:
             highval_lookup = {
                 dtype: math.pow(TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype], 1 / IC)
             }
-            data_range = TosaTensorValuesGen._get_data_range(
-                testGen, dtype, highval_lookup
-            )
+            data_range = TosaTensorValuesGen._get_data_range(rng, dtype, highval_lookup)
             assert data_range is not None
             argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgCast(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgCast(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         in_dtype = dtypeList[0]
         out_dtype = argsDict["out_type"]
         # Create look up to limit input tensor to output type maximums to avoid
         # FP infinities and saturation of integers
-        out_range = testGen.getDTypeRange(out_dtype, high_inclusive=True)
+        out_range = rng.dTypeRange(out_dtype, high_inclusive=True)
         highval_lookup = {in_dtype: out_range[1]}
         data_range = TosaTensorValuesGen._get_data_range(
-            testGen,
+            rng,
             in_dtype,
             highval_lookup,
         )
@@ -1686,11 +1692,13 @@ class TosaTensorValuesGen:
         argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
-    def tvgGather(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgGather(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         K = shapeList[0][1]
 
         # Fix the type of the indices tensor
@@ -1709,11 +1717,11 @@ class TosaTensorValuesGen:
             for idx, shape in enumerate(shapeList):
                 dtype = dtypeList[idx]
                 if idx != 1:
-                    arr = testGen.getRandTensor(shape, dtype)
+                    arr = rng.randTensor(shape, dtype)
                     tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
                 else:
                     # Limit data range of indices tensor upto K (exclusive)
-                    arr = testGen.getRandTensor(shape, dtype, (0, K))
+                    arr = rng.randTensor(shape, dtype, (0, K))
                     # To match old functionality - create indices as CONST
                     tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
 
@@ -1729,11 +1737,13 @@ class TosaTensorValuesGen:
             argsDict["data_range_list"] = data_range_list
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
-    def tvgScatter(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgScatter(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         K = shapeList[0][1]
         W = shapeList[2][1]
 
@@ -1760,7 +1770,7 @@ class TosaTensorValuesGen:
             for idx, shape in enumerate(shapeList):
                 dtype = dtypeList[idx]
                 if idx != 1:
-                    arr = testGen.getRandTensor(shape, dtype)
+                    arr = rng.randTensor(shape, dtype)
                     tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
                 else:
                     # Create the indices array
@@ -1769,7 +1779,7 @@ class TosaTensorValuesGen:
                     for n in range(shape[0]):
                         # Get a shuffled list of output indices (0 to K-1) and
                         # limit length to W
-                        arr.append(testGen.rng.permutation(K)[:W])
+                        arr.append(rng.permutation(K)[:W])
                     indices_arr = np.array(arr, dtype=np.int32)  # (N, W)
                     # To match old functionality - create indices as CONST
                     tens_ser_list.append(
@@ -1789,7 +1799,7 @@ class TosaTensorValuesGen:
             argsDict["data_range_list"] = data_range_list
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, opName, dtypeList, shapeList, argsDict, error_name
+                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
 
 
@@ -1881,7 +1891,7 @@ class TosaArgGen:
         return new_arg_list
 
     @staticmethod
-    def agNone(testGen, opName, shapeList, dtype, error_name=None):
+    def agNone(testGen, rng, opName, shapeList, dtype, error_name=None):
         """A trivial argument generator for operators that don't take any
         non-tensor arguments"""
         arg_list = TosaArgGen._add_data_generators(
@@ -1896,7 +1906,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agPow(testGen, opName, shapeList, dtype, error_name=None):
+    def agPow(testGen, rng, opName, shapeList, dtype, error_name=None):
         """Pow operator needs different test sets to cover random numbers
         without creating NaNs or Infs"""
         arg_list = TosaArgGen._add_data_generators(
@@ -1911,17 +1921,17 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agAxis(testGen, opName, shapeList, dtype, error_name=None):
+    def agAxis(testGen, rng, opName, shapeList, dtype, error_name=None):
         """Build the axis argument for operators that take a single axis"""
         arg_list = []
         shape = shapeList[0]
 
         if error_name == ErrorIf.AxisSmallerZero:
             # Set too small axis
-            axes = [testGen.rng.integers(-5, 0)]
+            axes = [rng.integers(-5, 0)]
         elif error_name == ErrorIf.AxisLargerRank:
             # Set too large axis
-            axes = [testGen.rng.integers(len(shape) + 1, len(shape) + 10)]
+            axes = [rng.integers(len(shape) + 1, len(shape) + 10)]
         else:
             # Create tests for each dimension
             axes = range(0, len(shape))
@@ -1967,7 +1977,7 @@ class TosaArgGen:
         return sparsity
 
     @staticmethod
-    def agConv(testGen, opName, shapeList, dtypes, error_name=None):
+    def agConv(testGen, rng, opName, shapeList, dtypes, error_name=None):
         # Used by CONV2D, CONV3D and DEPTHWISE_CONV2D
         arg_list = []
 
@@ -2005,13 +2015,13 @@ class TosaArgGen:
             # Generate comprehensive argument lists
             # - except for named errors, which use specific invalid value(s)
             if error_name == ErrorIf.PadSmallerZero:
-                p_vals = [testGen.rng.choice(range(-5, 0))]
+                p_vals = [rng.choice(range(-5, 0))]
             else:
                 p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
             paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
             if error_name == ErrorIf.StrideSmallerOne:
                 # Can't use stride=0, as it is used to derive output shape, as a divisor
-                s_vals = [testGen.rng.choice(range(-5, 0))]
+                s_vals = [rng.choice(range(-5, 0))]
             else:
                 # Stride must be greater than 1 to force non-integer error
                 startStride = (
@@ -2022,7 +2032,7 @@ class TosaArgGen:
                 ]
             strides = {x for x in itertools.product(*([s_vals] * k_rank))}
             if error_name == ErrorIf.DilationSmallerOne:
-                d_vals = [testGen.rng.choice(range(-5, 1))]
+                d_vals = [rng.choice(range(-5, 1))]
             else:
                 d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
             dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
@@ -2195,13 +2205,13 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agFullyConnected(testGen, opName, shapeList, dtypes, error_name=None):
+    def agFullyConnected(testGen, rng, opName, shapeList, dtypes, error_name=None):
 
         assert isinstance(dtypes, (list, tuple)), f"{dtypes} unexpected"
         input_dtype = dtypes[0]
 
         if error_name == ErrorIf.WrongOutputType:
-            accum_dtype = gtu.get_wrong_output_type(opName, testGen.rng, input_dtype)
+            accum_dtype = gtu.get_wrong_output_type(opName, rng, input_dtype)
         elif error_name == ErrorIf.WrongInputType:
             # Pick some potentially correct output dtype if input type is incorrect
             accum_dtype = DType.INT32
@@ -2230,7 +2240,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMatMul(testGen, opName, shapeList, dtype, error_name=None):
+    def agMatMul(testGen, rng, opName, shapeList, dtype, error_name=None):
         # Get valid accumulate type(s)
         if dtype == DType.INT8:
             accum_dtypes = [DType.INT32]
@@ -2249,7 +2259,7 @@ class TosaArgGen:
 
         if error_name == ErrorIf.WrongOutputType:
             # Get incorrect output dtype for ErrorIf case
-            accum_dtypes = [gtu.get_wrong_output_type(opName, testGen.rng, dtype)]
+            accum_dtypes = [gtu.get_wrong_output_type(opName, rng, dtype)]
         elif error_name == ErrorIf.WrongInputType:
             # Pick some potentially correct output dtype if input type is incorrect
             accum_dtypes = [DType.INT32]
@@ -2283,7 +2293,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTransposeConv2D(testGen, opName, shapeList, dtypes, error_name=None):
+    def agTransposeConv2D(testGen, rng, opName, shapeList, dtypes, error_name=None):
         arg_list = []
 
         if testGen.args.level8k and error_name is not None:
@@ -2310,9 +2320,7 @@ class TosaArgGen:
             smallest_padding_size = -min(k_shape[0], k_shape[1]) + 1
             if error_name == ErrorIf.PadLargerEqualKernel:
                 max_filter_size = -max(k_shape[0], k_shape[1])
-                p_vals = [
-                    testGen.rng.choice(range(max_filter_size - 10, max_filter_size))
-                ]
+                p_vals = [rng.choice(range(max_filter_size - 10, max_filter_size))]
             else:
                 p_vals = [
                     x
@@ -2323,7 +2331,7 @@ class TosaArgGen:
             paddings = {x for x in itertools.product(*([p_vals] * 4))}
             if error_name == ErrorIf.StrideSmallerOne:
                 # Can't use stride=0, as it is used to derive output shape, as a divisor
-                s_vals = [testGen.rng.choice(range(-5, 0))]
+                s_vals = [rng.choice(range(-5, 0))]
             else:
                 s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
             strides = {x for x in itertools.product(*([s_vals] * 2))}
@@ -2440,7 +2448,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agPad(testGen, opName, shapeList, dtype, error_name=None):
+    def agPad(testGen, rng, opName, shapeList, dtype, error_name=None):
         rank = len(shapeList[0])
 
         # Exhaustively test combinations of padding on each side of each dimension
@@ -2454,11 +2462,11 @@ class TosaArgGen:
         shape_pad_values = itertools.product(*([axis_pad_values] * rank))
 
         if dtype in [DType.BOOL, DType.INT8, DType.INT16, DType.INT32]:
-            pad_const_int = testGen.getRandNumberDType(dtype)
+            pad_const_int = rng.randNumberDType(dtype)
             pad_const_fp = 0
         elif gtu.dtypeIsFloat(dtype):
             pad_const_int = 0
-            pad_const_fp = testGen.getRandNumberDType(dtype)
+            pad_const_fp = rng.randNumberDType(dtype)
         else:
             return []
 
@@ -2516,7 +2524,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agPooling(testGen, opName, shapeList, dtype, error_name=None):
+    def agPooling(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         shape = shapeList[0]
@@ -2658,7 +2666,7 @@ class TosaArgGen:
                             ErrorIf.PadLargerEqualKernel,
                         ]:
                             sNew, pNew, kNew = TosaErrorIfArgGen.eiPoolingErrorIf(
-                                testGen, error_name, s, p, k
+                                rng, error_name, s, p, k
                             )
                             if None not in [sNew, pNew, kNew] and n % sparsity == 0:
                                 arg_list.append(
@@ -2722,12 +2730,12 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agCast(testGen, opName, shapeList, inDtype, error_name=None):
+    def agCast(testGen, rng, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
         # Enumerate the output types here
         if error_name == ErrorIf.WrongOutputType:
-            dtypeList = TosaErrorIfArgGen.eiCastErrorIf(testGen, inDtype)
+            dtypeList = TosaErrorIfArgGen.eiCastErrorIf(inDtype)
         elif inDtype == DType.INT8:
             dtypeList = [
                 DType.BOOL,
@@ -2811,7 +2819,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agRescale(testGen, opName, shapeList, inDtype, error_name=None):
+    def agRescale(testGen, rng, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
         # Enumerate the output types here
@@ -2906,7 +2914,7 @@ class TosaArgGen:
                         # Calculate scale based on:
                         # scale = a *(2^output_width)/(2^input_width))
 
-                        a = np.float32(testGen.rng.random(size=[nc]))
+                        a = np.float32(rng.random(size=[nc]))
                         scale_arr = a * np.float32(
                             (1 << out_type_width) / (1 << in_type_width)
                         )
@@ -2965,13 +2973,13 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMul(testGen, opName, shapeList, dtype, error_name=None):
+    def agMul(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         if dtype is DType.INT32:
             for p in range(testGen.args.num_rand_permutations):
 
-                shift = testGen.randInt(0, 32)
+                shift = rng.randInt(0, 32)
                 arg_list.append(("perm{}_shift{}".format(p, shift), {"shift": shift}))
         else:
             arg_list.append(("perm0_shift0", {"shift": 0}))
@@ -2988,7 +2996,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agArithmeticRightShift(testGen, opName, shapeList, dtype, error_name=None):
+    def agArithmeticRightShift(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         for round in (True, False):
@@ -3009,7 +3017,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agFFT2d(testGen, opName, shapeList, dtype, error_name=None):
+    def agFFT2d(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         shape = shapeList[0]
@@ -3037,7 +3045,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agRFFT2d(testGen, opName, shapeList, dtype, error_name=None):
+    def agRFFT2d(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         shape = shapeList[0]
@@ -3074,7 +3082,7 @@ class TosaArgGen:
         return factors
 
     @staticmethod
-    def agReshape(testGen, opName, shapeList, dtype, error_name=None):
+    def agReshape(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         origShape = shapeList[0]
@@ -3085,7 +3093,7 @@ class TosaArgGen:
         # This code is NOT fast.  Fortunately, the numbers are fairly small.
         for p in range(testGen.args.num_rand_permutations):
             # Rank from 1 to TOSA_TENSOR_MAX_RANK
-            newRank = testGen.randInt(1, (testGen.TOSA_TENSOR_MAX_RANK + 1))
+            newRank = rng.randInt(1, (testGen.TOSA_TENSOR_MAX_RANK + 1))
             if len(factors) < newRank:
                 continue
 
@@ -3095,12 +3103,12 @@ class TosaArgGen:
                 # Generate the new shape of the chosen new rank
                 newShape = []
                 remainingElements = totalElements
-                shuffledFactors = testGen.rng.permutation(factors)
+                shuffledFactors = rng.permutation(factors)
                 for i in range(1, newRank):
                     # pick rank-1 factors
                     newShape.append(shuffledFactors[0])
                     remainingElements = remainingElements // shuffledFactors[0]
-                    shuffledFactors = testGen.rng.permutation(
+                    shuffledFactors = rng.permutation(
                         TosaArgGen.getFactors(remainingElements)
                     )
                 newShape.append(remainingElements)
@@ -3136,7 +3144,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTranspose(testGen, opName, shapeList, dtype, error_name=None):
+    def agTranspose(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -3151,7 +3159,7 @@ class TosaArgGen:
         elif error_name == ErrorIf.IndexUsedTwice:
             # Create list with a duplicated index
             perm_range = list(range(len(ifm_shape)))
-            index_choice = testGen.rng.choice(range(len(perm_range)))
+            index_choice = rng.choice(range(len(perm_range)))
             perm_range[(index_choice + 1) % len(perm_range)] = perm_range[index_choice]
             permutations = [p for p in itertools.permutations(perm_range)]
 
@@ -3163,7 +3171,7 @@ class TosaArgGen:
         limit = min(len(permutations), testGen.args.num_rand_permutations)
 
         # Get random permutation generator that uses all permutations
-        random_permutations = testGen.rng.permutation(permutations)
+        random_permutations = rng.permutation(permutations)
 
         # Create list of required amount of permutations
         arg_list = [
@@ -3183,7 +3191,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agSlice(testGen, opName, shapeList, dtype, error_name=None):
+    def agSlice(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -3197,8 +3205,8 @@ class TosaArgGen:
 
             for i in range(rank):
                 if ifm_shape[i] > 1:
-                    start.append(testGen.randInt(0, ifm_shape[i]))
-                    size.append(testGen.randInt(0, ifm_shape[i] - start[i]))
+                    start.append(rng.randInt(0, ifm_shape[i]))
+                    size.append(rng.randInt(0, ifm_shape[i] - start[i]))
 
                     # Invalid slice size?
                     if size[i] == 0:
@@ -3210,7 +3218,7 @@ class TosaArgGen:
             if valid:
                 # If ERROR_IF test required then incorrect start, size will be returned
                 start, size = TosaErrorIfArgGen.eiSliceErrorIf(
-                    testGen, error_name, ifm_shape, start, size
+                    rng, error_name, ifm_shape, start, size
                 )
                 arg_list.append(("perm{}".format(p), {"start": start, "size": size}))
         # Now add data generator types
@@ -3226,7 +3234,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTile(testGen, opName, shapeList, dtype, error_name=None):
+    def agTile(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         ifm_shape = shapeList[0]
@@ -3246,7 +3254,7 @@ class TosaArgGen:
                 elif max(ifm_shape) > 1000:
                     multiples.append(2)
                 else:
-                    multiples.append(testGen.randInt(1, 4))
+                    multiples.append(rng.randInt(1, 4))
             arg_list.append(("perm{}".format(p), {"multiples": multiples}))
 
         # Now add data generator types
@@ -3262,15 +3270,15 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agResize(testGen, opName, shapeList, dtype, error_name=None):
+    def agResize(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
         ifm_shape = shapeList[0]
 
         def get_aspect_ratio_resize_params():
             common_aspect_ratios = ((3, 2), (16, 9), (4, 3))
-            aspect_ratio = testGen.rng.choice(common_aspect_ratios)
-            invert = testGen.rng.choice((False, True))
-            letterbox = testGen.rng.choice((False, True))
+            aspect_ratio = rng.choice(common_aspect_ratios)
+            invert = rng.choice((False, True))
+            letterbox = rng.choice((False, True))
 
             scale_y_n = aspect_ratio[0] if invert else aspect_ratio[1]
             scale_x_n = aspect_ratio[1] if invert else aspect_ratio[0]
@@ -3279,13 +3287,13 @@ class TosaArgGen:
 
             if letterbox:
                 max_border = scale_y_n
-                border_y = testGen.randInt(low=0, high=max_border)
+                border_y = rng.randInt(low=0, high=max_border)
                 border_x = 0
             else:
                 # Pillarboxing
                 border_y = 0
                 max_border = scale_x_n
-                border_x = testGen.randInt(low=0, high=max_border)
+                border_x = rng.randInt(low=0, high=max_border)
 
             scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
             offset = (offset_y, offset_x)
@@ -3296,13 +3304,13 @@ class TosaArgGen:
         def get_upscale_downscale_params():
             valid_params = False
             while not valid_params:
-                upscale = testGen.rng.choice((False, True))
+                upscale = rng.choice((False, True))
 
                 # True if sampling begins from (0,0). Otherwise (-0.5,-0.5)
-                origin_sampling = testGen.rng.choice((False, True))
+                origin_sampling = rng.choice((False, True))
 
                 if upscale:
-                    shift = testGen.randInt(low=1, high=4)
+                    shift = rng.randInt(low=1, high=4)
                     scale_x_d = scale_y_d = 1
                     scale_x_n = scale_y_n = (
                         1 << shift if origin_sampling else 2 << shift
@@ -3328,16 +3336,16 @@ class TosaArgGen:
                     if not valid_scale_y_ds:
                         scale_y_d = 1
                     else:
-                        scale_y_d = testGen.rng.choice(valid_scale_y_ds)
+                        scale_y_d = rng.choice(valid_scale_y_ds)
 
                     if not valid_scale_x_ds:
                         scale_x_d = 1
                     else:
-                        scale_x_d = testGen.rng.choice(valid_scale_x_ds)
+                        scale_x_d = rng.choice(valid_scale_x_ds)
 
                     border_x = border_y = 0
-                    offset_y = testGen.randInt(0, 16 * scale_y_n)
-                    offset_x = testGen.randInt(0, 16 * scale_x_n)
+                    offset_y = rng.randInt(0, 16 * scale_y_n)
+                    offset_x = rng.randInt(0, 16 * scale_x_n)
                 valid_params = True
 
             scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
@@ -3356,11 +3364,11 @@ class TosaArgGen:
                 return scale_d
 
             # Scale
-            scale_y_n = testGen.randInt(low=1, high=(1 << 11))
-            scale_x_n = testGen.randInt(low=1, high=(1 << 11))
+            scale_y_n = rng.randInt(low=1, high=(1 << 11))
+            scale_x_n = rng.randInt(low=1, high=(1 << 11))
 
-            scale_y_d = testGen.randInt(low=1, high=(16 * scale_y_n))
-            scale_x_d = testGen.randInt(low=1, high=(16 * scale_x_n))
+            scale_y_d = rng.randInt(low=1, high=(16 * scale_y_n))
+            scale_x_d = rng.randInt(low=1, high=(16 * scale_x_n))
 
             scale_y_d = fix_scale_to_max_scale(
                 scale_y_n, scale_y_d, testGen.TOSA_8K_LEVEL_MAX_SCALE
@@ -3370,10 +3378,10 @@ class TosaArgGen:
             )
 
             # Offsets and border within the scale
-            offset_y = testGen.randInt(low=-scale_y_n, high=(16 * scale_y_n))
-            offset_x = testGen.randInt(low=-scale_x_n, high=(16 * scale_x_n))
-            border_y = testGen.randInt(low=(-16 * scale_y_n), high=scale_y_n)
-            border_x = testGen.randInt(low=(-16 * scale_x_n), high=scale_x_n)
+            offset_y = rng.randInt(low=-scale_y_n, high=(16 * scale_y_n))
+            offset_x = rng.randInt(low=-scale_x_n, high=(16 * scale_x_n))
+            border_y = rng.randInt(low=(-16 * scale_y_n), high=scale_y_n)
+            border_x = rng.randInt(low=(-16 * scale_x_n), high=scale_x_n)
 
             scale = (scale_y_n, scale_y_d, scale_x_n, scale_x_d)
             offset = (offset_y, offset_x)
@@ -3382,24 +3390,24 @@ class TosaArgGen:
 
         def get_level_8k_params():
             # Create 64x scale - 64/1 to 2048/32
-            scale_d = testGen.randInt(
+            scale_d = rng.randInt(
                 low=1, high=(1 << 11) / testGen.TOSA_8K_LEVEL_MAX_SCALE
             )
             scale_n = scale_d * testGen.TOSA_8K_LEVEL_MAX_SCALE
             # Create half to fifth scaling
-            scale_d_alt = testGen.randInt(low=2, high=6)
+            scale_d_alt = rng.randInt(low=2, high=6)
             scale_n_alt = 1
-            switch = testGen.rng.choice((False, True))
+            switch = rng.choice((False, True))
             if switch:
                 scale = (scale_n_alt, scale_d_alt, scale_n, scale_d)
             else:
                 scale = (scale_n, scale_d, scale_n_alt, scale_d_alt)
 
-            offset_y = testGen.rng.choice((-scale[0], 0, (16 * scale[0]) - 1))
-            offset_x = testGen.rng.choice((-scale[2], 0, (16 * scale[2]) - 1))
+            offset_y = rng.choice((-scale[0], 0, (16 * scale[0]) - 1))
+            offset_x = rng.choice((-scale[2], 0, (16 * scale[2]) - 1))
             offset = (offset_y, offset_x)
-            border_y = testGen.rng.choice((-16 * scale[0], 0, scale[0] - 1))
-            border_x = testGen.rng.choice((-16 * scale[2], 0, scale[2] - 1))
+            border_y = rng.choice((-16 * scale[0], 0, scale[0] - 1))
+            border_x = rng.choice((-16 * scale[2], 0, scale[2] - 1))
             border = (border_y, border_x)
             return scale, offset, border
 
@@ -3437,7 +3445,7 @@ class TosaArgGen:
                 while perm < testGen.args.num_rand_permutations:
                     # Random choice of type of params we are testing
                     if not testGen.args.level8k:
-                        _rnd_param_fn = testGen.rng.choice(
+                        _rnd_param_fn = rng.choice(
                             (
                                 get_rand_params,
                                 get_upscale_downscale_params,
@@ -3541,7 +3549,7 @@ class TosaArgGen:
                             border,
                             outputDTypeNew,
                         ) = TosaErrorIfArgGen.eiResizeErrorIf(
-                            testGen,
+                            rng,
                             error_name,
                             mode,
                             dtype,
@@ -3596,17 +3604,13 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agTable(testGen, opName, shapeList, dtype, error_name=None):
+    def agTable(testGen, rng, opName, shapeList, dtype, error_name=None):
         arg_list = []
 
         if dtype == DType.INT8:
-            table = np.int32(
-                testGen.rng.integers(low=-128, high=128, size=[256])
-            ).tolist()
+            table = np.int32(rng.integers(low=-128, high=128, size=[256])).tolist()
         else:  # INT16
-            table = np.int32(
-                testGen.rng.integers(low=-32768, high=32768, size=[513])
-            ).tolist()
+            table = np.int32(rng.integers(low=-32768, high=32768, size=[513])).tolist()
             # Make sure all slopes are within REQUIRE min/max 16-bit int
             for idx in range(len(table) - 1):
                 slope = table[idx + 1] - table[idx]
@@ -3635,7 +3639,7 @@ class TosaArgGen:
         # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
-    def agCondIf(testGen, opName, shapeList, dtype, error_name=None):
+    def agCondIf(testGen, rng, opName, shapeList, dtype, error_name=None):
         # CondIf generates the condition values here.
         # Convert to tensors in the build function, along with the
         # then and else blocks
@@ -3656,7 +3660,7 @@ class TosaArgGen:
         # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
-    def agWhileLoop(testGen, opName, shapeList, dtype, error_name=None):
+    def agWhileLoop(testGen, rng, opName, shapeList, dtype, error_name=None):
         # While loop: 0 iterations, 1, more than 1
         arg_list = []
 
