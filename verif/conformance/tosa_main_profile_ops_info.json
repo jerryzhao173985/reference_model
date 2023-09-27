@@ -609,7 +609,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen", "generator_select" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen" ],
         "gen_filter": "^conv2d",
         "generation": {
             "standard": {
@@ -640,7 +640,7 @@
                         "--target-shape",
                         "1,65537,1,3",
                         "--target-shape",
-                        "1,2,65531,2",
+                        "1,2,65530,2",
                         "--tensor-dim-range",
                         "1,16",
                         "--max-conv-dilation",
@@ -1619,7 +1619,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen", "generator_select" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [

@@ -80,6 +80,13 @@ def parseArgs(argv):
         help="Random seed for test generation",
     )
 
+    parser.add_argument(
+        "--stable-random-generation",
+        dest="stable_rng",
+        action="store_true",
+        help="Produces less variation (when the test-generator changes) in the test output using the same options",
+    )
+
     filter_group.add_argument(
         "--filter",
         dest="filter",
@@ -395,7 +402,7 @@ def main(argv=None):
         else:
             # Use the random number generator to shuffle the test list
             # and select the per op tests from it
-            tests = testList.select(ttg.rng)
+            tests = testList.select(ttg.global_rng)
 
         if args.list_tests:
             for test in tests:

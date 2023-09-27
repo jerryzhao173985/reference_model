@@ -19,6 +19,8 @@ from generator.tosa_error_if import ErrorIf
 from generator.tosa_error_if import TosaErrorIfArgGen
 from generator.tosa_error_if import TosaErrorValidator
 from generator.tosa_error_if import TosaInvalidValidator
+from generator.tosa_random_gen import TosaHashRandomGenerator
+from generator.tosa_random_gen import TosaRandomGenerator
 from schemavalidation.schemavalidation import TestDescSchemaValidator
 from tosa.DType import DType
 from tosa.Op import Op
@@ -49,10 +51,10 @@ class TosaTestGen:
         self.basePath = args.output_dir
         self.random_seed = args.random_seed
         self.ser = None
-        self.rng = np.random.default_rng(self.random_seed)
         self.createDynamicOpLists()
         self.initOpListDefaults()
         self.quantGen = TosaQuantGen()
+        self.global_rng = None
         # Force makeShape to do a specific starting shape
         self.targetted_shape = None
         # JSON schema validation
@@ -79,12 +81,16 @@ class TosaTestGen:
                 vals.append(v)
             return tuple(sorted(vals))
 
-        self.random_float_range = {}
+        self.random_dtype_range = {}
         for dtype in (DType.FP32, DType.FP16, DType.BF16):
-            self.random_float_range[dtype] = convertFPRange(
+            self.random_dtype_range[dtype] = convertFPRange(
                 args.tensor_fp_value_range,
                 TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype],
             )
+        self.resetGlobalRNG()
+
+    def resetGlobalRNG(self):
+        self.global_rng = TosaRandomGenerator(self.random_seed, self.random_dtype_range)
 
     def createSerializer(self, opName, testPath):
         self.testPath = os.path.join(opName, testPath)
@@ -223,12 +229,12 @@ class TosaTestGen:
         arr = None
         for idx, shape in enumerate(shape_list):
             if not self.args.lazy_data_gen:
-                arr = self.getRandTensor(shape, dtype_list[idx])
+                arr = rng.randTensor(shape, dtype_list[idx])
             placeholders.append(self.ser.addPlaceholder(shape, dtype_list[idx], arr))
 
         return placeholders
 
-    def buildConstTensors(self, shape_list, dtype_list):
+    def buildConstTensors(self, rng, shape_list, dtype_list):
         consts = []
 
         assert len(shape_list) == len(dtype_list)
@@ -236,16 +242,16 @@ class TosaTestGen:
         arr = None
         for idx, shape in enumerate(shape_list):
             if not self.args.lazy_data_gen:
-                arr = self.getRandTensor(shape, dtype_list[idx])
+                arr = rng.randTensor(shape, dtype_list[idx])
             consts.append(self.ser.addConst(shape, dtype_list[idx], arr))
 
         return consts
 
-    def makeShape(self, rank):
+    def makeShape(self, rng, rank):
         if self.targetted_shape:
             return np.int32(self.targetted_shape)
         return np.int32(
-            self.rng.integers(
+            rng.integers(
                 low=self.args.tensor_shape_range[0],
                 high=self.args.tensor_shape_range[1],
                 size=rank,
@@ -254,27 +260,6 @@ class TosaTestGen:
 
     def setTargetShape(self, shape):
         self.targetted_shape = shape
-
-    def randInt(self, low=0, high=256):
-        return np.int32(self.rng.integers(low=low, high=high, size=1))[0]
-
-    def getRandNumberDType(self, dtype):
-        low, high = self.getDTypeRange(dtype)
-
-        if dtype == DType.FP32:
-            return np.float32(self.rng.uniform(low=low, high=high))
-        elif dtype == DType.FP16:
-            return np.float16(self.rng.uniform(low=low, high=high))
-        elif dtype == DType.BF16:
-            rand_f32 = np.float32(self.rng.uniform(low=low, high=high))
-            return gtu.vect_f32_to_bf16(rand_f32)
-        elif dtype == DType.BOOL:
-            return self.rng.choice([False, True])
-        elif dtype == DType.INT48:
-            # Special size
-            return np.int64(self.rng.integers(low, high, size=1))[0]
-
-        return np.int32(self.rng.integers(low, high, size=1))[0]
 
     def shapeStr(self, shape):
 
@@ -312,8 +297,8 @@ class TosaTestGen:
             shape[0] = min(shape[0], self.args.max_batch_size)
         return shape
 
-    def makeDimension(self):
-        return self.randInt(
+    def makeDimension(self, rng):
+        return rng.randInt(
             low=self.args.tensor_shape_range[0], high=self.args.tensor_shape_range[1]
         )
 
@@ -421,11 +406,18 @@ class TosaTestGen:
                 return compliance
 
     def build_unary(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
-        result_tensor = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
+        result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
 
         assert not isinstance(op, int)
 
@@ -433,8 +425,10 @@ class TosaTestGen:
         if error_name == ErrorIf.WrongOutputType:
             if result_tensor.dtype not in [DType.INT8, DType.UINT8]:
                 qinfo = [
-                    TosaQuantGen.getZeroPoint(self, a.dtype),
-                    TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, a.dtype),
+                    TosaQuantGen.getZeroPoint(
+                        rng, self.args.zeropoint, result_tensor.dtype
+                    ),
                 ]
 
         # Invalidate Input/Output list for error if checks.
@@ -443,7 +437,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -474,13 +468,11 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_binary_broadcast(
-        self, op, inputs, args_dict, validator_fcns, error_name=None, qinfo=None
+        self, rng, op, inputs, args_dict, validator_fcns, error_name=None, qinfo=None
     ):
         assert len(inputs) == 2
         a, b = inputs
-        result_tensor = OutputShaper.binaryBroadcastOp(
-            self.ser, self.rng, a, b, error_name
-        )
+        result_tensor = OutputShaper.binaryBroadcastOp(self.ser, rng, a, b, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, b.name]
@@ -488,7 +480,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -515,20 +507,20 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_binary_nonbroadcast(self, op, a, b, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.binaryNonBroadcastOp(self.ser, a, b)
-        self.ser.addOperator(op["op"], [a.name, b.name], [result_tens.name])
-        return result_tens
-
     def build_arithmetic_right_shift(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 2
         a, b = inputs
         round = args_dict["round"]
-        result_tensor = OutputShaper.binaryBroadcastOp(
-            self.ser, self.rng, a, b, error_name
-        )
+        result_tensor = OutputShaper.binaryBroadcastOp(self.ser, rng, a, b, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, b.name]
@@ -536,7 +528,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -567,15 +559,20 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_mul(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 2
         a, b = inputs
         shift = args_dict["shift"]
 
-        result_tensor = OutputShaper.binaryBroadcastOp(
-            self.ser, self.rng, a, b, error_name
-        )
+        result_tensor = OutputShaper.binaryBroadcastOp(self.ser, rng, a, b, error_name)
 
         # Special for multiply: Force the result to INT32 for INT types
         if a.dtype not in (DType.FP16, DType.BF16, DType.FP32):
@@ -583,7 +580,7 @@ class TosaTestGen:
 
         if error_name == ErrorIf.WrongOutputType:
             all_dtypes = [DType.INT8, DType.INT16, DType.INT48]
-            outputDType = self.rng.choice(all_dtypes)
+            outputDType = rng.choice(all_dtypes)
             result_tensor.setDtype(outputDType)
 
         # Invalidate Input/Output list for error if checks.
@@ -592,7 +589,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -623,12 +620,19 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_table(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
         table = args_dict["table"]
-        result_tensor = OutputShaper.tableOp(self.ser, self.rng, a, error_name)
+        result_tensor = OutputShaper.tableOp(self.ser, rng, a, error_name)
 
         attr = ts.TosaSerializerAttribute()
         attr.TableAttribute(table)
@@ -639,7 +643,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -666,14 +670,19 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_select(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 3
         cond, a, b = inputs
 
-        result_tensor = OutputShaper.selectOp(
-            self.ser, self.rng, cond, a, b, error_name
-        )
+        result_tensor = OutputShaper.selectOp(self.ser, rng, cond, a, b, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [cond.name, a.name, b.name]
@@ -681,7 +690,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -714,14 +723,19 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_comparison(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 2
         a, b = inputs
 
-        result_tensor = OutputShaper.binaryComparisonOp(
-            self.ser, self.rng, a, b, error_name
-        )
+        result_tensor = OutputShaper.binaryComparisonOp(self.ser, rng, a, b, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, b.name]
@@ -729,7 +743,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -762,12 +776,12 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_argmax(
-        self, op, inputs, args_dict, validator_fcns, error_name, qinfo=None
+        self, rng, op, inputs, args_dict, validator_fcns, error_name, qinfo=None
     ):
         assert len(inputs) == 1
         a = inputs[0]
         axis = args_dict["axis"]
-        result_tensor = OutputShaper.argmaxOp(self.ser, self.rng, a, axis, error_name)
+        result_tensor = OutputShaper.argmaxOp(self.ser, rng, a, axis, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -775,7 +789,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -807,6 +821,7 @@ class TosaTestGen:
 
     def build_pool2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -825,15 +840,17 @@ class TosaTestGen:
         kernel = args_dict["kernel"]
 
         result_tensor = OutputShaper.pool2dOp(
-            self.ser, self.rng, input, kernel, stride, pad, error_name
+            self.ser, rng, input, kernel, stride, pad, error_name
         )
 
         # Ensure new output type has correct qinfo
         if error_name == ErrorIf.WrongInputType:
             if input.dtype not in [DType.INT8, DType.UINT8]:
                 qinfo = [
-                    TosaQuantGen.getZeroPoint(self, input.dtype),
-                    TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, input.dtype),
+                    TosaQuantGen.getZeroPoint(
+                        rng, self.args.zeropoint, result_tensor.dtype
+                    ),
                 ]
 
         # Invalidate Input/Output list for error if checks.
@@ -842,7 +859,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -882,6 +899,7 @@ class TosaTestGen:
 
     def build_conv2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -899,7 +917,7 @@ class TosaTestGen:
         assert len(padding) == 4
         result_tensor = OutputShaper.conv2dOp(
             self.ser,
-            self.rng,
+            rng,
             ifm,
             filter,
             accum_dtype,
@@ -915,8 +933,10 @@ class TosaTestGen:
             DType.UINT8,
         ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(self, ifm.dtype),
-                TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, self.args.zeropoint, result_tensor.dtype
+                ),
             ]
 
         # Invalidate Input/Output list for error_if checks.
@@ -924,7 +944,7 @@ class TosaTestGen:
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -964,6 +984,7 @@ class TosaTestGen:
 
     def build_conv3d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -981,7 +1002,7 @@ class TosaTestGen:
         assert len(padding) == 6
         result_tensor = OutputShaper.conv3dOp(
             self.ser,
-            self.rng,
+            rng,
             ifm,
             filter,
             accum_dtype,
@@ -997,8 +1018,10 @@ class TosaTestGen:
             DType.UINT8,
         ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(self, ifm.dtype),
-                TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, self.args.zeropoint, result_tensor.dtype
+                ),
             ]
 
         # Invalidate Input/Output list for error_if checks.
@@ -1006,7 +1029,7 @@ class TosaTestGen:
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1046,6 +1069,7 @@ class TosaTestGen:
 
     def build_transpose_conv2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1062,7 +1086,7 @@ class TosaTestGen:
 
         assert len(out_pad) == 4
         result_tensor = OutputShaper.transposeConv2DOp(
-            self.ser, self.rng, ifm, output_shape, accum_dtype, error_name
+            self.ser, rng, ifm, output_shape, accum_dtype, error_name
         )
 
         # Ensure new output type has correct qinfo
@@ -1071,8 +1095,10 @@ class TosaTestGen:
             DType.UINT8,
         ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(self, ifm.dtype),
-                TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, self.args.zeropoint, result_tensor.dtype
+                ),
             ]
 
         # Invalidate Input/Output list for error_if checks.
@@ -1080,7 +1106,7 @@ class TosaTestGen:
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1121,6 +1147,7 @@ class TosaTestGen:
 
     def build_depthwise_conv2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1137,7 +1164,7 @@ class TosaTestGen:
 
         result_tensor = OutputShaper.depthwiseConv2dOp(
             self.ser,
-            self.rng,
+            rng,
             ifm,
             filter,
             accum_dtype,
@@ -1153,8 +1180,10 @@ class TosaTestGen:
             DType.UINT8,
         ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(self, ifm.dtype),
-                TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
+                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, self.args.zeropoint, result_tensor.dtype
+                ),
             ]
 
         # Invalidate Input/Output list for error_if checks.
@@ -1162,7 +1191,7 @@ class TosaTestGen:
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1202,6 +1231,7 @@ class TosaTestGen:
 
     def build_fully_connected(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1214,7 +1244,7 @@ class TosaTestGen:
         accum_dtype = args_dict["acc_type"]
 
         result_tensor = OutputShaper.fullyConnectedOp(
-            self.ser, self.rng, ifm, filter, accum_dtype, error_name
+            self.ser, rng, ifm, filter, accum_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1223,7 +1253,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1257,13 +1287,20 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_matmul(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 2
         a, b = inputs
         accum_dtype = args_dict["acc_type"]
         result_tensor = OutputShaper.matmulOp(
-            self.ser, self.rng, a, b, accum_dtype, error_name
+            self.ser, rng, a, b, accum_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1272,7 +1309,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1307,12 +1344,12 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_reduce(
-        self, op, inputs, args_dict, validator_fcns, error_name=None, qinfo=None
+        self, rng, op, inputs, args_dict, validator_fcns, error_name=None, qinfo=None
     ):
         assert len(inputs) == 1
         a = inputs[0]
         axis = args_dict["axis"]
-        result_tensor = OutputShaper.reduceOp(self.ser, self.rng, a, axis, error_name)
+        result_tensor = OutputShaper.reduceOp(self.ser, rng, a, axis, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1320,7 +1357,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1356,19 +1393,26 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_clamp(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
 
-        result_tensor = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
+        result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
 
-        v = [self.getRandNumberDType(a.dtype), self.getRandNumberDType(a.dtype)]
+        v = [rng.randNumberDType(a.dtype), rng.randNumberDType(a.dtype)]
 
         if error_name == ErrorIf.MaxSmallerMin:
             # Make sure the numbers are different to invoke this error
             while v[0] == v[1]:
-                v = [self.getRandNumberDType(a.dtype), self.getRandNumberDType(a.dtype)]
+                v = [rng.randNumberDType(a.dtype), rng.randNumberDType(a.dtype)]
             max_val = min(v)
             min_val = max(v)
         else:
@@ -1381,7 +1425,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1421,29 +1465,20 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_leaky_relu(self, op, a, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
-        attr = ts.TosaSerializerAttribute()
-
-        attr.LeakyReluAttribute(self.getRandNumberDType(DType.FP32))
-
-        self.ser.addOperator(op["op"], [a.name], [result_tens.name], attr)
-        return result_tens
-
-    # Needs an additional type/input
-    def build_prelu(self, op, a, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
-
-        self.ser.addOperator(op["op"], [a.name], [result_tens.name])
-        return result_tens
-
     def build_activation(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
 
-        result_tensor = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
+        result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1451,7 +1486,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1479,14 +1514,21 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_concat(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         axis = args_dict["axis"]
         if error_name != ErrorIf.WrongInputType:
             assert type(axis) == int
 
         result_tensor = OutputShaper.concatOp(
-            self.ser, self.rng, axis, inputs, error_name=error_name
+            self.ser, rng, axis, inputs, error_name=error_name
         )
 
         input_tensor_names = []
@@ -1499,7 +1541,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1533,6 +1575,7 @@ class TosaTestGen:
 
     def build_pad(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1546,7 +1589,7 @@ class TosaTestGen:
         pad_const_int = args_dict["pad_const_int"]
         pad_const_float = args_dict["pad_const_fp"]
 
-        result_tensor = OutputShaper.padOp(self.ser, self.rng, a, padding, error_name)
+        result_tensor = OutputShaper.padOp(self.ser, rng, a, padding, error_name)
 
         attr = ts.TosaSerializerAttribute()
         attr.PadAttribute(
@@ -1559,7 +1602,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1591,6 +1634,7 @@ class TosaTestGen:
 
     def build_dim(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1601,7 +1645,7 @@ class TosaTestGen:
         assert len(inputs) == 1
         a = inputs[0]
         axis = args_dict["axis"]
-        result_tensor = OutputShaper.dimOp(self.ser, self.rng, a, axis, error_name)
+        result_tensor = OutputShaper.dimOp(self.ser, rng, a, axis, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1609,7 +1653,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1636,13 +1680,20 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, None)
 
     def build_reshape(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
         new_shape = args_dict["new_shape"]
         result_tensor = OutputShaper.reshapeOp(
-            self.ser, self.rng, a, new_shape, error_name
+            self.ser, rng, a, new_shape, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1651,7 +1702,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1682,12 +1733,19 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_reverse(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
         axis = args_dict["axis"]
-        result_tensor = OutputShaper.unaryOp(self.ser, self.rng, a, error_name)
+        result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1695,7 +1753,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1722,15 +1780,20 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, None)
 
     def build_transpose(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
         perms = args_dict["perms"]
 
-        result_tensor = OutputShaper.transposeOp(
-            self.ser, self.rng, a, perms, error_name
-        )
+        result_tensor = OutputShaper.transposeOp(self.ser, rng, a, perms, error_name)
 
         attr = ts.TosaSerializerAttribute()
         attr.TransposeAttribute(perms)
@@ -1741,7 +1804,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1771,7 +1834,14 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_slice(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
@@ -1779,7 +1849,7 @@ class TosaTestGen:
         size = args_dict["size"]
 
         result_tensor = OutputShaper.sliceOp(
-            self.ser, self.rng, a, start, size, error_name
+            self.ser, rng, a, start, size, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1788,7 +1858,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1822,14 +1892,21 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_tile(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
         multiples = args_dict["multiples"]
 
         result_tensor = OutputShaper.tileOp(
-            self.ser, self.rng, a, multiples, error_name
+            self.ser, rng, a, multiples, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1838,7 +1915,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1870,13 +1947,20 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_gather(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 2
         values, indices = inputs
 
         result_tensor = OutputShaper.gatherOp(
-            self.ser, self.rng, values, indices, error_name
+            self.ser, rng, values, indices, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1885,7 +1969,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1913,12 +1997,19 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_scatter(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 3
         values_in, indices, input = inputs
         result_tensor = OutputShaper.scatterOp(
-            self.ser, self.rng, values_in, indices, input, error_name
+            self.ser, rng, values_in, indices, input, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -1927,7 +2018,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -1956,6 +2047,7 @@ class TosaTestGen:
 
     def build_resize(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -1973,7 +2065,7 @@ class TosaTestGen:
 
         result_tensor = OutputShaper.resizeOp(
             self.ser,
-            self.rng,
+            rng,
             input,
             mode,
             scale,
@@ -1990,7 +2082,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2023,16 +2115,15 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_identityn(self, op, val, val2, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.unaryOp(self.ser, self.rng, val, error_name)
-        result_tens2 = OutputShaper.unaryOp(self.ser, self.rng, val2, error_name)
-        self.ser.addOperator(
-            op, [val.name, val2.name], [result_tens.name, result_tens2.name]
-        )
-        return result_tens
-
     def build_const(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         val = inputs[0]
@@ -2046,14 +2137,21 @@ class TosaTestGen:
 
     # Type Conversion
     def build_cast(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         val = inputs[0]
         out_dtype = args_dict["out_type"]
 
         result_tensor = OutputShaper.typeConversionOp(
-            self.ser, self.rng, val, out_dtype, error_name
+            self.ser, rng, val, out_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
@@ -2062,7 +2160,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2091,6 +2189,7 @@ class TosaTestGen:
 
     def build_rescale(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -2106,7 +2205,7 @@ class TosaTestGen:
         per_channel = args_dict["per_channel"]
 
         result_tensor = OutputShaper.typeConversionOp(
-            self.ser, self.rng, val, out_dtype, error_name
+            self.ser, rng, val, out_dtype, error_name
         )
 
         if per_channel:
@@ -2121,46 +2220,46 @@ class TosaTestGen:
         output_unsigned = False
 
         if val.dtype == DType.INT8:
-            input_zp = self.randInt(-128, 128)
+            input_zp = rng.randInt(-128, 128)
             in_type_width += 1
         elif val.dtype == DType.UINT8:
-            input_zp = self.randInt(0, 256)
+            input_zp = rng.randInt(0, 256)
             in_type_width += 1
             input_unsigned = True
         elif error_name in [
             ErrorIf.InputZeroPointNotZero,
             ErrorIf.U16InputZeroPointNotValid,
         ]:
-            input_zp = self.randInt(-128, 128)
+            input_zp = rng.randInt(-128, 128)
             if input_zp == 0:
-                input_zp = input_zp + self.rng.integers(1, 10)
+                input_zp = input_zp + rng.integers(1, 10)
             in_type_width += 1
         elif val.dtype == DType.UINT16:
             # Must come after ErrorIf.U16InputZeroPointNotValid check
-            input_zp = self.rng.choice([0, 32768])
+            input_zp = rng.choice([0, 32768])
             in_type_width += 1
             input_unsigned = True
         else:
             input_zp = 0
 
         if out_dtype == DType.INT8:
-            output_zp = self.randInt(-128, 128)
+            output_zp = rng.randInt(-128, 128)
             out_type_width += 1
         elif out_dtype == DType.UINT8:
-            output_zp = self.randInt(0, 256)
+            output_zp = rng.randInt(0, 256)
             out_type_width += 1
             output_unsigned = True
         elif error_name in [
             ErrorIf.OutputZeroPointNotZero,
             ErrorIf.U16OutputZeroPointNotValid,
         ]:
-            output_zp = self.randInt(-128, 128)
+            output_zp = rng.randInt(-128, 128)
             if output_zp == 0:
-                output_zp = output_zp + self.rng.integers(1, 10)
+                output_zp = output_zp + rng.integers(1, 10)
             out_type_width += 1
         elif out_dtype == DType.UINT16:
             # Must come after ErrorIf.U16OutputZeroPointNotValid check
-            output_zp = self.rng.choice([0, 32768])
+            output_zp = rng.choice([0, 32768])
             out_type_width += 1
             output_unsigned = True
         else:
@@ -2169,7 +2268,7 @@ class TosaTestGen:
         # Calculate scale based on:
         # scale = a *(2^output_width)/(2^input_width))
 
-        a = np.float32(self.rng.random(size=[nc]))
+        a = np.float32(rng.random(size=[nc]))
         scale_arr = a * np.float32((1 << out_type_width) / (1 << in_type_width))
 
         if scale32:
@@ -2231,7 +2330,7 @@ class TosaTestGen:
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
+            rng, error_name, input_list, output_list
         )
 
         qinfo = (input_zp, output_zp)
@@ -2274,13 +2373,13 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def _get_condition_tensor(self, op, cond, error_name):
+    def _get_condition_tensor(self, rng, op, cond, error_name):
         if error_name == ErrorIf.CondIfCondNotMatchingBool:
-            cond_type = gtu.get_wrong_output_type(op, self.rng, DType.BOOL)
+            cond_type = gtu.get_wrong_output_type(op, rng, DType.BOOL)
         else:
             cond_type = DType.BOOL
         if error_name == ErrorIf.CondIfCondShapeNotSizeOne:
-            choice = self.rng.choice([1, 2])
+            choice = rng.choice([1, 2])
             if choice == 1:
                 cond_shape = [2]
             else:
@@ -2293,6 +2392,7 @@ class TosaTestGen:
 
     def build_cond_if_const(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -2309,7 +2409,7 @@ class TosaTestGen:
         cond = args_dict["condition"]
 
         # Condition tensor
-        cond_tens = self._get_condition_tensor(op, cond, error_name)
+        cond_tens = self._get_condition_tensor(rng, op, cond, error_name)
 
         # Make then/else tensors
         out_shape = then_tens.shape
@@ -2324,14 +2424,14 @@ class TosaTestGen:
             incorrect_shape = deepcopy(then_tens.shape)
             for i in range(len(incorrect_shape)):
                 incorrect_shape[i] += (
-                    self.rng.choice([-3, -2, 2, 3])
+                    rng.choice([-3, -2, 2, 3])
                     if incorrect_shape[i] > 3
-                    else self.rng.choice([1, 2, 4])
+                    else rng.choice([1, 2, 4])
                 )
-            incorrect_arr = np.int32(self.rng.integers(0, 256, size=incorrect_shape))
+            incorrect_arr = np.int32(rng.integers(0, 256, size=incorrect_shape))
 
-        then_arr = np.int32(self.rng.integers(0, 256, size=out_shape))
-        else_arr = np.int32(self.rng.integers(0, 256, size=out_shape))
+        then_arr = np.int32(rng.integers(0, 256, size=out_shape))
+        else_arr = np.int32(rng.integers(0, 256, size=out_shape))
 
         # And the result tensor based on any of the outputs
         result_tensor = self.ser.addOutput(out_shape, dtype)
@@ -2378,6 +2478,7 @@ class TosaTestGen:
 
     def build_cond_if_binary(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -2393,7 +2494,7 @@ class TosaTestGen:
         cond = args_dict["condition"]
 
         # Condition tensor
-        cond_tens = self._get_condition_tensor(op, cond, error_name)
+        cond_tens = self._get_condition_tensor(rng, op, cond, error_name)
 
         result_tensor = self.ser.addOutput(a.shape, a.dtype)
 
@@ -2411,7 +2512,7 @@ class TosaTestGen:
         ]:
             incorrect_shape = a.shape.copy()
             for i in range(len(incorrect_shape)):
-                incorrect_shape[i] += self.rng.choice([-3, -2, 2, 3])
+                incorrect_shape[i] += rng.choice([-3, -2, 2, 3])
             incorrect_block_input = deepcopy(a)
             incorrect_block_input.shape = incorrect_shape
 
@@ -2481,7 +2582,14 @@ class TosaTestGen:
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_while_loop(
-        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         assert len(inputs) == 1
         a = inputs[0]
@@ -2506,7 +2614,7 @@ class TosaTestGen:
         if error_name == ErrorIf.InputListOutputListMismatch:
             incorrect_acc = deepcopy(acc)
             for i in range(len(incorrect_acc.shape)):
-                incorrect_acc.shape[i] += self.rng.choice([-3, -2, 2, 3])
+                incorrect_acc.shape[i] += rng.choice([-3, -2, 2, 3])
             acc_out = self.ser.addIntermediate(incorrect_acc.shape, acc.dtype)
         else:
             acc_out = self.ser.addIntermediate(acc.shape, acc.dtype)
@@ -2527,13 +2635,13 @@ class TosaTestGen:
         ]:
             incorrect_iter = deepcopy(iter)
             for i in range(len(incorrect_iter.shape)):
-                incorrect_iter.shape[i] += self.rng.choice([-3, -2, 2, 3])
+                incorrect_iter.shape[i] += rng.choice([-3, -2, 2, 3])
             if len(incorrect_iter.shape) == 0:
-                incorrect_iter.shape.append(self.rng.choice([-3, -2, 2, 3]))
+                incorrect_iter.shape.append(rng.choice([-3, -2, 2, 3]))
 
             incorrect_acc = deepcopy(acc)
             for i in range(len(incorrect_acc.shape)):
-                incorrect_acc.shape[i] += self.rng.choice([-3, -2, 2, 3])
+                incorrect_acc.shape[i] += rng.choice([-3, -2, 2, 3])
 
         # COND block (input: iter, output: cond_tens )
         self.ser.addBasicBlock(cond_block)
@@ -2549,11 +2657,11 @@ class TosaTestGen:
         zero_tens = self.ser.addConst([], DType.INT32, [np.int32(0)])
 
         if error_name == ErrorIf.CondGraphOutputNotMatchingBool:
-            cond_type = self.rng.choice([DType.INT8, DType.INT32, DType.FP32])
+            cond_type = rng.choice([DType.INT8, DType.INT32, DType.FP32])
         else:
             cond_type = DType.BOOL
         if error_name == ErrorIf.CondGraphOutputShapeNotSizeOne:
-            choice = self.rng.choice([1, 2])
+            choice = rng.choice([1, 2])
             if choice == 1:
                 cond_shape = [3]
             else:
@@ -2613,6 +2721,7 @@ class TosaTestGen:
 
     def build_fft2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -2624,7 +2733,7 @@ class TosaTestGen:
         val1, val2 = inputs
         inverse = args_dict["inverse"]
 
-        results = OutputShaper.fft2dOp(self.ser, self.rng, val1, val2, error_name)
+        results = OutputShaper.fft2dOp(self.ser, rng, val1, val2, error_name)
 
         input_names = [val1.name, val2.name]
         pCount, cCount = op["operands"]
@@ -2635,7 +2744,7 @@ class TosaTestGen:
         output_dtypes = [res.dtype for res in results]
 
         input_names, output_names = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_names, output_names
+            rng, error_name, input_names, output_names
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2677,6 +2786,7 @@ class TosaTestGen:
 
     def build_rfft2d(
         self,
+        rng,
         op,
         inputs,
         args_dict,
@@ -2686,7 +2796,7 @@ class TosaTestGen:
     ):
         assert len(inputs) == 1
         val = inputs[0]
-        results = OutputShaper.rfft2dOp(self.ser, self.rng, val, error_name)
+        results = OutputShaper.rfft2dOp(self.ser, rng, val, error_name)
 
         input_names = [val.name]
         pCount, cCount = op["operands"]
@@ -2697,7 +2807,7 @@ class TosaTestGen:
         output_dtypes = [res.dtype for res in results]
 
         input_names, output_names = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_names, output_names
+            rng, error_name, input_names, output_names
         )
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2827,8 +2937,9 @@ class TosaTestGen:
         except KeyError:
             raise Exception("Cannot find op with name {}".format(opName))
 
-        # Initialize a new random number generator
-        self.rng = np.random.default_rng(self.random_seed)
+        if not self.args.stable_rng:
+            # Initialize a new random number generator per op
+            self.resetGlobalRNG()
 
         _, tgen_fcn, _, agen_fcn = op["build_fcn"]
 
@@ -2865,37 +2976,53 @@ class TosaTestGen:
                         if shape is not None and len(shape) != r:
                             continue
                         self.setTargetShape(shape)
-                        shapeList = tgen_fcn(self, op, r, error_name)
+                        typeStr = self.typeStr(t)
+                        if self.args.stable_rng:
+                            shape_rng = TosaHashRandomGenerator(
+                                self.random_seed,
+                                [opName, r, typeStr],
+                                self.random_dtype_range,
+                            )
+                        else:
+                            shape_rng = self.global_rng
+                        shapeList = tgen_fcn(self, shape_rng, op, r, error_name)
 
                         shapeStr = self.shapeStr(shapeList[0])
-                        typeStr = self.typeStr(t)
 
                         # Argument lists consists of tuples of the (str, []) string representation and the build function argument list
                         argList = []
                         if agen_fcn:
-                            argList = agen_fcn(self, opName, shapeList, t, error_name)
+                            if self.args.stable_rng:
+                                arg_rng = TosaHashRandomGenerator(
+                                    self.random_seed,
+                                    [opName, shapeStr, typeStr],
+                                    self.random_dtype_range,
+                                )
+                            else:
+                                arg_rng = self.global_rng
+
+                            argList = agen_fcn(
+                                self, arg_rng, opName, shapeList, t, error_name
+                            )
                         else:
                             argList = [("", [])]
 
                         for argStr, args in argList:
+                            # Create the test name string - for example: add_1x2x3_i32
                             if testType == "positive":
-                                if argStr:
-                                    testStr = "{}_{}_{}_{}".format(
-                                        opName, shapeStr, typeStr, argStr
-                                    )
-                                else:
-                                    testStr = "{}_{}_{}".format(
-                                        opName, shapeStr, typeStr
-                                    )
-                            elif testType == "negative":
-                                if argStr:
-                                    testStr = "{}_ERRORIF_{}_{}_{}_{}".format(
-                                        opName, error_name, shapeStr, typeStr, argStr
-                                    )
-                                else:
-                                    testStr = "{}_ERRORIF_{}_{}_{}".format(
-                                        opName, error_name, shapeStr, typeStr
-                                    )
+                                name_parts = [opName, shapeStr, typeStr]
+                            else:
+                                assert testType == "negative"
+                                name_parts = [
+                                    opName,
+                                    "ERRORIF",
+                                    error_name,
+                                    shapeStr,
+                                    typeStr,
+                                ]
+                            if argStr:
+                                name_parts.append(argStr)
+                            testStr = "_".join(name_parts)
 
                             testList.append(
                                 (opName, testStr, t, error_name, shapeList, args)
@@ -2970,8 +3097,18 @@ class TosaTestGen:
 
         # Build the random tensor operands and the test
 
+        # Set the random number generator
+        if self.args.stable_rng:
+            build_rng = TosaHashRandomGenerator(
+                self.random_seed, [testStr], self.random_dtype_range
+            )
+        else:
+            build_rng = self.global_rng
+
         if qgen is not None:
-            qinfo = qgen(self, op, dtype_or_dtypeList, error_name)
+            qinfo = qgen(
+                build_rng, self.args.zeropoint, op, dtype_or_dtypeList, error_name
+            )
         else:
             qinfo = None
 
@@ -2985,7 +3122,9 @@ class TosaTestGen:
 
         # New interface with args info in dictionary
         assert "dg_type" in argsDict
-        tvgInfo = tvgen_fcn(self, opName, dtypeList, shapeList, argsDict, error_name)
+        tvgInfo = tvgen_fcn(
+            self, build_rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
         if tvgInfo.dataGenDict:
             tensMeta["data_gen"] = tvgInfo.dataGenDict
         tens = tvgInfo.tensorList
@@ -2994,6 +3133,7 @@ class TosaTestGen:
 
         result = build_fcn(
             self,
+            build_rng,
             op,
             tens,
             argsDict,

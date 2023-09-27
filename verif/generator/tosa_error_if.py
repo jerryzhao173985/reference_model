@@ -94,7 +94,7 @@ class ErrorIf(object):
 class TosaErrorIfArgGen:
     @staticmethod
     def eiResizeErrorIf(
-        testGen,
+        rng,
         error_name,
         mode,
         dtype,
@@ -105,28 +105,28 @@ class TosaErrorIfArgGen:
         border,
     ):
         if error_name == ErrorIf.ScaleSmallerEqualZero:
-            index = testGen.randInt(low=0, high=4)
-            scale[index] = testGen.rng.choice([-2, -1, 0])
+            index = rng.randInt(low=0, high=4)
+            scale[index] = rng.choice([-2, -1, 0])
         elif error_name == ErrorIf.ScaleNLargerMax:
-            index = testGen.rng.choice([0, 2])
-            scale[index] = (1 << 11) + testGen.rng.choice([1, 2, 3])
+            index = rng.choice([0, 2])
+            scale[index] = (1 << 11) + rng.choice([1, 2, 3])
         elif error_name == ErrorIf.ScaleDLargerMax:
-            index = testGen.rng.choice([1, 3])
-            scale[index] = 16 * scale[index - 1] + testGen.rng.choice([0, 1, 2])
+            index = rng.choice([1, 3])
+            scale[index] = 16 * scale[index - 1] + rng.choice([0, 1, 2])
 
         if error_name == ErrorIf.OffsetLargerEqualMax:
-            index = testGen.rng.choice([0, 1])
-            offset[index] = 16 * scale[index * 2] + testGen.rng.choice([0, 1, 2])
+            index = rng.choice([0, 1])
+            offset[index] = 16 * scale[index * 2] + rng.choice([0, 1, 2])
         elif error_name == ErrorIf.OffsetSmallerMin:
-            index = testGen.rng.choice([0, 1])
-            offset[index] = -scale[index * 2] - testGen.rng.choice([1, 2, 3])
+            index = rng.choice([0, 1])
+            offset[index] = -scale[index * 2] - rng.choice([1, 2, 3])
 
         if error_name == ErrorIf.BorderLargerEqualMax:
-            index = testGen.rng.choice([0, 1])
-            border[index] = scale[index * 2] + testGen.rng.choice([0, 1, 2])
+            index = rng.choice([0, 1])
+            border[index] = scale[index * 2] + rng.choice([0, 1, 2])
         elif error_name == ErrorIf.BorderSmallerMin:
-            index = testGen.rng.choice([0, 1])
-            border[index] = -16 * scale[index * 2] - testGen.rng.choice([1, 2, 3])
+            index = rng.choice([0, 1])
+            border[index] = -16 * scale[index * 2] - rng.choice([1, 2, 3])
 
         if error_name == ErrorIf.WrongOutputType:
             if mode == ResizeMode.NEAREST and dtype == DType.INT8:
@@ -192,12 +192,12 @@ class TosaErrorIfArgGen:
                     DType.INT48,
                     DType.FP16,
                 )
-            outputDType = testGen.rng.choice(a=incorrect_types)
+            outputDType = rng.choice(a=incorrect_types)
 
         return scale, offset, border, outputDType
 
     @staticmethod
-    def eiPoolingErrorIf(testGen, error_name, stride, pad, kernel):
+    def eiPoolingErrorIf(rng, error_name, stride, pad, kernel):
         if (
             error_name == ErrorIf.StrideSmallerOne
             # padding must not exceed the kernel size
@@ -207,30 +207,30 @@ class TosaErrorIfArgGen:
             and pad[3] < kernel[1]
         ):
             wrongStride = (
-                testGen.rng.choice([0, -1, -2, -3]),
-                testGen.rng.choice([0, -1, -2, -3]),
+                rng.choice([0, -1, -2, -3]),
+                rng.choice([0, -1, -2, -3]),
             )
             return wrongStride, pad, kernel
         elif error_name == ErrorIf.PadSmallerZero:
             wrongPad = (
-                testGen.rng.choice([-1, -2, -3]),
-                testGen.rng.choice([-1, -2, -3]),
-                testGen.rng.choice([-1, -2, -3]),
-                testGen.rng.choice([-1, -2, -3]),
+                rng.choice([-1, -2, -3]),
+                rng.choice([-1, -2, -3]),
+                rng.choice([-1, -2, -3]),
+                rng.choice([-1, -2, -3]),
             )
             return stride, wrongPad, kernel
         elif error_name == ErrorIf.KernelSmallerOne:
             wrongKernel = (
-                testGen.rng.choice([0, -1, -2, -3]),
-                testGen.rng.choice([0, -1, -2, -3]),
+                rng.choice([0, -1, -2, -3]),
+                rng.choice([0, -1, -2, -3]),
             )
             return stride, pad, wrongKernel
         elif error_name == ErrorIf.PadLargerEqualKernel:
             wrongPad = (
-                testGen.rng.choice([kernel[0], kernel[0] + 1, kernel[0] + 2]),
-                testGen.rng.choice([kernel[0], kernel[0] + 1, kernel[0] + 2]),
-                testGen.rng.choice([kernel[1], kernel[1] + 1, kernel[1] + 2]),
-                testGen.rng.choice([kernel[1], kernel[1] + 1, kernel[1] + 2]),
+                rng.choice([kernel[0], kernel[0] + 1, kernel[0] + 2]),
+                rng.choice([kernel[0], kernel[0] + 1, kernel[0] + 2]),
+                rng.choice([kernel[1], kernel[1] + 1, kernel[1] + 2]),
+                rng.choice([kernel[1], kernel[1] + 1, kernel[1] + 2]),
             )
             return stride, wrongPad, kernel
         else:
@@ -265,16 +265,16 @@ class TosaErrorIfArgGen:
         return False
 
     @staticmethod
-    def eiInvalidateInputOutputList(testGen, error_name, input_list, output_list):
+    def eiInvalidateInputOutputList(rng, error_name, input_list, output_list):
         # Mess up input/output tensors for ERROR_IF checks
         if error_name == "WrongInputList":
-            add_input = testGen.rng.choice([True, False])
+            add_input = rng.choice([True, False])
             if add_input:
                 input_list.append("eiDummyInput")
             else:
                 input_list = input_list[:-1]
         elif error_name == "WrongOutputList":
-            add_output = testGen.rng.choice([True, False])
+            add_output = rng.choice([True, False])
             if add_output:
                 output_list.append("eiDummyOutput")
             else:
@@ -291,25 +291,25 @@ class TosaErrorIfArgGen:
             new_shape = [max(d - 1, 1) for d in new_shape]
         return new_shape
 
-    def eiSliceErrorIf(testGen, error_name, input_shape, start, size):
+    def eiSliceErrorIf(rng, error_name, input_shape, start, size):
         if error_name == ErrorIf.StartSmallerZero:
             newStart = []
             for i in range(len(input_shape)):
-                newStart.append(testGen.rng.choice([-3, -2, -1]))
+                newStart.append(rng.choice([-3, -2, -1]))
             return newStart, size
         elif error_name == ErrorIf.SizeSmallerEqualZero:
             newSize = []
             for i in range(len(input_shape)):
-                newSize.append(testGen.rng.choice([-3, -2, -1, 0]))
+                newSize.append(rng.choice([-3, -2, -1, 0]))
             return start, newSize
         elif error_name == ErrorIf.StartSizeOutsideBounds:
             newStart, newSize = [], []
             for i in range(len(input_shape)):
                 newStart.append(input_shape[i] - 1)
-                newSize.append(testGen.rng.choice([2, 3, 4]))
+                newSize.append(rng.choice([2, 3, 4]))
             return newStart, newSize
         elif error_name == ErrorIf.InputSizeStartLengthMismatch:
-            remove = testGen.rng.choice([True, False])
+            remove = rng.choice([True, False])
             if remove:
                 newStart = start[1:]
                 newSize = size[1:]
@@ -323,7 +323,7 @@ class TosaErrorIfArgGen:
             return start, size
 
     @staticmethod
-    def eiCastErrorIf(testGen, input_dtype):
+    def eiCastErrorIf(input_dtype):
         if input_dtype in [DType.BOOL, DType.FP32]:
             outputDType = [DType.BOOL, DType.INT48, DType.FP32]
         elif input_dtype in [DType.FP16, DType.BF16]:
