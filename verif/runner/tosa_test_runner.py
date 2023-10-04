@@ -4,7 +4,6 @@
 import json
 from enum import IntEnum
 
-import conformance.model_files as cmf
 import schemavalidation.schemavalidation as sch
 from checker.color_print import LogColors
 from checker.color_print import print_color
@@ -71,9 +70,7 @@ class TosaTestRunner:
         self.testDir = str(testDirPath)
         self.testDirPath = testDirPath
         self.testName = self.testDirPath.name
-        self.verify_lib_path = cmf.find_tosa_file(
-            cmf.TosaFileType.VERIFY_LIBRARY, args.ref_model_path
-        )
+        self.verify_lib_path = args.verify_lib_path
 
         set_print_in_color(not args.no_color)
         # Stop the result checker printing anything - we will do it

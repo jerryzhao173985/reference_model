@@ -30,6 +30,12 @@ NAME_REFMODEL_RUN_RESULT_SUFFIX = ".runner.tosa_refmodel_sut_run.npy"
 
 PROFILES_LIST = ["tosa-bi", "tosa-mi"]
 
+OUTPUT_TYPE_JSON = "json"
+OUTPUT_TYPE_BINARY = "binary"
+OUTPUT_TYPE_BOTH = "both"
+OUTPUT_TYPES = (OUTPUT_TYPE_JSON, OUTPUT_TYPE_BINARY, OUTPUT_TYPE_BOTH)
+OUTPUT_TYPE_DEFAULT = OUTPUT_TYPE_JSON
+
 
 def parse_args(argv):
     """Parse the arguments."""
@@ -48,14 +54,14 @@ def parse_args(argv):
         dest="schema_path",
         type=Path,
         required=True,
-        help=("Path to reference model schema."),
+        help="Path to reference model schema.",
     )
     parser.add_argument(
         "--flatc-path",
         dest="flatc_path",
         type=Path,
         required=True,
-        help=("Path to flatc executable."),
+        help="Path to flatc executable.",
     )
     parser.add_argument(
         "--output-directory",
@@ -63,6 +69,13 @@ def parse_args(argv):
         type=Path,
         default=Path.cwd() / "conformance",
         help="Output directory (default is conformance in CWD)",
+    )
+    parser.add_argument(
+        "--output-type",
+        dest="output_type",
+        choices=OUTPUT_TYPES,
+        default=OUTPUT_TYPE_DEFAULT,
+        help=f"Output file type produced (default is {OUTPUT_TYPE_DEFAULT})",
     )
     parser.add_argument(
         "--framework",
@@ -135,30 +148,48 @@ def get_framework_name(name_array: list, framework: str):
     return name
 
 
-def convert_flatbuffer_file(flatc: Path, schema: Path, model_file: Path, output: Path):
-    """Convert the flatbuffer binary into JSON."""
-    try:
-        fbbin_to_json(flatc, schema, model_file, output)
-    except Exception as e:
-        logger.error(f"Failed to convert flatbuffer binary:\n{e}")
-        return None
+def convert_flatbuffer_file(
+    output_type: str, flatc: Path, schema: Path, model_file: Path, output: Path
+):
+    """Convert and/or copy the flatbuffer binary."""
+    if output_type in (OUTPUT_TYPE_JSON, OUTPUT_TYPE_BOTH):
+        try:
+            fbbin_to_json(flatc, schema, model_file, output)
+        except Exception as e:
+            logger.error(f"Failed to convert flatbuffer binary:\n{e}")
+            return None
 
-    if model_file.name == "model.tflite":
-        file_name = "model-tflite.json"
-        os.rename(output / "model.json", output / file_name)
-    else:
-        file_name = model_file.stem + ".json"
+        if model_file.name == "model.tflite":
+            file_name = "model-tflite.json"
+            os.rename(output / "model.json", output / file_name)
+        else:
+            file_name = model_file.stem + ".json"
+    if output_type in (OUTPUT_TYPE_BINARY, OUTPUT_TYPE_BOTH):
+        try:
+            shutil.copy(model_file, output)
+        except Exception as e:
+            logger.error(f"Failed to copy flatbuffer binary:\n{e}")
+            return None
+        # By default return the binary name (if we have created both)
+        file_name = model_file.name
+
     return output / file_name
 
 
-def convert_numpy_file(n_file: Path, output: Path, outname: Optional[str] = None):
-    """Convert a numpy file into a JSON file."""
-    j_file = output / (outname if outname else (n_file.stem + ".json"))
-    npy_to_json(n_file, j_file)
-    return j_file
+def convert_numpy_file(
+    output_type: str, npy_file: Path, output: Path, outstem: Optional[str] = None
+):
+    """Convert and/or copy the numpy file."""
+    if output_type in (OUTPUT_TYPE_JSON, OUTPUT_TYPE_BOTH):
+        new_file = output / ((outstem if outstem else npy_file.stem) + ".json")
+        npy_to_json(npy_file, new_file)
+    if output_type in (OUTPUT_TYPE_BINARY, OUTPUT_TYPE_BOTH):
+        new_file = output / ((outstem + ".npy") if outstem else npy_file.name)
+        shutil.copy(npy_file, new_file)
 
 
 def update_desc_json(
+    output_type: str,
     test_dir: Path,
     test_desc,
     output_dir: Optional[Path] = None,
@@ -184,7 +215,9 @@ def update_desc_json(
                     ofm_refmodel = ofm_path.with_suffix(NAME_REFMODEL_RUN_RESULT_SUFFIX)
                 # Create conformance result
                 if ofm_refmodel.is_file():
-                    convert_numpy_file(ofm_refmodel, output_dir, outname=cfm + ".json")
+                    convert_numpy_file(
+                        output_type, ofm_refmodel, output_dir, outstem=cfm
+                    )
                 else:
                     logger.error(f"Missing result file {ofm_path}")
                     return None
@@ -297,7 +330,11 @@ def main(argv=None):
     # Convert the TOSA flatbuffer binary
     tosa_filename = desc_filename.parent / test_desc["tosa_file"]
     tosa_filename = convert_flatbuffer_file(
-        args.flatc_path, args.schema_path, tosa_filename, args.output_dir
+        args.output_type,
+        args.flatc_path,
+        args.schema_path,
+        tosa_filename,
+        args.output_dir,
     )
     if not tosa_filename:
         # Failed to convert the file, json2fbbin will have printed an error
@@ -309,7 +346,11 @@ def main(argv=None):
     if framework_conversion and framework_filename:
         # Convert the framework flatbuffer binary
         framework_filename = convert_flatbuffer_file(
-            args.flatc_path, framework_schema, framework_filename, args.output_dir
+            args.output_type,
+            args.flatc_path,
+            framework_schema,
+            framework_filename,
+            args.output_dir,
         )
         if not framework_filename:
             # Failed to convert the file, json2fbbin will have printed an error
@@ -322,7 +363,7 @@ def main(argv=None):
             path = desc_filename.parent / file
             ifm_files.append(path.name)
             if path.is_file():
-                convert_numpy_file(path, args.output_dir)
+                convert_numpy_file(args.output_type, path, args.output_dir)
             else:
                 if not args.lazy_data_generation:
                     logger.error(f"Missing input file {path.name}")
@@ -346,6 +387,7 @@ def main(argv=None):
 
     # Update desc.json and convert result files to JSON
     test_desc = update_desc_json(
+        args.output_type,
         desc_filename.parent,
         test_desc,
         output_dir=args.output_dir,

@@ -8,7 +8,7 @@ Steps:
   settings in the .json files.
 - Tests are selected to produce a good coverage.
 - Tests are run on the reference model to produce the correct output files.
-- Tests are converted into JSON format and saved to desired output directory.
+- Tests are converted to JSON and/or copied and saved to desired output directory.
 """
 import argparse
 import copy
@@ -26,6 +26,8 @@ from pathlib import Path
 import conformance.model_files as cmf
 from conformance.test_select import Operator
 from convert2conformance.convert2conformance import main as c2c_main
+from convert2conformance.convert2conformance import OUTPUT_TYPE_DEFAULT
+from convert2conformance.convert2conformance import OUTPUT_TYPES
 from distutils.dir_util import copy_tree
 
 logging.basicConfig()
@@ -50,6 +52,10 @@ DEFAULT_SEED = 42
 # When there is a dictionary of generator argument lists (groups) only the
 # standard group will have negative tests generated for it
 STANDARD_GENERATOR_GROUP = "standard"
+
+TEST_VERSION_LATEST = "latest"
+TEST_VERSION_V0_60_0 = "v0.60.0"
+TEST_VERSIONS = (TEST_VERSION_LATEST, TEST_VERSION_V0_60_0)
 
 
 class GenConformanceError(Exception):
@@ -214,12 +220,14 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
         return
 
     num_cores = args.num_cores
-    run_tests_cmd = "tosa_verif_run_tests"
 
-    ref_cmd_base = ref_cmd = [
-        run_tests_cmd,
+    # Use the test runner
+    ref_cmd_base = [
+        "tosa_verif_run_tests",
         "--ref-model-path",
         str(args.ref_model_path.absolute()),
+        "--schema-path",
+        str(args.schema_path.absolute()),
         "-j",
         str(num_cores),
         "-v",
@@ -243,7 +251,7 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
             )
             continue
         ref_cmd = ref_cmd_base.copy()
-        ref_cmd.append(str(test))
+        ref_cmd.append(str(test.absolute()))
         ref_cmds.append(ref_cmd)
 
     fail_string = "UNEXPECTED_FAILURE"
@@ -280,13 +288,14 @@ def convert_tests(
     trim_op_subdir=False,
     tags=None,
 ):
-    """Convert tests to JSON and save to output directory."""
+    """Convert/copy tests to output directory."""
     if group:
         output_dir = output_dir / group
 
     c2c_args_base = ["--strict"]
     c2c_args_base.extend(["--schema-path", str(args.schema_path)])
     c2c_args_base.extend(["--flatc-path", str(args.flatc_path)])
+    c2c_args_base.extend(["--output-type", args.output_type])
     # This op maybe in more than one profile - e.g. tosa_bi and tosa_mi
     # even if we are only producing tests for tosa_mi
     for op_profile in op_profiles_list:
@@ -349,7 +358,7 @@ def convert_tests(
         logger.error(f"Stopping due to {failed_counter} test conversion errors")
         raise (GenConformanceError())
 
-    logger.info("Converted tests to JSON and saved to output directory")
+    logger.info("Converted/copied tests and saved to output directory")
 
     return output_dir
 
@@ -533,6 +542,20 @@ def parse_args(argv=None):
             "Path to flatc executable. Defaults to "
             f"`{cmf.DEFAULT_REF_MODEL_BUILD_FLATC_PATH}` in parent directory of `ref-model-path`"
         ),
+    )
+    parser.add_argument(
+        "--test-version",
+        dest="test_version",
+        choices=TEST_VERSIONS,
+        default=TEST_VERSION_LATEST,
+        help=f"Version of the tests to produce (default is {TEST_VERSION_LATEST})",
+    )
+    parser.add_argument(
+        "--output-type",
+        dest="output_type",
+        choices=OUTPUT_TYPES,
+        default=OUTPUT_TYPE_DEFAULT,
+        help=f"Output file type produced (default is {OUTPUT_TYPE_DEFAULT})",
     )
     parser.add_argument(
         "--seed",
@@ -776,6 +799,10 @@ def main():
                         logger.warning(
                             f"{op} operator parameters not found in {test_params_file} - skipping"
                         )
+                        continue
+
+                    if args.test_version == TEST_VERSION_V0_60_0 and op in ("dim",):
+                        logger.warning(f"{op} is not in {args.test_version} - skipping")
                         continue
 
                     op_profiles_list = test_params[op]["profile"]
