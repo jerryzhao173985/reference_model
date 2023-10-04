@@ -17,6 +17,8 @@
 // Output Verification : Section 1.8.2
 //
 //===----------------------------------------------------------------------===//
+#ifndef VERIFY_H
+#define VERIFY_H
 
 #include "types.h"
 
@@ -45,3 +47,5 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif    // VERIFY_H

@@ -71,6 +71,10 @@ set(CXX_SOURCE
     src/operators.cc
     src/subgraph_traverser.cc
     src/tensor.cc
+    src/generate/generate_dot_product_states.cc
+    src/generate/generate_dot_product.cc
+    src/generate/generate_entry.cc
+    src/generate/generate_utils.cc
     src/verify/verify_dot_product.cc
     src/verify/verify_entry.cc
     src/verify/verify_exact.cc
@@ -130,6 +134,7 @@ list(APPEND PUBLIC_HEADERS
     include/dtype.h
     include/func_config.h
     include/func_debug.h
+    include/generate.h
     include/graph_status.h
     include/model_common.h
     include/model_runner.h
@@ -152,6 +157,21 @@ add_library(tosa_reference_verify_lib SHARED
   src/func_debug.cc
 )
 target_include_directories(tosa_reference_verify_lib
+  PUBLIC
+    ${PUBLIC_INCLUDE_DIRS}
+  PRIVATE
+    ${PRIVATE_INCLUDE_DIRS}
+)
+
+# Build TOSA generator library
+add_library(tosa_reference_generate_lib SHARED
+  src/generate/generate_dot_product_states.cc
+  src/generate/generate_dot_product.cc
+  src/generate/generate_entry.cc
+  src/generate/generate_utils.cc
+  src/func_debug.cc
+)
+target_include_directories(tosa_reference_generate_lib
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
@@ -193,6 +213,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
 
   # Sources only required for unit tests.
   set(CXX_SOURCE_TESTS
+      test/generate_tests.cpp
       test/model_runner_tests.cpp
       test/verify_tests.cpp
       ${DOCTEST_DIR}/doctest.h
