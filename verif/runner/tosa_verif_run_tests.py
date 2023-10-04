@@ -52,6 +52,15 @@ def parseArgs(argv):
         help="Path to TOSA reference model executable",
     )
     parser.add_argument(
+        "--verify-lib-path",
+        dest="verify_lib_path",
+        type=Path,
+        help=(
+            "Path to TOSA verify library. Defaults to "
+            "the library in the directory of `ref-model-path`"
+        ),
+    )
+    parser.add_argument(
         "--operator-fbs",
         "--schema-path",
         dest="schema_path",
@@ -364,6 +373,10 @@ def main(argv=None):
     if args.ref_model_path is None:
         args.ref_model_path = cmf.find_tosa_file(
             cmf.TosaFileType.REF_MODEL, Path("reference_model"), False
+        )
+    if args.verify_lib_path is None:
+        args.verify_lib_path = cmf.find_tosa_file(
+            cmf.TosaFileType.VERIFY_LIBRARY, args.ref_model_path
         )
     if args.flatc_path is None:
         args.flatc_path = cmf.find_tosa_file(

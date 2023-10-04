@@ -444,9 +444,10 @@ Currently only the Base Profile of TOSA is fully supported by the generator.
 
 **DEPRECATION NOTES:**
 
-* The repository *TOSA conformance tests - <https://git.mlplatform.org/tosa/conformance_tests.git/>* - has been DEPRECATED, tests need to be
-generated using the script detailed in this section.
-* The framework tests are DEPRECATED as part of the conformance testing, so there is no need to follow the TOSA Framework Unit Tests instructions above for this section.
+* The repository *TOSA conformance tests - <https://git.mlplatform.org/tosa/conformance_tests.git/>* -
+has been DEPRECATED, tests need to be generated using the script detailed in this section.
+* The framework tests are DEPRECATED as part of the conformance testing, so there
+is no need to follow the TOSA Framework Unit Tests instructions above for this section.
 
 #### Setup
 
@@ -457,31 +458,53 @@ command `flatc` - please follow the section on the FlatBuffers compiler below.
 
 These are the main script options for controlling the types of tests produced:
 
-* `--profile` - controls the TOSA profile, only `base` - for base inference tests - is fully supported, but other options are `main` - for the floating point main inference tests - or `all` - for both.
-* `--unit-tests` - choose which tests to produce, only `operator` should be used as `framework` (and `both`) tests are DEPRECATED.
+* `--profile` - controls the TOSA profile, only `tosa-bi` - for base inference tests -
+is fully supported. The other options are `tosa-mi` - for the floating point main
+inference tests - or `all` - for both.
+* `--unit-tests` - choose which tests to produce, only `operator` should be used as
+`framework` (and `both`) tests are DEPRECATED.
 * `--test-type` - selects `positive`, `negative` or `both` types of test.
-
+* `--output-type` - selects the output file type between `json`, `binary` or `both`.
+The default - `json` - converts numpy data files and flatbuffer files into JSON for
+ease in viewing and comparison.
 
 An example to create the TOSA operator unit tests for ADD and SUB:
 
 ```bash
-tosa_verif_conformance_generator        \
-  --profile base                        \
-  --ref-model-directory reference_model \
-  --operator add sub
+tosa_verif_conformance_generator \
+  --profile tosa-bi              \
+  --ref-model-path reference_model/build/reference_model/tosa_reference_model \
+  --operators add sub
 ```
 
 The above command will create some temporary files in a `conformance_build`
 directory, but will output the conformance unit tests into a `conformance`
 directory.
 
+If you have a different build directory for the reference model, you may have
+to supply one or more of the following options for path locations:
+
+* `--ref-model-path` - path to the `tosa_reference_model` executable.
+* `--schema-path` or `--operator-fbs` - path to the TOSA flatbuffer schema file (`tosa.fbs`)
+* `--flatc-path` - path to the flatbuffers compiler `flatc`
+
+This is an example using the default locations:
+
+```bash
+tosa_verif_conformance_generator \
+  --ref-model-path reference_model/build/reference_model/tosa_reference_model \
+  --flatc-path reference_model/build/thirdparty/serialization_lib/third_party/flatbuffers/flatc \
+  --schema-path referecne_model/thirdparty/serialization_lib/schema/tosa.fbs \
+  --operators abs
+```
+
 This next example will create all the conformance tests, using different
 temporary build and output directories:
 
 ```bash
-tosa_verif_conformance_generator        \
-  --ref-model-directory reference_model \
-  --build-directory tmp_build           \
+tosa_verif_conformance_generator \
+  --ref-model-path reference_model/build/reference_model/tosa_reference_model \
+  --build-directory tmp_build    \
   --output-directory conf_tests
 ```
 
@@ -512,7 +535,7 @@ the FlatBuffers tool using:
 ``` bash
 # After compiling the reference model (in the build directory)
 cd thirdparty/serialization_lib/third_party/flatbuffers
-make
+make flatc
 ```
 
 
