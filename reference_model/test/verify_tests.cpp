@@ -264,6 +264,7 @@ TEST_CASE("positive - reduce product")
         "tensors" : {
             "out1" : {
                 "mode": "REDUCE_PRODUCT",
+                "data_type": "FP32",
                 "reduce_product_info": {
                 "m": 23,
                 "n": 8
