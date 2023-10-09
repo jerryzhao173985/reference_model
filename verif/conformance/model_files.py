@@ -19,6 +19,7 @@ class TosaFileType(IntEnum):
     SCHEMA = 1
     FLATC = 2
     VERIFY_LIBRARY = 3
+    GENERATE_LIBRARY = 4
 
 
 TOSA_FILE_TYPE_TO_DETAILS = {
@@ -39,6 +40,11 @@ TOSA_FILE_TYPE_TO_DETAILS = {
     },
     TosaFileType.VERIFY_LIBRARY: {
         "name": "libtosa_reference_verify_lib.so",
+        "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
+        "build": True,
+    },
+    TosaFileType.GENERATE_LIBRARY: {
+        "name": "libtosa_reference_generate_lib.so",
         "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
         "build": True,
     },

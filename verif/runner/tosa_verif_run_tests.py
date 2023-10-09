@@ -13,7 +13,7 @@ from pathlib import Path
 
 import conformance.model_files as cmf
 import runner.tosa_test_presets as ttp
-from json2numpy import json2numpy
+from generator.datagenerator import GenerateError
 from runner.tosa_test_runner import TosaTestInvalid
 from runner.tosa_test_runner import TosaTestRunner
 from xunit import xunit
@@ -50,6 +50,15 @@ def parseArgs(argv):
         dest="ref_model_path",
         type=Path,
         help="Path to TOSA reference model executable",
+    )
+    parser.add_argument(
+        "--generate-lib-path",
+        dest="generate_lib_path",
+        type=Path,
+        help=(
+            "Path to TOSA generate library. Defaults to "
+            "the library in the directory of `ref-model-path`"
+        ),
     )
     parser.add_argument(
         "--verify-lib-path",
@@ -177,22 +186,6 @@ def parseArgs(argv):
     return args
 
 
-EXCLUSION_PREFIX = ["test", "model", "desc"]
-
-
-def convert2Numpy(test_path):
-    """Convert all the JSON numpy files back into binary numpy."""
-    jsons = test_path.glob("*.json")
-    for j in jsons:
-        for exclude in EXCLUSION_PREFIX:
-            if j.name.startswith(exclude):
-                j = None
-                break
-        if j:
-            # debug print(f"Converting {json}")
-            json2numpy.json_to_npy(j)
-
-
 def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
     """Worker thread that runs the next test from the queue."""
     complianceRunnerList = runnerList.copy()
@@ -222,7 +215,6 @@ def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
             currentRunners = runnerList
 
         msg = ""
-        converted = False
         for runnerModule, runnerArgs in currentRunners:
             try:
                 start_time = datetime.now()
@@ -232,39 +224,30 @@ def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
 
                 skip, reason = runner.skipTest()
                 if skip:
-                    msg = "Skipping {} test".format(reason)
-                    print("{} {}".format(msg, test_path))
+                    msg = f"Skipping {reason} test"
+                    print(f"{msg} {test_path}")
                     rc = TosaTestRunner.Result.SKIPPED
                 else:
-                    # Convert JSON data files into numpy format on first pass
-                    if not converted:
-                        convert2Numpy(test_path)
-                        converted = True
-
                     if args.verbose:
-                        print(
-                            "Running runner {} with test {}".format(
-                                runnerName, test_path
-                            )
-                        )
+                        print(f"Running runner {runnerName} with test {test_path}")
+                    try:
+                        # Convert or generate the required data files
+                        runner.readyDataFiles()
+                    except Exception as e:
+                        msg = f"Failed to ready test files error: {e}"
+                        raise e
+
                     try:
                         grc, gmsg = runner.runTestGraph()
                         rc, msg = runner.testResult(grc, gmsg)
                     except Exception as e:
-                        msg = "System Under Test error: {}".format(e)
-                        print(msg)
-                        print(
-                            "".join(
-                                traceback.format_exception(
-                                    etype=type(e), value=e, tb=e.__traceback__
-                                )
-                            )
-                        )
-                        rc = TosaTestRunner.Result.INTERNAL_ERROR
+                        msg = f"System Under Test error: {e}"
+                        raise e
             except Exception as e:
-                msg = "Internal error: {}".format(e)
+                if not msg:
+                    msg = f"Internal error: {e}"
                 print(msg)
-                if not isinstance(e, TosaTestInvalid):
+                if not isinstance(e, (TosaTestInvalid, GenerateError)):
                     # Show stack trace on unexpected exceptions
                     print(
                         "".join(
@@ -373,6 +356,10 @@ def main(argv=None):
     if args.ref_model_path is None:
         args.ref_model_path = cmf.find_tosa_file(
             cmf.TosaFileType.REF_MODEL, Path("reference_model"), False
+        )
+    if args.generate_lib_path is None:
+        args.generate_lib_path = cmf.find_tosa_file(
+            cmf.TosaFileType.GENERATE_LIBRARY, args.ref_model_path
         )
     if args.verify_lib_path is None:
         args.verify_lib_path = cmf.find_tosa_file(

@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from shutil import rmtree
 
+import conformance.model_files as cmf
 import numpy as np
 import pytest
 from checker.tosa_result_checker import test_check as tosa_check
@@ -17,9 +18,13 @@ from runner.run_command import RunShCommandError
 # Note: Must rename imports (like test_check) so that pytest doesn't assume its a test function/class
 
 # Location of reference model binaries
-REF_MODEL_BUILD_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
-REF_MODEL_EXE = "tosa_reference_model"
-REF_MODEL_EXE_PATH = REF_MODEL_BUILD_PATH / REF_MODEL_EXE
+REF_MODEL_DIR = Path(__file__).resolve().parents[2]
+REF_MODEL_EXE_PATH = cmf.find_tosa_file(
+    cmf.TosaFileType.REF_MODEL, REF_MODEL_DIR, False
+)
+GENERATE_LIB_PATH = cmf.find_tosa_file(
+    cmf.TosaFileType.GENERATE_LIBRARY, REF_MODEL_EXE_PATH
+)
 
 # Set this to False if you want ot preserve the test directories after running
 CLEAN_UP_TESTS = True
@@ -51,7 +56,9 @@ REF_MODEL_TYPE_TO_OUT = {
     "bf16": "bf16",
 }
 
-# NOTE: These tests are set to POST COMMIT - so will only run on the CI
+# NOTE: These tests are marked as POST COMMIT
+# To run them, please build the reference_model in a local "build" directory
+# (as per the README) and run them using: pytest -m "postcommit"
 
 
 @pytest.mark.postcommit
@@ -83,6 +90,8 @@ class BuildTosaTest:
 
         # Generate tests without any zero-point
         build_args = [
+            "--generate-lib-path",
+            str(GENERATE_LIB_PATH),
             "--filter",
             self.op_name,
             "--target-shape",

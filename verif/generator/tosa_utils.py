@@ -55,8 +55,9 @@ class DataGenType(IntEnum):
 DG_DOT_PRODUCT_OPTIONAL_INFO = ("acc_type", "kernel", "axis")
 
 
-def dtypeIsFloat(dtype):
-    return dtype in (DType.FP16, DType.BF16, DType.FP32)
+def dtypeIsSupportedByCompliance(dtype):
+    """Types supported by the new data generation and compliance flow."""
+    return dtype in (DType.FP32,)
 
 
 def valueToName(item, value):

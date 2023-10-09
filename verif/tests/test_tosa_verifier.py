@@ -8,7 +8,9 @@ import pytest
 from checker.verifier import VerifierError
 from checker.verifier import VerifierLibrary
 
-# NOTE: These tests are set to POST COMMIT - so will only run on the CI
+# NOTE: These tests are marked as POST COMMIT
+# To run them, please build the reference_model in a local "build" directory
+# (as per the README) and run them using: pytest -m "postcommit"
 
 # Location of reference model binaries
 REF_MODEL_BUILD_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
