@@ -635,15 +635,13 @@ class TosaTensorValuesGen:
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
 
-        overrideLazy = False
-        if not gtu.dtypeIsFloat(dtypeList[0]) and testGen.args.lazy_data_gen:
-            # TEMPORARY OVERRIDE for integer types
-            overrideLazy = True
+        if error_name is not None or not gtu.dtypeIsSupportedByCompliance(dtypeList[0]):
+            # Fall back to original path when dealing with unsupported types
+
+            # First turn off lazy data gen so we always produce data
+            lazy_data_gen = testGen.args.lazy_data_gen
             testGen.args.lazy_data_gen = False
 
-        # TODO - Change to generation of data using library!
-        # For now - we fall back to original path (or when dealing with non-floats)
-        if not testGen.args.lazy_data_gen:
             tens_ser_list = TosaTensorValuesGen.tvgDefault(
                 testGen,
                 testGen.TOSA_OP_LIST[opName],
@@ -652,9 +650,8 @@ class TosaTensorValuesGen:
                 [],
                 error_name,
             )
-            if overrideLazy:
-                # Return to lazy mode
-                testGen.args.lazy_data_gen = True
+            # Restore lazy data gen setting
+            testGen.args.lazy_data_gen = lazy_data_gen
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
@@ -1112,7 +1109,11 @@ class TosaArgGen:
     @staticmethod
     def _add_data_generators(testGen, opName, dtype, arg_list, error_name, **kwargs):
         """Add extra tests for each type of data generator for this op."""
-        if error_name is None and "data_gen" in testGen.TOSA_OP_LIST[opName]:
+        if (
+            error_name is None
+            and "data_gen" in testGen.TOSA_OP_LIST[opName]
+            and gtu.dtypeIsSupportedByCompliance(dtype)
+        ):
             if dtype in [DType.FP16, DType.FP32, DType.BF16]:
                 dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"]["fp"]
             else:

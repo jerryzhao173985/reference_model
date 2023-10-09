@@ -1,4 +1,4 @@
-"""Tests for tosa_verif_run_tests.py."""
+"""Mock SUT tests for tosa_verif_run_tests.py."""
 # Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
@@ -55,16 +55,33 @@ def _delete_desc_json(file: Path):
     file.unlink()
 
 
+def _create_ifm_files(files):
+    """Create empty input files."""
+    for name in files:
+        file = Path(__file__).parent / name
+        with open(file, "w") as fd:
+            fd.write("empty")
+
+
+def _delete_ifm_files(files):
+    """Delete empty input files."""
+    for name in files:
+        file = Path(__file__).parent / name
+        file.unlink()
+
+
 @pytest.fixture
 def testDir() -> str:
     """Set up a mock expected pass test."""
     print("SET UP - testDir")
     _create_fake_ref_model()
+    _create_ifm_files(TEST_DESC["ifm_file"])
     file = _create_desc_json(TEST_DESC)
     yield file.parent
     print("TEAR DOWN - testDir")
     _delete_desc_json(file)
     _delete_fake_ref_model()
+    _delete_ifm_files(TEST_DESC["ifm_file"])
 
 
 @pytest.fixture
@@ -74,11 +91,13 @@ def testDirExpectedFail() -> str:
     _create_fake_ref_model()
     fail = deepcopy(TEST_DESC)
     fail["expected_failure"] = True
+    _create_ifm_files(TEST_DESC["ifm_file"])
     file = _create_desc_json(fail)
     yield file.parent
     print("TEAR DOWN - testDirExpectedFail")
     _delete_desc_json(file)
     _delete_fake_ref_model()
+    _delete_ifm_files(TEST_DESC["ifm_file"])
 
 
 @pytest.fixture
@@ -89,11 +108,13 @@ def testDirMultiOutputs() -> str:
     out = deepcopy(TEST_DESC)
     out["ofm_name"].append("tr1")
     out["ofm_file"].append("test-result-1.npy")
+    _create_ifm_files(TEST_DESC["ifm_file"])
     file = _create_desc_json(out)
     yield file.parent
     print("TEAR DOWN - testDirMultiOutputs")
     _delete_desc_json(file)
     _delete_fake_ref_model()
+    _delete_ifm_files(TEST_DESC["ifm_file"])
 
 
 def _get_default_argv(testDir: Path, graphResult: str) -> list:

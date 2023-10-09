@@ -27,6 +27,7 @@ class IDotProductGenerator
 {
 public:
     virtual float operator()(uint32_t k) = 0;
+    virtual ~IDotProductGenerator()      = default;
 };
 
 /// \brief Dot-product stage generator selector

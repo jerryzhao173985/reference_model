@@ -10,7 +10,9 @@ from checker.color_print import print_color
 from checker.color_print import set_print_in_color
 from checker.tosa_result_checker import set_print_result
 from checker.tosa_result_checker import test_check
+from generator.datagenerator import GenerateLibrary
 from json2fbbin import json2fbbin
+from json2numpy import json2numpy
 from runner.tosa_test_presets import TOSA_REFCOMPLIANCE_RUNNER
 
 
@@ -71,6 +73,7 @@ class TosaTestRunner:
         self.testDirPath = testDirPath
         self.testName = self.testDirPath.name
         self.verify_lib_path = args.verify_lib_path
+        self.generate_lib_path = args.generate_lib_path
 
         set_print_in_color(not args.no_color)
         # Stop the result checker printing anything - we will do it
@@ -134,6 +137,33 @@ class TosaTestRunner:
             if self.args.profile not in profile:
                 return True, "non-{} profile".format(self.args.profile)
         return False, ""
+
+    def _ready_file(self, dataFile, jsonOnly=False):
+        """Convert/create any data file that is missing."""
+        dataPath = self.testDirPath / dataFile
+        if not dataPath.is_file():
+            jsonPath = dataPath.with_suffix(".json")
+            if jsonPath.is_file():
+                # Data files stored as JSON
+                if self.args.verbose:
+                    print(f"Readying data file: {dataPath}")
+                json2numpy.json_to_npy(jsonPath)
+            elif not jsonOnly:
+                # Use data generator for all data files
+                if self.args.verbose:
+                    print("Readying all data input files")
+                dgl = GenerateLibrary(self.generate_lib_path)
+                dgl.set_config(self.testDesc)
+                dgl.write_numpy_files(self.testDirPath)
+
+    def readyDataFiles(self):
+        """Check that the data files have been created/converted."""
+        for dataFile in self.testDesc["ifm_file"]:
+            self._ready_file(dataFile)
+        # Convert expected result if any
+        if "expected_result_file" in self.testDesc:
+            for dataFile in self.testDesc["expected_result_file"]:
+                self._ready_file(dataFile, jsonOnly=True)
 
     def runTestGraph(self):
         """Override with function that calls system under test."""

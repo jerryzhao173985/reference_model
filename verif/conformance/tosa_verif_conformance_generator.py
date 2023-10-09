@@ -109,6 +109,8 @@ def build_op_tests(
 
     build_cmd_base = [
         build_tests_cmd,
+        "--generate-lib-path",
+        str(args.generate_lib_path),
         "--filter",
         operator,
         "-o",
@@ -160,7 +162,7 @@ def build_op_tests(
     error = False
     for i, cmd in enumerate(build_cmds_list):
         try:
-            _run_sh_command(args, args.ref_model_path.parent.absolute(), cmd)
+            _run_sh_command(args, args.ref_model_path.parent, cmd)
             logger.info(
                 f"{operator} test batch {(i+1)}/{len(build_cmds_list)} created successfully"
             )
@@ -225,9 +227,9 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
     ref_cmd_base = [
         "tosa_verif_run_tests",
         "--ref-model-path",
-        str(args.ref_model_path.absolute()),
+        str(args.ref_model_path),
         "--schema-path",
-        str(args.schema_path.absolute()),
+        str(args.schema_path),
         "-j",
         str(num_cores),
         "-v",
@@ -258,7 +260,7 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
     failed_counter = 0
 
     job_pool = mp.Pool(args.num_cores)
-    sh_partial = partial(_run_sh_command, args, args.ref_model_path.parent.absolute())
+    sh_partial = partial(_run_sh_command, args, args.ref_model_path.parent)
     pool_results = job_pool.map(sh_partial, ref_cmds)
     job_pool.close()
     job_pool.join()
@@ -525,6 +527,15 @@ def parse_args(argv=None):
         help="Path to TOSA reference model executable",
     )
     parser.add_argument(
+        "--generate-lib-path",
+        dest="generate_lib_path",
+        type=Path,
+        help=(
+            "Path to TOSA generate library. Defaults to "
+            "the library in the directory of `ref-model-path`"
+        ),
+    )
+    parser.add_argument(
         "--schema-path",
         "--operator-fbs",
         dest="schema_path",
@@ -646,6 +657,18 @@ def main():
             f"Missing reference model binary (--ref-model-path): {args.ref_model_path}"
         )
         return 2
+    args.ref_model_path = args.ref_model_path.absolute()
+
+    if args.generate_lib_path is None:
+        args.generate_lib_path = cmf.find_tosa_file(
+            cmf.TosaFileType.GENERATE_LIBRARY, args.ref_model_path
+        )
+    if not args.generate_lib_path.is_file():
+        logger.error(
+            f"Missing TOSA generate data library (--generate-lib-path): {args.generate_lib_path}"
+        )
+        return 2
+    args.generate_lib_path = args.generate_lib_path.absolute()
 
     if args.schema_path is None:
         args.schema_path = cmf.find_tosa_file(
@@ -656,6 +679,7 @@ def main():
             f"Missing reference model schema (--schema-path): {args.schema_path}"
         )
         return 2
+    args.schema_path = args.schema_path.absolute()
 
     if args.flatc_path is None:
         args.flatc_path = cmf.find_tosa_file(
@@ -664,6 +688,7 @@ def main():
     if not args.flatc_path.is_file():
         logger.error(f"Missing flatc binary (--flatc-path): {args.flatc_path}")
         return 2
+    args.flatc_path = args.flatc_path.absolute()
 
     if args.unit_tests in ["framework", "both"]:
         logger.warning(

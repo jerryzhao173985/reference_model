@@ -3,7 +3,9 @@
 import argparse
 import re
 import sys
+from pathlib import Path
 
+import conformance.model_files as cmf
 from generator.tosa_test_gen import TosaTestGen
 from serializer.tosa_serializer import dtype_str_to_val
 from serializer.tosa_serializer import DTypeNames
@@ -84,6 +86,13 @@ def parseArgs(argv):
         dest="lazy_data_gen",
         action="store_true",
         help="Tensor data generation is delayed til test running",
+    )
+
+    parser.add_argument(
+        "--generate-lib-path",
+        dest="generate_lib_path",
+        type=Path,
+        help="Path to TOSA generate library.",
     )
 
     # Constraints on tests
@@ -267,6 +276,17 @@ def positive_integer_type(argv_str):
 def main(argv=None):
 
     args = parseArgs(argv)
+
+    if not args.lazy_data_gen:
+        if args.generate_lib_path is None:
+            args.generate_lib_path = cmf.find_tosa_file(
+                cmf.TosaFileType.GENERATE_LIBRARY, Path("reference_model"), False
+            )
+        if not args.generate_lib_path.is_file():
+            print(
+                f"Argument error: Generate library (--generate-lib-path) not found - {str(args.generate_lib_path)}"
+            )
+            exit(2)
 
     ttg = TosaTestGen(args)
 
