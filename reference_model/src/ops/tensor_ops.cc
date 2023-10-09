@@ -537,16 +537,6 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_y,
                kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right, EnumNamesDType()[accum_dtype]);
 
-    Eigen::array<Eigen::Index, 2> im2col_input_dims;
-    im2col_input_dims[0] = kernel_y * kernel_x;
-    im2col_input_dims[1] = out_batch * out_height * out_width * out_channels;
-
-    Eigen::array<Eigen::Index, 4> col2im_output_dims;
-    col2im_output_dims[0] = out_batch;
-    col2im_output_dims[1] = out_height;
-    col2im_output_dims[2] = out_width;
-    col2im_output_dims[3] = out_channels;
-
     Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
     pad[0] = std::make_pair(0, 0);
     pad[1] = std::make_pair(pad_top, pad_bottom);
@@ -571,68 +561,63 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     // so input and output scaling is not required
     // TODO: check if this assumption TOSA made
 
-    // extract_image_patches() output [N, KH, KW, H * W, C]
-    // transpose to [KH, KW, N, H * W, C]
-    // reshape to [KH * KW, N * H * W * C]
-    ETensor2<InEigenType> input_extract_patches =
-        input_padded.extract_image_patches(kernel_y, kernel_x, stride_y, stride_x, 1, 1, Eigen::PADDING_VALID)
-            .shuffle(Eigen::array<Eigen::Index, 5>{ 1, 2, 0, 3, 4 })
-            .reshape(im2col_input_dims);
-
-    // 1D result with [N * H * W * C]
-    ETensor1<AccEigenType> out_1d(this->out->getElementCount());
-    out_1d.setZero();
+    ETensor4<OutEigenType> out_tens(out_batch, out_height, out_width, out_channels);
 
     // sum pool
-    for (size_t i = 0; i < this->out->getElementCount(); i++)
+    for (int ob = 0; ob < out_batch; ++ob)
     {
-        for (int32_t j = 0; j < kernel_y * kernel_x; j++)
+        for (int oh = 0; oh < out_height; ++oh)
         {
-            out_1d(i) += (AccEigenType)input_extract_patches(j, i);
+            for (int ow = 0; ow < out_width; ++ow)
+            {
+                for (int oc = 0; oc < out_channels; ++oc)
+                {
+                    AccEigenType acc(0);
+                    int filter_count = 0;
+                    const int iy     = oh * stride_y - pad_top;
+                    const int ix     = ow * stride_x - pad_left;
+                    for (int ky = 0; ky < kernel_y; ++ky)
+                    {
+                        for (int kx = 0; kx < kernel_x; ++kx)
+                        {
+                            const int y = iy + ky;
+                            const int x = ix + kx;
+                            if ((0 <= y && y < in_height) && (0 <= x && x < in_width))
+                            {
+                                ++filter_count;
+                                acc = acc + (AccEigenType)input_padded(ob, y, x, oc);
+                            }
+                        }
+                    }
+                    if (Dtype != TOSA_REF_TYPE_FP32 && Dtype != TOSA_REF_TYPE_FP16 && Dtype != TOSA_REF_TYPE_BF16 &&
+                        Dtype != TOSA_REF_TYPE_FP64)
+                    {
+                        try
+                        {
+                            int32_t multiplier, shift;
+                            OutEigenType out;
+                            TosaReference::QuantUtil::reciprocal_scale(filter_count, multiplier, shift);
+
+                            out = (OutEigenType)TosaReference::QuantUtil::apply_scale_32(acc, multiplier, shift, false);
+                            out = out + (OutEigenType)(attribute->output_zp());
+                            out = std::max(out, (OutEigenType)QMin);
+                            out_tens(ob, oh, ow, oc) = std::min(out, (OutEigenType)QMax);
+                        }
+                        catch (std::string desc)
+                        {
+                            REQUIRE(false, "OpAvgPool2d apply_scale_32() fails: %s.", desc.c_str());
+                        }
+                    }
+                    else
+                    {
+                        REQUIRE(filter_count != 0, "OpAvgPool2d number of filters should be non-zero.");
+                        out_tens(ob, oh, ow, oc) = acc / static_cast<OutEigenType>(filter_count);
+                    }
+                }
+            }
         }
     }
-
-    // reshape result to [N, H, W, C] and divide with div_map
-    ETensor4<AccEigenType> sum = out_1d.reshape(col2im_output_dims);
-
-    // calculate 1d height/width div_map (number of elements this pooling window covers)
-    // and outer product to get 2d div_map, then reshape/broadcast to [N, H, W, C]
-    ETensor1<int32_t> div_map_h = calculate_div_map_1d(in_height, out_height, kernel_y, stride_y, pad_top, pad_bottom);
-    ETensor1<int32_t> div_map_w = calculate_div_map_1d(in_width, out_width, kernel_x, stride_x, pad_left, pad_right);
-    Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
-    Eigen::array<Eigen::Index, 4> bcast{ out_batch, 1, 1, out_channels };
-
-    ETensor2<int32_t> dm2_w   = div_map_w.reshape(Eigen::array<Eigen::Index, 2>{ 1, out_width });
-    ETensor2<int32_t> dm2_h   = div_map_h.reshape(Eigen::array<Eigen::Index, 2>{ out_height, 1 });
-    ETensor4<int32_t> div_map = dm2_h.contract(dm2_w, contract_dims)
-                                    .reshape(Eigen::array<Eigen::Index, 4>{ 1, out_height, out_width, 1 })
-                                    .broadcast(bcast);
-    if (Dtype != TOSA_REF_TYPE_FP32 && Dtype != TOSA_REF_TYPE_FP16 && Dtype != TOSA_REF_TYPE_BF16 &&
-        Dtype != TOSA_REF_TYPE_FP64)
-    {
-        try
-        {
-            this->out->getTensor() = sum.binaryExpr(div_map, [](AccEigenType value, int32_t div) -> OutEigenType {
-                int32_t multiplier, shift;
-                TosaReference::QuantUtil::reciprocal_scale(div, multiplier, shift);
-
-                return (OutEigenType)TosaReference::QuantUtil::apply_scale_32(value, multiplier, shift, false);
-            });
-        }
-        catch (std::string desc)
-        {
-            REQUIRE(false, "OpAvgPool2d apply_scale_32() fails: %s.", desc.c_str());
-        }
-        this->out->getTensor() = this->out->getTensor() + (OutEigenType)(attribute->output_zp());
-        this->out->getTensor() = this->out->getTensor().cwiseMax((OutEigenType)QMin);
-        this->out->getTensor() = this->out->getTensor().cwiseMin((OutEigenType)QMax);
-    }
-    else
-    {
-        // Case for float-types
-        this->out->getTensor() = (sum / div_map.template cast<AccEigenType>()).template cast<OutEigenType>();
-    }
-
+    this->out->getTensor() = out_tens;
     return GraphNode::eval();
 }
 
