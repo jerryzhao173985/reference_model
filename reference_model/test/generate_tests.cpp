@@ -56,6 +56,24 @@ void check_output(const std::vector<T>& results, const std::vector<uint32_t>& ex
     }
 }
 
+template <typename T>
+void check_output(const std::vector<T>& results, const std::vector<T>& expected)
+{
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        check_value(true, *(uint32_t*)&results[idx], *(uint32_t*)&expected[idx], idx);
+    }
+}
+
+template <typename T>
+void check_not_output(const std::vector<T>& results, const std::vector<T>& expected)
+{
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        check_value(false, *(uint32_t*)&results[idx], *(uint32_t*)&expected[idx], idx);
+    }
+}
+
 }    // namespace
 
 TEST_SUITE_BEGIN("generate");
@@ -266,6 +284,67 @@ TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
     {
         std::vector<uint32_t> expected = { 0xde086d85, 0x5e630878, 0x5eba5c7b };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
+    }
+}
+TEST_CASE("positive - pseudo random")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 12, 3 ],
+                "input_pos": 0,
+                "op" : "PAD",
+                "pseudo_random_info": {
+                    "rng_seed": _SEED0_
+                }
+            },
+            "input1" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 1, 3 ],
+                "input_pos": 1,
+                "op" : "PAD",
+                "pseudo_random_info": {
+                    "rng_seed": _SEED1_
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaNameP0 = "input0";
+    const size_t tosaElementsP0  = 12 * 3;
+    const std::string tosaNameP1 = "input1";
+    const size_t tosaElementsP1  = 1 * 3;
+
+    SUBCASE("pad - same rng")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_SEED0_", "0");
+        update_json_template(jsonCfg, "_SEED1_", "0");
+
+        std::vector<float> bufferP0(tosaElementsP0);
+        std::vector<float> bufferP1(tosaElementsP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaElementsP0 * 4));
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaElementsP1 * 4));
+        check_output<float>(bufferP0, bufferP1);
+    }
+
+    SUBCASE("pad - different rng")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_SEED0_", "0");
+        update_json_template(jsonCfg, "_SEED1_", "1000");
+
+        std::vector<float> bufferP0(tosaElementsP0);
+        std::vector<float> bufferP1(tosaElementsP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaElementsP0 * 4));
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaElementsP1 * 4));
+        check_not_output<float>(bufferP0, bufferP1);
     }
 }
 TEST_SUITE_END();    // generate

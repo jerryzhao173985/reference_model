@@ -56,6 +56,11 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
                     void* data,
                     size_t size)
 {
+    if (cfg.dataType != DType::DType_FP32)
+    {
+        WARNING("[Generator][DP][MatMul] Only supports FP32.");
+        return false;
+    }
     if (cfg.shape.size() != 3)
     {
         WARNING("[Generator][DP][MatMul] Tensor shape expected 3 dimensions.");

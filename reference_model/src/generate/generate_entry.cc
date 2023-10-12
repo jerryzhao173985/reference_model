@@ -15,6 +15,7 @@
 #include "generate.h"
 
 #include "generate_dot_product.h"
+#include "generate_pseudo_random.h"
 #include "generate_utils.h"
 
 #include "func_debug.h"
@@ -29,6 +30,10 @@ bool generate(const GenerateConfig& cfg, void* data, size_t size)
     {
         case GeneratorType::DotProduct: {
             return generateDotProduct(cfg, data, size);
+            break;
+        }
+        case GeneratorType::PseudoRandom: {
+            return generatePseudoRandom(cfg, data, size);
             break;
         }
         default: {

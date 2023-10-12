@@ -55,6 +55,15 @@ struct DotProductInfo
     std::array<int32_t, 2> kernel;
 };
 
+/// \brief Pseudo random generator meta-data
+struct PseudoRandomInfo
+{
+    PseudoRandomInfo() = default;
+
+    int64_t rngSeed;
+    // TODO: Add range support
+};
+
 /// \brief Generator configuration
 struct GenerateConfig
 {
@@ -65,6 +74,7 @@ struct GenerateConfig
     int32_t inputPos;
     tosa::Op opType;
     DotProductInfo dotProductInfo;
+    PseudoRandomInfo pseudoRandomInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form

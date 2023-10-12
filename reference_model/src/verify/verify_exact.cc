@@ -16,6 +16,14 @@
 #include "verifiers.h"
 #include <cmath>
 
+namespace
+{
+bool exact_fp32(const double& referenceValue, const float& implementationValue)
+{
+    return std::isnan(referenceValue) ? std::isnan(implementationValue) : (referenceValue == implementationValue);
+}
+}    // namespace
+
 namespace TosaReference
 {
 
@@ -33,15 +41,14 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
     switch (implementationTensor->data_type)
     {
         case tosa_datatype_fp32_t: {
-            const auto* refData = reinterpret_cast<const float*>(referenceTensor->data);
+            TOSA_REF_REQUIRE(referenceTensor->data_type == tosa_datatype_fp64_t, "[E] Reference tensor is not fp64");
+            const auto* refData = reinterpret_cast<const double*>(referenceTensor->data);
             TOSA_REF_REQUIRE(refData != nullptr, "[E] Missing data for reference");
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            return std::equal(refData, std::next(refData, elementCount), impData, std::next(impData, elementCount),
-                              [](const auto& referenceValue, const auto& implementationValue) {
-                                  return std::isnan(referenceValue) ? std::isnan(implementationValue)
-                                                                    : (referenceValue == implementationValue);
-                              });
+            auto result = std::equal(refData, std::next(refData, elementCount), impData,
+                                     std::next(impData, elementCount), exact_fp32);
+            return result;
         }
         default:
             WARNING("[Verifier][E] Data-type not supported.");

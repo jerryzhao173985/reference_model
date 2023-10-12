@@ -73,6 +73,7 @@ set(CXX_SOURCE
     src/tensor.cc
     src/generate/generate_dot_product_states.cc
     src/generate/generate_dot_product.cc
+    src/generate/generate_pseudo_random.cc
     src/generate/generate_entry.cc
     src/generate/generate_utils.cc
     src/verify/verify_dot_product.cc
@@ -167,6 +168,7 @@ target_include_directories(tosa_reference_verify_lib
 add_library(tosa_reference_generate_lib SHARED
   src/generate/generate_dot_product_states.cc
   src/generate/generate_dot_product.cc
+  src/generate/generate_pseudo_random.cc
   src/generate/generate_entry.cc
   src/generate/generate_utils.cc
   src/generate/generate_config.cc

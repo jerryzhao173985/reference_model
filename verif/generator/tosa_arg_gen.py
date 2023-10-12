@@ -635,7 +635,11 @@ class TosaTensorValuesGen:
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
 
-        if error_name is not None or not gtu.dtypeIsSupportedByCompliance(dtypeList[0]):
+        if (
+            error_name is not None
+            or not gtu.dtypeIsSupportedByCompliance(dtypeList[0])
+            or opName in ("avg_pool2d",)
+        ):
             # Fall back to original path when dealing with unsupported types
 
             # First turn off lazy data gen so we always produce data
@@ -678,7 +682,7 @@ class TosaTensorValuesGen:
             if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
                 info = {}
                 # TODO - generate seed for this generator based on test
-                info["rng_seed"] = -1
+                info["rng_seed"] = 42
                 info["range"] = [
                     str(v)
                     for v in testGen.getDTypeRange(dtypeList[idx], high_inclusive=True)
@@ -1107,7 +1111,7 @@ class TosaArgGen:
         pass
 
     @staticmethod
-    def _add_data_generators(testGen, opName, dtype, arg_list, error_name, **kwargs):
+    def _add_data_generators(testGen, opName, dtype, arg_list, error_name):
         """Add extra tests for each type of data generator for this op."""
         if (
             error_name is None
@@ -1125,32 +1129,28 @@ class TosaArgGen:
         # Expand arg list with other data generator types
         new_arg_list = []
         for dg_type in dataGenTypesList:
-            for arg_str, arg_attrs in arg_list:
-                arg_dict = arg_attrs[0]
-                arg_dict["dg_type"] = dg_type
-
+            for arg_str, args_dict in arg_list:
+                args_dict["dg_type"] = dg_type
                 if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
                     # Default test
-                    new_arg_list.append((arg_str, [arg_dict]))
+                    new_arg_list.append((arg_str, args_dict))
 
                 elif dg_type == gtu.DataGenType.DOT_PRODUCT:
                     # Extra tests for each dot product test set
-                    dot_products = kwargs["dot_products"]
+                    dot_products = args_dict["dot_products"]
                     if dot_products < testGen.TOSA_MI_DOT_PRODUCT_MIN:
                         print(
                             f"Skipping {opName} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
                         )
                         continue
-                    arg_dict["ks"] = kwargs["ks"]
-                    for key in gtu.DG_DOT_PRODUCT_OPTIONAL_INFO:
-                        if key in kwargs:
-                            arg_dict[key] = kwargs[key]
+                    # KS is required by all dot product generators
+                    assert "ks" in args_dict
 
                     for s in testGen.TOSA_MI_DOT_PRODUCT_TEST_SETS:
                         new_arg_str = f"{arg_str}_s{s}"
-                        new_arg_dict = arg_dict.copy()
-                        new_arg_dict["s"] = s
-                        new_arg_list.append((new_arg_str, [new_arg_dict]))
+                        new_args_dict = args_dict.copy()
+                        new_args_dict["s"] = s
+                        new_arg_list.append((new_arg_str, new_args_dict))
 
         return new_arg_list
 
@@ -1421,9 +1421,21 @@ class TosaArgGen:
             # Pick some potentially correct output dtype if input type is incorrect
             accum_dtypes = [DType.INT32]
 
-        arg_list = [
-            (f"acc{testGen.typeStr(a)}", [{"acc_type": a}]) for a in accum_dtypes
-        ]
+        # Set up compliance info
+        args_dict = {
+            "ks": int(shapeList[0][2]),  # Set KS = C, from input A (N,H,C)
+            # Set dot_products = N*H*W
+            "dot_products": gtu.product(
+                (shapeList[0][0], shapeList[0][1], shapeList[1][2])
+            ),
+        }
+
+        # Create arg tuple of string and dict
+        arg_list = []
+        for a in accum_dtypes:
+            d = args_dict.copy()
+            d["acc_type"] = a
+            arg_list.append((f"acc{testGen.typeStr(a)}", d))
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,
@@ -1431,12 +1443,8 @@ class TosaArgGen:
             dtype,
             arg_list,
             error_name,
-            ks=int(shapeList[0][2]),  # Set KS = C, from input A (N,H,C)
-            # Set dot_products = N*H*W
-            dot_products=gtu.product(
-                (shapeList[0][0], shapeList[0][1], shapeList[1][2])
-            ),
         )
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod
@@ -1574,7 +1582,6 @@ class TosaArgGen:
 
     @staticmethod
     def agPad(testGen, opName, shapeList, dtype, error_name=None):
-        arg_list = []
         rank = len(shapeList[0])
 
         # Exhaustively test combinations of padding on each side of each dimension
@@ -1606,6 +1613,8 @@ class TosaArgGen:
         else:
             sparsity = 1
 
+        # Build arg list
+        arg_list = []
         for n, paddings in enumerate(list_shape_pad_values):
             paddings = list(paddings)
             args_valid = True
@@ -1625,13 +1634,25 @@ class TosaArgGen:
                 for r in range(rank):
                     before, after = paddings[r]
                     name = f"{name}{before}{after}"
-                arg_list.append(
-                    (name, [np.array(paddings), pad_const_int, pad_const_fp])
-                )
+                    args_dict = {
+                        "pad": np.array(paddings),
+                        "pad_const_int": pad_const_int,
+                        "pad_const_fp": pad_const_fp,
+                    }
+                arg_list.append((name, args_dict))
 
         if error_name == ErrorIf.PadSmallerZero and len(arg_list) == 0:
             warnings.warn(f"No ErrorIf test created for input shape: {shapeList[0]}")
 
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod
@@ -1735,9 +1756,9 @@ class TosaArgGen:
             else "st{}_kern{}_pad{}"
         )
 
-        def get_arg_list_element(accum, stride, pad, kern):
+        def get_arg_list_element(accum, stride, pad, kern, dot_products=0):
             # Return tuple containing the formatted argument string and
-            # the corresponding argument values
+            # the corresponding argument values in a dictionary
 
             # Support for larger values than 9 needs different delimiter
             delim = "" if max(stride + kern + pad) <= 9 else "x"
@@ -1746,13 +1767,18 @@ class TosaArgGen:
                 delim.join([str(x) for x in kern]),
                 delim.join([str(x) for x in pad]),
             ]
-            # Note: different order to string
-            arg_val_elems = [stride, pad, kern]
+            args_dict = {
+                "stride": stride,
+                "pad": pad,
+                "kernel": kern,
+                "dot_products": dot_products,  # Ignored for error tests
+                "ks": gtu.product(kern),  # avg_pool2d: KS = KX*KY
+            }
 
             if accum is not None:
                 arg_str_elems.insert(0, testGen.typeStr(accum))
-                arg_val_elems.insert(0, accum)
-            return (arg_str.format(*arg_str_elems), arg_val_elems)
+                args_dict["acc_type"] = accum
+            return (arg_str.format(*arg_str_elems), args_dict)
 
         n = 0
         for a in accum_dtypes:
@@ -1769,8 +1795,9 @@ class TosaArgGen:
                                 testGen, error_name, s, p, k
                             )
                             if None not in [sNew, pNew, kNew] and n % sparsity == 0:
-                                arg_vals = [a, sNew, pNew, kNew]
-                                arg_list.append(get_arg_list_element(*arg_vals))
+                                arg_list.append(
+                                    get_arg_list_element(a, sNew, pNew, kNew)
+                                )
                         elif (
                             n % sparsity == 0
                             # padding must not exceed the kernel size
@@ -1804,10 +1831,23 @@ class TosaArgGen:
                                 ):
                                     # Test will consume too much memory - skip it
                                     continue
-                                arg_vals = [a, s, p, k]
-                                arg_list.append(get_arg_list_element(*arg_vals))
+                                # Dot products = N*OH*OW*C
+                                dp = gtu.product(
+                                    (shape[0], output_h, output_w, shape[3])
+                                )
+                                arg_list.append(get_arg_list_element(a, s, p, k, dp))
                         n += 1
 
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod
