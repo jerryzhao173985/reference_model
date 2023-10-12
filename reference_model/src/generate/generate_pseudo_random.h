@@ -12,36 +12,23 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#ifndef GENERATE_DOT_PRODUCT_H_
-#define GENERATE_DOT_PRODUCT_H_
+#ifndef GENERATE_PSEUDO_RANDOM_H_
+#define GENERATE_PSEUDO_RANDOM_H_
 
 #include "generate_utils.h"
-
-#include <memory>
 
 namespace TosaReference
 {
 
-/// \brief Generic dot-product generator interface
-class IDotProductGenerator
-{
-public:
-    virtual float operator()(uint32_t k) = 0;
-    virtual ~IDotProductGenerator()      = default;
-};
-
-/// \brief Dot-product stage generator selector
-std::unique_ptr<IDotProductGenerator> pickDotProductGenerator(const GenerateConfig& cfg);
-
-/// \brief Perform dot-product based generation
+/// \brief Perform pseudo random based generation
 ///
 /// \param cfg Generator related meta-data
 /// \param data Buffer to generate the data to
 /// \param size Size of the buffer
 ///
 /// \return True on successful generation
-bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size);
+bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size);
 
 };    // namespace TosaReference
 
-#endif    // GENERATE_DOT_PRODUCT_H_
+#endif    // GENERATE_PSEUDO_RANDOM_H_

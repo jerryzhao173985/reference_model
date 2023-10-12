@@ -75,7 +75,7 @@ template <typename FP>
 std::enable_if_t<std::is_floating_point_v<FP>, std::add_lvalue_reference_t<std::uniform_real_distribution<FP>>>
     getUniformRealDist()
 {
-    // Uniform real distribution generates real values in the range [a, b)
+    // Uniform real distribution generates real values in the range [a, b]
     // and requires that b - a <= std::numeric_limits<FP>::max() so here
     // we choose some arbitrary values that satisfy that condition.
     constexpr auto min = std::numeric_limits<FP>::lowest() / 2;
@@ -261,13 +261,14 @@ TEST_CASE("positive - exact")
     const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
 
     // Generate some random floats using the full range of fp32.
-    auto data = generateRandomTensorData<float>(elementCount);
+    auto data_fp32 = generateRandomTensorData<float>(elementCount);
+    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
     SUBCASE("same")
     {
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(data_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -275,16 +276,16 @@ TEST_CASE("positive - exact")
     {
         // Generate some mismatched tensors by setting every other value to an incrementing counter.
         // In theory this could be the same, but the probability is tiny.
-        auto otherData = std::vector<float>(elementCount);
-        std::generate(std::begin(otherData), std::end(otherData), [&, i = 0]() mutable {
+        auto otherData_fp32 = std::vector<float>(elementCount);
+        std::generate(std::begin(otherData_fp32), std::end(otherData_fp32), [&, i = 0]() mutable {
             auto oldIndex = i++;
-            return oldIndex % 2 ? data[oldIndex] : static_cast<float>(oldIndex);
+            return oldIndex % 2 ? data_fp32[oldIndex] : static_cast<float>(oldIndex);
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }

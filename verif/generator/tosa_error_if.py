@@ -2653,16 +2653,28 @@ class TosaInvalidValidator:
 
         args = kwargs["args"]
 
-        # Skip accum_dtype arg (apart from MaxPool2D that doesn't have one)
-        stride_idx, pad_idx = (1, 2) if opName != "max_pool2d" else (0, 1)
+        if isinstance(args, dict):
+            args_dict = args
+        else:
+            # Create args_dict from list elements
+            # TODO - Remove this once all NWHC operators agFunctions have been
+            # converted to args_dict output
+
+            # Skip accum_dtype arg (apart from MaxPool2D that doesn't have one)
+            stride_idx, pad_idx = (1, 2) if opName != "max_pool2d" else (0, 1)
+            args_dict = {"stride": args[stride_idx], "pad": args[pad_idx]}
+            # Alias different info for each op
+            args_dict["kernel"] = args[pad_idx + 1]
+            args_dict["out_shape"] = args[pad_idx + 1]
+            args_dict["dilation"] = args[pad_idx + 1]
 
         # Common info for all ops
-        strides = args[stride_idx]
-        padding = args[pad_idx]
+        strides = args_dict["stride"]
+        padding = args_dict["pad"]
 
         if opName.endswith("pool2d"):
             # avg_pool2d, max_pool2d
-            kernel_shape = args[pad_idx + 1]
+            kernel_shape = args_dict["kernel"]
             h = (
                 input_shape[1] + padding[0] + padding[1] + strides[0] - kernel_shape[0]
             ) // strides[0]
@@ -2674,7 +2686,7 @@ class TosaInvalidValidator:
 
         if opName.startswith("transpose_conv2d"):
             # transpose_conv2d
-            output_shape = args[pad_idx + 1]
+            output_shape = args_dict["out_shape"]
             filter_shape = inputShapes[1]
             kernel_shape = filter_shape[1:-1]
 
@@ -2703,7 +2715,7 @@ class TosaInvalidValidator:
 
         if "conv2d" in opName or "conv3d" in opName:
             # conv2d, conv3d, depthwise_conv2d
-            dilations = args[pad_idx + 1]
+            dilations = args_dict["dilation"]
             filter_shape = inputShapes[1]
             kernel_shape = (
                 filter_shape[0:2]

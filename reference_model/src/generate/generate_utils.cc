@@ -39,6 +39,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                              {
                                  { Op::Op_UNKNOWN, "UNKNOWN" },
                                  { Op::Op_MATMUL, "MATMUL" },
+                                 { Op::Op_MAX_POOL2D, "MAX_POOL2D" },
+                                 { Op::Op_PAD, "PAD" },
                              })
 
 }    // namespace tosa
@@ -78,6 +80,11 @@ void from_json(const nlohmann::json& j, DotProductInfo& dotProductInfo)
     }
 }
 
+void from_json(const nlohmann::json& j, PseudoRandomInfo& pseudoRandomInfo)
+{
+    j.at("rng_seed").get_to(pseudoRandomInfo.rngSeed);
+}
+
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)
 {
     j.at("data_type").get_to(cfg.dataType);
@@ -89,6 +96,10 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);
+    }
+    if (j.contains("pseudo_random_info"))
+    {
+        j.at("pseudo_random_info").get_to(cfg.pseudoRandomInfo);
     }
 }
 
