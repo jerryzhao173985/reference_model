@@ -203,6 +203,12 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
             status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
+        case TOSA_REF_TYPE_BOOL: {
+            auto typed_ptr     = reinterpret_cast<unsigned char*>(raw_ptr);
+            const int elements = size / sizeof(unsigned char);
+            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            break;
+        }
         default:
             status = 1;
     }
