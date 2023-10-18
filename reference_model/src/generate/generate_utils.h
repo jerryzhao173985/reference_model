@@ -52,7 +52,7 @@ struct DotProductInfo
     int32_t ks;
     DType accType;
     int32_t axis;
-    std::array<int32_t, 2> kernel;
+    std::vector<int32_t> kernel;
 };
 
 /// \brief Pseudo random generator meta-data

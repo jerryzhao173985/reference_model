@@ -76,6 +76,119 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
 
     return true;
 }
+//---------------------------------------------------------------------------//
+//                              Conv2D                                       //
+//---------------------------------------------------------------------------//
+
+bool generateConv2DInput(const TosaReference::GenerateConfig& cfg,
+                         TosaReference::IDotProductGenerator& generator,
+                         void* data,
+                         size_t size)
+{
+    if (cfg.dotProductInfo.kernel.size() != 2 || cfg.dotProductInfo.kernel[0] <= 0 || cfg.dotProductInfo.kernel[1] <= 0)
+    {
+        WARNING("[Generator][DP][Conv2D][Input] Missing or incorrect kernel size information.");
+        return false;
+    }
+    if (cfg.shape.size() != 4)
+    {
+        WARNING("[Generator][DP][Conv2D][Input] Tensor shape expected 4 dimensions.");
+        return false;
+    }
+
+    float* input      = reinterpret_cast<float*>(data);
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IH = cfg.shape[1];
+    const uint32_t IW = cfg.shape[2];
+    const uint32_t IC = cfg.shape[3];
+    const uint32_t KH = cfg.dotProductInfo.kernel[0];
+    const uint32_t KW = cfg.dotProductInfo.kernel[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t ic = t % IC;
+        uint32_t ix = (t / IC) % IW;
+        uint32_t iy = ((t / IC) / IW) % IH;
+        uint32_t k  = ((iy % KH) * KW + (ix % KW)) * IC + ic;
+
+        input[t] = generator(k);
+    }
+    return true;
+}
+
+bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
+                          TosaReference::IDotProductGenerator& generator,
+                          void* data,
+                          size_t size)
+{
+    if (cfg.shape.size() != 4)
+    {
+        WARNING("[Generator][DP][Conv2D][Weight] Tensor shape expected 4 dimensions.");
+        return false;
+    }
+
+    float* weight     = reinterpret_cast<float*>(data);
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t KH = cfg.shape[1];
+    const uint32_t KW = cfg.shape[2];
+    const uint32_t IC = cfg.shape[3];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t ic = t % IC;
+        uint32_t kx = (t / IC) % KW;
+        uint32_t ky = ((t / IC) / KW) % KH;
+        uint32_t k  = (ky + KW * kx) * IC + ic;
+
+        weight[t] = generator(k);
+    }
+    return true;
+}
+
+bool generateConv2DBias(const TosaReference::GenerateConfig& cfg,
+                        TosaReference::IDotProductGenerator& generator,
+                        void* data,
+                        size_t size)
+{
+    if (cfg.shape.size() != 1)
+    {
+        WARNING("[Generator][DP][Conv2D][Bias] Tensor shape expected 1 dimension.");
+        return false;
+    }
+
+    float* bias      = reinterpret_cast<float*>(data);
+    const uint32_t T = cfg.shape[0];
+
+    for (uint32_t t = 0; t < T; ++t)
+    {
+        bias[t] = generator(2);
+    }
+    return true;
+}
+
+bool generateConv2D(const TosaReference::GenerateConfig& cfg,
+                    TosaReference::IDotProductGenerator& generator,
+                    void* data,
+                    size_t size)
+{
+    if (cfg.dataType != DType::DType_FP32)
+    {
+        WARNING("[Generator][DP][Conv2D] Only supports FP32.");
+        return false;
+    }
+    switch (cfg.inputPos)
+    {
+        case 0:
+            return generateConv2DInput(cfg, generator, data, size);
+        case 1:
+            return generateConv2DWeight(cfg, generator, data, size);
+        case 2:
+            return generateConv2DBias(cfg, generator, data, size);
+        default:
+            WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+            return false;
+    }
+}
 }    // namespace
 
 namespace TosaReference
@@ -95,6 +208,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
     {
         case tosa::Op_MATMUL:
             return generateMatMul(cfg, *generator, data, size);
+        case tosa::Op_CONV2D:
+            return generateConv2D(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;

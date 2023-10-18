@@ -51,13 +51,19 @@ class DataGenType(IntEnum):
     OP_SPECIAL = 4
 
 
-# Additional (optional) data for dot product data generator
-DG_DOT_PRODUCT_OPTIONAL_INFO = ("acc_type", "kernel", "axis")
-
-
 def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
+    if isinstance(dtype, list) or isinstance(dtype, tuple):
+        dtype = dtype[0]
     return dtype in (DType.FP32,)
+
+
+def getOpNameFromOpListName(opName):
+    """Get the op name from a TOSA_OP_LIST name that can have suffixes."""
+    for name in ("conv2d", "depthwise_conv2d", "transpose_conv2d", "conv3d"):
+        if opName.startswith(name):
+            return name
+    return opName
 
 
 def valueToName(item, value):

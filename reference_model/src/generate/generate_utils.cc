@@ -41,6 +41,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_MATMUL, "MATMUL" },
                                  { Op::Op_MAX_POOL2D, "MAX_POOL2D" },
                                  { Op::Op_PAD, "PAD" },
+                                 { Op::Op_CONV2D, "CONV2D" },
                              })
 
 }    // namespace tosa

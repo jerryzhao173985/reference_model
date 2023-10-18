@@ -85,7 +85,8 @@
                                 },
                                 "ks": {
                                     "description": "kernel size for this dot product operation",
-                                    "type": "integer"
+                                    "type": "integer",
+                                    "minimum": 0
                                 },
                                 "acc_type": {
                                     "description": "operator accumulator type (like tensor data_type)",
@@ -93,9 +94,9 @@
                                 },
                                 "kernel": {
                                     "type": "array",
-                                    "description": "kernel x, y sizes (for avg_pool2d)",
+                                    "description": "kernel x, y (and z) sizes",
                                     "minItems": 2,
-                                    "maxItems": 2,
+                                    "maxItems": 3,
                                     "items": {
                                         "description": "kernel dimension",
                                         "type": "integer",
