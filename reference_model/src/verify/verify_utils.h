@@ -23,10 +23,10 @@
 #include <optional>
 #include <vector>
 
-#define TOSA_REF_REQUIRE(COND, MESSAGE)                                                                                \
+#define TOSA_REF_REQUIRE(COND, MESSAGE, ...)                                                                           \
     if (!(COND))                                                                                                       \
     {                                                                                                                  \
-        WARNING("[Verifier]" MESSAGE ".");                                                                             \
+        WARNING("[Verifier]" MESSAGE ".", ##__VA_ARGS__);                                                              \
         return false;                                                                                                  \
     }
 
@@ -94,6 +94,38 @@ int64_t numElements(const std::vector<int32_t>& shape);
 
 /// \brief Map API data-type to DType
 DType mapToDType(tosa_datatype_t dataType);
+
+/// \brief Raise a value by the power of N or -N
+// For use during compile time - as no range check
+constexpr double const_exp2(int32_t n)
+{
+    double v = 1.0;
+    while (n > 0)
+    {
+        v = v * 2.0;
+        n--;
+    }
+    while (n < 0)
+    {
+        v = v / 2.0;
+        n++;
+    }
+    return v;
+}
+
+/// \brief Same as const_exp2 but with runtime range check of N
+double exp2(int32_t n);
+
+/// \brief Accuracy precision information
+template <typename T>
+struct AccPrecision;
+template <>
+struct AccPrecision<float>
+{
+    static constexpr double normal_min   = const_exp2(-126);
+    static constexpr double normal_max   = const_exp2(128) - const_exp2(127 - 23);
+    static constexpr int32_t normal_frac = 23;
+};
 
 };    // namespace TosaReference
 

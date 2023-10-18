@@ -242,7 +242,7 @@ public:
         if (_p != P2)
             return (_B / std::sqrt(_KS + 1)) * s;
         else
-            return (_B * _B / (_KS + 1)) * s;
+            return 0.f;
     }
 
 private:

@@ -286,6 +286,168 @@ TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
     }
 }
+
+void conv2d_test_FP32(const std::string tosaName[3],
+                      const size_t tosaElements[3],
+                      const std::string templateJsonCfg,
+                      const std::string setStr,
+                      int32_t param,
+                      const std::vector<uint32_t> lastExpected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<float> buffer(tosaElements[param]);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 4));
+    std::vector<float> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+    check_output<float>(last_three, lastExpected);
+}
+
+TEST_CASE("positive - FP32 conv2d dot product (last 3 values)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 1, 8, 2, 4 ],
+                "input_pos": 0,
+                "op" : "CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 16,
+                    "acc_type": "FP32",
+                    "kernel": [2, 2]
+                }
+            },
+            "weight" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "CONSTANT",
+                "shape" : [ 2, 2, 2, 4 ],
+                "input_pos": 1,
+                "op" : "CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 16,
+                    "acc_type": "FP32"
+                }
+            },
+            "bias" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "CONSTANT",
+                "shape" : [ 2 ],
+                "input_pos": 2,
+                "op" : "CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 16,
+                    "acc_type": "FP32"
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaName[3] = { "input", "weight", "bias" };
+    const size_t tosaElements[3]  = { (1 * 8 * 2 * 4), (2 * 2 * 2 * 4), 2 };
+
+    SUBCASE("conv2d, set 0, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0xbf28bfda, 0xbe99cd47 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 0, param 1")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x3f648dfd, 0xbd4cb21c };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 0, param 2")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", 2, lastExpected);
+    }
+    SUBCASE("conv2d, set 1, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0x5e6f0400, 0x5e2f78e5, 0x5e62318d };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 1, param 1")
+    {
+        // NOTE: Python test script produced 0x5e6960b0 - so off by 1
+        std::vector<uint32_t> lastExpected = { 0x5e6960af, 0x5e6d0ca9, 0x5e0b8561 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 1, param 2")
+    {
+        // NOTE: Python test script produced 0x7cf260d0, 0x7d355432 - so off by 1
+        std::vector<uint32_t> lastExpected = { 0x7cf260d1, 0x7d355431 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 2, lastExpected);
+    }
+    SUBCASE("conv2d, set 2, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0x3e7da8e9, 0x3df76a57, 0xbe338212 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 2, param 1")
+    {
+        std::vector<uint32_t> lastExpected = { 0x3daabbc5, 0xbe2f8909, 0xbdb806ec };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 2, param 2")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 2, lastExpected);
+    }
+    SUBCASE("conv2d, set 3, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0xbee77fe5, 0x402141c5, 0xbda1b2ed };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 3, param 1")
+    {
+        // NOTE: Python test script produced 0xbe9947ac - so off by 1
+        std::vector<uint32_t> lastExpected = { 0x3f91e619, 0x3e9ac66b, 0xbe9947ad };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 3, param 2")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 2, lastExpected);
+    }
+    SUBCASE("conv2d, set 4, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0xdd7e8575, 0x0, 0xde569ff3 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 4, param 1")
+    {
+        std::vector<uint32_t> lastExpected = { 0x5e2d6921, 0x5e13a014, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 4, param 2")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 2, lastExpected);
+    }
+    SUBCASE("conv2d, set 5, param 0")
+    {
+        std::vector<uint32_t> lastExpected = { 0x5e719fb9, 0x5e6b329c, 0xdd7617d4 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 0, lastExpected);
+    }
+    SUBCASE("conv2d, set 5, param 1")
+    {
+        std::vector<uint32_t> lastExpected = { 0xde42f57a, 0x5dd68799, 0xde2ddfcb };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 1, lastExpected);
+    }
+    SUBCASE("conv2d, set 5, param 2")
+    {
+        std::vector<uint32_t> lastExpected = { 0x0, 0x0 };
+        conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 2, lastExpected);
+    }
+}
 TEST_CASE("positive - pseudo random")
 {
     std::string templateJsonCfg = R"({

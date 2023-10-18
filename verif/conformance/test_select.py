@@ -125,6 +125,8 @@ class Operator:
     # Working set of param_names - updated for negative tests
     wks_param_names = None
 
+    COMPLIANCE_SETS = ("_s0", "_s1", "_s2", "_s3", "_s4", "_s5")
+
     def __init__(
         self,
         test_dir: Path,
@@ -258,7 +260,15 @@ class Operator:
                 if (not negative and "ERRORIF" not in str(path)) or (
                     negative and "ERRORIF" in str(path)
                 ):
-                    yield path
+                    # Check for compliance test set paths
+                    suffix = path.name[-3:]
+                    if suffix in Operator.COMPLIANCE_SETS:
+                        if suffix != Operator.COMPLIANCE_SETS[0]:
+                            # Only return one of the test sets
+                            continue
+                        yield path.with_name(path.name[:-3])
+                    else:
+                        yield path
 
     @classmethod
     def get_test_paths(cls, test_dir: Path, negative):
@@ -343,7 +353,12 @@ class Operator:
                 for k in path_params:
                     unused_values[k].discard(path_params[k])
                 logger.debug(f"FOUND wanted: {path.name}")
-                yield path
+                if path.exists():
+                    yield path
+                else:
+                    # Compliance test series - expand to all sets
+                    for s in Operator.COMPLIANCE_SETS:
+                        yield path.with_name(f"{path.name}{s}")
 
         # search for tests that match any unused parameter values
         for n, path in enumerate(sorted(list(unused_paths))):
@@ -359,7 +374,12 @@ class Operator:
                         unused_values[p].discard(path_params[p])
                     sparsity = self.sparsity[k] if k in self.sparsity else 0
                     logger.debug(f"FOUND unused [{k}/{n}/{sparsity}]: {path.name}")
-                    yield path
+                    if path.exists():
+                        yield path
+                    else:
+                        # Compliance test series - expand to all sets
+                        for s in Operator.COMPLIANCE_SETS:
+                            yield path.with_name(f"{path.name}{s}")
                     break
 
         if not self.ignore_missing:

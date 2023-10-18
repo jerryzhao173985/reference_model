@@ -140,4 +140,11 @@ DType mapToDType(tosa_datatype_t dataType)
 
     return DType_UNKNOWN;
 }
+
+// Like const_exp2 but for use during runtime
+double exp2(int32_t n)
+{
+    TOSA_REF_REQUIRE(-1022 <= n && n <= 1023, " Invalid exponent value (%d)", n);
+    return const_exp2(n);
+}
 }    // namespace TosaReference

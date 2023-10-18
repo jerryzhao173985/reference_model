@@ -114,3 +114,17 @@ def test_generate_dot_product_check_fail_names():
     for f in json_config["ifm_file"]:
         file = TEST_DIR / f
         assert not file.is_file()
+
+
+@pytest.mark.postcommit
+def test_generate_tensor_data_check():
+    glib = GenerateLibrary(GENERATE_LIB_PATH)
+    assert glib
+
+    json_config = JSON_DATAGEN_DOT_PRODUCT["meta"]["data_gen"]
+
+    for n in JSON_DATAGEN_DOT_PRODUCT["ifm_name"]:
+        arr = glib.get_tensor_data(n, json_config)
+
+        assert arr.shape == tuple(json_config["tensors"][n]["shape"])
+        assert arr.dtype == np.float32
