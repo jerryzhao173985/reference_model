@@ -794,6 +794,7 @@
         ],
         "generation": {
             "standard": {
+                "from_version": "v0.80.0",
                 "generator_args": [
                     [
                         "--target-dtype",

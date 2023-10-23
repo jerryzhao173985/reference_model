@@ -27,6 +27,9 @@ criteria.
 
 Each generation group is a dictionary that contains:
 
+* "from_version" - optional version string for when the tests have been introduced in TOSA
+of the form "vM.mm.p" where `M` is the major version, `mm` is the minor version
+and `p` is the patch version
 * "no_negative_tests" - optional "true" indicator that no negative tests are relevant/generated
 * "negative_dim_range" - optional range of dimensions for negative tests
 * "generator_args" - list of argument lists to supply to the `tosa_verif_build_tests` (see that tool for more details)

@@ -16,6 +16,7 @@ import json
 import logging
 import multiprocessing as mp
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -29,6 +30,7 @@ from convert2conformance.convert2conformance import main as c2c_main
 from convert2conformance.convert2conformance import OUTPUT_TYPE_DEFAULT
 from convert2conformance.convert2conformance import OUTPUT_TYPES
 from distutils.dir_util import copy_tree
+from serializer.tosa_serializer import TOSA_VERSION
 
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_conformance_generator")
@@ -56,6 +58,7 @@ STANDARD_GENERATOR_GROUP = "standard"
 TEST_VERSION_LATEST = "latest"
 TEST_VERSION_V0_60_0 = "v0.60.0"
 TEST_VERSIONS = (TEST_VERSION_LATEST, TEST_VERSION_V0_60_0)
+REGEX_VERSION = re.compile(r"v([0-9]+)\.([0-9]+)\.([0-9]+)")
 
 
 class GenConformanceError(Exception):
@@ -644,6 +647,39 @@ def parse_args(argv=None):
     return args
 
 
+def in_version(test_version, gen_dict):
+    """Check if the selected test_version is compatible with the tests."""
+
+    def version_string_to_numbers(verstr):
+        # Turn the "vM.mm.pp" string into Major, Minor, Patch versions
+        if verstr == TEST_VERSION_LATEST:
+            return (TOSA_VERSION[0], TOSA_VERSION[1], TOSA_VERSION[2])
+        else:
+            match = re.match(REGEX_VERSION, verstr)
+            if match is None:
+                raise KeyError(f"Invalid version string {verstr}")
+            return (int(v) for v in match.groups())
+
+    if "from_version" in gen_dict:
+        selected_version = version_string_to_numbers(test_version)
+        from_version = version_string_to_numbers(gen_dict["from_version"])
+
+        # Check the Major version is compatible, then Minor, and lastly Patch
+        # Unless the versions match, we can exit early due to obvious precedence
+        for sel, fro in zip(selected_version, from_version):
+            if sel < fro:
+                # From version is later than selected version
+                return False
+            elif sel > fro:
+                # From version is earlier than selected version
+                return True
+        # If we get here, the version numbers match exactly
+        return True
+    else:
+        # No specific version info
+        return True
+
+
 def main():
     args = parse_args()
 
@@ -826,10 +862,6 @@ def main():
                         )
                         continue
 
-                    if args.test_version == TEST_VERSION_V0_60_0 and op in ("dim",):
-                        logger.warning(f"{op} is not in {args.test_version} - skipping")
-                        continue
-
                     op_profiles_list = test_params[op]["profile"]
                     if (
                         args.profile != PROFILES_ALL
@@ -849,6 +881,13 @@ def main():
 
                     # Iterate through the generation groups selecting tests from each
                     for gen_name, gen_dict in test_params[op]["generation"].items():
+
+                        if not in_version(args.test_version, gen_dict):
+                            logger.warning(
+                                f"{op} [{gen_name}] is not in {args.test_version} - skipping"
+                            )
+                            continue
+
                         no_neg_tests = (
                             "no_negative_tests" in gen_dict
                             and gen_dict["no_negative_tests"] == "true"
