@@ -38,6 +38,16 @@ int OpConst::checkTensorAttributes()
 
 int OpConst::eval()
 {
+    for (auto ct : getOutputs())
+    {
+        if (!ct->getIsValid())
+        {
+            std::string err = "Constant tensor " + ct->getName() + " not correctly initialized";
+            printNodeValidationError(err.c_str());
+            return 1;
+        }
+    }
+
     // Evaluation is trivial for constants
     return GraphNode::eval();
 }
