@@ -458,39 +458,6 @@ int OpAvgPool2d<Dtype, AccDtype>::checkTensorAttributes()
     return 0;
 }
 
-// This calculates the number of padding elements used for each location along an axis
-// Average pooling only divides by the number of elements used, not including padding.
-// This function uses left/right, but is also used for vertical padding with top/bottom
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
-ETensor1<int32_t> OpAvgPool2d<Dtype, AccDtype>::calculate_div_map_1d(
-    int in_size, int out_size, int kernel_size, int stride, int32_t pad_left, int32_t pad_right)
-{
-    ETensor1<int32_t> result(out_size);
-
-    result.setConstant(kernel_size);
-
-    // adjust divisors on the left side for padding
-    // We start at the leftmost output element, and remove pad_left - (index * stride) elements
-    // until we have no more padding being used
-    for (int index = 0; (index <= pad_left / stride) && (index < out_size); index++)
-    {
-        int32_t adjust = pad_left - (index * stride);
-        result(index) -= adjust;
-    }
-
-    // The process repeats on the right side. Padding starts taking effect as we
-    // near the rightmost input element. The first output element which touches
-    // padding is defined in the initialization of index below. Then we keep moving
-    // to the right, increasing padding until we get to the last output element.
-    int index = std::max(0, ((pad_left + in_size - kernel_size) / stride) + 1);
-    for (; index < out_size; index++)
-    {
-        int32_t adjust = ((index * stride) + kernel_size) - (pad_left + in_size);
-        result(index) -= adjust;
-    }
-    return result;
-}
-
 // assuming input and output tensor have same scales like tflite reference
 // so no need to scale input and output
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
@@ -549,12 +516,10 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
         input_val = input_val - (InEigenType)attribute->input_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(pad);
-
     if (g_func_config.abs_mode)
     {
-        // in abs_mode: take abs values of input_padded
-        input_padded = input_padded.abs();
+        // in abs_mode: take abs values of input_val
+        input_val = input_val.abs();
     }
 
     // assuming input and output have same scales
@@ -585,7 +550,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                             if ((0 <= y && y < in_height) && (0 <= x && x < in_width))
                             {
                                 ++filter_count;
-                                acc = acc + (AccEigenType)input_padded(ob, y, x, oc);
+                                acc = acc + (AccEigenType)input_val(ob, y, x, oc);
                             }
                         }
                     }
