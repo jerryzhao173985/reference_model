@@ -179,6 +179,7 @@
                 ]
             },
             "8k_level": {
+                "from_version": "v0.70.0",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -1325,6 +1326,7 @@
         ],
         "generation": {
             "standard": {
+                "from_version": "v0.80.0",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -1347,6 +1349,7 @@
                 ]
             },
             "8k_level": {
+                "from_version": "v0.80.0",
                 "no_negative_tests": "true",
                 "selector": "8k_level",
                 "generator_args": [
