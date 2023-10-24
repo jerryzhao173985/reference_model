@@ -28,6 +28,7 @@ namespace TosaReference
 /// \brief Supported generator types
 enum class GeneratorType
 {
+    Unknown,
     PseudoRandom,
     DotProduct,
     OpFullRange,

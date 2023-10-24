@@ -56,7 +56,6 @@ extern "C"
         auto cfg = TosaReference::parseGenerateConfig(config_json, tensor_name);
         if (!cfg)
         {
-            WARNING("[Generator] Invalid json config.");
             return false;
         }
 

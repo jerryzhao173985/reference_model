@@ -124,28 +124,28 @@ bool tosaCheckULP(float testValue, double referenceValue, int64_t ulpCount)
 bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, uint64_t ulp)
 {
     // Validate that tensors are provided
-    TOSA_REF_REQUIRE(referenceTensor != nullptr, "reference tensor is missing");
-    TOSA_REF_REQUIRE(implementationTensor != nullptr, "implementation tensor is missing");
+    TOSA_REF_REQUIRE(referenceTensor != nullptr, "[ULP] Reference tensor is missing");
+    TOSA_REF_REQUIRE(implementationTensor != nullptr, "[ULP] Implementation tensor is missing");
 
     // Get number of elements
     const auto elementCount =
         numElements(std::vector<int32_t>(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims));
-    TOSA_REF_REQUIRE(elementCount > 0, "invalid shape for reference tensor");
+    TOSA_REF_REQUIRE(elementCount > 0, "[ULP] Invalid shape for reference tensor");
 
     switch (implementationTensor->data_type)
     {
         case tosa_datatype_fp32_t: {
             const auto* refData = reinterpret_cast<const float*>(referenceTensor->data);
-            TOSA_REF_REQUIRE(refData != nullptr, "missing data for reference");
+            TOSA_REF_REQUIRE(refData != nullptr, "[ULP] Missing data for reference");
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
-            TOSA_REF_REQUIRE(impData != nullptr, "missing data for implementation");
+            TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
             return std::equal(refData, std::next(refData, elementCount), impData, std::next(impData, elementCount),
                               [ulp](const auto& referenceValue, const auto& implementationValue) {
                                   return tosaCheckULP(referenceValue, implementationValue, ulp);
                               });
         }
         default:
-            WARNING("tosa verifier: data-type not supported.");
+            WARNING("[Verifier][ULP] Data-type not supported.");
             break;
     }
 

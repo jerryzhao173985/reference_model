@@ -82,7 +82,7 @@ bool validateData(const double* ref, const double* bnd, const AccType* imp, size
     for (size_t i = 0; i < T; ++i)
     {
         auto out_err = validateElement<AccType>(ref[i], bnd[i], imp[i], KS);
-        TOSA_REF_REQUIRE(out_err, "data required to be zero or error within range");
+        TOSA_REF_REQUIRE(out_err, "[DP] Data required to be zero or error within range");
         out_err_sum += out_err.value();
         out_err_sumsq += out_err.value() * out_err.value();
     }
@@ -90,10 +90,10 @@ bool validateData(const double* ref, const double* bnd, const AccType* imp, size
     if (S >= 3 && S <= 5)
     {
         // Check error bias magnitude for data sets S which are not positive biased
-        TOSA_REF_REQUIRE(std::abs(out_err_sum) <= 2 * sqrt(KS * T), "bias magnitude is out of range");
+        TOSA_REF_REQUIRE(std::abs(out_err_sum) <= 2 * sqrt(KS * T), "[DP] Bias magnitude is out of range");
     }
     // Check error variance magnitude
-    TOSA_REF_REQUIRE(out_err_sumsq <= 0.4 * KS * T, "error variance magnitude is out of range");
+    TOSA_REF_REQUIRE(out_err_sumsq <= 0.4 * KS * T, "[DP] Error variance magnitude is out of range");
     return true;
 }
 }    // namespace
@@ -101,9 +101,9 @@ bool validateData(const double* ref, const double* bnd, const AccType* imp, size
 bool verifyDotProduct(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const DotProductVerifyInfo& dpInfo)
 {
     // Validate that tensors are provided
-    TOSA_REF_REQUIRE(ref != nullptr, "reference tensor is missing");
-    TOSA_REF_REQUIRE(refBnd != nullptr, "reference bounds tensor is missing");
-    TOSA_REF_REQUIRE(imp != nullptr, "implementation tensor is missing");
+    TOSA_REF_REQUIRE(ref != nullptr, "[DP] Reference tensor is missing");
+    TOSA_REF_REQUIRE(refBnd != nullptr, "[DP] Reference bounds tensor is missing");
+    TOSA_REF_REQUIRE(imp != nullptr, "[DP] Implementation tensor is missing");
 
     // Get number of dot-product elements
     const int64_t T = numElements(std::vector<int32_t>(ref->shape, ref->shape + ref->num_dims));
@@ -111,18 +111,18 @@ bool verifyDotProduct(const CTensor* ref, const CTensor* refBnd, const CTensor* 
 
     const double* refData    = reinterpret_cast<const double*>(ref->data);
     const double* refBndData = reinterpret_cast<const double*>(refBnd->data);
-    TOSA_REF_REQUIRE(refData != nullptr && refBndData != nullptr, "missing data for reference or bounds tensors");
+    TOSA_REF_REQUIRE(refData != nullptr && refBndData != nullptr, "[DP] Missing data for reference or bounds tensors");
 
     switch (imp->data_type)
     {
         case tosa_datatype_fp32_t: {
             const float* impData = reinterpret_cast<const float*>(imp->data);
-            TOSA_REF_REQUIRE(impData != nullptr, "missing data for implementation");
+            TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
             return validateData(refData, refBndData, impData, static_cast<size_t>(T), dpInfo);
             break;
         }
         default: {
-            WARNING("tosa verifier: data-type not supported.");
+            WARNING("[Verifier][DP] Data-type not supported.");
             break;
         }
     }

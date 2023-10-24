@@ -151,7 +151,7 @@ TEST_SUITE_BEGIN("verify");
 
 TEST_CASE("negative - api")
 {
-    std::string json_cfg = R"({
+    std::string jsonCfg = R"({
         "tensors" : {
             "out1" : {
                 "mode": "DOT_PRODUCT",
@@ -166,7 +166,7 @@ TEST_CASE("negative - api")
 
     SUBCASE("invalid json")
     {
-        std::string invalid_json_cfg = R"({
+        std::string invalidJsonCfg = R"({
             "tensors" : {
                 "out1" : {
                     "mode": DOT_PRODUCT,
@@ -178,7 +178,39 @@ TEST_CASE("negative - api")
         const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
         const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
-        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), invalid_json_cfg.c_str()));
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), invalidJsonCfg.c_str()));
+    }
+    SUBCASE("unknown mode")
+    {
+        std::string unknownJsonCfg = R"({
+            "tensors" : {
+                "out1" : {
+                    "mode": "WIND",
+                    "data_type": "FP32"
+                }
+            }
+        })";
+
+        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8 });
+        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8 });
+
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), nullptr, imp.cTensor(), unknownJsonCfg.c_str()));
+    }
+    SUBCASE("unknown type")
+    {
+        std::string unknownJsonCfg = R"({
+            "tensors" : {
+                "out1" : {
+                    "mode": "DOT_PRODUCT",
+                    "data_type": "JOULES"
+                }
+            }
+        })";
+
+        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8 });
+        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8 });
+
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), nullptr, imp.cTensor(), unknownJsonCfg.c_str()));
     }
     SUBCASE("mismatching dimensions")
     {
@@ -186,7 +218,7 @@ TEST_CASE("negative - api")
         const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 4, 4 });
         const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
-        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), json_cfg.c_str()));
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("mismatching shapes")
     {
@@ -194,7 +226,7 @@ TEST_CASE("negative - api")
         const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
         const TosaTensor imp("out1", tosa_datatype_fp32_t, { 4, 4, 4 });
 
-        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), json_cfg.c_str()));
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("mismatching data types")
     {
@@ -202,7 +234,7 @@ TEST_CASE("negative - api")
         const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
         const TosaTensor imp("out1", tosa_datatype_fp16_t, { 8, 8, 8 });
 
-        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), json_cfg.c_str()));
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("missing tensor data")
     {
@@ -210,13 +242,13 @@ TEST_CASE("negative - api")
         const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
         const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
-        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), json_cfg.c_str()));
+        REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
 }
 
 TEST_CASE("positive - exact")
 {
-    std::string json_cfg = R"({
+    std::string jsonCfg = R"({
         "tensors" : {
             "out1" : {
                 "mode": "EXACT",
@@ -236,7 +268,7 @@ TEST_CASE("positive - exact")
             TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(data.data()));
-        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
     SUBCASE("different")
@@ -254,13 +286,13 @@ TEST_CASE("positive - exact")
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
         REQUIRE_FALSE(
-            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 }
 
 TEST_CASE("positive - reduce product")
 {
-    std::string json_cfg = R"({
+    std::string jsonCfg = R"({
         "tensors" : {
             "out1" : {
                 "mode": "REDUCE_PRODUCT",
@@ -311,7 +343,7 @@ TEST_CASE("positive - reduce product")
             TosaTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data.data()));
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData.data()));
-        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
     SUBCASE("different")
@@ -337,13 +369,13 @@ TEST_CASE("positive - reduce product")
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData.data()));
         REQUIRE_FALSE(
-            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 }
 
 TEST_CASE("positive - ulp")
 {
-    std::string json_cfg = R"({
+    std::string jsonCfg = R"({
         "tensors" : {
             "out1" : {
                 "mode": "ULP",
@@ -369,7 +401,7 @@ TEST_CASE("positive - ulp")
             TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
-        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
     SUBCASE("different")
@@ -383,7 +415,7 @@ TEST_CASE("positive - ulp")
         const auto implementationTensor =
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
         REQUIRE_FALSE(
-            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), json_cfg.c_str()));
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 }
 

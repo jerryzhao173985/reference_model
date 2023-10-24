@@ -25,6 +25,7 @@ namespace tosa
 
 NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                              {
+                                 { DType::DType_UNKNOWN, "UNKNOWN" },
                                  { DType::DType_BOOL, "BOOL" },
                                  { DType::DType_INT4, "INT4" },
                                  { DType::DType_INT8, "INT8" },
@@ -43,6 +44,7 @@ namespace TosaReference
 
 NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                              {
+                                 { VerifyMode::Unknown, "UNKNOWN" },
                                  { VerifyMode::Exact, "EXACT" },
                                  { VerifyMode::Ulp, "ULP" },
                                  { VerifyMode::DotProduct, "DOT_PRODUCT" },
@@ -94,14 +96,23 @@ std::optional<VerifyConfig> parseVerifyConfig(const char* tensorName, const char
     auto jsonCfg = nlohmann::json::parse(json, nullptr, /* allow exceptions */ false);
 
     if (jsonCfg.is_discarded())
+    {
+        WARNING("[Verifier] Invalid json config.");
         return std::nullopt;
+    }
     if (!jsonCfg.contains("tensors"))
+    {
+        WARNING("[Verifier] Missing tensors in json config.");
         return std::nullopt;
+    }
 
     const auto& tensors = jsonCfg["tensors"];
     if (!tensors.contains(tensorName))
-        return std::nullopt;
-
+        if (!tensors.contains(tensorName))
+        {
+            WARNING("[Verifier] Missing tensor %s in json config.", tensorName);
+            return std::nullopt;
+        }
     const auto& namedTensor = tensors[tensorName];
     return namedTensor.get<VerifyConfig>();
 }

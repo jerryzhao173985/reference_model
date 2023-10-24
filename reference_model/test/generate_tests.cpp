@@ -16,32 +16,34 @@
 #include <doctest.h>
 
 #include <array>
-#include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace
 {
-template <typename T>
-void debug_vec_print(const std::vector<T>& vec)
+void update_json_template(std::string& str, const std::string& find, const std::string& change)
 {
-    std::cout << "vector: ";
-    for (auto v = vec.begin(); v != vec.end(); ++v)
-    {
-        T f = *v;
-        std::cout << std::dec << f << " [" << std::hex << *(uint32_t*)&f << "] ";
-    }
-    std::cout << std::dec << '\n';
-}
-
-void update_json_template(std::string& str, const std::string& set)
-{
-    std::string find = "_SET_";
-    auto pos         = str.find(find);
+    // Update the 'str' by looking for instances of 'find' and replacing them with 'change'
+    auto pos = str.find(find);
     while (pos != std::string::npos)
     {
-        str.replace(pos, find.length(), set);
+        str.replace(pos, find.length(), change);
         pos = str.find(find);
+    }
+}
+
+void check_value(bool match, uint32_t result, uint32_t expected, uint32_t idx)
+{
+    std::stringstream msg;
+    msg << "index: " << idx << " expected: " << std::hex << expected << " got: " << result;
+    if (match)
+    {
+        REQUIRE_MESSAGE(expected == result, msg.str());
+    }
+    else
+    {
+        REQUIRE_MESSAGE(expected != result, msg.str());
     }
 }
 
@@ -50,7 +52,7 @@ void check_output(const std::vector<T>& results, const std::vector<uint32_t>& ex
 {
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        REQUIRE_MESSAGE(expected[idx] == *(uint32_t*)&results[idx], "index: ", idx);
+        check_value(true, *(uint32_t*)&results[idx], expected[idx], idx);
     }
 }
 
@@ -60,19 +62,19 @@ TEST_SUITE_BEGIN("generate");
 
 TEST_CASE("negative - api")
 {
-    std::string json_cfg = R"({
+    std::string templateJsonCfg = R"({
         "tensors" : {
             "in1" : {
-                "generator": "DOT_PRODUCT",
-                "data_type": "FP32",
+                "generator": "_GENERATOR_",
+                "data_type": "_TYPE_",
                 "input_type": "VARIABLE",
                 "shape" : [ 4, 8, 8 ],
                 "input_pos": 0,
-                "op" : "MATMUL",
+                "op" : "_OP_",
                 "dot_product_info": {
                     "s": 0,
                     "ks": 8,
-                    "acc_type": "FP32"
+                    "acc_type": "_TYPE_"
                 }
             }
         }
@@ -88,7 +90,7 @@ TEST_CASE("negative - api")
     }
     SUBCASE("invalid json")
     {
-        std::string invalid_json_cfg = R"({
+        std::string invalidJsonCfg = R"({
             "tensors" : {
                 "in1" : {
                     "generator": DOT_PRODUCT,
@@ -97,28 +99,79 @@ TEST_CASE("negative - api")
         })";
 
         std::vector<float> buffer(tosaElements);
-        REQUIRE_FALSE(tgd_generate_data(invalid_json_cfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaSize));
+        REQUIRE_FALSE(tgd_generate_data(invalidJsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaSize));
     }
-    SUBCASE("invalid json - mismatching name")
+    SUBCASE("unknown generator")
     {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_GENERATOR_", "SOLAR");
+        update_json_template(jsonCfg, "_TYPE_", "FP32");
+        update_json_template(jsonCfg, "_OP_", "MATMUL");
+        std::vector<float> buffer(tosaElements);
+        REQUIRE_FALSE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaSize));
+    }
+    SUBCASE("unknown op")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_GENERATOR_", "DOT_PRODUCT");
+        update_json_template(jsonCfg, "_TYPE_", "FP32");
+        update_json_template(jsonCfg, "_OP_", "GREEN");
+
+        std::vector<float> buffer(tosaElements);
+        REQUIRE_FALSE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaSize));
+    }
+    SUBCASE("unknown type")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_GENERATOR_", "DOT_PRODUCT");
+        update_json_template(jsonCfg, "_TYPE_", "WATT");
+        update_json_template(jsonCfg, "_OP_", "MATMUL");
+
+        std::vector<float> buffer(tosaElements);
+        REQUIRE_FALSE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaSize));
+    }
+    SUBCASE("mismatching name")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_GENERATOR_", "DOT_PRODUCT");
+        update_json_template(jsonCfg, "_TYPE_", "FP32");
+        update_json_template(jsonCfg, "_OP_", "MATMUL");
         std::string invalidName = "notFound1";
 
         std::vector<float> buffer(tosaElements);
-        REQUIRE_FALSE(tgd_generate_data(json_cfg.c_str(), invalidName.c_str(), (void*)buffer.data(), tosaSize));
+        REQUIRE_FALSE(tgd_generate_data(jsonCfg.c_str(), invalidName.c_str(), (void*)buffer.data(), tosaSize));
     }
     SUBCASE("mismatching size")
     {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_GENERATOR_", "DOT_PRODUCT");
+        update_json_template(jsonCfg, "_TYPE_", "FP32");
+        update_json_template(jsonCfg, "_OP_", "MATMUL");
         size_t smallElements = 4 * 8 * 7;
         size_t smallSize     = smallElements * 4;
 
         std::vector<float> buffer(smallElements);
-        REQUIRE_FALSE(tgd_generate_data(json_cfg.c_str(), tosaName.c_str(), (void*)buffer.data(), smallSize));
+        REQUIRE_FALSE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), smallSize));
     }
 }
 
-TEST_CASE("positive - dot product")
+void matmul_test_FP32(const std::string tosaName[2],
+                      const size_t tosaElements[2],
+                      const std::string templateJsonCfg,
+                      const std::string setStr,
+                      int32_t param,
+                      const std::vector<uint32_t> expected)
 {
-    std::string template_json_cfg = R"({
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+    std::vector<float> buffer(tosaElements[param]);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 4));
+    check_output<float>(buffer, expected);
+}
+
+TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
+{
+    std::string templateJsonCfg = R"({
         "tensors" : {
             "in1" : {
                 "generator": "DOT_PRODUCT",
@@ -150,131 +203,69 @@ TEST_CASE("positive - dot product")
         }
     })";
 
-    const std::string tosaNameP0 = "in1";
-    const size_t tosaElementsP0  = 4 * 8 * 2;
-    const std::string tosaNameP1 = "in2";
-    const size_t tosaElementsP1  = 4 * 2 * 5;
+    const std::string tosaName[2] = { "in1", "in2" };
+    const size_t tosaElements[2]  = { (4 * 8 * 2), (4 * 2 * 5) };
 
     SUBCASE("matmul, set 0, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "0");
-
         std::vector<uint32_t> expected = { 0xbf665aa4, 0xbf736bd3, 0x0 };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", 0, expected);
     }
     SUBCASE("matmul, set 0, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "0");
-
         std::vector<uint32_t> expected = { 0x0, 0x0, 0x3f34f2dd };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", 1, expected);
     }
     SUBCASE("matmul, set 1, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "1");
-
         std::vector<uint32_t> expected = { 0x5e97f1b0, 0x5ea6a18e, 0x5eb811af };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 0, expected);
     }
     SUBCASE("matmul, set 1, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "1");
-
         std::vector<uint32_t> expected = { 0x5f128bb1, 0x5ef54579, 0x5ebd65b8 };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 1, expected);
     }
     SUBCASE("matmul, set 2, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "2");
-
         std::vector<uint32_t> expected = { 0x3f800000, 0x3e66ed53, 0x3f800000 };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
     }
     SUBCASE("matmul, set 2, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "2");
-
         std::vector<uint32_t> expected = { 0x3f800000, 0x3f800000, 0x3f800000 };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
     }
     SUBCASE("matmul, set 3, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "3");
-
-        // NOTE: Python test script produced  0xbf256686 - so off by 1
+        // NOTE: Python test script produced 0xbf256686 - so off by 1
         std::vector<uint32_t> expected = { 0x41800000, 0xbf256685, 0x41800000 };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
     }
     SUBCASE("matmul, set 3, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "3");
-
         std::vector<uint32_t> expected = { 0x41800000, 0x41800000, 0x41800000 };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
     }
     SUBCASE("matmul, set 4, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "4");
-
         std::vector<uint32_t> expected = { 0x0, 0x3f000000, 0x5f14e80c };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("matmul, set 4, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "4");
-
         std::vector<uint32_t> expected = { 0x5d5d0db2, 0xdf2c82a8, 0x0 };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
     }
     SUBCASE("matmul, set 5, param 0")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "5");
-
         std::vector<uint32_t> expected = { 0x5df6c4b3, 0x5e6b4088, 0x5ed0fe71 };
-        std::vector<float> buffer(tosaElementsP0);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP0.c_str(), (void*)buffer.data(), tosaElementsP0 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 0, expected);
     }
     SUBCASE("matmul, set 5, param 1")
     {
-        std::string json_cfg = template_json_cfg;
-        update_json_template(json_cfg, "5");
-
         std::vector<uint32_t> expected = { 0xde086d85, 0x5e630878, 0x5eba5c7b };
-        std::vector<float> buffer(tosaElementsP1);
-        REQUIRE(tgd_generate_data(json_cfg.c_str(), tosaNameP1.c_str(), (void*)buffer.data(), tosaElementsP1 * 4));
-        check_output<float>(buffer, expected);
+        matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
     }
 }
 TEST_SUITE_END();    // generate
