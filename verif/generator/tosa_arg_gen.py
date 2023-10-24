@@ -665,13 +665,13 @@ class TosaTensorValuesGen:
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
             tens_meta["shape"] = [int(i) for i in shape]
             tens_meta["input_pos"] = idx
-            tens_meta["op"] = opName
+            tens_meta["op"] = opName.upper()
 
             if idx < pCount:
-                tens_meta["input_type"] = "variable"
+                tens_meta["input_type"] = "VARIABLE"
                 tens = testGen.ser.addPlaceholder(shape, dtypeList[idx], None)
             else:
-                tens_meta["input_type"] = "constant"
+                tens_meta["input_type"] = "CONSTANT"
                 tens = testGen.ser.addConst(shape, dtypeList[idx], None)
             tens_ser_list.append(tens)
 

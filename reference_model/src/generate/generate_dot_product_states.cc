@@ -309,9 +309,11 @@ std::unique_ptr<IDotProductGenerator> pickDotProductGenerator(const GenerateConf
             case 5:
                 return std::make_unique<GeneratorS5>(cfg.inputPos, dpinfo.ks, B);
             default:
+                WARNING("[Generator][DP] Unsupported dot product test series for generator.");
                 return nullptr;
         }
     }
+    WARNING("[Generator][DP] Unsupported data types for generator.");
     return nullptr;
 }
 

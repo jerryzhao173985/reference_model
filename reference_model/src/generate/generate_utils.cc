@@ -23,6 +23,7 @@ namespace tosa
 
 NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                              {
+                                 { DType::DType_UNKNOWN, "UNKNOWN" },
                                  { DType::DType_BOOL, "BOOL" },
                                  { DType::DType_INT4, "INT4" },
                                  { DType::DType_INT8, "INT8" },
@@ -36,6 +37,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                              {
+                                 { Op::Op_UNKNOWN, "UNKNOWN" },
                                  { Op::Op_MATMUL, "MATMUL" },
                              })
 
@@ -46,6 +48,7 @@ namespace TosaReference
 
 NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                              {
+                                 { GeneratorType::Unknown, "UNKNOWN" },
                                  { GeneratorType::PseudoRandom, "PSEUDO_RANDOM" },
                                  { GeneratorType::DotProduct, "DOT_PRODUCT" },
                                  { GeneratorType::OpFullRange, "OP_FULL_RANGE" },
@@ -53,6 +56,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::OpSpecial, "OP_SPECIAL" },
                              })
 
+// NOTE: This assumes it's VARIABLE if the InputType is not recognized
 NLOHMANN_JSON_SERIALIZE_ENUM(InputType,
                              {
                                  { InputType::Variable, "VARIABLE" },
@@ -96,14 +100,21 @@ std::optional<GenerateConfig> parseGenerateConfig(const char* json, const char* 
     auto jsonCfg = nlohmann::json::parse(json, nullptr, /* allow exceptions */ false);
 
     if (jsonCfg.is_discarded())
+    {
+        WARNING("[Generator] Invalid json config.");
         return std::nullopt;
+    }
     if (!jsonCfg.contains("tensors"))
+    {
+        WARNING("[Generator] Missing tensors in json config.");
         return std::nullopt;
-
+    }
     const auto& tensors = jsonCfg["tensors"];
     if (!tensors.contains(tensorName))
+    {
+        WARNING("[Generator] Missing tensor %s in json config.", tensorName);
         return std::nullopt;
-
+    }
     const auto& namedTensor = tensors[tensorName];
     return namedTensor.get<GenerateConfig>();
 }

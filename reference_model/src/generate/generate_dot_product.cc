@@ -91,7 +91,7 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
         case tosa::Op_MATMUL:
             return generateMatMul(cfg, *generator, data, size);
         default:
-            WARNING("[Generator][DP] Unsupported operator");
+            WARNING("[Generator][DP] Unsupported operator.");
             return false;
     }
 

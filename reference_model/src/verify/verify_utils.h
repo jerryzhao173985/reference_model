@@ -26,7 +26,7 @@
 #define TOSA_REF_REQUIRE(COND, MESSAGE)                                                                                \
     if (!(COND))                                                                                                       \
     {                                                                                                                  \
-        WARNING("tosa verifier: " MESSAGE ".");                                                                        \
+        WARNING("[Verifier]" MESSAGE ".");                                                                             \
         return false;                                                                                                  \
     }
 
@@ -39,6 +39,7 @@ using CTensor = tosa_tensor_t;
 /// \brief Supported verification modes
 enum class VerifyMode
 {
+    Unknown,
     Exact,
     Ulp,
     DotProduct,
