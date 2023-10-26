@@ -61,7 +61,7 @@ struct PseudoRandomInfo
     PseudoRandomInfo() = default;
 
     int64_t rngSeed;
-    // TODO: Add range support
+    std::vector<std::string> range;
 };
 
 /// \brief Generator configuration

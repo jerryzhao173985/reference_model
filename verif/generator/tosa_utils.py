@@ -38,7 +38,6 @@ class ComplianceMode(IntEnum):
     ULP = 2
     FP_SPECIAL = 3
     REDUCE_PRODUCT = 4
-    ROUND = 5
 
 
 class DataGenType(IntEnum):

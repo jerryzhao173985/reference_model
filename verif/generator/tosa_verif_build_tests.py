@@ -13,14 +13,18 @@ from serializer.tosa_serializer import DTypeNames
 OPTION_FP_VALUES_RANGE = "--fp-values-range"
 
 
-# Used for parsing a comma-separated list of integers in a string
-# to an actual list of integers
+# Used for parsing a comma-separated list of integers/floats in a string
+# to an actual list of integers/floats with special case max
 def str_to_list(in_s, is_float=False):
-    """Converts a comma-separated list of string integers to a python list of ints"""
+    """Converts a comma-separated list string to a python list of numbers."""
     lst = in_s.split(",")
     out_list = []
     for i in lst:
-        val = float(i) if is_float else int(i)
+        # Special case for allowing maximum FP numbers
+        if is_float and i in ("-max", "max"):
+            val = i
+        else:
+            val = float(i) if is_float else int(i)
         out_list.append(val)
     return out_list
 

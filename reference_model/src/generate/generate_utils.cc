@@ -38,10 +38,11 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
 NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                              {
                                  { Op::Op_UNKNOWN, "UNKNOWN" },
+                                 { Op::Op_CONV2D, "CONV2D" },
                                  { Op::Op_MATMUL, "MATMUL" },
                                  { Op::Op_MAX_POOL2D, "MAX_POOL2D" },
+                                 { Op::Op_MUL, "MUL" },
                                  { Op::Op_PAD, "PAD" },
-                                 { Op::Op_CONV2D, "CONV2D" },
                              })
 
 }    // namespace tosa
@@ -84,6 +85,10 @@ void from_json(const nlohmann::json& j, DotProductInfo& dotProductInfo)
 void from_json(const nlohmann::json& j, PseudoRandomInfo& pseudoRandomInfo)
 {
     j.at("rng_seed").get_to(pseudoRandomInfo.rngSeed);
+    if (j.contains("range"))
+    {
+        j.at("range").get_to(pseudoRandomInfo.range);
+    }
 }
 
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)

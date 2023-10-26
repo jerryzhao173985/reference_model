@@ -35,8 +35,8 @@
                             "properties":
                             {
                                 "ulp": {
-                                    "description": "ulp range limit - positive number",
-                                    "type": "integer",
+                                    "description": "ulp range limit - positive float",
+                                    "type": "number",
                                     "minimum": 0
                                 }
                             },
