@@ -44,8 +44,7 @@ enum class VerifyMode
     Ulp,
     DotProduct,
     ReduceProduct,
-    FpSpecial,
-    Round
+    FpSpecial
 };
 
 /// \brief ULP verification meta-data
@@ -53,7 +52,7 @@ struct UlpInfo
 {
     UlpInfo() = default;
 
-    uint64_t ulp;
+    double ulp;
 };
 
 /// \brief Dot-product verification meta-data
@@ -95,7 +94,7 @@ int64_t numElements(const std::vector<int32_t>& shape);
 /// \brief Map API data-type to DType
 DType mapToDType(tosa_datatype_t dataType);
 
-/// \brief Raise a value by the power of N or -N
+/// \brief Return 2 to the power of N or -N
 // For use during compile time - as no range check
 constexpr double const_exp2(int32_t n)
 {
@@ -115,6 +114,9 @@ constexpr double const_exp2(int32_t n)
 
 /// \brief Same as const_exp2 but with runtime range check of N
 double exp2(int32_t n);
+
+/// \brief Return the base-2 exponent of V
+int32_t ilog2(double v);
 
 /// \brief Accuracy precision information
 template <typename T>

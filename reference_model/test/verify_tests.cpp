@@ -392,29 +392,37 @@ TEST_CASE("positive - ulp")
     const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
 
     // Generate some random floats using the full range of fp32.
-    auto data = generateRandomTensorData<float>(elementCount, false);
+    auto data_fp32 = generateRandomTensorData<float>(elementCount, false);
+    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
+
     SUBCASE("same")
     {
         // Generate some data that meets the ULP requirements of the result.
-        auto otherData = data;
-        std::for_each(std::begin(otherData), std::end(otherData), [](auto& value) { value = increment(value, 5); });
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value))
+                value = increment(value, 5);
+        });
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
     SUBCASE("different")
     {
         // Generate some data that exceeds a specified number of ULP for each value in the tensor.
-        auto otherData = std::vector<float>(elementCount);
-        std::for_each(std::begin(otherData), std::end(otherData), [](auto& value) { value = increment(value, 6); });
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value))
+                value = increment(value, 6);
+        });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data.data()));
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData.data()));
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }

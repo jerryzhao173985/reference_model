@@ -50,7 +50,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::DotProduct, "DOT_PRODUCT" },
                                  { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
                                  { VerifyMode::FpSpecial, "FP_SPECIAL" },
-                                 { VerifyMode::Round, "ROUND" },
                              })
 
 void from_json(const nlohmann::json& j, UlpInfo& ulpInfo)
@@ -144,7 +143,24 @@ DType mapToDType(tosa_datatype_t dataType)
 // Like const_exp2 but for use during runtime
 double exp2(int32_t n)
 {
-    TOSA_REF_REQUIRE(-1022 <= n && n <= 1023, " Invalid exponent value (%d)", n);
+    TOSA_REF_REQUIRE(-1022 <= n && n <= 1023, " Invalid exponent value (%d) in exp2", n);
     return const_exp2(n);
+}
+
+int32_t ilog2(double v)
+{
+    TOSA_REF_REQUIRE(0.0 < v && v < std::numeric_limits<double>::infinity(), " Value out of range (%g) in ilog2", v);
+    int32_t n = 0;
+    while (v >= 2.0)
+    {
+        v = v / 2.0;
+        n++;
+    }
+    while (v < 1.0)
+    {
+        v = v * 2.0;
+        n--;
+    }
+    return n;
 }
 }    // namespace TosaReference

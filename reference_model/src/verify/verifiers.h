@@ -58,7 +58,7 @@ bool verifyReduceProduct(const CTensor* referenceTensor, const CTensor* implemen
 /// \param ulp    The ULP tolerence for the comparison of the two tensors
 ///
 /// \return True if compliant else false
-bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, uint64_t ulp);
+bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, const UlpInfo& ulpInfo);
 
 };    // namespace TosaReference
 

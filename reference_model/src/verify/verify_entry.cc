@@ -38,7 +38,7 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
             return verifyReduceProduct(ref, imp, cfg.reduceProductInfo.m, cfg.reduceProductInfo.n);
         }
         case VerifyMode::Ulp: {
-            return verifyULP(ref, imp, cfg.ulpInfo.ulp);
+            return verifyULP(ref, imp, cfg.ulpInfo);
         }
         default: {
             WARNING("[Verifier] Unsupported verification mode.");
