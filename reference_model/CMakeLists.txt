@@ -131,6 +131,8 @@ target_link_libraries(tosa_reference_model_lib
 
 set(PUBLIC_HEADERS)
 list(APPEND PUBLIC_HEADERS
+    include/custom_op_interface.h
+    include/custom_registry.h
     include/debug_modes.def
     include/debug_types.h
     include/dtype.h
@@ -202,6 +204,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
       ${SERIALIZATION_LIB}
       nlohmann_json::nlohmann_json
       cxxopts
+      ${CMAKE_DL_LIBS}
   )
 
   install(TARGETS tosa_reference_model DESTINATION bin)

@@ -18,6 +18,8 @@
 
 #include "arith_util.h"
 #include "command_line_utils.h"
+#include "custom_op_interface.h"
+#include "custom_registry.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
@@ -38,6 +40,7 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc);
 int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string& filename_prefix);
 int readVariableTensors(SubgraphTraverser& gt, json test_desc);
 int writeVariableTensors(SubgraphTraverser& gt, json test_desc);
+int loadSharedLibs(std::string& custom_op_lib_path);
 int loadGraph(TosaSerializationHandler& tsh, json& test_desc);
 void parse_value(const std::string& text, tosa_level_t& value);
 const std::string getResultFilenamePrefix();
@@ -81,6 +84,15 @@ int main(int argc, char** argv)
     if (initTestDesc(test_desc))
     {
         FATAL_ERROR("Unable to load test json");
+    }
+
+    // load shared libs if specified
+    if (g_func_config.custom_op_lib_path != "")
+    {
+        if (loadSharedLibs(g_func_config.custom_op_lib_path))
+        {
+            FATAL_ERROR("Shared library specified but not loaded successfully");
+        }
     }
 
     if (loadGraph(tsh, test_desc))
@@ -234,6 +246,25 @@ int main(int argc, char** argv)
 
     g_func_debug.fini_debug();
     return (int)status;
+}
+
+int loadSharedLibs(std::string& custom_op_lib_path)
+{
+    // Load the shared_lib
+    void* lib_handle = dlopen(custom_op_lib_path.c_str(), RTLD_LAZY);
+    if (lib_handle == nullptr)
+    {
+        FATAL_ERROR("Library %s does not exist\n", custom_op_lib_path.c_str());
+    }
+
+    typedef int (*get_customOp_function_t)(registration_callback_t registration_func);
+    auto get_customOp_creation_funcs = (get_customOp_function_t)dlsym(lib_handle, "getCustomOpCreationFuncs");
+    if (get_customOp_creation_funcs == nullptr)
+    {
+        FATAL_ERROR("Can't find the getCustomOpCreationFuncs \n");
+    }
+
+    return get_customOp_creation_funcs(&MasterRegistry::register_function);
 }
 
 int loadGraph(TosaSerializationHandler& tsh, json& test_desc)

@@ -70,6 +70,7 @@ int func_model_parse_cmd_line(
         ("l,loglevel", func_debug.get_debug_verbosity_help_string(), cxxopts::value<std::string>())
         ("o,logfile", "output log file", cxxopts::value<std::string>())
         ("d,debugmask", func_debug.get_debug_mask_help_string(), cxxopts::value<std::vector<std::string>>())
+        ("custom_op_lib_path", "Path to the shared lib for customOp evaluation", cxxopts::value<std::string>(func_config.custom_op_lib_path))
         ("h,help", "print help");
         // clang-format on
 
