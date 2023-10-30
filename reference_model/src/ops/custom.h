@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020, 2023 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,23 +16,29 @@
 #ifndef OPS_CUSTOM_H
 #define OPS_CUSTOM_H
 
+#include "attribute.h"
+#include "custom_registry.h"
 #include "graph_node.h"
 
 using namespace tosa;
 
 namespace TosaReference
 {
-
 class OpCustom : public GraphNode
 {
 public:
-    OpCustom(SubgraphTraverser* sgt_, uint64_t id_);
-    virtual ~OpCustom();
+    OpCustom(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
+    ~OpCustom();
 
-    virtual int checkTensorAttributes();
-    virtual int eval();
+    int checkTensorAttributes();
+    int eval();
+
+protected:
+    TosaCustomAttribute* attribute;
+
+private:
+    CustomOpInterface* custom_op_ptr;
 };
-
 };    // namespace TosaReference
 
 #endif

@@ -592,7 +592,7 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
 
         // custom
         case Op_CUSTOM:
-            return new OpCustom(sgt, id);
+            return new OpCustom(sgt, attribute, id);
 
         // control_flow
         case Op_COND_IF:

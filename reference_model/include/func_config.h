@@ -55,6 +55,7 @@ struct func_config_t
     uint32_t dump_intermediates                    = 0;
     uint32_t initialize_variable_tensor_from_numpy = 0;
     std::string fp_format                          = "0.5";
+    std::string custom_op_lib_path                 = "";
     uint32_t precise_mode                          = 0;
     bool abs_mode                                  = 0;        // set in main as second run of precise_mode
     bool float_is_big_endian                       = false;    // Set in arith_util.h by float_is_big_endian()

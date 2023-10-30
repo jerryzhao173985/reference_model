@@ -25,3 +25,5 @@ add_subdirectory(thirdparty)
 if(TOSA_TOOLS_BUILD_REFERENCE_MODEL)
     add_subdirectory(reference_model)
 endif()
+
+add_subdirectory(reference_model/custom_op_example)
