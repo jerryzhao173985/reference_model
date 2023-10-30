@@ -49,6 +49,9 @@ pid_t func_print_backtrace_helper(int num_tries, int sig);
 void func_print_backtrace(FILE* out, int sig)
 {
 #if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
+    if (getenv("TOSA_MODEL_NO_BACKTRACE"))
+        return;
+
     for (int i = 0; i < 2; i++)
     {
         const pid_t child_pid = func_print_backtrace_helper(i, sig);
