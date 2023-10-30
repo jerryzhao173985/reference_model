@@ -186,7 +186,14 @@ def test_check(
             return (TestResult.INCORRECT_FORMAT, 0.0, msg)
 
     # for quantized test, allow +-(quantize_tolerance) error
-    if reference_result.dtype == np.int32 or reference_result.dtype == np.int64:
+    if reference_result.dtype in (
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.uint8,
+        np.uint16,
+    ):
 
         if np.all(np.absolute(reference_result - test_result) <= quantize_tolerance):
             _print_result(LogColors.GREEN, "Results PASS {}".format(test_name))
