@@ -32,12 +32,12 @@ def _delete_data_file(file: Path):
 @pytest.mark.parametrize(
     "data_type,expected",
     [
-        (np.int8, trc.TestResult.MISMATCH),
-        (np.int16, trc.TestResult.MISMATCH),
+        (np.int8, trc.TestResult.PASS),
+        (np.int16, trc.TestResult.PASS),
         (np.int32, trc.TestResult.PASS),
         (np.int64, trc.TestResult.PASS),
-        (np.uint8, trc.TestResult.MISMATCH),
-        (np.uint16, trc.TestResult.MISMATCH),
+        (np.uint8, trc.TestResult.PASS),
+        (np.uint16, trc.TestResult.PASS),
         (np.uint32, trc.TestResult.MISMATCH),
         (np.uint64, trc.TestResult.MISMATCH),
         (np.float16, trc.TestResult.PASS),
