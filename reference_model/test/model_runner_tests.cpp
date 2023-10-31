@@ -327,6 +327,47 @@ TEST_SUITE("model_runner")
         compareOutput(dstData, expectedData, expectedData.size());
     }
 
+    TEST_CASE("op_entry_reshape")
+    {
+        // Inputs/Outputs
+        tosa_datatype_t dt                = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape  = { 2, 2 };
+        std::vector<int32_t> new_shape    = { 1, 2 };
+        std::vector<int32_t> output_shape = { 4, 1 };
+        std::vector<float> srcData1(4, 4.0f);
+        std::vector<int32_t> shapeData = { 4, 1 };
+        std::vector<float> dstData(4, 0.0f);
+
+        tosa_tensor_t input1;
+        input1.shape     = input_shape.data();
+        input1.num_dims  = input_shape.size();
+        input1.data_type = dt;
+        input1.data      = reinterpret_cast<uint8_t*>(srcData1.data());
+        input1.size      = srcData1.size() * sizeof(float);
+
+        tosa_tensor_t shape;
+        shape.shape     = new_shape.data();
+        shape.num_dims  = new_shape.size();
+        shape.data_type = tosa_datatype_int32_t;
+        shape.data      = reinterpret_cast<uint8_t*>(shapeData.data());
+        shape.size      = shapeData.size() * sizeof(int32_t);
+
+        tosa_tensor_t output;
+        output.shape     = output_shape.data();
+        output.num_dims  = output_shape.size();
+        output.data_type = dt;
+        output.data      = reinterpret_cast<uint8_t*>(dstData.data());
+        output.size      = dstData.size() * sizeof(float);
+
+        // Execution
+        auto status = tosa_run_reshape(input1, shape, output, func_ctx_t{});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedData(4, 4.0f);
+        compareOutput(dstData, expectedData, expectedData.size());
+    }
+
     TEST_CASE("op_entry_tile")
     {
         // Inputs/Outputs
