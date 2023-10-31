@@ -636,6 +636,19 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
+    def _get_data_range(testGen, dtype, highValueLookup):
+        if dtype in highValueLookup:
+            data_range = testGen.getDTypeRange(dtype, high_inclusive=True)
+            high_val = highValueLookup[dtype]
+            # Set the values to something that won't produce infinity whilst
+            # respecting the default ranges if less than the high value
+            return [
+                max(-high_val, data_range[0]),
+                min(high_val, data_range[1]),
+            ]
+        return None
+
+    @staticmethod
     def tvgLazyGenDefault(
         testGen, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
@@ -777,16 +790,24 @@ class TosaTensorValuesGen:
                 testGen, op, dtypeList, shapeList, testArgs, error_name
             )
 
+    # Set the data range to half the largest value
+    TVG_FLOAT_HIGH_VALUE_ADDSUB = {
+        DType.FP32: (TVG_FLOAT_HIGH_VALUE[DType.FP32] / 2),
+        DType.FP16: (TVG_FLOAT_HIGH_VALUE[DType.FP16] / 2),
+        DType.BF16: (TVG_FLOAT_HIGH_VALUE[DType.BF16] / 2),
+    }
+
     @staticmethod
-    def tvgAddSub(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgAddSub(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
         if dtypeList[0] == DType.INT32 and error_name is None:
-            # Make sure the operation does not cause value saturation - where
+            # Make sure the integer operation does not cause value saturation - where
             # the number wraps due to limited number of bits to store the answer
+            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 2 and cCount == 0
             ), "Op.ADD / Op.SUB must have 2 placeholders, 0 consts"
-            placeholders = []
+            tens_ser_list = []
             add = op["op"] == Op.ADD
             a_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
             b_arr = testGen.getRandTensor(shapeList[1], dtypeList[1])
@@ -833,17 +854,24 @@ class TosaTensorValuesGen:
                         ), "Op.ADD / SUB dimension must be 1 or matching to be broadcastable"
                         b_unsat_arr = np.amax(b_unsat_arr, axis=axis, keepdims=True)
 
-            placeholders.append(
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
             )
-            placeholders.append(
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_unsat_arr)
             )
 
-            return placeholders
+            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
-            return TosaTensorValuesGen.tvgDefault(
-                testGen, op, dtypeList, shapeList, testArgs, error_name
+            # ERROR_IF or floating point test
+            data_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_ADDSUB
+            )
+            if data_range:
+                argsDict["data_range"] = data_range
+
+            return TosaTensorValuesGen.tvgLazyGenDefault(
+                testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod
@@ -923,14 +951,15 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
-    def tvgIntDiv(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgIntDiv(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
         if error_name is None:
+            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 2 and cCount == 0
             ), "Op.INTDIV must have 2 placeholders, 0 consts"
 
-            placeholders = []
+            tens_ser_list = []
 
             # Two invalid cases for Op.INTDIV:
             # 1. divisor == 0
@@ -947,17 +976,17 @@ class TosaTensorValuesGen:
 
                 break
 
-            placeholders.append(
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], dividend_arr)
             )
-            placeholders.append(
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], divisor_arr)
             )
 
-            return placeholders
+            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
-            return TosaTensorValuesGen.tvgDefault(
-                testGen, op, dtypeList, shapeList, testArgs, error_name
+            return TosaTensorValuesGen.tvgLazyGenDefault(
+                testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     # Set the data range to the square root of the largest value
@@ -975,15 +1004,12 @@ class TosaTensorValuesGen:
             DType.FP32,
         ):
             # ERROR_IF or floating point test
-            if dtypeList[0] in TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL:
-                data_range = testGen.getDTypeRange(dtypeList[0], high_inclusive=True)
-                high_val = TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL[dtypeList[0]]
-                # Set the values to something that won't produce infinity whilst
-                # respecting the default ranges if less than the high value
-                argsDict["data_range"] = [
-                    max(-high_val, data_range[0]),
-                    min(high_val, data_range[1]),
-                ]
+            data_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL
+            )
+            if data_range:
+                argsDict["data_range"] = data_range
+
             return TosaTensorValuesGen.tvgLazyGenDefault(
                 testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
@@ -1075,22 +1101,25 @@ class TosaTensorValuesGen:
         return tens
 
     @staticmethod
-    def tvgLogicalShift(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgLogicalShift(
+        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        op = testGen.TOSA_OP_LIST[opName]
         pCount, cCount = op["operands"]
         assert (
             pCount == 2 and cCount == 0
         ), "Op.LOGICAL_LEFT_SHIFT or Op.LOGICAL_RIGHT_SHIFT must have 2 placeholders, 0 consts"
         values_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
         shift_arr = np.int32(testGen.rng.integers(low=0, high=32, size=shapeList[1]))
-        placeholders = []
-        placeholders.append(
+        tens_ser_list = []
+        tens_ser_list.append(
             testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
         )
-        placeholders.append(
+        tens_ser_list.append(
             testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], shift_arr)
         )
 
-        return placeholders
+        return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
     def tvgEqual(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
@@ -1218,7 +1247,15 @@ class TosaArgGen:
     def agNone(testGen, opName, shapeList, dtype, error_name=None):
         """A trivial argument generator for operators that don't take any
         non-tensor arguments"""
-        return [("", [])]
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            [("", {})],
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
+        return arg_list
 
     @staticmethod
     def agAxis(testGen, opName, shapeList, dtype, error_name=None):

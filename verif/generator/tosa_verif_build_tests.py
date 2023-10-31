@@ -301,32 +301,42 @@ def main(argv=None):
     results = []
     for test_type in testType:
         testList = []
-        for op in ttg.TOSA_OP_LIST:
-            if re.match(args.filter + ".*", op):
-                testList.extend(
-                    ttg.genOpTestList(
-                        op,
-                        shapeFilter=args.target_shapes,
-                        rankFilter=args.target_ranks,
-                        dtypeFilter=args.target_dtypes,
-                        testType=test_type,
+        try:
+            for opName in ttg.TOSA_OP_LIST:
+                if re.match(args.filter + ".*", opName):
+                    testList.extend(
+                        ttg.genOpTestList(
+                            opName,
+                            shapeFilter=args.target_shapes,
+                            rankFilter=args.target_ranks,
+                            dtypeFilter=args.target_dtypes,
+                            testType=test_type,
+                        )
                     )
-                )
+        except Exception as e:
+            print(f"INTERNAL ERROR: Failure generating test lists for {opName}")
+            raise e
 
         print("{} matching {} tests".format(len(testList), test_type))
 
         testStrings = []
-        for opName, testStr, dtype, error, shapeList, testArgs in testList:
-            # Check for and skip duplicate tests
-            if testStr in testStrings:
-                print(f"Skipping duplicate test: {testStr}")
-                continue
-            else:
-                testStrings.append(testStr)
+        try:
+            for opName, testStr, dtype, error, shapeList, testArgs in testList:
+                # Check for and skip duplicate tests
+                if testStr in testStrings:
+                    print(f"Skipping duplicate test: {testStr}")
+                    continue
+                else:
+                    testStrings.append(testStr)
 
-            results.append(
-                ttg.serializeTest(opName, testStr, dtype, error, shapeList, testArgs)
-            )
+                results.append(
+                    ttg.serializeTest(
+                        opName, testStr, dtype, error, shapeList, testArgs
+                    )
+                )
+        except Exception as e:
+            print(f"INTERNAL ERROR: Failure creating test output for {opName}")
+            raise e
 
     print(f"Done creating {len(results)} tests")
 

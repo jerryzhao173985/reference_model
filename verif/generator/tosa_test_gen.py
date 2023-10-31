@@ -403,14 +403,18 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
 
-    def build_binary_broadcast(self, op, a, b, validator_fcns, error_name=None):
-        result_tens = OutputShaper.binaryBroadcastOp(
+    def build_binary_broadcast(
+        self, op, inputs, args_dict, validator_fcns, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 2
+        a, b = inputs
+        result_tensor = OutputShaper.binaryBroadcastOp(
             self.ser, self.rng, a, b, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, b.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -425,8 +429,8 @@ class TosaTestGen:
             input1=a,
             input2=b,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -434,7 +438,16 @@ class TosaTestGen:
             return None
 
         self.ser.addOperator(op["op"], input_list, output_list)
-        return result_tens
+
+        if op["op"] == Op.POW:
+            # TODO - add compliance support
+            compliance = None
+        else:
+            compliance = self.tensorComplianceMetaData(
+                op, a.dtype, args_dict, result_tensor, error_name
+            )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_binary_nonbroadcast(self, op, a, b, validator_fcns=None, error_name=None):
         result_tens = OutputShaper.binaryNonBroadcastOp(self.ser, a, b)
@@ -3261,7 +3274,7 @@ class TosaTestGen:
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgAddSub,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
             "error_if_validators": (
@@ -3273,6 +3286,10 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {"ulp": 0.5},
         },
         "arithmetic_right_shift": {
             "op": Op.ARITHMETIC_RIGHT_SHIFT,
@@ -3300,8 +3317,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
             "error_if_validators": (
@@ -3320,8 +3337,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
             "error_if_validators": (
@@ -3340,8 +3357,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
             "error_if_validators": (
@@ -3361,7 +3378,7 @@ class TosaTestGen:
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgIntDiv,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": [DType.INT32],
             "error_if_validators": (
@@ -3380,8 +3397,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
             "error_if_validators": (
@@ -3401,7 +3418,7 @@ class TosaTestGen:
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgLogicalShift,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
             "error_if_validators": (
@@ -3421,7 +3438,7 @@ class TosaTestGen:
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgLogicalShift,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
             "error_if_validators": (
@@ -3440,8 +3457,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
             "error_if_validators": (
@@ -3460,8 +3477,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
             "error_if_validators": (
@@ -3480,8 +3497,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
             "error_if_validators": (
@@ -3493,6 +3510,9 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "minimum": {
             "op": Op.MINIMUM,
@@ -3500,8 +3520,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
             "error_if_validators": (
@@ -3513,6 +3533,9 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "mul": {
             "op": Op.MUL,
@@ -3544,8 +3567,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FP,
             "error_if_validators": (
@@ -3565,7 +3588,7 @@ class TosaTestGen:
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgAddSub,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
             "error_if_validators": (
@@ -3577,6 +3600,10 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {"ulp": 0.5},
         },
         "table": {
             "op": Op.TABLE,
@@ -4432,7 +4459,7 @@ class TosaTestGen:
                 build_rfft2d,
                 TosaTensorGen.tgRFFT2d,
                 TosaTensorValuesGen.tvgDefault,
-                TosaArgGen.agNone,
+                None,
             ),
             "types": [DType.FP32],
             "error_if_validators": (
