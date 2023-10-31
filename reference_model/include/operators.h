@@ -323,8 +323,6 @@ extern "C"
 
     tosa_status_t tosa_run_reshape(tosa_tensor_t client_input1,
                                    tosa_tensor_t client_shape,
-                                   const int32_t client_new_shape_len,
-                                   const int32_t client_new_shape[],
                                    tosa_tensor_t client_output,
                                    const func_ctx_t& func_ctx);
 
