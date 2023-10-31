@@ -38,11 +38,15 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
 NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                              {
                                  { Op::Op_UNKNOWN, "UNKNOWN" },
+                                 { Op::Op_ADD, "ADD" },
                                  { Op::Op_CONV2D, "CONV2D" },
                                  { Op::Op_MATMUL, "MATMUL" },
+                                 { Op::Op_MAXIMUM, "MAXIMUM" },
                                  { Op::Op_MAX_POOL2D, "MAX_POOL2D" },
+                                 { Op::Op_MINIMUM, "MINIMUM" },
                                  { Op::Op_MUL, "MUL" },
                                  { Op::Op_PAD, "PAD" },
+                                 { Op::Op_SUB, "SUB" },
                              })
 
 }    // namespace tosa

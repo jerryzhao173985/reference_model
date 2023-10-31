@@ -126,9 +126,10 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
         WARNING("[Generator][PR] Unknown operator.");
         return false;
     }
-    if (cfg.pseudoRandomInfo.range.size() != 0 || cfg.pseudoRandomInfo.range.size() != 2)
+    if (cfg.pseudoRandomInfo.range.size() != 0 && cfg.pseudoRandomInfo.range.size() != 2)
     {
-        WARNING("[Generator][PR] Invalid range.");
+        WARNING("[Generator][PR] Invalid range");
+        return false;
     }
 
     switch (cfg.dataType)
