@@ -112,13 +112,11 @@ extern "C"
     tosa_status_t tosa_run_transpose_conv2d(tosa_tensor_t client_input,
                                             tosa_tensor_t client_weight,
                                             tosa_tensor_t client_bias,
+                                            const int32_t client_out_pad[4],
                                             const int32_t client_stride[2],
+                                            const int32_t client_out_shape[4],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
-                                            const int32_t client_pad_len,
-                                            const int32_t client_pad[],
-                                            const int32_t client_dilation_len,
-                                            const int32_t client_dilation[],
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx);
 
