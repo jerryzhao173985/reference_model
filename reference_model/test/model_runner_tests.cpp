@@ -180,6 +180,66 @@ TEST_SUITE("model_runner")
         compareOutput(dstData, expectedData, expectedData.size());
     }
 
+    TEST_CASE("op_entry_transpose_conv2d")
+    {
+        // Transpose Conv 2D parameters
+        const int32_t stride[2]    = { 1, 1 };
+        const int32_t out_pad[4]   = { 0, 0, 0, 0 };
+        const int32_t out_shape[4] = { 1, 32, 32, 16 };
+
+        // Inputs/Outputs
+        tosa_datatype_t dt                = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape  = { 1, 32, 32, 8 };
+        std::vector<int32_t> output_shape = { 1, 32, 32, 16 };
+        std::vector<int32_t> weight_shape = { 16, 1, 1, 8 };
+        std::vector<int32_t> bias_shape   = { 16 };
+
+        std::vector<float> srcData(32 * 32 * 8, 1.0f);
+        std::vector<float> dstData(32 * 32 * 16, 0.f);
+        std::vector<float> biasData(16, 0.f);
+        std::vector<float> weightData(16 * 8, 1.0f);
+
+        tosa_tensor_t input;
+        input.shape     = input_shape.data();
+        input.num_dims  = input_shape.size();
+        input.data_type = dt;
+        input.data      = reinterpret_cast<uint8_t*>(srcData.data());
+        input.size      = srcData.size() * sizeof(float);
+
+        tosa_tensor_t weight;
+        weight.shape     = weight_shape.data();
+        weight.num_dims  = weight_shape.size();
+        weight.data_type = dt;
+        weight.data      = reinterpret_cast<uint8_t*>(weightData.data());
+        weight.size      = weightData.size() * sizeof(float);
+
+        tosa_tensor_t bias;
+        bias.shape     = bias_shape.data();
+        bias.num_dims  = bias_shape.size();
+        bias.data_type = dt;
+        bias.data      = reinterpret_cast<uint8_t*>(biasData.data());
+        bias.size      = biasData.size() * sizeof(float);
+
+        tosa_tensor_t output;
+        output.shape     = output_shape.data();
+        output.num_dims  = output_shape.size();
+        output.data_type = dt;
+        output.data      = reinterpret_cast<uint8_t*>(dstData.data());
+        output.size      = dstData.size() * sizeof(float);
+
+        const int32_t input_zp  = 0;
+        const int32_t weight_zp = 0;
+
+        // Execution
+        auto status =
+            tosa_run_transpose_conv2d(input, weight, bias, out_pad, stride, out_shape, input_zp, weight_zp, output, {});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedData(32 * 32 * 16, 8.0f);
+        compareOutput(dstData, expectedData, expectedData.size());
+    }
+
     TEST_CASE("op_entry_conv2d_abs_mode")
     {
         // Conv parameters
