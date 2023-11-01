@@ -39,6 +39,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                              {
                                  { Op::Op_UNKNOWN, "UNKNOWN" },
                                  { Op::Op_ADD, "ADD" },
+                                 { Op::Op_ARGMAX, "ARGMAX" },
                                  { Op::Op_CONV2D, "CONV2D" },
                                  { Op::Op_MATMUL, "MATMUL" },
                                  { Op::Op_MAXIMUM, "MAXIMUM" },
@@ -46,6 +47,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_MINIMUM, "MINIMUM" },
                                  { Op::Op_MUL, "MUL" },
                                  { Op::Op_PAD, "PAD" },
+                                 { Op::Op_REDUCE_MAX, "REDUCE_MAX" },
+                                 { Op::Op_REDUCE_MIN, "REDUCE_MIN" },
+                                 { Op::Op_REDUCE_SUM, "REDUCE_SUM" },
                                  { Op::Op_SUB, "SUB" },
                              })
 

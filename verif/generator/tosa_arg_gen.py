@@ -1078,27 +1078,26 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgConcat(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgConcat(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
         count = len(shapeList) - testGen.args.num_const_inputs_concat
         if count < 1:
             count = 1
         if testGen.args.num_const_inputs_concat == 0:
             count = len(shapeList)
 
-        # Ensure axis is an int
-        testArgs[0] = int(testArgs[0])
-
         shapeList = TosaTensorGen.tgConcatConstInput(
-            testGen, shapeList, testArgs[0], error_name
+            testGen, shapeList, argsDict["axis"], error_name
         )
 
-        tens = []
-        tens.extend(
+        tens_ser_list = []
+        tens_ser_list.extend(
             testGen.buildPlaceholderTensors(shapeList[0:count], dtypeList[0:count])
         )
-        tens.extend(testGen.buildConstTensors(shapeList[count:], dtypeList[count:]))
+        tens_ser_list.extend(
+            testGen.buildConstTensors(shapeList[count:], dtypeList[count:])
+        )
 
-        return tens
+        return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
     def tvgLogicalShift(
@@ -1164,8 +1163,9 @@ class TosaTensorValuesGen:
             )
 
     @staticmethod
-    def tvgReduceSum(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgReduceSum(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
         if dtypeList[0] == DType.INT32:
+            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 1 and cCount == 0
@@ -1176,14 +1176,15 @@ class TosaTensorValuesGen:
             values_arr = np.int32(
                 testGen.rng.integers(low=-range_val, high=range_val, size=shapeList[0])
             )
-            placeholders = []
-            placeholders.append(
+            tens_ser_list = []
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
             )
-            return placeholders
+            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
-            return TosaTensorValuesGen.tvgDefault(
-                testGen, op, dtypeList, shapeList, testArgs, error_name
+            # ERROR_IF or dot product floating point test
+            return TosaTensorValuesGen.tvgLazyGenDefault(
+                testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
 
@@ -1228,12 +1229,18 @@ class TosaArgGen:
                     # Extra tests for each dot product test set
                     dot_products = args_dict["dot_products"]
                     if dot_products < testGen.TOSA_MI_DOT_PRODUCT_MIN:
+                        shape_info = (
+                            " ({})".format(testGen.shapeStr(args_dict["shape"]))
+                            if "shape" in args_dict
+                            else ""
+                        )
                         print(
-                            f"Skipping {opName} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
+                            f"Skipping {opName}{shape_info} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
                         )
                         continue
-                    # KS is required by all dot product generators
+                    # KS and acc_type is required by all dot product generators
                     assert "ks" in args_dict
+                    assert "acc_type" in args_dict
 
                     for s in testGen.TOSA_MI_DOT_PRODUCT_TEST_SETS:
                         new_arg_str = f"{arg_str}_s{s}"
@@ -1260,20 +1267,40 @@ class TosaArgGen:
     @staticmethod
     def agAxis(testGen, opName, shapeList, dtype, error_name=None):
         """Build the axis argument for operators that take a single axis"""
-        axes = []
+        arg_list = []
         shape = shapeList[0]
 
         if error_name == ErrorIf.AxisSmallerZero:
-            small_axis = testGen.rng.integers(-5, 0)
-            axes.append(("axis{}".format(small_axis), [small_axis]))
+            # Set too small axis
+            axes = [testGen.rng.integers(-5, 0)]
         elif error_name == ErrorIf.AxisLargerRank:
-            large_axis = testGen.rng.integers(len(shape) + 1, len(shape) + 10)
-            axes.append(("axis{}".format(large_axis), [large_axis]))
+            # Set too large axis
+            axes = [testGen.rng.integers(len(shape) + 1, len(shape) + 10)]
         else:
-            for a in range(0, len(shape)):
-                axes.append(("axis{}".format(a), [a]))
+            # Create tests for each dimension
+            axes = range(0, len(shape))
 
-        return axes
+        opid = testGen.TOSA_OP_LIST[opName]["op"]
+
+        for a in axes:
+            args_dict = {"axis": int(a)}
+            if opid == Op.REDUCE_SUM:
+                args_dict["dot_products"] = gtu.product(shape)
+                args_dict["shape"] = shape
+                args_dict["ks"] = int(shape[a]) if a >= 0 and a < len(shape) else 1
+                args_dict["acc_type"] = dtype if dtype != DType.BF16 else DType.FP32
+
+            arg_list.append(("axis{}".format(a), args_dict))
+
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
+        return arg_list
 
     @staticmethod
     def _calculate_sparsity(num_tests, sparsity_factor):
@@ -1483,6 +1510,7 @@ class TosaArgGen:
                                 "kernel": k_shape,
                                 "ks": k_size,
                                 "dot_products": dots,
+                                "shape": ifm_shape,
                             }
 
                             # Support for larger values than 9 needs different delimiter
@@ -1558,6 +1586,7 @@ class TosaArgGen:
             "dot_products": gtu.product(
                 (shapeList[0][0], shapeList[0][1], shapeList[1][2])
             ),
+            "shape": shapeList[0],
         }
 
         # Create arg tuple of string and dict
@@ -1886,7 +1915,7 @@ class TosaArgGen:
             else "st{}_kern{}_pad{}"
         )
 
-        def get_arg_list_element(accum, stride, pad, kern, dot_products=0):
+        def get_arg_list_element(accum, stride, pad, kern, dot_products=0, shape=[]):
             # Return tuple containing the formatted argument string and
             # the corresponding argument values in a dictionary
 
@@ -1902,6 +1931,7 @@ class TosaArgGen:
                 "pad": pad,
                 "kernel": kern,
                 "dot_products": dot_products,  # Ignored for error tests
+                "shape": shape,
                 "ks": gtu.product(kern),  # avg_pool2d: KS = KX*KY
             }
 
@@ -1926,7 +1956,7 @@ class TosaArgGen:
                             )
                             if None not in [sNew, pNew, kNew] and n % sparsity == 0:
                                 arg_list.append(
-                                    get_arg_list_element(a, sNew, pNew, kNew)
+                                    get_arg_list_element(a, sNew, pNew, kNew, shape)
                                 )
                         elif (
                             n % sparsity == 0
@@ -1965,7 +1995,9 @@ class TosaArgGen:
                                 dp = gtu.product(
                                     (shape[0], output_h, output_w, shape[3])
                                 )
-                                arg_list.append(get_arg_list_element(a, s, p, k, dp))
+                                arg_list.append(
+                                    get_arg_list_element(a, s, p, k, dp, shape)
+                                )
                         n += 1
 
         # Now add data generator types
