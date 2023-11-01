@@ -509,4 +509,75 @@ TEST_CASE("positive - pseudo random")
         check_not_output<float>(bufferP0, bufferP1);
     }
 }
+void reduce_sum_test_FP32(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string templateJsonCfg,
+                          const std::string setStr,
+                          const std::vector<uint32_t> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<float> buffer(tosaElements);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    // Choose different generator values to test at positions 6, 7 & 8
+    std::vector<float> mid_three(buffer.begin() + 6, buffer.begin() + 9);
+    check_output<float>(mid_three, expected);
+}
+
+TEST_CASE("positive - FP32 reduce_sum dot product (values 6,7 & 8)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 5, 3, 7 ],
+                "input_pos": 0,
+                "op" : "REDUCE_SUM",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 3,
+                    "acc_type": "FP32",
+                    "axis": 1
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName = "input";
+    const size_t tosaElements  = 5 * 3 * 7;
+
+    SUBCASE("reduce_sum, set 0, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x3df2e612, 0x3f59255f, 0x0 };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", expected);
+    }
+    SUBCASE("reduce_sum, set 1, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x5edaa175, 0x5edb84c1, 0x5ea3c765 };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", expected);
+    }
+    SUBCASE("reduce_sum, set 2, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3e73f143, 0x3f12cef8 };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", expected);
+    }
+    SUBCASE("reduce_sum, set 3, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x41800000, 0xbe9f659e, 0xbfaca78c };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", expected);
+    }
+    SUBCASE("reduce_sum, set 4, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x5e1e6f12, 0x3f000000, 0x3f000000 };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", expected);
+    }
+    SUBCASE("reduce_sum, set 5, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x5d2790c5, 0xdec3dadc, 0xdea1486e };
+        reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", expected);
+    }
+}
 TEST_SUITE_END();    // generate

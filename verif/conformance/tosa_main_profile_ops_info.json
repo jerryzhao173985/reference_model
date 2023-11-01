@@ -131,6 +131,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -142,7 +143,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "32,64",
                         "--target-rank",
@@ -162,7 +163,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,32",
                         "--target-rank",
@@ -174,7 +175,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,3,65535,1",
                         "--target-shape",
@@ -612,7 +613,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,34,19,27",
                         "--target-shape",
@@ -625,7 +626,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,65537,1,3",
                         "--target-shape",
@@ -2378,6 +2379,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -2390,7 +2392,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,32"
                     ],
@@ -2398,7 +2400,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,1,1,65531",
                         "--target-shape",
@@ -2423,6 +2425,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -2435,7 +2438,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,32"
                     ],
@@ -2443,7 +2446,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,1,65531,1",
                         "--target-shape",
@@ -2510,6 +2513,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2521,13 +2525,25 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,37"
                     ],
                     [
                         "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1001",
+                        "--target-shape",
+                        "50,200"
+                    ],
+                    [
+                        "--target-dtype",
                         "bf16",
+                        "--fp-values-range",
+                        "-max,max",
                         "--target-shape",
                         "1,3,65529,1",
                         "--target-shape",

@@ -189,6 +189,48 @@ bool generateConv2D(const TosaReference::GenerateConfig& cfg,
             return false;
     }
 }
+//---------------------------------------------------------------------------//
+//                              Reduce Sum                                   //
+//---------------------------------------------------------------------------//
+
+bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
+                       TosaReference::IDotProductGenerator& generator,
+                       void* data,
+                       size_t size)
+{
+    if (cfg.dataType != DType::DType_FP32)
+    {
+        WARNING("[Generator][DP][ReduceSum] Only supports FP32.");
+        return false;
+    }
+    if (cfg.inputPos != 0)
+    {
+        WARNING("[Generator][DP][ReduceSum] Invalid input tensor slot position to operator.");
+        return false;
+    }
+    if (cfg.dotProductInfo.axis < 0 || static_cast<size_t>(cfg.dotProductInfo.axis) >= cfg.shape.size())
+    {
+        WARNING("[Generator][DP][ReduceSum] Invalid axis %d.", cfg.dotProductInfo.axis);
+        return false;
+    }
+
+    float* input        = reinterpret_cast<float*>(data);
+    const int64_t T     = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t axis = cfg.dotProductInfo.axis;
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint64_t k = t;
+        for (uint32_t d = cfg.shape.size() - 1; d > axis; --d)
+        {
+            k = k / cfg.shape[d];
+        }
+        k = k % cfg.shape[axis];
+
+        input[t] = generator(static_cast<int32_t>(k));
+    }
+    return true;
+}
 }    // namespace
 
 namespace TosaReference
@@ -210,6 +252,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
             return generateMatMul(cfg, *generator, data, size);
         case tosa::Op_CONV2D:
             return generateConv2D(cfg, *generator, data, size);
+        case tosa::Op_REDUCE_SUM:
+            return generateReduceSum(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;
