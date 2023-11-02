@@ -1541,9 +1541,7 @@ class TosaArgGen:
     @staticmethod
     def agFullyConnected(testGen, opName, shapeList, dtypes, error_name=None):
 
-        assert isinstance(dtypes, list) or isinstance(
-            dtypes, tuple
-        ), f"{dtypes} unexpected"
+        assert isinstance(dtypes, (list, tuple)), f"{dtypes} unexpected"
         input_dtype = dtypes[0]
 
         if error_name == ErrorIf.WrongOutputType:
@@ -1554,7 +1552,25 @@ class TosaArgGen:
         else:
             accum_dtype = gtu.get_accum_dtype_from_tgTypes(dtypes)
 
-        return [(f"acc{testGen.typeStr(accum_dtype)}", [accum_dtype])]
+        # Set up compliance info
+        args_dict = {
+            "acc_type": accum_dtype,
+            "ks": int(shapeList[0][1]),  # Set KS = IC, from input A (N,IC)
+            "dot_products": gtu.product((shapeList[0][0], shapeList[1][0])),
+            "shape": shapeList[0],
+        }
+
+        arg_list = [(f"acc{testGen.typeStr(accum_dtype)}", args_dict)]
+
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            input_dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
+        return arg_list
 
     @staticmethod
     def agMatMul(testGen, opName, shapeList, dtype, error_name=None):
