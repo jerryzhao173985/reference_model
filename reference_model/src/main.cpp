@@ -543,7 +543,9 @@ std::vector<std::string> parseFromString(std::string raw_str)
         if (end == std::string::npos)
             last_pair = true;
 
-        name = raw_str.substr(start, end);
+        // The second parameter holds for number of characters to include in the substring,
+        // not for the index of the end of the capture.
+        name = raw_str.substr(start, end - start);
 
         result.push_back(name);
 
