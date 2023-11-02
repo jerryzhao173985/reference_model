@@ -1086,21 +1086,23 @@ class TosaTestGen:
     def build_fully_connected(
         self,
         op,
-        ifm,
-        filter,
-        bias,
-        accum_dtype,
+        inputs,
+        args_dict,
         validator_fcns=None,
         error_name=None,
         qinfo=None,
     ):
-        result_tens = OutputShaper.fullyConnectedOp(
+        assert len(inputs) == 3
+        ifm, filter, bias = inputs
+        accum_dtype = args_dict["acc_type"]
+
+        result_tensor = OutputShaper.fullyConnectedOp(
             self.ser, self.rng, ifm, filter, accum_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [ifm.name, filter.name, bias.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1115,10 +1117,10 @@ class TosaTestGen:
             input_shape=ifm.shape,
             input_dtype=ifm.dtype,
             weight_dtype=filter.dtype,
-            output_shape=result_tens.shape,
-            output_dtype=result_tens.dtype,
+            output_shape=result_tensor.shape,
+            output_dtype=result_tensor.dtype,
             qinfo=qinfo,
-            result_tensors=[result_tens],
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1130,7 +1132,12 @@ class TosaTestGen:
         attr.FullyConnectedAttribute(qinfo[0], qinfo[1])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, ifm.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_matmul(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -3077,7 +3084,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_fully_connected,
                 TosaTensorGen.tgFullyConnected,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agFullyConnected,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3091,6 +3098,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.DOT_PRODUCT,),
+            },
         },
         "matmul": {
             "op": Op.MATMUL,

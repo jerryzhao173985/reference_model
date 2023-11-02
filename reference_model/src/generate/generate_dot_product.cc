@@ -231,6 +231,102 @@ bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
     }
     return true;
 }
+//---------------------------------------------------------------------------//
+//                              Fully Connected                              //
+//---------------------------------------------------------------------------//
+
+bool generateFullyConnectedInput(const TosaReference::GenerateConfig& cfg,
+                                 TosaReference::IDotProductGenerator& generator,
+                                 void* data,
+                                 size_t size)
+{
+    if (cfg.shape.size() != 2)
+    {
+        WARNING("[Generator][DP][FullyConnected][Input] Tensor shape expected 2 dimensions.");
+        return false;
+    }
+
+    float* input      = reinterpret_cast<float*>(data);
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IC = cfg.shape[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t k = t % IC;
+
+        input[t] = generator(k);
+    }
+    return true;
+}
+
+bool generateFullyConnectedWeight(const TosaReference::GenerateConfig& cfg,
+                                  TosaReference::IDotProductGenerator& generator,
+                                  void* data,
+                                  size_t size)
+{
+    if (cfg.shape.size() != 2)
+    {
+        WARNING("[Generator][DP][FullyConnected][Weight] Tensor shape expected 2 dimensions.");
+        return false;
+    }
+
+    float* weight     = reinterpret_cast<float*>(data);
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IC = cfg.shape[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t k = t % IC;
+
+        weight[t] = generator(k);
+    }
+    return true;
+}
+
+bool generateFullyConnectedBias(const TosaReference::GenerateConfig& cfg,
+                                TosaReference::IDotProductGenerator& generator,
+                                void* data,
+                                size_t size)
+{
+    if (cfg.shape.size() != 1)
+    {
+        WARNING("[Generator][DP][FullyConnected][Bias] Tensor shape expected 1 dimension.");
+        return false;
+    }
+
+    float* bias      = reinterpret_cast<float*>(data);
+    const uint32_t T = cfg.shape[0];
+
+    for (uint32_t t = 0; t < T; ++t)
+    {
+        bias[t] = generator(2);
+    }
+    return true;
+}
+
+bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
+                            TosaReference::IDotProductGenerator& generator,
+                            void* data,
+                            size_t size)
+{
+    if (cfg.dataType != DType::DType_FP32)
+    {
+        WARNING("[Generator][DP][FullyConnected] Only supports FP32.");
+        return false;
+    }
+    switch (cfg.inputPos)
+    {
+        case 0:
+            return generateFullyConnectedInput(cfg, generator, data, size);
+        case 1:
+            return generateFullyConnectedWeight(cfg, generator, data, size);
+        case 2:
+            return generateFullyConnectedBias(cfg, generator, data, size);
+        default:
+            WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+            return false;
+    }
+}
 }    // namespace
 
 namespace TosaReference
@@ -254,6 +350,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
             return generateConv2D(cfg, *generator, data, size);
         case tosa::Op_REDUCE_SUM:
             return generateReduceSum(cfg, *generator, data, size);
+        case tosa::Op_FULLY_CONNECTED:
+            return generateFullyConnected(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;
