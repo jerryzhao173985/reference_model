@@ -91,6 +91,12 @@ std::optional<VerifyConfig> parseVerifyConfig(const char* tensorName, const char
 /// \brief Extract number of total elements
 int64_t numElements(const std::vector<int32_t>& shape);
 
+/// \brief Convert a flat index to a shape position
+std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& shape);
+
+/// \brief A string representing the shape or position
+std::string positionToString(const std::vector<int32_t>& pos);
+
 /// \brief Map API data-type to DType
 DType mapToDType(tosa_datatype_t dataType);
 

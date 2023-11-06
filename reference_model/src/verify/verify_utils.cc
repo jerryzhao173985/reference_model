@@ -121,6 +121,32 @@ int64_t numElements(const std::vector<int32_t>& shape)
     return std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
 }
 
+std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& shape)
+{
+    std::vector<int32_t> pos;
+    for (auto d = shape.end() - 1; d >= shape.begin(); --d)
+    {
+        pos.insert(pos.begin(), index % *d);
+        index /= *d;
+    }
+    return pos;
+}
+
+std::string positionToString(const std::vector<int32_t>& pos)
+{
+    std::string str = "[";
+    for (auto d = pos.begin(); d < pos.end(); ++d)
+    {
+        str.append(std::to_string(*d));
+        if (pos.end() - d > 1)
+        {
+            str.append(",");
+        }
+    }
+    str.append("]");
+    return str;
+}
+
 DType mapToDType(tosa_datatype_t dataType)
 {
     static std::map<tosa_datatype_t, DType> typeMap = {
