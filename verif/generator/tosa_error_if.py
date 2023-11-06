@@ -343,6 +343,9 @@ class TosaErrorValidator:
         Returns:
             True if the result matches the expected result; otherwise False
         """
+        if validator_fcns is None:
+            # Nothing to do
+            return True
         overall_result = True
         for val_fcn in validator_fcns:
             val_result = val_fcn(True, **kwargs)

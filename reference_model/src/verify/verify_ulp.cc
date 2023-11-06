@@ -16,6 +16,7 @@
 #include <limits>
 #include <memory>
 #include <type_traits>
+#include <utility>
 
 #include "verifiers.h"
 
@@ -36,9 +37,14 @@ bool tosaCheckULP(double referenceValue, float testValue, double ulpNum)
 
     // Start by sanitizing the input.
 
-    // The concept of ULP isn't defined for NaN's
+    // Both must be NaNs to be correct
     if (std::isnan(referenceValue) || std::isnan(testValue))
     {
+        if (std::isnan(referenceValue) && std::isnan(testValue))
+        {
+            return true;
+        }
+        WARNING("[Verfier][ULP] Non-matching NaN values - ref (%10f) versus test (%10f).", referenceValue, testValue);
         return false;
     }
 
@@ -112,8 +118,8 @@ bool tosaCheckULP(double referenceValue, float testValue, double ulpNum)
     bool withinUlp     = testValue64 >= referenceMin && testValue64 <= referenceMax;
     if (!withinUlp)
     {
-        WARNING("[Verfier][ULP] value (%10f) is not in ULP %g range (%10f <= ref (%10f) <= %10f).", testValue64, ulpNum,
-                referenceMin, referenceValue, referenceMax);
+        WARNING("[Verfier][ULP] value (%10.10f) is not in ULP %g range (%10.10f <= ref (%10.10f) <= %10.10f).",
+                testValue64, ulpNum, referenceMin, referenceValue, referenceMax);
     }
     return withinUlp;
 }
@@ -126,8 +132,8 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
     TOSA_REF_REQUIRE(implementationTensor != nullptr, "[ULP] Implementation tensor is missing");
 
     // Get number of elements
-    const auto elementCount =
-        numElements(std::vector<int32_t>(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims));
+    const std::vector<int32_t> refShape(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims);
+    const auto elementCount = numElements(refShape);
     TOSA_REF_REQUIRE(elementCount > 0, "[ULP] Invalid shape for reference tensor");
 
     const double ulp = ulpInfo.ulp;
@@ -138,10 +144,23 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
             TOSA_REF_REQUIRE(refData != nullptr, "[ULP] Missing data for reference");
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return std::equal(refData, std::next(refData, elementCount), impData, std::next(impData, elementCount),
-                              [ulp](const auto& referenceValue, const auto& implementationValue) {
-                                  return tosaCheckULP(referenceValue, implementationValue, ulp);
-                              });
+            const auto* refDataEnd = std::next(refData, elementCount);
+            // Use mismatch to get the location of the first unequal value
+            auto pair = std::mismatch(refData, refDataEnd, impData, std::next(impData, elementCount),
+                                      [ulp](const auto& referenceValue, const auto& implementationValue) {
+                                          return tosaCheckULP(referenceValue, implementationValue, ulp);
+                                      });
+            if (std::get<0>(pair) == refDataEnd)
+            {
+                // No mismatch found
+                return true;
+            }
+            else
+            {
+                auto pos = indexToPosition(std::get<0>(pair) - refData, refShape);
+                WARNING("[Verfier][ULP] Location %s", positionToString(pos).c_str());
+                return false;
+            }
         }
         default:
             WARNING("[Verifier][ULP] Data-type not supported.");
