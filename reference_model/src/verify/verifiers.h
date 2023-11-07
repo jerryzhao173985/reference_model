@@ -60,6 +60,15 @@ bool verifyReduceProduct(const CTensor* referenceTensor, const CTensor* implemen
 /// \return True if compliant else false
 bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, const UlpInfo& ulpInfo);
 
+/// \brief Perform abs-error based verification
+///
+/// \param ref    Reference tensor
+/// \param refBnd Reference bounds tensor (according to op)
+/// \param imp    Implementation resulting tensor
+///
+/// \return True if compliant else false
+bool verifyAbsError(const CTensor* ref, const CTensor* refBnd, const CTensor* imp);
+
 };    // namespace TosaReference
 
 #endif    // VERIFIERS_H_

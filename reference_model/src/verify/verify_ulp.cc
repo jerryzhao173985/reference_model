@@ -25,57 +25,18 @@ namespace TosaReference
 
 namespace
 {
-static_assert(std::numeric_limits<float>::is_iec559,
-              "TOSA Reference Model has not been built with standard IEE574 32-bit float support; ULP based "
-              "verifcation is invalid");
-static_assert(std::numeric_limits<double>::is_iec559,
-              "TOSA Reference Model has not been built with standard IEE574 64-bit float support; ULP based "
-              "verifcation is invalid");
-
-bool tosaCheckULP(double referenceValue, float testValue, double ulpNum)
+bool tosaCheckULP(float testValue, double referenceValue, double ulpNum)
 {
-
-    // Start by sanitizing the input.
-
-    // Both must be NaNs to be correct
-    if (std::isnan(referenceValue) || std::isnan(testValue))
+    double errorBound = 0.0;
+    if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
     {
-        if (std::isnan(referenceValue) && std::isnan(testValue))
+        // Make the sign of the reference value positive
+        // and adjust the test value appropriately.
+        if (referenceValue < 0)
         {
-            return true;
+            referenceValue = -referenceValue;
+            testValue      = -testValue;
         }
-        WARNING("[Verfier][ULP] Non-matching NaN values - ref (%10f) versus test (%10f).", referenceValue, testValue);
-        return false;
-    }
-
-    // Make the sign of the reference value positive
-    // and adjust the test value appropriately.
-    if (referenceValue < 0)
-    {
-        referenceValue = -referenceValue;
-        testValue      = -testValue;
-    }
-
-    // At this point we are ready to calculate the ULP bounds for the reference value.
-    double referenceMin, referenceMax;
-
-    // If the reference is infinity e.g. the result of an overflow the test value must
-    // be infinity of an appropriate sign.
-    if (std::isinf(referenceValue))
-    {
-        // We already canonicalized the input such that the reference value is positive
-        // so no need to check again here.
-        referenceMin = std::numeric_limits<float>::infinity();
-        referenceMax = std::numeric_limits<float>::infinity();
-    }
-    else if (referenceValue == 0)
-    {
-        // For zero we require that the results match exactly with the correct sign.
-        referenceMin = 0;
-        referenceMax = 0;
-    }
-    else
-    {
         // Find the exponent of the reference value.
         int32_t referenceExponent = ilog2(referenceValue);
 
@@ -86,42 +47,9 @@ bool tosaCheckULP(double referenceValue, float testValue, double ulpNum)
         // i.e. the ULP.
         double ulpValue = referencePower2 * exp2(-AccPrecision<float>::normal_frac);
 
-        // Scale by the number of ULPs requested by the user.
-        referenceMax = referenceValue + ulpValue * ulpNum;
-        referenceMin = referenceValue - ulpValue * ulpNum;
-
-        // Handle the overflow cases.
-        if (referenceMax > AccPrecision<float>::normal_max)
-        {
-            referenceMax = std::numeric_limits<float>::infinity();
-        }
-
-        if (referenceMin > AccPrecision<float>::normal_max)
-        {
-            referenceMin = std::numeric_limits<float>::infinity();
-        }
-
-        // And the underflow cases.
-        if (referenceMax < AccPrecision<float>::normal_min)
-        {
-            referenceMax = AccPrecision<float>::normal_min;
-        }
-
-        if (referenceMin < AccPrecision<float>::normal_min)
-        {
-            referenceMin = 0.0;
-        }
+        errorBound = ulpValue * ulpNum;
     }
-
-    // And finally... Do the comparison.
-    double testValue64 = static_cast<double>(testValue);
-    bool withinUlp     = testValue64 >= referenceMin && testValue64 <= referenceMax;
-    if (!withinUlp)
-    {
-        WARNING("[Verfier][ULP] value (%10.10f) is not in ULP %g range (%10.10f <= ref (%10.10f) <= %10.10f).",
-                testValue64, ulpNum, referenceMin, referenceValue, referenceMax);
-    }
-    return withinUlp;
+    return tosaCheckFloatBound(testValue, referenceValue, errorBound);
 }
 }    // namespace
 
@@ -148,7 +76,7 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
             // Use mismatch to get the location of the first unequal value
             auto pair = std::mismatch(refData, refDataEnd, impData, std::next(impData, elementCount),
                                       [ulp](const auto& referenceValue, const auto& implementationValue) {
-                                          return tosaCheckULP(referenceValue, implementationValue, ulp);
+                                          return tosaCheckULP(implementationValue, referenceValue, ulp);
                                       });
             if (std::get<0>(pair) == refDataEnd)
             {

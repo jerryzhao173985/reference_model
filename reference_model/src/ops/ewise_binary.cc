@@ -514,7 +514,18 @@ int OpPow<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(powf(a, b)); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return pow(a, b); };
+            if (g_func_config.abs_mode)
+            {
+                // ABS_ERROR bounds return (1+abs(log(abs(a))*b))
+                this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                    OutEigenType c = log(a > (InEigenType)0 ? a : (-a)) * b;
+                    return 1.0 + (c > (OutEigenType)0 ? c : (-c));
+                };
+            }
+            else
+            {
+                this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return pow(a, b); };
+            }
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));

@@ -43,8 +43,9 @@ enum class VerifyMode
     Exact,
     Ulp,
     DotProduct,
+    FpSpecial,
     ReduceProduct,
-    FpSpecial
+    AbsError
 };
 
 /// \brief ULP verification meta-data
@@ -134,6 +135,9 @@ struct AccPrecision<float>
     static constexpr double normal_max   = const_exp2(128) - const_exp2(127 - 23);
     static constexpr int32_t normal_frac = 23;
 };
+
+/// \brief Error bounds check for ULP and ABS_ERROR modes
+bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBound);
 
 };    // namespace TosaReference
 
