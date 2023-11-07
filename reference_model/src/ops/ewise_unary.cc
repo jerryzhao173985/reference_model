@@ -172,7 +172,15 @@ int OpExp<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(expf(a)); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return exp(a); };
+            if (g_func_config.abs_mode)
+            {
+                // ABS_ERROR bounds return (1+abs(a))
+                this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 + (a > (InEigenType)0 ? a : (-a)); };
+            }
+            else
+            {
+                this->fcn = [](InEigenType a) -> OutEigenType { return exp(a); };
+            }
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));

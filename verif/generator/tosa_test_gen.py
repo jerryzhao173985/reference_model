@@ -333,6 +333,8 @@ class TosaTestGen:
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
+        elif op["op"] in (Op.EXP, Op.POW):
+            mode = gtu.ComplianceMode.ABS_ERROR
         else:
             mode = gtu.ComplianceMode.EXACT
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name
@@ -400,8 +402,8 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
-        if op["op"] in (Op.EXP, Op.LOG):
-            # TODO - add compliance support LOG and EXP
+        if op["op"] in (Op.LOG,):
+            # TODO - add compliance support LOG
             compliance = None
         else:
             compliance = self.tensorComplianceMetaData(
@@ -445,13 +447,9 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list)
 
-        if op["op"] == Op.POW:
-            # TODO - add compliance support
-            compliance = None
-        else:
-            compliance = self.tensorComplianceMetaData(
-                op, a.dtype, args_dict, result_tensor, error_name
-            )
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
@@ -3576,6 +3574,9 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "sub": {
             "op": Op.SUB,
@@ -3713,6 +3714,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "floor": {
             "op": Op.FLOOR,

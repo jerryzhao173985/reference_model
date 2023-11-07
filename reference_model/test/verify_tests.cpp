@@ -428,4 +428,65 @@ TEST_CASE("positive - ulp")
     }
 }
 
+TEST_CASE("positive - abs error")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "ABS_ERROR",
+                "data_type": "FP32"
+            }
+        }
+    })";
+
+    const auto shape        = std::vector<int32_t>{ 4, 4, 4 };
+    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+
+    // Generate some random floats using the full range of fp32.
+    auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
+    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
+
+    // Set up simple bounds of the input to 2.0
+    std::vector<double> bounds_fp64(elementCount);
+    std::for_each(std::begin(bounds_fp64), std::end(bounds_fp64), [](auto& value) { value = 2.0; });
+    constexpr float insideErrBound  = 1.0e-7 * 2;    // v.approx exp2(-23) * bounds[]
+    constexpr float outsideErrBound = 1.0e-7 * 3;
+
+    SUBCASE("inside")
+    {
+        // Generate some data that meets the ABS_ERROR requirements of the result.
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [insideErrBound](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value += value * insideErrBound;
+        });
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto boundsTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
+                                jsonCfg.c_str()));
+    }
+
+    SUBCASE("outside")
+    {
+        // Generate some data that exceeds a specified number of ULP for each value in the tensor.
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [outsideErrBound](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value += value * outsideErrBound;
+        });
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto boundsTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+        REQUIRE_FALSE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
+                                      jsonCfg.c_str()));
+    }
+}
 TEST_SUITE_END();    // verify

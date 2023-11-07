@@ -76,6 +76,7 @@ set(CXX_SOURCE
     src/generate/generate_pseudo_random.cc
     src/generate/generate_entry.cc
     src/generate/generate_utils.cc
+    src/verify/verify_abs_error.cc
     src/verify/verify_dot_product.cc
     src/verify/verify_entry.cc
     src/verify/verify_exact.cc
@@ -148,6 +149,7 @@ set_target_properties(tosa_reference_model_lib PROPERTIES PUBLIC_HEADER "${PUBLI
 
 # Build TOSA verification library
 add_library(tosa_reference_verify_lib SHARED
+  src/verify/verify_abs_error.cc
   src/verify/verify_dot_product.cc
   src/verify/verify_entry.cc
   src/verify/verify_exact.cc

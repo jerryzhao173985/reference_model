@@ -16,15 +16,15 @@ from json2numpy import json2numpy
 from runner.tosa_test_presets import TOSA_REFCOMPLIANCE_RUNNER
 
 
-def isComplianceModeDotProduct(testDesc):
-    """Checks the test descriptor for DOT_PRODUCT compliance mode."""
+def isComplianceAbsModeNeeded(testDesc):
+    """Checks the test descriptor for DOT_PRODUCT/ABS_ERROR compliance mode."""
     if (
         "meta" in testDesc
         and "compliance" in testDesc["meta"]
         and "tensors" in testDesc["meta"]["compliance"]
     ):
         for _, t in testDesc["meta"]["compliance"]["tensors"].items():
-            if "mode" in t and t["mode"] == "DOT_PRODUCT":
+            if "mode" in t and t["mode"] in ("DOT_PRODUCT", "ABS_ERROR"):
                 return True
         return False
 
@@ -195,7 +195,7 @@ class TosaTestRunner:
                         conformanceFilePath = getRunnerResultFilePath(
                             resultFilePath, TOSA_REFCOMPLIANCE_RUNNER
                         )
-                        if isComplianceModeDotProduct(self.testDesc):
+                        if isComplianceAbsModeNeeded(self.testDesc):
                             conformanceBoundsPath = getBoundsResultFilePath(
                                 resultFilePath, TOSA_REFCOMPLIANCE_RUNNER
                             )
@@ -255,7 +255,7 @@ class TosaTestRunner:
                             getRunnerResultFilePath(resultFilePath, sutModule)
                         )
                         if (
-                            isComplianceModeDotProduct(self.testDesc)
+                            isComplianceAbsModeNeeded(self.testDesc)
                             and sutModule == TOSA_REFCOMPLIANCE_RUNNER
                         ):
                             boundsFilePath = getBoundsResultFilePath(resultFilePath)

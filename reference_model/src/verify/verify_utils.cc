@@ -48,8 +48,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::Exact, "EXACT" },
                                  { VerifyMode::Ulp, "ULP" },
                                  { VerifyMode::DotProduct, "DOT_PRODUCT" },
-                                 { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
                                  { VerifyMode::FpSpecial, "FP_SPECIAL" },
+                                 { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
+                                 { VerifyMode::AbsError, "ABS_ERROR" },
                              })
 
 void from_json(const nlohmann::json& j, UlpInfo& ulpInfo)
@@ -188,5 +189,98 @@ int32_t ilog2(double v)
         n--;
     }
     return n;
+}
+
+static_assert(std::numeric_limits<float>::is_iec559,
+              "TOSA Reference Model has not been built with standard IEEE 754 32-bit float support; Bounds based "
+              "verification is invalid");
+static_assert(std::numeric_limits<double>::is_iec559,
+              "TOSA Reference Model has not been built with standard IEEE 754 64-bit float support; Bounds based "
+              "verification is invalid");
+
+bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBound)
+{
+    // Both must be NaNs to be correct
+    if (std::isnan(referenceValue) || std::isnan(testValue))
+    {
+        if (std::isnan(referenceValue) && std::isnan(testValue))
+        {
+            return true;
+        }
+        WARNING("[Verifier][Bound] Non-matching NaN values - ref (%10f) versus test (%10f).", referenceValue,
+                testValue);
+        return false;
+    }
+
+    // Make the sign of the reference value positive
+    // and adjust the test value appropriately.
+    if (referenceValue < 0)
+    {
+        referenceValue = -referenceValue;
+        testValue      = -testValue;
+    }
+    if (errorBound < 0)
+    {
+        errorBound = -errorBound;
+    }
+
+    // At this point we are ready to calculate the ULP bounds for the reference value.
+    double referenceMin, referenceMax;
+
+    // If the reference is infinity e.g. the result of an overflow the test value must
+    // be infinity of an appropriate sign.
+    if (std::isinf(referenceValue))
+    {
+        // We already canonicalized the input such that the reference value is positive
+        // so no need to check again here.
+        referenceMin = std::numeric_limits<float>::infinity();
+        referenceMax = std::numeric_limits<float>::infinity();
+    }
+    else if (referenceValue == 0)
+    {
+        // For zero we require that the results match exactly with the correct sign.
+        referenceMin = 0;
+        referenceMax = 0;
+    }
+    else
+    {
+
+        // Scale by the number of ULPs requested by the user.
+        referenceMax = referenceValue + errorBound;
+        referenceMin = referenceValue - errorBound;
+
+        // Handle the overflow cases.
+        if (referenceMax > AccPrecision<float>::normal_max)
+        {
+            referenceMax = std::numeric_limits<float>::infinity();
+        }
+
+        if (referenceMin > AccPrecision<float>::normal_max)
+        {
+            referenceMin = std::numeric_limits<float>::infinity();
+        }
+
+        // And the underflow cases.
+        if (referenceMax < AccPrecision<float>::normal_min)
+        {
+            referenceMax = AccPrecision<float>::normal_min;
+        }
+
+        if (referenceMin < AccPrecision<float>::normal_min)
+        {
+            referenceMin = 0.0;
+        }
+    }
+
+    // And finally... Do the comparison.
+    double testValue64 = static_cast<double>(testValue);
+    bool withinBound   = testValue64 >= referenceMin && testValue64 <= referenceMax;
+    if (!withinBound)
+    {
+        WARNING(
+            "[Verifier][Bound] value (%10.10f) is not in error bound %g range (%10.10f <= ref (%10.10f) <= %10.10f).",
+            testValue64, errorBound, referenceMin, referenceValue, referenceMax);
+    }
+    return withinBound;
 }
 }    // namespace TosaReference

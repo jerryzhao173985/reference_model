@@ -40,6 +40,9 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
         case VerifyMode::Ulp: {
             return verifyULP(ref, imp, cfg.ulpInfo);
         }
+        case VerifyMode::AbsError: {
+            return verifyAbsError(ref, refBnd, imp);
+        }
         default: {
             WARNING("[Verifier] Unsupported verification mode.");
             break;
