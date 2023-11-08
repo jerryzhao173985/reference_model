@@ -728,7 +728,7 @@ class TosaTestGen:
         pad = args_dict["pad"]
         kernel = args_dict["kernel"]
 
-        result_tens = OutputShaper.pool2dOp(
+        result_tensor = OutputShaper.pool2dOp(
             self.ser, self.rng, input, kernel, stride, pad, error_name
         )
 
@@ -737,12 +737,12 @@ class TosaTestGen:
             if input.dtype not in [DType.INT8, DType.UINT8]:
                 qinfo = [
                     TosaQuantGen.getZeroPoint(self, input.dtype),
-                    TosaQuantGen.getZeroPoint(self, result_tens.dtype),
+                    TosaQuantGen.getZeroPoint(self, result_tensor.dtype),
                 ]
 
         # Invalidate Input/Output list for error if checks.
         input_list = [input.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -756,13 +756,13 @@ class TosaTestGen:
             op=op,
             input_shape=input.shape,
             input_dtype=input.dtype,
-            output_shape=result_tens.shape,
-            output_dtype=result_tens.dtype,
+            output_shape=result_tensor.shape,
+            output_dtype=result_tensor.dtype,
             kernel=kernel,
             stride=stride,
             pad=pad,
             qinfo=qinfo,
-            result_tensors=[result_tens],
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -776,25 +776,7 @@ class TosaTestGen:
         attr.PoolAttribute(kernel, stride, pad, qinfo[0], qinfo[1], accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
 
-    def build_maxpool2d(
-        self,
-        op,
-        inputs,
-        args_dict,
-        validator_fcns=None,
-        error_name=None,
-        qinfo=None,
-    ):
-        result_tensor = self.build_pool2d(
-            op,
-            inputs,
-            args_dict,
-            validator_fcns,
-            error_name,
-            qinfo,
-        )
         compliance = self.tensorComplianceMetaData(
             op, inputs[0].dtype, args_dict, result_tensor, error_name
         )
@@ -3042,6 +3024,9 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeMismatch,
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.DOT_PRODUCT,),
+            },
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
@@ -3191,7 +3176,7 @@ class TosaTestGen:
             "operands": (1, 0),
             "rank": (4, 4),
             "build_fcn": (
-                build_maxpool2d,
+                build_pool2d,
                 TosaTensorGen.tgNHWC,
                 TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agPooling,

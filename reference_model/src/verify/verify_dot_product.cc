@@ -86,10 +86,9 @@ bool validateData(const double* ref, const double* bnd, const AccType* imp, size
     if (S >= 3 && S <= 5)
     {
         const double max_bias = 2 * sqrt(KS * T);
-        out_err_sum           = std::abs(out_err_sum);
         // Check error bias magnitude for data sets S which are not positive biased
-        TOSA_REF_REQUIRE(out_err_sum <= max_bias, "[DP] Bias magnitude (%g) is out of range (%g)", out_err_sum,
-                         max_bias);
+        TOSA_REF_REQUIRE(std::abs(out_err_sum) <= max_bias, "[DP] Bias magnitude (abs(%g)) is out of range (%g)",
+                         out_err_sum, max_bias);
     }
     // Check error variance magnitude
     const double max_error = 0.4 * KS * T;

@@ -327,6 +327,55 @@ bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
             return false;
     }
 }
+//---------------------------------------------------------------------------//
+//                              Avg Pool 2D                                   //
+//---------------------------------------------------------------------------//
+
+bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
+                       TosaReference::IDotProductGenerator& generator,
+                       void* data,
+                       size_t size)
+{
+    if (cfg.dataType != DType::DType_FP32)
+    {
+        WARNING("[Generator][DP][AvgPool2D] Only supports FP32.");
+        return false;
+    }
+    if (cfg.inputPos != 0)
+    {
+        WARNING("[Generator][DP][AvgPool2D] Invalid input tensor slot position to operator.");
+        return false;
+    }
+    if (cfg.dotProductInfo.kernel.size() != 2 || cfg.dotProductInfo.kernel[0] <= 0 || cfg.dotProductInfo.kernel[1] <= 0)
+    {
+        WARNING("[Generator][DP][AvgPool2D] Missing or incorrect kernel size information.");
+        return false;
+    }
+    if (cfg.shape.size() != 4)
+    {
+        WARNING("[Generator][DP][AvgPool2D] Tensor shape expected 4 dimensions.");
+        return false;
+    }
+
+    float* input      = reinterpret_cast<float*>(data);
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IH = cfg.shape[1];
+    const uint32_t IW = cfg.shape[2];
+    const uint32_t C  = cfg.shape[3];
+    const uint32_t KY = cfg.dotProductInfo.kernel[0];
+    const uint32_t KX = cfg.dotProductInfo.kernel[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t c  = t % C;
+        uint32_t ix = (t / C) % IW;
+        uint32_t iy = ((t / C) / IW) % IH;
+        uint32_t k  = ((iy % KY) * KX + (ix % KX)) * C + c;
+
+        input[t] = generator(k);
+    }
+    return true;
+}
 }    // namespace
 
 namespace TosaReference
@@ -352,6 +401,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
             return generateReduceSum(cfg, *generator, data, size);
         case tosa::Op_FULLY_CONNECTED:
             return generateFullyConnected(cfg, *generator, data, size);
+        case tosa::Op_AVG_POOL2D:
+            return generateAvgPool2D(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;

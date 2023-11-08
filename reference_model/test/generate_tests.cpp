@@ -267,7 +267,7 @@ TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
     }
     SUBCASE("matmul, set 4, param 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x3f000000, 0x5f14e80c };
+        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x5f14e80c };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("matmul, set 4, param 1")
@@ -572,7 +572,7 @@ TEST_CASE("positive - FP32 reduce_sum dot product (values 6,7 & 8)")
     }
     SUBCASE("reduce_sum, set 4, param 0")
     {
-        std::vector<uint32_t> expected = { 0x5e1e6f12, 0x3f000000, 0x3f000000 };
+        std::vector<uint32_t> expected = { 0x5e1e6f12, 0x3f000000, 0xbf000000 };
         reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", expected);
     }
     SUBCASE("reduce_sum, set 5, param 0")
@@ -748,6 +748,79 @@ TEST_CASE("positive - FP32 fully_connected dot product (values -8, -7 & -6 from 
     {
         std::vector<uint32_t> lastExpected = { 0x0, 0x0, 0x0 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 2, lastExpected);
+    }
+}
+
+void avg_pool2d_test_FP32(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string templateJsonCfg,
+                          const std::string setStr,
+                          const std::vector<uint32_t> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<float> buffer(tosaElements);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    std::vector<float> first_three(buffer.begin(), buffer.begin() + 3);
+    check_output<float>(first_three, expected);
+}
+
+TEST_CASE("positive - FP32 avg_pool2d dot product (first 3 values)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 2, 6, 2, 3 ],
+                "input_pos": 0,
+                "op" : "AVG_POOL2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 3,
+                    "acc_type": "FP32",
+                    "kernel": [3, 1]
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName = "input";
+    const size_t tosaElements  = 2 * 6 * 2 * 3;
+
+    SUBCASE("avg_pool2d, set 0, param 0")
+    {
+        std::vector<uint32_t> expected = { 0xbf665aa4, 0xbf736bd3, 0x0 };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "0", expected);
+    }
+    SUBCASE("avg_pool2d, set 1, param 0")
+    {
+        // NOTE: Python test script produced 0x5e839663,0x5e9f6894 - so off by 1
+        std::vector<uint32_t> expected = { 0x5e839662, 0x5e904e86, 0x5e9f6893 };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", expected);
+    }
+    SUBCASE("avg_pool2d, set 2, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3e3c8d18, 0xbe813879 };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", expected);
+    }
+    SUBCASE("avg_pool2d, set 3, param 0")
+    {
+        // NOTE: Python test script produced 0xbf256686,0x3e1e8d3b - so off by 1
+        std::vector<uint32_t> expected = { 0x41800000, 0xbf256685, 0x3e1e8d3b };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", expected);
+    }
+    SUBCASE("avg_pool2d, set 4, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x5ef329c7 };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", expected);
+    }
+    SUBCASE("avg_pool2d, set 5, param 0")
+    {
+        std::vector<uint32_t> expected = { 0x5dd5b529, 0x5e4bbbf9, 0x5eb4fe79 };
+        avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", expected);
     }
 }
 TEST_SUITE_END();    // generate
