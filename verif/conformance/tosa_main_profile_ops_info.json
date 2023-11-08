@@ -202,6 +202,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -213,18 +214,18 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
-                        "1,11,7,39",
+                        "4,11,7,39",
                         "--target-shape",
-                        "1,21,36,7",
+                        "5,21,36,7",
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,2,65533,2",
                         "--target-shape",

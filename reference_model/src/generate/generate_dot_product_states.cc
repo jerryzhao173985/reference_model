@@ -209,9 +209,23 @@ public:
         const float s0 = _set_data0();
         const float s1 = _set_data1();
         if (_p == P0)
-            return (k == _KS / 2) ? +0.5f : s0 < 0 ? 0.f : (_B / std::sqrt(_KS)) * s1;
+            if (k == _KS / 2)
+            {
+                return s0 < 0 ? -0.5f : +0.5f;
+            }
+            else
+            {
+                return s0 < 0 ? 0.f : (_B / std::sqrt(_KS)) * s1;
+            }
         else if (_p == P1)
-            return (k == _KS / 2) ? -0.5f : s0 < 0 ? (_B / std::sqrt(_KS)) * s1 : 0.f;
+            if (k == _KS / 2)
+            {
+                return s0 < 0 ? +0.5f : -0.5f;
+            }
+            else
+            {
+                return s0 < 0 ? (_B / std::sqrt(_KS)) * s1 : 0.f;
+            }
         else
             return 0.f;
     }
