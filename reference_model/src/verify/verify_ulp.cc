@@ -30,15 +30,8 @@ bool tosaCheckULP(float testValue, double referenceValue, double ulpNum)
     double errorBound = 0.0;
     if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
     {
-        // Make the sign of the reference value positive
-        // and adjust the test value appropriately.
-        if (referenceValue < 0)
-        {
-            referenceValue = -referenceValue;
-            testValue      = -testValue;
-        }
         // Find the exponent of the reference value.
-        int32_t referenceExponent = ilog2(referenceValue);
+        int32_t referenceExponent = ilog2(std::abs(referenceValue));
 
         // Work out the values magnitude - by raising 2 to the power of the
         // exponent and taking the normalized minimum for denormal values

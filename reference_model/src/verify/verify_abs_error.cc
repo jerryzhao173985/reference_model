@@ -32,7 +32,7 @@ bool validateData(const double* ref, const double* bnd, const float* imp, const 
 
     for (size_t i = 0; i < T; ++i)
     {
-        double errBound = ref[i] * exp2(-AccPrecision<float>::normal_frac) * bnd[i];
+        double errBound = std::abs(ref[i]) * exp2(-AccPrecision<float>::normal_frac) * bnd[i];
         bool valid      = tosaCheckFloatBound(imp[i], ref[i], errBound);
         if (!valid)
         {

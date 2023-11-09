@@ -170,7 +170,11 @@ DType mapToDType(tosa_datatype_t dataType)
 // Like const_exp2 but for use during runtime
 double exp2(int32_t n)
 {
-    TOSA_REF_REQUIRE(-1022 <= n && n <= 1023, " Invalid exponent value (%d) in exp2", n);
+    if (n < -1075)
+    {
+        return 0.0;    // smaller than smallest denormal
+    }
+    TOSA_REF_REQUIRE(n <= 1023, " Invalid exponent value (%d) in exp2", n);
     return const_exp2(n);
 }
 
@@ -212,16 +216,15 @@ bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBou
         return false;
     }
 
+    // Check the errorBound
+    TOSA_REF_REQUIRE(errorBound >= 0.f, " Invalid error bound (%g)", errorBound);
+
     // Make the sign of the reference value positive
     // and adjust the test value appropriately.
     if (referenceValue < 0)
     {
         referenceValue = -referenceValue;
         testValue      = -testValue;
-    }
-    if (errorBound < 0)
-    {
-        errorBound = -errorBound;
     }
 
     // At this point we are ready to calculate the ULP bounds for the reference value.
