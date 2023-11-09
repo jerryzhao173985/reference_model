@@ -403,6 +403,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -414,7 +415,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "20,64",
                         "--target-rank",
@@ -432,7 +433,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,20",
                         "--target-rank",
@@ -444,7 +445,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,2,1,65536",
                         "--target-shape",
@@ -1369,6 +1370,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1382,7 +1384,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "15,64",
                         "--target-rank",
@@ -1398,7 +1400,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,15",
                         "--target-rank",
@@ -1412,7 +1414,7 @@
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,65530,1,2",
                         "--target-shape",
@@ -2748,6 +2750,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2759,7 +2762,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-16.0,16.0",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
@@ -2777,7 +2780,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-16.0,16.0",
                         "--tensor-dim-range",
                         "1,19",
                         "--target-rank",
@@ -2789,7 +2792,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-16.0,16.0",
                         "--target-shape",
                         "1,2,65538,2,1",
                         "--target-shape",
@@ -2946,6 +2949,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2957,7 +2961,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-8.0,8.0",
                         "--tensor-dim-range",
                         "18,60",
                         "--target-rank",
@@ -2975,7 +2979,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-8.0,8.0",
                         "--tensor-dim-range",
                         "1,24",
                         "--target-rank",
@@ -2987,7 +2991,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-8.0,8.0",
                         "--target-shape",
                         "1,65535,2,1,1",
                         "--target-shape",
@@ -3011,6 +3015,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -3022,7 +3027,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-4.0,4.0",
                         "--tensor-dim-range",
                         "18,60",
                         "--target-rank",
@@ -3040,7 +3045,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-4.0,4.0",
                         "--tensor-dim-range",
                         "1,24",
                         "--target-rank",
@@ -3052,7 +3057,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-4.0,4.0",
                         "--target-shape",
                         "1,65535,2,1,1",
                         "--target-shape",
