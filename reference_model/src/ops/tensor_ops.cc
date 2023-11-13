@@ -1736,11 +1736,16 @@ OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_
 {
     setRequiredOperands(1, 2);
     setRequiredRank(3, 3);
+
+    INIT_ATTRIBUTE(RFFT);
 }
 
 template <TOSA_REF_TYPE Dtype>
 OpRFFT2d<Dtype>::~OpRFFT2d()
-{}
+{
+    if (attribute)
+        delete attribute;
+}
 
 template <TOSA_REF_TYPE Dtype>
 int OpRFFT2d<Dtype>::checkTensorAttributes()

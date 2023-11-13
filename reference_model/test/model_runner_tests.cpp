@@ -170,9 +170,11 @@ TEST_SUITE("model_runner")
 
         const int32_t input_zp  = 0;
         const int32_t weight_zp = 0;
+        const bool local_bound  = false;
 
         // Execution
-        auto status = tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output, {});
+        auto status =
+            tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, local_bound, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -229,10 +231,11 @@ TEST_SUITE("model_runner")
 
         const int32_t input_zp  = 0;
         const int32_t weight_zp = 0;
+        const bool local_bound  = false;
 
         // Execution
-        auto status =
-            tosa_run_transpose_conv2d(input, weight, bias, out_pad, stride, out_shape, input_zp, weight_zp, output, {});
+        auto status = tosa_run_transpose_conv2d(input, weight, bias, out_pad, stride, out_shape, input_zp, weight_zp,
+                                                local_bound, output, {});
         CHECK((status == tosa_status_valid));
 
         // Compare results
@@ -288,12 +291,13 @@ TEST_SUITE("model_runner")
 
         const int32_t input_zp  = 0;
         const int32_t weight_zp = 0;
+        const bool local_bound  = false;
 
         // Execution
         func_ctx_t func_ctx;
         func_ctx.func_config.abs_mode = true;
-        auto status =
-            tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, output, func_ctx);
+        auto status = tosa_run_conv2d(input, weight, bias, pad, stride, dilation, input_zp, weight_zp, local_bound,
+                                      output, func_ctx);
         CHECK((status == tosa_status_valid));
 
         // Compare results

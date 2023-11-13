@@ -200,6 +200,7 @@ extern "C"
                                   const int32_t client_dilation[2],
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
+                                  const bool client_local_bound,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx)
     {
@@ -207,7 +208,7 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -249,6 +250,7 @@ extern "C"
                                   const int32_t client_dilation[3],
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
+                                  const bool client_local_bound,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx)
     {
@@ -256,7 +258,7 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[6]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[3]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[3]);
-        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -298,6 +300,7 @@ extern "C"
                                             const int32_t client_dilation[2],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
+                                            const bool client_local_bound,
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx)
     {
@@ -305,7 +308,7 @@ extern "C"
         const std::vector<int32_t> pad(&client_pad[0], &client_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> dilation(&client_dilation[0], &client_dilation[2]);
-        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp);
+        TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
@@ -470,6 +473,7 @@ extern "C"
                                             const int32_t client_out_shape[4],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
+                                            const bool client_local_bound,
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx)
     {
@@ -477,7 +481,8 @@ extern "C"
         const std::vector<int32_t> out_pad(&client_out_pad[0], &client_out_pad[4]);
         const std::vector<int32_t> stride(&client_stride[0], &client_stride[2]);
         const std::vector<int32_t> out_shape(&client_out_shape[0], &client_out_shape[4]);
-        TosaTransposeConvAttribute attr(out_pad, stride, out_shape, client_input_zp, client_weight_zp);
+        TosaTransposeConvAttribute attr(out_pad, stride, out_shape, client_input_zp, client_weight_zp,
+                                        client_local_bound);
 
         // Create tensors
         tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");

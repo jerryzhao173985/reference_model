@@ -60,6 +60,7 @@ extern "C"
                                   const int32_t client_dilation[2],
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
+                                  const bool client_local_bound,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx);
 
@@ -71,6 +72,7 @@ extern "C"
                                   const int32_t client_dilation[3],
                                   const int32_t client_input_zp,
                                   const int32_t client_weight_zp,
+                                  const bool client_local_bound,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx);
 
@@ -82,6 +84,7 @@ extern "C"
                                             const int32_t client_dilation[2],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
+                                            const bool client_local_bound,
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx);
 
@@ -117,6 +120,7 @@ extern "C"
                                             const int32_t client_out_shape[4],
                                             const int32_t client_input_zp,
                                             const int32_t client_weight_zp,
+                                            const bool client_local_bound,
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx);
 

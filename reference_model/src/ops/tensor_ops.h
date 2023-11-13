@@ -291,6 +291,7 @@ protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out_real;
     TosaReference::TensorTemplate<TOut>* out_imag;
+    tosa::TosaRFFTAttribute* attribute;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
