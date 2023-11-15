@@ -1434,6 +1434,27 @@ class TosaTensorValuesGen:
             testGen, opName, dtypeList, shapeList, argsDict, error_name
         )
 
+    @staticmethod
+    def tvgCast(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        in_dtype = dtypeList[0]
+        out_dtype = argsDict["out_type"]
+        # Create look up to limit input tensor to output type maximums to avoid
+        # FP infinities and saturation of integers
+        out_range = testGen.getDTypeRange(out_dtype, high_inclusive=True)
+        highval_lookup = {in_dtype: out_range[1]}
+        data_range = TosaTensorValuesGen._get_data_range(
+            testGen,
+            in_dtype,
+            highval_lookup,
+        )
+
+        assert data_range is not None
+        argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
 
 class TosaArgGen:
     """Argument generators create exhaustive or random lists of attributes for
@@ -2350,7 +2371,18 @@ class TosaArgGen:
             raise Exception("Unexpected input dtype: {}".format(inDtype))
 
         for dtype in dtypeList:
-            arg_list.append(("out{}".format(testGen.typeStr(dtype)), [dtype]))
+            arg_list.append(
+                ("out{}".format(testGen.typeStr(dtype)), {"out_type": dtype})
+            )
+
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
 
         return arg_list
 

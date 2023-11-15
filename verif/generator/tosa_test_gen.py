@@ -307,10 +307,15 @@ class TosaTestGen:
     def tensorComplianceMetaData(
         self, op, inputType, argsDict, outputTensor, errorName
     ):
+        # TODO - Dot product Ops with FP16 or BF16 inputs that produce FP32 outputs are not supported yet
+        UNSUPPORTED_NON_FP32_INPUT_OPS = (Op.MATMUL, Op.CONV2D, Op.FULLY_CONNECTED)
         if (
             errorName
             or not gtu.dtypeIsSupportedByCompliance(outputTensor.dtype)
-            or not gtu.dtypeIsSupportedByCompliance(inputType)
+            or (
+                not gtu.dtypeIsSupportedByCompliance(inputType)
+                and op["op"] in UNSUPPORTED_NON_FP32_INPUT_OPS
+            )
         ):
             # No compliance for error tests or unsupported types currently
             return None
@@ -1874,14 +1879,20 @@ class TosaTestGen:
         return val
 
     # Type Conversion
-    def build_cast(self, op, val, out_dtype, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.typeConversionOp(
+    def build_cast(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        val = inputs[0]
+        out_dtype = args_dict["out_type"]
+
+        result_tensor = OutputShaper.typeConversionOp(
             self.ser, self.rng, val, out_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [val.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1894,10 +1905,10 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=val.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             input_dtype=val.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1905,7 +1916,12 @@ class TosaTestGen:
             return None
 
         self.ser.addOperator(op["op"], input_list, output_list)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, val.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_rescale(
         self,
@@ -4365,7 +4381,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_cast,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgCast,
                 TosaArgGen.agCast,
             ),
             "types": (
@@ -4383,6 +4399,10 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {"ulp": 0.5},
         },
         "rescale": {
             "op": Op.RESCALE,
