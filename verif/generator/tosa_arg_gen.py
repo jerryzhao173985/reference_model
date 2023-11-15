@@ -654,28 +654,24 @@ class TosaTensorValuesGen:
     ):
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
+        tens_ser_list = []
 
         if (
             error_name is not None
             or not gtu.dtypeIsSupportedByCompliance(dtypeList[0])
             or "data_gen" not in testGen.TOSA_OP_LIST[opName]
         ):
-            # Fall back to original path when dealing with unsupported types or ops
+            # Fall back to internal data gen when dealing with unsupported types or ops
+            data_range = argsDict["data_range"] if "data_range" in argsDict else None
+            for idx, info in enumerate(zip(shapeList, dtypeList)):
+                shape, dtype = info
+                # Ignore lazy data gen option and create data array using any range limits
+                arr = testGen.getRandTensor(shape, dtype, data_range)
+                if idx < pCount:
+                    tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
+                else:
+                    tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
 
-            # First turn off lazy data gen so we always produce data
-            lazy_data_gen = testGen.args.lazy_data_gen
-            testGen.args.lazy_data_gen = False
-
-            tens_ser_list = TosaTensorValuesGen.tvgDefault(
-                testGen,
-                testGen.TOSA_OP_LIST[opName],
-                dtypeList,
-                shapeList,
-                [],
-                error_name,
-            )
-            # Restore lazy data gen setting
-            testGen.args.lazy_data_gen = lazy_data_gen
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
@@ -685,7 +681,6 @@ class TosaTensorValuesGen:
             "tensors": {},
         }
         dg_tens_meta = tens_data["tensors"]
-        tens_ser_list = []
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}

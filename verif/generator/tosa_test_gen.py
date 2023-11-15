@@ -176,8 +176,11 @@ class TosaTestGen:
             # Inclusive range: low <= range <= high
             return (rng[0], rng[1] - 1)
 
-    def getRandTensor(self, shape, dtype):
-        low, high = self.getDTypeRange(dtype)
+    def getRandTensor(self, shape, dtype, data_range=None):
+        if data_range is None:
+            low, high = self.getDTypeRange(dtype)
+        else:
+            low, high = data_range
 
         if dtype == DType.BOOL:
             return np.bool_(self.rng.choice(a=[False, True], size=shape))
