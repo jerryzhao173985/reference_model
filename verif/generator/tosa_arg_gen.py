@@ -1119,14 +1119,18 @@ class TosaTensorValuesGen:
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgEqual(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
-        if error_name is None:
+    def tvgEqual(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        if error_name is None and not gtu.dtypeIsSupportedByCompliance(dtypeList[0]):
+            # Integer
+            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 2 and cCount == 0
             ), "Op.EQUAL must have 2 placeholders, 0 consts"
+
             a_arr = testGen.getRandTensor(shapeList[0], dtypeList[0])
             b_arr = testGen.getRandTensor(shapeList[1], dtypeList[1])
+
             # Using random numbers means that it will be very unlikely that
             # there are any matching (equal) values, therefore force that
             # there are twice the number of matching values as the tensor rank
@@ -1147,17 +1151,18 @@ class TosaTensorValuesGen:
 
                 a_arr[tuple(a_index)] = b_arr[tuple(b_index)]
 
-            placeholders = []
-            placeholders.append(
+            tens_ser_list = []
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
             )
-            placeholders.append(
+            tens_ser_list.append(
                 testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr)
             )
-            return placeholders
+            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
-            return TosaTensorValuesGen.tvgDefault(
-                testGen, op, dtypeList, shapeList, testArgs, error_name
+            # ERROR_IF or floating point test
+            return TosaTensorValuesGen.tvgLazyGenDefault(
+                testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
     @staticmethod

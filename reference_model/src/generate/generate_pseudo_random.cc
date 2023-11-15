@@ -107,9 +107,16 @@ bool generateFP32(const TosaReference::GenerateConfig& cfg, void* data, size_t s
 
     float* a     = reinterpret_cast<float*>(data);
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
+    const bool comparisonOp =
+        (cfg.opType == Op::Op_EQUAL) || (cfg.opType == Op::Op_GREATER_EQUAL) || (cfg.opType == Op::Op_GREATER);
     for (auto t = 0; t < T; ++t)
     {
         a[t] = generator->getRandomFloat();
+        if (comparisonOp && (t % 4 == 0))
+        {
+            // Set every 4th value to 0 to enable better comparison testing
+            a[t] = 0.f;
+        }
     }
     return true;
 }

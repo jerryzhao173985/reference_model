@@ -839,6 +839,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -850,7 +851,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "18,64",
                         "--target-rank",
@@ -864,7 +865,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,18",
                         "--target-rank",
@@ -876,7 +877,7 @@
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,1,2,65550",
                         "--target-shape",
@@ -1175,6 +1176,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1188,7 +1190,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "18,64",
                         "--target-rank",
@@ -1204,7 +1206,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,18",
                         "--target-rank",
@@ -1218,7 +1220,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "3,65551,1,1",
                         "--target-shape",
@@ -1242,6 +1244,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1253,7 +1256,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "18,64",
                         "--target-rank",
@@ -1267,7 +1270,7 @@
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,18",
                         "--target-rank",
@@ -1279,7 +1282,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "65552,1,1,4",
                         "--target-shape",
