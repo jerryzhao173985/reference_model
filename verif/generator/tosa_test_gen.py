@@ -713,8 +713,11 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -785,8 +788,11 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -848,8 +854,13 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
         attr = ts.TosaSerializerAttribute()
-        attr.TransposeConvAttribute(out_pad, stride, output_shape, qinfo[0], qinfo[1])
+        attr.TransposeConvAttribute(
+            out_pad, stride, output_shape, qinfo[0], qinfo[1], local_bound
+        )
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -919,8 +930,11 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1])
+        attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
@@ -2184,7 +2198,13 @@ class TosaTestGen:
         return acc_out
 
     def build_fft2d(
-        self, op, val1, val2, inverse, validator_fcns=None, error_name=None
+        self,
+        op,
+        val1,
+        val2,
+        inverse,
+        validator_fcns=None,
+        error_name=None,
     ):
         results = OutputShaper.fft2dOp(self.ser, self.rng, val1, val2, error_name)
 
@@ -2219,13 +2239,22 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
         attr = ts.TosaSerializerAttribute()
-        attr.FFTAttribute(inverse)
+        attr.FFTAttribute(inverse, local_bound)
 
         self.ser.addOperator(op["op"], input_names, output_names, attr)
         return results
 
-    def build_rfft2d(self, op, val, validator_fcns=None, error_name=None):
+    def build_rfft2d(
+        self,
+        op,
+        val,
+        validator_fcns=None,
+        error_name=None,
+    ):
         results = OutputShaper.rfft2dOp(self.ser, self.rng, val, error_name)
 
         input_names = [val.name]
@@ -2256,7 +2285,13 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_names, output_names)
+        # TODO - Test local_bound, for now set local bound attribute to False
+        local_bound = False
+
+        attr = ts.TosaSerializerAttribute()
+        attr.RFFTAttribute(local_bound)
+
+        self.ser.addOperator(op["op"], input_names, output_names, attr)
         return results
 
     def create_filter_lists(
