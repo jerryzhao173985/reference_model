@@ -69,6 +69,10 @@
                                         "description": "[low value, high value] as strings to allow ints and floats",
                                         "type": "string"
                                     }
+                                },
+                                "round": {
+                                    "type": "boolean",
+                                    "description": "force rounding of all values"
                                 }
                             },
                             "additionalProperties": false,

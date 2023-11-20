@@ -62,6 +62,7 @@ struct PseudoRandomInfo
 
     int64_t rngSeed;
     std::vector<std::string> range;
+    bool round;
 };
 
 /// \brief Generator configuration
