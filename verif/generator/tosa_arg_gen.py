@@ -635,17 +635,40 @@ class TosaTensorValuesGen:
         DType.BF16: (1 << 128) - (1 << (127 - 7)),
     }
 
+    # Default lowest normal values for random numbers
+    TVG_FLOAT_LOW_VALUE = {
+        DType.FP32: np.exp2(-126),
+        DType.FP16: np.exp2(-14),
+        DType.BF16: np.exp2(-126),
+    }
+
     @staticmethod
-    def _get_data_range(testGen, dtype, highValueLookup):
+    def _get_data_range(testGen, dtype, highValueLookup, lowValueLookup=None):
+        # Return a tuple of (low,high) data range values for the given data
+        # type using a combination of per operator table limits, data limits
+        # and user supplied ranges for FP numbers
         if dtype in highValueLookup:
-            data_range = testGen.getDTypeRange(dtype, high_inclusive=True)
+            type_range = testGen.getDTypeRange(dtype, high_inclusive=True)
             high_val = highValueLookup[dtype]
+            if lowValueLookup is not None and dtype in lowValueLookup:
+                low_val = lowValueLookup[dtype]
+            else:
+                low_val = -high_val
             # Set the values to something that won't produce infinity whilst
-            # respecting the default ranges if less than the high value
-            return [
-                max(-high_val, data_range[0]),
-                min(high_val, data_range[1]),
-            ]
+            # respecting the default ranges if more/less than the low/high
+            # values
+            data_range = (
+                max(low_val, type_range[0]),
+                min(high_val, type_range[1]),
+            )
+            if data_range[0] > data_range[1]:
+                # Invalid data range from low to high created due to user
+                # constraints revert to using internal ranges as they are
+                # known to work
+                msg = f"Using safe data range ({low_val} to {high_val}) instead of supplied ({type_range[0]} to {type_range[1]})"
+                warnings.warn(msg)
+                data_range = (low_val, high_val)
+            return data_range
         return None
 
     @staticmethod
@@ -664,9 +687,18 @@ class TosaTensorValuesGen:
             # Fall back to internal data gen when dealing with unsupported types or ops
             data_range = argsDict["data_range"] if "data_range" in argsDict else None
             for idx, info in enumerate(zip(shapeList, dtypeList)):
+                roundMode = False
                 shape, dtype = info
+                if "data_range_list" in argsDict:
+                    data_range = argsDict["data_range_list"][idx]["range"]
+                    roundMode = (
+                        "round" in argsDict["data_range_list"][idx]
+                        and argsDict["data_range_list"][idx]["round"] is True
+                    )
                 # Ignore lazy data gen option and create data array using any range limits
                 arr = testGen.getRandTensor(shape, dtype, data_range)
+                if roundMode:
+                    arr = np.round(arr)
                 if idx < pCount:
                     tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
                 else:
@@ -699,7 +731,12 @@ class TosaTensorValuesGen:
                 info = {}
                 # TODO - generate seed for this generator based on test
                 info["rng_seed"] = 42
-                if "data_range" in argsDict:
+
+                if "data_range_list" in argsDict:
+                    data_range = argsDict["data_range_list"][idx]["range"]
+                    if "round" in argsDict["data_range_list"][idx]:
+                        info["round"] = argsDict["data_range_list"][idx]["round"]
+                elif "data_range" in argsDict:
                     data_range = argsDict["data_range"]
                 else:
                     data_range = testGen.getDTypeRange(
@@ -788,7 +825,7 @@ class TosaTensorValuesGen:
                 testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
-    # Set the data range to half the largest value
+    # Set the ADD/SUB data range to half the largest value to avoid infinities
     TVG_FLOAT_HIGH_VALUE_ADDSUB = {
         DType.FP32: (TVG_FLOAT_HIGH_VALUE[DType.FP32] / 2),
         DType.FP16: (TVG_FLOAT_HIGH_VALUE[DType.FP16] / 2),
@@ -987,7 +1024,8 @@ class TosaTensorValuesGen:
                 testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
 
-    # Set the data range to the square root of the largest value
+    # Set the MUL data range to the square root of the largest value
+    # to avoid infinities
     TVG_FLOAT_HIGH_VALUE_MUL = {
         DType.FP32: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
         DType.FP16: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
@@ -1167,7 +1205,8 @@ class TosaTensorValuesGen:
 
     @staticmethod
     def tvgReduceSum(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
-        if dtypeList[0] == DType.INT32:
+        dtype = dtypeList[0]
+        if dtype == DType.INT32:
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
@@ -1181,14 +1220,219 @@ class TosaTensorValuesGen:
             )
             tens_ser_list = []
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
+                testGen.ser.addPlaceholder(shapeList[0], dtype, values_arr)
             )
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
         else:
             # ERROR_IF or dot product floating point test
+            if (
+                error_name is None
+                and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT
+            ):
+                # Limit ranges for (non error & non compliance) tests by using
+                # values that can be summed on any axis to not hit infinity
+                highval_lookup = {
+                    dtype: TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype]
+                    / max(shapeList[0])
+                }
+                data_range = TosaTensorValuesGen._get_data_range(
+                    testGen, dtype, highval_lookup
+                )
+                assert data_range is not None
+                argsDict["data_range"] = data_range
+
             return TosaTensorValuesGen.tvgLazyGenDefault(
                 testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
+
+    # Set the POW exponent high data range
+    TVG_FLOAT_HIGH_VALUE_POW_EXP = {
+        DType.FP32: 10.0,
+        DType.FP16: 10.0,
+        DType.BF16: 10.0,
+    }
+    # POW highest base value (within a safe margin of error) that can be raised
+    # to +ve exponent that doesn't become Infinity
+    TVG_FLOAT_HIGH_VALUE_POW_BASE = {
+        DType.FP32: math.floor(
+            math.pow(
+                TVG_FLOAT_HIGH_VALUE[DType.FP32],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP32],
+            )
+        ),
+        DType.FP16: math.floor(
+            math.pow(
+                TVG_FLOAT_HIGH_VALUE[DType.FP16],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP16],
+            )
+        ),
+        DType.BF16: math.floor(
+            math.pow(
+                TVG_FLOAT_HIGH_VALUE[DType.BF16],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+            )
+        ),
+    }
+    # POW lowest base value (within a safe margin of error) that can be raised
+    # to -ve exponent that doesn't become Infinity
+    TVG_FLOAT_LOW_VALUE_POW_BASE = {
+        DType.FP32: math.ceil(
+            math.pow(
+                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP32],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP32],
+            )
+            * 1000
+        )
+        / 1000,
+        DType.FP16: math.ceil(
+            math.pow(
+                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP16],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP16],
+            )
+            * 1000
+        )
+        / 1000,
+        DType.BF16: math.ceil(
+            math.pow(
+                1.0 / TVG_FLOAT_HIGH_VALUE[DType.BF16],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+            )
+            * 1000
+        )
+        / 1000,
+    }
+
+    @staticmethod
+    def tvgPow(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        if error_name is not None:
+            return TosaTensorValuesGen.tvgLazyGenDefault(
+                testGen, opName, dtypeList, shapeList, argsDict, error_name
+            )
+        dtype = dtypeList[0]
+        # Different ranges for POW
+        test_set = argsDict["s"]
+        if test_set == 0:
+            # Positive base with fractional exponent
+            base_range = TosaTensorValuesGen._get_data_range(
+                testGen,
+                dtype,
+                TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
+                TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
+            )
+            exp_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+            )
+            exp_round = False
+        else:
+            # Integer exponent
+            exp_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+            )
+            exp_round = True
+            if test_set == 1:
+                # Positive base
+                base_range = TosaTensorValuesGen._get_data_range(
+                    testGen,
+                    dtype,
+                    TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
+                    TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
+                )
+            else:
+                assert test_set == 2
+                # Negative base
+                # Supply new look up tables with negative values
+                base_range = TosaTensorValuesGen._get_data_range(
+                    testGen,
+                    dtype,
+                    {dtype: -TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE[dtype]},
+                    {dtype: -TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE[dtype]},
+                )
+
+        data_range_list = (
+            {
+                "range": base_range,
+            },
+            {
+                "range": exp_range,
+                "round": exp_round,
+            },
+        )
+        argsDict["data_range_list"] = data_range_list
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
+    def tvgLogRsqrt(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        # LOG & RSQRT data range from lowest expressible positive number to
+        # largest to avoid NaNs
+        data_range = TosaTensorValuesGen._get_data_range(
+            testGen,
+            dtypeList[0],
+            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
+            TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE,
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    # Set the EXP data range to the log of the largest to smallest values
+    # to avoid infinities or making the result zero
+    TVG_FLOAT_HIGH_VALUE_EXP = {
+        DType.FP32: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
+        DType.FP16: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
+        DType.BF16: math.log(TVG_FLOAT_HIGH_VALUE[DType.BF16]),
+    }
+    TVG_FLOAT_LOW_VALUE_EXP = {
+        DType.FP32: math.log(TVG_FLOAT_LOW_VALUE[DType.FP32]),
+        DType.FP16: math.log(TVG_FLOAT_LOW_VALUE[DType.FP16]),
+        DType.BF16: math.log(TVG_FLOAT_LOW_VALUE[DType.BF16]),
+    }
+
+    @staticmethod
+    def tvgExp(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        data_range = TosaTensorValuesGen._get_data_range(
+            testGen,
+            dtypeList[0],
+            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_EXP,
+            TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_EXP,
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
+    def tvgFullyConnected(
+        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        dtype = dtypeList[0]
+        if (
+            error_name is None
+            and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT
+            and dtype in (DType.FP16, DType.BF16)
+        ):
+            # TODO - Remove once FP16 and BF16 enabled for DOT_PRODUCT compliance
+            # Limit ranges for (non error & non compliance) FP tests by using
+            # values that can be multiplied on any axis to not hit infinity/NaN
+            IC = shapeList[0][1]
+            highval_lookup = {
+                dtype: math.pow(TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype], 1 / IC)
+            }
+            data_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtype, highval_lookup
+            )
+            assert data_range is not None
+            argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
 
 class TosaArgGen:
@@ -1225,8 +1469,14 @@ class TosaArgGen:
             for arg_str, args_dict in arg_list:
                 args_dict["dg_type"] = dg_type
                 if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
-                    # Default test
-                    new_arg_list.append((arg_str, args_dict))
+                    if error_name is None:
+                        num_test_sets = (
+                            args_dict["num_test_sets"]
+                            if "num_test_sets" in args_dict
+                            else 0
+                        )
+                    else:
+                        num_test_sets = 0
 
                 elif dg_type == gtu.DataGenType.DOT_PRODUCT:
                     # Extra tests for each dot product test set
@@ -1245,11 +1495,17 @@ class TosaArgGen:
                     assert "ks" in args_dict
                     assert "acc_type" in args_dict
 
-                    for s in testGen.TOSA_MI_DOT_PRODUCT_TEST_SETS:
-                        new_arg_str = f"{arg_str}_s{s}"
+                    num_test_sets = testGen.TOSA_MI_DOT_PRODUCT_TEST_SETS
+
+                if num_test_sets > 0:
+                    for s in range(0, num_test_sets):
+                        new_arg_str = f"{arg_str}_s{s}" if arg_str else f"s{s}"
                         new_args_dict = args_dict.copy()
                         new_args_dict["s"] = s
                         new_arg_list.append((new_arg_str, new_args_dict))
+                else:
+                    # Default is a single test
+                    new_arg_list.append((arg_str, args_dict))
 
         return new_arg_list
 
@@ -1262,6 +1518,20 @@ class TosaArgGen:
             opName,
             dtype,
             [("", {})],
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
+        return arg_list
+
+    @staticmethod
+    def agPow(testGen, opName, shapeList, dtype, error_name=None):
+        """Pow operator needs different test sets to cover random numbers
+        without creating NaNs or Infs"""
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            [("", {"num_test_sets": 3})],
             error_name,
         )
         # Return list of tuples: (arg_str, args_dict)

@@ -387,7 +387,12 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
     if (!generator)
     {
         WARNING("[Generator][DP] Requested generator could not be created!");
-        return 0;
+        return false;
+    }
+    if (cfg.dotProductInfo.ks <= 0)
+    {
+        WARNING("[Generator][DP] Invalid test set kernel size %d.", cfg.dotProductInfo.ks);
+        return false;
     }
 
     // Select which generator to use

@@ -37,7 +37,7 @@ class TosaTestGen:
     TOSA_8K_LEVEL_MAX_STRIDE = 8192
 
     # Main compliance dot product statistical test range
-    TOSA_MI_DOT_PRODUCT_TEST_SETS = range(0, 6)
+    TOSA_MI_DOT_PRODUCT_TEST_SETS = 6
     TOSA_MI_DOT_PRODUCT_MIN = 1000
 
     def __init__(self, args):
@@ -3074,7 +3074,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_fully_connected,
                 TosaTensorGen.tgFullyConnected,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgFullyConnected,
                 TosaArgGen.agFullyConnected,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3562,8 +3562,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_binary_broadcast,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgLazyGenDefault,
-                TosaArgGen.agNone,
+                TosaTensorValuesGen.tvgPow,
+                TosaArgGen.agPow,
             ),
             "types": TYPE_FP,
             "error_if_validators": (
@@ -3705,7 +3705,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgExp,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FP,
@@ -3746,7 +3746,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgLogRsqrt,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FP,
@@ -3828,7 +3828,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgLogRsqrt,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FP,

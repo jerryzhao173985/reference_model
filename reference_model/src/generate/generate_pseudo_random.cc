@@ -93,6 +93,7 @@ bool generateFP32(const TosaReference::GenerateConfig& cfg, void* data, size_t s
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
 
     PseudoRandomGeneratorFloat<float>* generator;
+    bool roundMode = prinfo.round;
 
     if (prinfo.range.size() == 2)
     {
@@ -116,6 +117,10 @@ bool generateFP32(const TosaReference::GenerateConfig& cfg, void* data, size_t s
         {
             // Set every 4th value to 0 to enable better comparison testing
             a[t] = 0.f;
+        }
+        else if (roundMode)
+        {
+            a[t] = std::roundf(a[t]);
         }
     }
     return true;

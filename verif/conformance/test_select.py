@@ -125,8 +125,6 @@ class Operator:
     # Working set of param_names - updated for negative tests
     wks_param_names = None
 
-    COMPLIANCE_SETS = ("_s0", "_s1", "_s2", "_s3", "_s4", "_s5")
-
     def __init__(
         self,
         test_dir: Path,
@@ -260,13 +258,13 @@ class Operator:
                 if (not negative and "ERRORIF" not in str(path)) or (
                     negative and "ERRORIF" in str(path)
                 ):
-                    # Check for compliance test set paths
-                    suffix = path.name[-3:]
-                    if suffix in Operator.COMPLIANCE_SETS:
-                        if suffix != Operator.COMPLIANCE_SETS[0]:
-                            # Only return one of the test sets
-                            continue
-                        yield path.with_name(path.name[:-3])
+                    # Check for test set paths
+                    match = re.match(r"(.*)_s([0-9]+)", path.name)
+                    if match:
+                        if match.group(2) == "0":
+                            # Only return the truncated test name
+                            # of the first test of a set
+                            yield path.with_name(match.group(1))
                     else:
                         yield path
 
@@ -297,6 +295,23 @@ class Operator:
         for param in params:
             params[param] = sorted(list(params[param]))
         return params
+
+    @staticmethod
+    def _get_test_set_paths(path):
+        """Expand a path to find all the test sets."""
+        s = 0
+        paths = []
+        # Have a bound for the maximum test sets
+        while s < 100:
+            set_path = path.with_name(f"{path.name}_s{s}")
+            if set_path.exists():
+                paths.append(set_path)
+            else:
+                if s == 0:
+                    logger.error(f"Could not find test set 0 - {str(set_path)}")
+                break
+            s += 1
+        return paths
 
     def select_tests(self):  # noqa: C901 (function too complex)
         """Generate the paths to the selected tests for this operator."""
@@ -356,9 +371,9 @@ class Operator:
                 if path.exists():
                     yield path
                 else:
-                    # Compliance test series - expand to all sets
-                    for s in Operator.COMPLIANCE_SETS:
-                        yield path.with_name(f"{path.name}{s}")
+                    # Must be a test set - expand to all test sets
+                    for p in Operator._get_test_set_paths(path):
+                        yield p
 
         # search for tests that match any unused parameter values
         for n, path in enumerate(sorted(list(unused_paths))):
@@ -377,9 +392,9 @@ class Operator:
                     if path.exists():
                         yield path
                     else:
-                        # Compliance test series - expand to all sets
-                        for s in Operator.COMPLIANCE_SETS:
-                            yield path.with_name(f"{path.name}{s}")
+                        # Must be a test set - expand to all test sets
+                        for p in Operator._get_test_set_paths(path):
+                            yield p
                     break
 
         if not self.ignore_missing:
