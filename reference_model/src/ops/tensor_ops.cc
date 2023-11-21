@@ -1246,9 +1246,10 @@ int OpFullyConnected<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (weight->getShape()[0] != bias->getShape()[0])
+    if (weight->getShape()[0] != bias->getShape()[0] && bias->getShape()[0] != 1)
     {
-        printNodeValidationError("OpFullyConnected operator bias.shape[0] should match weight.shape[0]");
+        printNodeValidationError(
+            "OpFullyConnected operator bias.shape[0] should match weight.shape[0] or be equal to 1");
         return 1;
     }
 
