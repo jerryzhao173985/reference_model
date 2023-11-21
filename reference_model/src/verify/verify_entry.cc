@@ -101,17 +101,14 @@ extern "C"
         {
             if (cfg->dataType != TosaReference::mapToDType(imp->data_type))
             {
-                WARNING("[Verifier] Incorrect tensor data type.");
+                WARNING("[Verifier] Incorrect implementation tensor data type.");
                 return false;
             }
         }
         else
         {
-            if (ref->data_type != imp->data_type)
-            {
-                WARNING("[Verifier] Tensors have different data types.");
-                return false;
-            }
+            WARNING("[Verifier] Reference tensor data type is not FP64, please use ref-model --precise_mode.");
+            return false;
         }
 
         // Run verification

@@ -78,7 +78,7 @@ def compliance_check(
         return (TestResult.PASS, 0.0, "")
     else:
         _print_result(LogColors.RED, f"Results NON-COMPLIANT {test_name}")
-        return (TestResult.MISMATCH, 0.0, "Non-compliance implementation results found")
+        return (TestResult.MISMATCH, 0.0, "Non-compliance results found")
 
 
 def test_check(
