@@ -625,7 +625,16 @@ int initTestDesc(json& test_desc)
     // Overwrite flatbuffer_dir/output_dir with dirname(g_func_config.test_desc) if it's not specified.
     if (g_func_config.flatbuffer_dir.empty() || g_func_config.output_dir.empty())
     {
-        std::string test_dir = g_func_config.test_desc.substr(0, g_func_config.test_desc.find_last_of("/\\"));
+        auto slash_pos = g_func_config.test_desc.find_last_of("/\\");
+        std::string test_dir;
+        if (slash_pos != std::string::npos)
+        {
+            test_dir = g_func_config.test_desc.substr(0, slash_pos);
+        }
+        else
+        {
+            test_dir = std::string(".");
+        }
         if (g_func_config.flatbuffer_dir.empty())
         {
             g_func_config.flatbuffer_dir = test_dir;

@@ -63,18 +63,25 @@ def compliance_check(
     ofm_name,
     verify_lib_path,
 ):
-    try:
-        vlib = VerifierLibrary(verify_lib_path)
-    except VerifierError as e:
+    if verify_lib_path is None:
+        error = "Please supply --verify-lib-path"
+    else:
+        error = None
+        try:
+            vlib = VerifierLibrary(verify_lib_path)
+        except VerifierError as e:
+            error = str(e)
+
+    if error is not None:
         _print_result(LogColors.RED, f"INTERNAL ERROR {test_name}")
-        msg = f"Could not load verfier library: {str(e)}"
+        msg = f"Could not load verfier library: {error}"
         return (TestResult.INTERNAL_ERROR, 0.0, msg)
 
     success = vlib.verify_data(
         ofm_name, compliance_config, imp_result_path, ref_result_path, bnd_result_path
     )
     if success:
-        _print_result(LogColors.GREEN, f"Results PASS {test_name}")
+        _print_result(LogColors.GREEN, f"Compliance Results PASS {test_name}")
         return (TestResult.PASS, 0.0, "")
     else:
         _print_result(LogColors.RED, f"Results NON-COMPLIANT {test_name}")
@@ -279,8 +286,10 @@ def main(argv=None):
         "--fp-tolerance", type=float, default=DEFAULT_FP_TOLERANCE, help="FP tolerance"
     )
     parser.add_argument(
-        "--test_path", type=Path, help="path to the test that produced the results"
+        "--test-path", type=Path, help="path to the test that produced the results"
     )
+    # Deprecate the incorrectly formatted option by hiding it
+    parser.add_argument("--test_path", type=Path, help=argparse.SUPPRESS)
     parser.add_argument(
         "--bnd-result-path",
         type=Path,

@@ -48,7 +48,7 @@ class VerifierLibrary:
     def __init__(self, verify_lib_path):
         """Find the library and set up the interface."""
         self.lib_path = verify_lib_path
-        if not self.lib_path.is_file():
+        if self.lib_path is None or not self.lib_path.is_file():
             raise VerifierError(f"Could not find verify library - {self.lib_path}")
 
         self.lib = ct.cdll.LoadLibrary(self.lib_path)
