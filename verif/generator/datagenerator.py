@@ -27,7 +27,7 @@ class GenerateLibrary:
     def __init__(self, generate_lib_path):
         """Find the library and set up the interface."""
         self.lib_path = generate_lib_path
-        if not self.lib_path.is_file():
+        if self.lib_path is None or not self.lib_path.is_file():
             raise GenerateError(f"Could not find generate library - {self.lib_path}")
 
         self.schema_validator = sch.TestDescSchemaValidator()
