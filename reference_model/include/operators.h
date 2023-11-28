@@ -88,6 +88,14 @@ extern "C"
                                             tosa_tensor_t client_output,
                                             const func_ctx_t& func_ctx);
 
+    tosa_status_t tosa_run_fft2d(tosa_tensor_t client_input_real,
+                                 tosa_tensor_t client_input_imag,
+                                 const bool client_inverse,
+                                 tosa_tensor_t client_output_real,
+                                 const bool client_local_bound,
+                                 tosa_tensor_t client_output_imag,
+                                 const func_ctx_t& func_ctx);
+
     tosa_status_t tosa_run_fully_connected(tosa_tensor_t client_input,
                                            tosa_tensor_t client_weight,
                                            tosa_tensor_t client_bias,
@@ -111,6 +119,12 @@ extern "C"
                                       const int32_t client_output_zp,
                                       tosa_tensor_t client_output,
                                       const func_ctx_t& func_ctx);
+
+    tosa_status_t tosa_run_rfft2d(tosa_tensor_t client_input,
+                                  tosa_tensor_t client_output_real,
+                                  const bool client_local_bound,
+                                  tosa_tensor_t client_output_imag,
+                                  const func_ctx_t& func_ctx);
 
     tosa_status_t tosa_run_transpose_conv2d(tosa_tensor_t client_input,
                                             tosa_tensor_t client_weight,

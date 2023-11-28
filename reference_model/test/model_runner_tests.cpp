@@ -182,6 +182,133 @@ TEST_SUITE("model_runner")
         compareOutput(dstData, expectedData, expectedData.size());
     }
 
+    TEST_CASE("op_entry_fft2d")
+    {
+        // Fft2d parameters
+        const bool inverse     = false;
+        const bool local_bound = false;
+
+        // Inputs/Outputs
+        tosa_datatype_t dt                     = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape_real  = { 1, 32, 32 };
+        std::vector<int32_t> output_shape_real = { 1, 32, 32 };
+        std::vector<int32_t> input_shape_imag  = { 1, 32, 32 };
+        std::vector<int32_t> output_shape_imag = { 1, 32, 32 };
+        std::vector<float> srcData(32 * 32 * 1, 0.f);
+        std::vector<float> dstDataReal(32 * 32 * 1, 0.f);
+        std::vector<float> dstDataImag(32 * 32 * 1, 0.f);
+
+        tosa_tensor_t input_real;
+        input_real.shape     = input_shape_real.data();
+        input_real.num_dims  = input_shape_real.size();
+        input_real.data_type = dt;
+        input_real.data      = reinterpret_cast<uint8_t*>(srcData.data());
+        input_real.size      = srcData.size() * sizeof(float);
+
+        tosa_tensor_t input_imag;
+        input_imag.shape     = input_shape_imag.data();
+        input_imag.num_dims  = input_shape_imag.size();
+        input_imag.data_type = dt;
+        input_imag.data      = reinterpret_cast<uint8_t*>(srcData.data());
+        input_imag.size      = srcData.size() * sizeof(float);
+
+        tosa_tensor_t output_real;
+        output_real.shape     = output_shape_real.data();
+        output_real.num_dims  = output_shape_real.size();
+        output_real.data_type = dt;
+        output_real.data      = reinterpret_cast<uint8_t*>(dstDataReal.data());
+        output_real.size      = dstDataReal.size() * sizeof(float);
+
+        tosa_tensor_t output_imag;
+        output_imag.shape     = output_shape_imag.data();
+        output_imag.num_dims  = output_shape_imag.size();
+        output_imag.data_type = dt;
+        output_imag.data      = reinterpret_cast<uint8_t*>(dstDataImag.data());
+        output_imag.size      = dstDataImag.size() * sizeof(float);
+
+        // Execution
+        auto status = tosa_run_fft2d(input_real, input_imag, inverse, output_real, local_bound, output_imag, {});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedDataReal = {};
+        std::vector<float> expectedDataImag = {};
+        for (unsigned i = 0; i < dstDataReal.size(); ++i)
+        {
+            std::vector<float> sum_real = {};
+            std::vector<float> sum_imag = {};
+            for (unsigned j = 0; j < dstDataImag.size(); ++j)
+            {
+                float a = ((inverse) ? -1 : 1) * 402.123859659; /* 2 * pi * ((iY * oY) / H + (iX * oX) / W) */
+                sum_real.emplace_back(srcData[j] * std::cos(a) + srcData[j] * std::sin(a));
+                sum_imag.emplace_back((-1) * srcData[j] * std::sin(a) + srcData[j] * std::sin(a));
+            }
+            expectedDataReal.emplace_back(sum_real[i]);
+            expectedDataImag.emplace_back(sum_imag[i]);
+        }
+        compareOutput(dstDataReal, expectedDataReal, expectedDataReal.size());
+        compareOutput(dstDataImag, expectedDataImag, expectedDataImag.size());
+    }
+
+    TEST_CASE("op_entry_rfft2d")
+    {
+        // Rfft2d parameters
+        const bool local_bound = false;
+
+        // Inputs/Outputs
+        tosa_datatype_t dt                     = tosa_datatype_fp32_t;
+        std::vector<int32_t> input_shape       = { 1, 32, 32 };
+        std::vector<int32_t> output_shape_real = { 1, 32, 17 };
+        std::vector<int32_t> output_shape_imag = { 1, 32, 17 };
+        std::vector<float> srcData(32 * 32 * 1, 0.f);
+        std::vector<float> dstDataReal(32 * 17 * 1, 0.f);
+        std::vector<float> dstDataImag(32 * 17 * 1, 0.f);
+
+        tosa_tensor_t input;
+        input.shape     = input_shape.data();
+        input.num_dims  = input_shape.size();
+        input.data_type = dt;
+        input.data      = reinterpret_cast<uint8_t*>(srcData.data());
+        input.size      = srcData.size() * sizeof(float);
+
+        tosa_tensor_t output_real;
+        output_real.shape     = output_shape_real.data();
+        output_real.num_dims  = output_shape_real.size();
+        output_real.data_type = dt;
+        output_real.data      = reinterpret_cast<uint8_t*>(dstDataReal.data());
+        output_real.size      = dstDataReal.size() * sizeof(float);
+
+        tosa_tensor_t output_imag;
+        output_imag.shape     = output_shape_imag.data();
+        output_imag.num_dims  = output_shape_imag.size();
+        output_imag.data_type = dt;
+        output_imag.data      = reinterpret_cast<uint8_t*>(dstDataImag.data());
+        output_imag.size      = dstDataImag.size() * sizeof(float);
+
+        // Execution
+        auto status = tosa_run_rfft2d(input, output_real, local_bound, output_imag, {});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedDataReal = {};
+        std::vector<float> expectedDataImag = {};
+        for (unsigned i = 0; i < dstDataReal.size(); ++i)
+        {
+            std::vector<float> sum_real = {};
+            std::vector<float> sum_imag = {};
+            for (unsigned j = 0; j < dstDataImag.size(); ++j)
+            {
+                float a = 307.876080052; /* 2 * pi * ((iY * oY) / H + (iX * oX) / W) */
+                sum_real.emplace_back(srcData[j] * std::cos(a));
+                sum_imag.emplace_back((-1) * srcData[j] * std::sin(a));
+            }
+            expectedDataReal.emplace_back(sum_real[i]);
+            expectedDataImag.emplace_back(sum_imag[i]);
+        }
+        compareOutput(dstDataReal, expectedDataReal, expectedDataReal.size());
+        compareOutput(dstDataImag, expectedDataImag, expectedDataImag.size());
+    }
+
     TEST_CASE("op_entry_transpose_conv2d")
     {
         // Transpose Conv 2D parameters
