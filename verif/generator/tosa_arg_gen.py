@@ -2584,8 +2584,8 @@ class TosaArgGen:
 
                 # Check for duplicates
                 found = False
-                for name, other_shape in arg_list:
-                    if other_shape[0] == newShape:
+                for name, args_dict in arg_list:
+                    if args_dict["new_shape"] == newShape:
                         found = True
                         break
 
@@ -2620,15 +2620,27 @@ class TosaArgGen:
                             new_shape_inferred[extra_dim] = -1
                     else:
                         arg_list.append(
-                            ("perm{}_rank{}_outdefined".format(p, newRank), [newShape])
+                            (
+                                "perm{}_rank{}_outdefined".format(p, newRank),
+                                {"new_shape": newShape},
+                            )
                         )
                     if error_name != ErrorIf.TensorSizeInputOutputMismatch:
                         arg_list.append(
                             (
                                 "perm{}_rank{}_outinferred".format(p, newRank),
-                                [new_shape_inferred],
+                                {"new_shape": new_shape_inferred},
                             )
                         )
+
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
 
         return arg_list
 
