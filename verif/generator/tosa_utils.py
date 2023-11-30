@@ -55,7 +55,7 @@ def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         dtype = dtype[0]
-    return dtype in (DType.FP32,)
+    return dtype in (DType.FP32, DType.FP16)
 
 
 def getOpNameFromOpListName(opName):
