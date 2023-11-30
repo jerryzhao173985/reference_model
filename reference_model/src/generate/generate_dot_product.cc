@@ -13,6 +13,7 @@
 //    limitations under the License.
 
 #include "generate_dot_product.h"
+#include "half.hpp"
 
 namespace
 {
@@ -20,34 +21,34 @@ namespace
 //                              MatMul                                       //
 //---------------------------------------------------------------------------//
 
+template <typename DataType>
 void generateMatMulA(const TosaReference::GenerateConfig& cfg,
                      TosaReference::IDotProductGenerator& generator,
-                     void* data,
+                     DataType* data,
                      size_t size)
 {
-    float* a         = reinterpret_cast<float*>(data);
     const uint32_t T = cfg.shape[0] * cfg.shape[1] * cfg.shape[2];
     const uint32_t C = cfg.shape[2];
 
     for (uint32_t t = 0; t < T; ++t)
     {
-        a[t] = generator(t % C);    // k = c
+        data[t] = static_cast<DataType>(generator(t % C));    // k = c
     }
 }
 
+template <typename DataType>
 void generateMatMulB(const TosaReference::GenerateConfig& cfg,
                      TosaReference::IDotProductGenerator& generator,
-                     void* data,
+                     DataType* data,
                      size_t size)
 {
-    float* b         = reinterpret_cast<float*>(data);
     const uint32_t T = cfg.shape[0] * cfg.shape[1] * cfg.shape[2];
     const uint32_t C = cfg.shape[1];
     const uint32_t W = cfg.shape[2];
 
     for (uint32_t t = 0; t < T; ++t)
     {
-        b[t] = generator((t / W) % C);    // k = c
+        data[t] = static_cast<DataType>(generator((t / W) % C));    // k = c
     }
 }
 
@@ -56,11 +57,6 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
                     void* data,
                     size_t size)
 {
-    if (cfg.dataType != DType::DType_FP32)
-    {
-        WARNING("[Generator][DP][MatMul] Only supports FP32.");
-        return false;
-    }
     if (cfg.shape.size() != 3)
     {
         WARNING("[Generator][DP][MatMul] Tensor shape expected 3 dimensions.");
@@ -72,7 +68,24 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, data, size) : generateMatMulB(cfg, generator, data, size);
+    switch (cfg.dataType)
+    {
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
+                                : generateMatMulB(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
+                                : generateMatMulB(cfg, generator, outData, size);
+            break;
+        }
+        default:
+            WARNING("[Generator][DP][MatMul] Only supports FP32 or FP16.");
+            return false;
+    }
 
     return true;
 }
@@ -80,9 +93,10 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
 //                              Conv2D                                       //
 //---------------------------------------------------------------------------//
 
+template <typename DataType>
 bool generateConv2DInput(const TosaReference::GenerateConfig& cfg,
                          TosaReference::IDotProductGenerator& generator,
-                         void* data,
+                         DataType* data,
                          size_t size)
 {
     if (cfg.dotProductInfo.kernel.size() != 2 || cfg.dotProductInfo.kernel[0] <= 0 || cfg.dotProductInfo.kernel[1] <= 0)
@@ -96,7 +110,6 @@ bool generateConv2DInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* input      = reinterpret_cast<float*>(data);
     const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
     const uint32_t IH = cfg.shape[1];
     const uint32_t IW = cfg.shape[2];
@@ -111,14 +124,15 @@ bool generateConv2DInput(const TosaReference::GenerateConfig& cfg,
         uint32_t iy = ((t / IC) / IW) % IH;
         uint32_t k  = ((iy % KH) * KW + (ix % KW)) * IC + ic;
 
-        input[t] = generator(k);
+        data[t] = static_cast<DataType>(generator(k));
     }
     return true;
 }
 
+template <typename DataType>
 bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
                           TosaReference::IDotProductGenerator& generator,
-                          void* data,
+                          DataType* data,
                           size_t size)
 {
     if (cfg.shape.size() != 4)
@@ -127,7 +141,6 @@ bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* weight     = reinterpret_cast<float*>(data);
     const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
     const uint32_t KH = cfg.shape[1];
     const uint32_t KW = cfg.shape[2];
@@ -140,14 +153,15 @@ bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
         uint32_t ky = ((t / IC) / KW) % KH;
         uint32_t k  = (ky + KW * kx) * IC + ic;
 
-        weight[t] = generator(k);
+        data[t] = static_cast<DataType>(generator(k));
     }
     return true;
 }
 
+template <typename DataType>
 bool generateConv2DBias(const TosaReference::GenerateConfig& cfg,
                         TosaReference::IDotProductGenerator& generator,
-                        void* data,
+                        DataType* data,
                         size_t size)
 {
     if (cfg.shape.size() != 1)
@@ -156,12 +170,11 @@ bool generateConv2DBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* bias      = reinterpret_cast<float*>(data);
     const uint32_t T = cfg.shape[0];
 
     for (uint32_t t = 0; t < T; ++t)
     {
-        bias[t] = generator(2);
+        data[t] = static_cast<DataType>(generator(2));
     }
     return true;
 }
@@ -171,21 +184,42 @@ bool generateConv2D(const TosaReference::GenerateConfig& cfg,
                     void* data,
                     size_t size)
 {
-    if (cfg.dataType != DType::DType_FP32)
+    switch (cfg.dataType)
     {
-        WARNING("[Generator][DP][Conv2D] Only supports FP32.");
-        return false;
-    }
-    switch (cfg.inputPos)
-    {
-        case 0:
-            return generateConv2DInput(cfg, generator, data, size);
-        case 1:
-            return generateConv2DWeight(cfg, generator, data, size);
-        case 2:
-            return generateConv2DBias(cfg, generator, data, size);
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+            WARNING("[Generator][DP][Conv2D] Only supports FP32 or FP16.");
             return false;
     }
 }
@@ -193,28 +227,12 @@ bool generateConv2D(const TosaReference::GenerateConfig& cfg,
 //                              Reduce Sum                                   //
 //---------------------------------------------------------------------------//
 
-bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
-                       TosaReference::IDotProductGenerator& generator,
-                       void* data,
-                       size_t size)
+template <typename DataType>
+void generateReduceSumData(const TosaReference::GenerateConfig& cfg,
+                           TosaReference::IDotProductGenerator& generator,
+                           DataType* data,
+                           size_t size)
 {
-    if (cfg.dataType != DType::DType_FP32)
-    {
-        WARNING("[Generator][DP][ReduceSum] Only supports FP32.");
-        return false;
-    }
-    if (cfg.inputPos != 0)
-    {
-        WARNING("[Generator][DP][ReduceSum] Invalid input tensor slot position to operator.");
-        return false;
-    }
-    if (cfg.dotProductInfo.axis < 0 || static_cast<size_t>(cfg.dotProductInfo.axis) >= cfg.shape.size())
-    {
-        WARNING("[Generator][DP][ReduceSum] Invalid axis %d.", cfg.dotProductInfo.axis);
-        return false;
-    }
-
-    float* input        = reinterpret_cast<float*>(data);
     const int64_t T     = TosaReference::numElementsFromShape(cfg.shape);
     const uint32_t axis = cfg.dotProductInfo.axis;
 
@@ -227,17 +245,53 @@ bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
         }
         k = k % cfg.shape[axis];
 
-        input[t] = generator(static_cast<int32_t>(k));
+        data[t] = static_cast<DataType>(generator(static_cast<int32_t>(k)));
     }
+}
+
+bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
+                       TosaReference::IDotProductGenerator& generator,
+                       void* data,
+                       size_t size)
+{
+    if (cfg.inputPos != 0)
+    {
+        WARNING("[Generator][DP][ReduceSum] Invalid input tensor slot position to operator.");
+        return false;
+    }
+    if (cfg.dotProductInfo.axis < 0 || static_cast<size_t>(cfg.dotProductInfo.axis) >= cfg.shape.size())
+    {
+        WARNING("[Generator][DP][ReduceSum] Invalid axis %d.", cfg.dotProductInfo.axis);
+        return false;
+    }
+
+    switch (cfg.dataType)
+    {
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            generateReduceSumData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            generateReduceSumData(cfg, generator, outData, size);
+            break;
+        }
+        default:
+            WARNING("[Generator][DP][ReduceSum] Only supports FP32 or FP16.");
+            return false;
+    }
+
     return true;
 }
 //---------------------------------------------------------------------------//
 //                              Fully Connected                              //
 //---------------------------------------------------------------------------//
 
+template <typename DataType>
 bool generateFullyConnectedInput(const TosaReference::GenerateConfig& cfg,
                                  TosaReference::IDotProductGenerator& generator,
-                                 void* data,
+                                 DataType* data,
                                  size_t size)
 {
     if (cfg.shape.size() != 2)
@@ -246,7 +300,6 @@ bool generateFullyConnectedInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* input      = reinterpret_cast<float*>(data);
     const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
     const uint32_t IC = cfg.shape[1];
 
@@ -254,14 +307,15 @@ bool generateFullyConnectedInput(const TosaReference::GenerateConfig& cfg,
     {
         uint32_t k = t % IC;
 
-        input[t] = generator(k);
+        data[t] = static_cast<DataType>(generator(k));
     }
     return true;
 }
 
+template <typename DataType>
 bool generateFullyConnectedWeight(const TosaReference::GenerateConfig& cfg,
                                   TosaReference::IDotProductGenerator& generator,
-                                  void* data,
+                                  DataType* data,
                                   size_t size)
 {
     if (cfg.shape.size() != 2)
@@ -270,7 +324,6 @@ bool generateFullyConnectedWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* weight     = reinterpret_cast<float*>(data);
     const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
     const uint32_t IC = cfg.shape[1];
 
@@ -278,14 +331,15 @@ bool generateFullyConnectedWeight(const TosaReference::GenerateConfig& cfg,
     {
         uint32_t k = t % IC;
 
-        weight[t] = generator(k);
+        data[t] = static_cast<DataType>(generator(k));
     }
     return true;
 }
 
+template <typename DataType>
 bool generateFullyConnectedBias(const TosaReference::GenerateConfig& cfg,
                                 TosaReference::IDotProductGenerator& generator,
-                                void* data,
+                                DataType* data,
                                 size_t size)
 {
     if (cfg.shape.size() != 1)
@@ -294,12 +348,11 @@ bool generateFullyConnectedBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* bias      = reinterpret_cast<float*>(data);
     const uint32_t T = cfg.shape[0];
 
     for (uint32_t t = 0; t < T; ++t)
     {
-        bias[t] = generator(2);
+        data[t] = static_cast<DataType>(generator(2));
     }
     return true;
 }
@@ -309,21 +362,42 @@ bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
                             void* data,
                             size_t size)
 {
-    if (cfg.dataType != DType::DType_FP32)
+    switch (cfg.dataType)
     {
-        WARNING("[Generator][DP][FullyConnected] Only supports FP32.");
-        return false;
-    }
-    switch (cfg.inputPos)
-    {
-        case 0:
-            return generateFullyConnectedInput(cfg, generator, data, size);
-        case 1:
-            return generateFullyConnectedWeight(cfg, generator, data, size);
-        case 2:
-            return generateFullyConnectedBias(cfg, generator, data, size);
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFullyConnectedInput(cfg, generator, outData, size);
+                case 1:
+                    return generateFullyConnectedWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateFullyConnectedBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFullyConnectedInput(cfg, generator, outData, size);
+                case 1:
+                    return generateFullyConnectedWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateFullyConnectedBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+            WARNING("[Generator][DP][FullyConnected] Only supports FP32 or FP16.");
             return false;
     }
 }
@@ -331,16 +405,35 @@ bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
 //                              Avg Pool 2D                                   //
 //---------------------------------------------------------------------------//
 
+template <typename DataType>
+void generateAvgPool2DData(const TosaReference::GenerateConfig& cfg,
+                           TosaReference::IDotProductGenerator& generator,
+                           DataType* data,
+                           size_t size)
+{
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IH = cfg.shape[1];
+    const uint32_t IW = cfg.shape[2];
+    const uint32_t C  = cfg.shape[3];
+    const uint32_t KY = cfg.dotProductInfo.kernel[0];
+    const uint32_t KX = cfg.dotProductInfo.kernel[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t c  = t % C;
+        uint32_t ix = (t / C) % IW;
+        uint32_t iy = ((t / C) / IW) % IH;
+        uint32_t k  = ((iy % KY) * KX + (ix % KX)) * C + c;
+
+        data[t] = static_cast<DataType>(generator(k));
+    }
+}
+
 bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
                        TosaReference::IDotProductGenerator& generator,
                        void* data,
                        size_t size)
 {
-    if (cfg.dataType != DType::DType_FP32)
-    {
-        WARNING("[Generator][DP][AvgPool2D] Only supports FP32.");
-        return false;
-    }
     if (cfg.inputPos != 0)
     {
         WARNING("[Generator][DP][AvgPool2D] Invalid input tensor slot position to operator.");
@@ -357,23 +450,23 @@ bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    float* input      = reinterpret_cast<float*>(data);
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t IH = cfg.shape[1];
-    const uint32_t IW = cfg.shape[2];
-    const uint32_t C  = cfg.shape[3];
-    const uint32_t KY = cfg.dotProductInfo.kernel[0];
-    const uint32_t KX = cfg.dotProductInfo.kernel[1];
-
-    for (int64_t t = 0; t < T; ++t)
+    switch (cfg.dataType)
     {
-        uint32_t c  = t % C;
-        uint32_t ix = (t / C) % IW;
-        uint32_t iy = ((t / C) / IW) % IH;
-        uint32_t k  = ((iy % KY) * KX + (ix % KX)) * C + c;
-
-        input[t] = generator(k);
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            generateAvgPool2DData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            generateAvgPool2DData(cfg, generator, outData, size);
+            break;
+        }
+        default:
+            WARNING("[Generator][DP][AvgPool2D] Only supports FP32 or FP16.");
+            return false;
     }
+
     return true;
 }
 }    // namespace

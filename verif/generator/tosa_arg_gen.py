@@ -1415,9 +1415,9 @@ class TosaTensorValuesGen:
         if (
             error_name is None
             and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT
-            and dtype in (DType.FP16, DType.BF16)
+            and dtype in (DType.BF16,)
         ):
-            # TODO - Remove once FP16 and BF16 enabled for DOT_PRODUCT compliance
+            # TODO - Remove once BF16 enabled for DOT_PRODUCT compliance
             # Limit ranges for (non error & non compliance) FP tests by using
             # values that can be multiplied on any axis to not hit infinity/NaN
             IC = shapeList[0][1]

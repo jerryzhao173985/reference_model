@@ -68,18 +68,32 @@ class GenerateLibrary:
 
     def _create_buffer(self, dtype: str, shape: tuple):
         """Helper to create a buffer of the required type."""
-        size = 1
-        for dim in shape:
-            size *= dim
+        size = np.prod(shape)
 
         if dtype == "FP32":
             # Create buffer and initialize to zero
             buffer = (ct.c_float * size)(0)
             size_bytes = size * 4
+        elif dtype == "FP16":
+            size_bytes = size * 2
+            # Create buffer of bytes and initialize to zero
+            buffer = (ct.c_ubyte * size_bytes)(0)
         else:
             raise GenerateError(f"Unsupported data type {dtype}")
 
         return buffer, size_bytes
+
+    def _convert_buffer(self, buffer, dtype: str, shape: tuple):
+        """Helper to convert a buffer to a numpy array."""
+        arr = np.ctypeslib.as_array(buffer)
+
+        if dtype == "FP16":
+            # Convert from bytes back to FP16
+            arr = np.frombuffer(arr, np.float16)
+
+        arr = np.reshape(arr, shape)
+
+        return arr
 
     def _data_gen_array(self, json_config: str, tensor_name: str):
         """Generate the named tensor data and return a numpy array."""
@@ -106,9 +120,7 @@ class GenerateLibrary:
         if not result:
             raise GenerateError("Data generate failed")
 
-        arr = np.ctypeslib.as_array(buffer)
-        arr = np.reshape(arr, shape)
-
+        arr = self._convert_buffer(buffer, dtype, shape)
         return arr
 
     def _data_gen_write(

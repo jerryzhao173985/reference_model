@@ -202,7 +202,8 @@ static_assert(std::numeric_limits<double>::is_iec559,
               "TOSA Reference Model has not been built with standard IEEE 754 64-bit float support; Bounds based "
               "verification is invalid");
 
-bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBound)
+template <typename OutType>
+bool tosaCheckFloatBound(OutType testValue, double referenceValue, double errorBound)
 {
     // Both must be NaNs to be correct
     if (std::isnan(referenceValue) || std::isnan(testValue))
@@ -236,8 +237,8 @@ bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBou
     {
         // We already canonicalized the input such that the reference value is positive
         // so no need to check again here.
-        referenceMin = std::numeric_limits<float>::infinity();
-        referenceMax = std::numeric_limits<float>::infinity();
+        referenceMin = std::numeric_limits<OutType>::infinity();
+        referenceMax = std::numeric_limits<OutType>::infinity();
     }
     else if (referenceValue == 0)
     {
@@ -253,23 +254,23 @@ bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBou
         referenceMin = referenceValue - errorBound;
 
         // Handle the overflow cases.
-        if (referenceMax > AccPrecision<float>::normal_max)
+        if (referenceMax > AccPrecision<OutType>::normal_max)
         {
-            referenceMax = std::numeric_limits<float>::infinity();
+            referenceMax = std::numeric_limits<OutType>::infinity();
         }
 
-        if (referenceMin > AccPrecision<float>::normal_max)
+        if (referenceMin > AccPrecision<OutType>::normal_max)
         {
-            referenceMin = std::numeric_limits<float>::infinity();
+            referenceMin = std::numeric_limits<OutType>::infinity();
         }
 
         // And the underflow cases.
-        if (referenceMax < AccPrecision<float>::normal_min)
+        if (referenceMax < AccPrecision<OutType>::normal_min)
         {
-            referenceMax = AccPrecision<float>::normal_min;
+            referenceMax = AccPrecision<OutType>::normal_min;
         }
 
-        if (referenceMin < AccPrecision<float>::normal_min)
+        if (referenceMin < AccPrecision<OutType>::normal_min)
         {
             referenceMin = 0.0;
         }
@@ -286,4 +287,8 @@ bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBou
     }
     return withinBound;
 }
+
+// Instantiate the needed check functions
+template bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBound);
+template bool tosaCheckFloatBound(half_float::half testValue, double referenceValue, double errorBound);
 }    // namespace TosaReference

@@ -17,6 +17,7 @@
 #define VERIFY_UTILS_H_
 
 #include "dtype.h"
+#include "half.hpp"
 #include "types.h"
 
 #include <cstdint>
@@ -135,10 +136,17 @@ struct AccPrecision<float>
     static constexpr double normal_max   = const_exp2(128) - const_exp2(127 - 23);
     static constexpr int32_t normal_frac = 23;
 };
+template <>
+struct AccPrecision<half_float::half>
+{
+    static constexpr double normal_min   = const_exp2(-14);
+    static constexpr double normal_max   = const_exp2(16) - const_exp2(15 - 10);
+    static constexpr int32_t normal_frac = 7;
+};
 
 /// \brief Error bounds check for ULP and ABS_ERROR modes
-bool tosaCheckFloatBound(float testValue, double referenceValue, double errorBound);
-
+template <typename OutType>
+bool tosaCheckFloatBound(OutType testValue, double referenceValue, double errorBound);
 };    // namespace TosaReference
 
 #endif    // VERIFY_UTILS_H_
