@@ -464,8 +464,9 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
                     result        = static_cast<int64_t>(a) * static_cast<int64_t>(b) + round;
                     result        = result >> shift;
 
-                    REQUIRE(result >= QMin && result <= QMax, "OpMul: result %ld exceeds valid range [%ld, %ld]",
-                            result, QMin, QMax);
+                    REQUIRE(result >= QMin && result <= QMax,
+                            "OpMul: result %" PRId64 " exceeds valid range [%" PRId64 ", %" PRId64 "]", result, QMin,
+                            QMax);
                 }
                 else
                 {
