@@ -320,7 +320,7 @@ extern "C"
                                       tosa_tensor_t client_output,
                                       const func_ctx_t& func_ctx);
 
-    tosa_status_t tosa_run_concat(tosa_tensor_t client_input1,
+    tosa_status_t tosa_run_concat(const tosa_tensor_list_t client_input1,
                                   const int32_t client_axis,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx);

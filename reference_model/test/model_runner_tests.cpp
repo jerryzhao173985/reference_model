@@ -152,6 +152,53 @@ TEST_SUITE("model_runner")
         compareOutput(dstData, expectedData, expectedData.size());
     }
 
+    TEST_CASE("op_entry_concat")
+    {
+        // Concat parameters
+        const int32_t axis = 2;
+
+        // Inputs/Outputs
+        tosa_datatype_t dt                = tosa_datatype_fp32_t;
+        std::vector<int32_t> input1_shape = { 1, 2, 3, 4 };
+        std::vector<int32_t> input2_shape = { 1, 2, 5, 4 };
+        std::vector<int32_t> output_shape = { 1, 2, 8, 4 };
+        std::vector<float> src1Data(24, 1.0f);
+        std::vector<float> src2Data(40, 1.0f);
+        std::vector<float> dstData(64, 0.f);
+
+        tosa_tensor_t input1;
+        input1.shape     = input1_shape.data();
+        input1.num_dims  = input1_shape.size();
+        input1.data_type = dt;
+        input1.data      = reinterpret_cast<uint8_t*>(src1Data.data());
+        input1.size      = src1Data.size() * sizeof(float);
+
+        tosa_tensor_t input2;
+        input2.shape     = input2_shape.data();
+        input2.num_dims  = input2_shape.size();
+        input2.data_type = dt;
+        input2.data      = reinterpret_cast<uint8_t*>(src2Data.data());
+        input2.size      = src2Data.size() * sizeof(float);
+
+        tosa_tensor_list_t input_list;
+        tosa_tensor_t inputs[]{ input1, input2 };
+        input_list.size    = 2;
+        input_list.tensors = inputs;
+
+        tosa_tensor_t output;
+        output.shape     = output_shape.data();
+        output.num_dims  = output_shape.size();
+        output.data_type = dt;
+        output.data      = reinterpret_cast<uint8_t*>(dstData.data());
+        output.size      = dstData.size() * sizeof(float);
+
+        auto status = tosa_run_concat(input_list, axis, output, {});
+        CHECK((status == tosa_status_valid));
+
+        std::vector<float> expectedData(64, 1.0f);
+        compareOutput(dstData, expectedData, expectedData.size());
+    }
+
     TEST_CASE("op_entry_conv2d")
     {
         // Conv parameters

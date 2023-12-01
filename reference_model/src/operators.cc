@@ -20,6 +20,15 @@
 #include "model_runner_impl.h"
 #include "ops/op_factory.h"
 
+#define TOSA_PROPAGATE_ERROR(status)                                                                                   \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        if (status != 0)                                                                                               \
+        {                                                                                                              \
+            return status;                                                                                             \
+        }                                                                                                              \
+    } while (false)
+
 #define TOSA_RETURN_ON_ERROR(status)                                                                                   \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -75,10 +84,61 @@ tosa::DType translate_client_datatype(tosa_datatype_t type)
     }
 };
 
+using TosaTensorInfo = std::pair<tosa::TosaSerializationTensor*, tosa_tensor_t*>;
+
 tosa::TosaSerializationTensor* translate_client_tensor(tosa_tensor_t& tensor, const std::string& name)
 {
     std::vector<int32_t> shape(tensor.shape, tensor.shape + tensor.num_dims);
     return new tosa::TosaSerializationTensor(name, shape, translate_client_datatype(tensor.data_type), {});
+}
+
+void addTensor(std::vector<TosaTensorInfo>& tensors, tosa_tensor_t& tensor, std::string tensorName)
+{
+    auto tensorDescr = translate_client_tensor(tensor, tensorName);
+    tensors.push_back(std::make_pair(tensorDescr, &tensor));
+}
+
+int setInputTensors(TosaReference::ModelRunnerImpl& runner, std::vector<TosaTensorInfo>& inputTensors)
+{
+    for (const auto& [tensorDescr, tensorData] : inputTensors)
+    {
+        auto status = runner.setInput(tensorDescr->GetName(), tensorData->data, tensorData->size);
+        TOSA_PROPAGATE_ERROR(status);
+    }
+
+    return 0;
+}
+
+int getOutputTensors(TosaReference::ModelRunnerImpl& runner, std::vector<TosaTensorInfo>& outputTensors)
+{
+    for (const auto& [tensorDescr, tensorData] : outputTensors)
+    {
+        auto status = runner.getOutput(tensorDescr->GetName(), tensorData->data, tensorData->size);
+        TOSA_PROPAGATE_ERROR(status);
+    }
+
+    return 0;
+}
+
+std::vector<std::string> getTensorNames(std::vector<TosaTensorInfo>& tensors)
+{
+    std::vector<std::string> tensorNames;
+    const auto mapping = [](const TosaTensorInfo& info) { return info.first->GetName(); };
+
+    std::transform(tensors.cbegin(), tensors.cend(), std::back_inserter(tensorNames), mapping);
+    return tensorNames;
+}
+
+std::vector<TosaSerializationTensor*> allTensors(std::vector<TosaTensorInfo>& inputTensors,
+                                                 std::vector<TosaTensorInfo>& outputTensors)
+{
+    std::vector<TosaSerializationTensor*> result;
+    const auto mapping = [](const TosaTensorInfo& info) { return info.first; };
+
+    std::transform(inputTensors.cbegin(), inputTensors.cend(), std::back_inserter(result), mapping);
+    std::transform(outputTensors.cbegin(), outputTensors.cend(), std::back_inserter(result), mapping);
+
+    return result;
 }
 
 tosa::ResizeMode translate_client_tosa_mode(tosa_mode_t mode)
@@ -124,27 +184,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ARGMAX, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_ARGMAX, tosa::Attribute::Attribute_AxisAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("argmax", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("argmax", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -167,27 +232,32 @@ extern "C"
         TosaPoolAttribute attr(pad, kernel, stride, client_input_zp, client_output_zp, accum_dtype);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_AVG_POOL2D, tosa::Attribute::Attribute_PoolAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_AVG_POOL2D, tosa::Attribute::Attribute_PoolAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("avg_pool2d", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("avg_pool2d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -211,33 +281,34 @@ extern "C"
         TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* weight = translate_client_tensor(client_weight, "weight");
-        tosa::TosaSerializationTensor* bias   = translate_client_tensor(client_bias, "bias");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+        addTensor(inputTensors, client_weight, "weight");
+        addTensor(inputTensors, client_bias, "bias");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CONV2D, tosa::Attribute::Attribute_ConvAttribute,
-                                                      &attr, { input->GetName(), weight->GetName(), bias->GetName() },
-                                                      { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_CONV2D, tosa::Attribute::Attribute_ConvAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("conv2d", "main", { op }, { input, weight, bias, output },
-                                                { input->GetName(), weight->GetName(), bias->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("conv2d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(bias->GetName(), client_bias.data, client_bias.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -261,33 +332,34 @@ extern "C"
         TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* weight = translate_client_tensor(client_weight, "weight");
-        tosa::TosaSerializationTensor* bias   = translate_client_tensor(client_bias, "bias");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+        addTensor(inputTensors, client_weight, "weight");
+        addTensor(inputTensors, client_bias, "bias");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CONV3D, tosa::Attribute::Attribute_ConvAttribute,
-                                                      &attr, { input->GetName(), weight->GetName(), bias->GetName() },
-                                                      { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_CONV3D, tosa::Attribute::Attribute_ConvAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("conv3d", "main", { op }, { input, weight, bias, output },
-                                                { input->GetName(), weight->GetName(), bias->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("conv3d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(bias->GetName(), client_bias.data, client_bias.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -311,33 +383,35 @@ extern "C"
         TosaConvAttribute attr(pad, stride, dilation, client_input_zp, client_weight_zp, client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* weight = translate_client_tensor(client_weight, "weight");
-        tosa::TosaSerializationTensor* bias   = translate_client_tensor(client_bias, "bias");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+        addTensor(inputTensors, client_weight, "weight");
+        addTensor(inputTensors, client_bias, "bias");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(
-            tosa::Op::Op_DEPTHWISE_CONV2D, tosa::Attribute::Attribute_ConvAttribute, &attr,
-            { input->GetName(), weight->GetName(), bias->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_DEPTHWISE_CONV2D, tosa::Attribute::Attribute_ConvAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("depthwise_conv2d", "main", { op }, { input, weight, bias, output },
-                                                { input->GetName(), weight->GetName(), bias->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("depthwise_conv2d", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(bias->GetName(), client_bias.data, client_bias.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -354,35 +428,34 @@ extern "C"
         TosaFFTAttribute attr(client_inverse, client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input_real  = translate_client_tensor(client_input_real, "input_real");
-        tosa::TosaSerializationTensor* input_imag  = translate_client_tensor(client_input_imag, "input_imag");
-        tosa::TosaSerializationTensor* output_real = translate_client_tensor(client_output_real, "output_real");
-        tosa::TosaSerializationTensor* output_imag = translate_client_tensor(client_output_imag, "output_imag");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input_real, "input_real");
+        addTensor(inputTensors, client_input_imag, "input_imag");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output_real, "output_real");
+        addTensor(outputTensors, client_output_imag, "output_imag");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_FFT2D, tosa::Attribute::Attribute_FFTAttribute,
-                                                      &attr, { input_real->GetName(), input_imag->GetName() },
-                                                      { output_real->GetName(), output_imag->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_FFT2D, tosa::Attribute::Attribute_FFTAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block(
-            "fft2d", "main", { op }, { input_real, input_imag, output_real, output_imag },
-            { input_real->GetName(), input_imag->GetName() }, { output_real->GetName(), output_imag->GetName() });
+        tosa::TosaSerializationBasicBlock block("fft2d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input_real->GetName(), client_input_real.data, client_input_real.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input_imag->GetName(), client_input_imag.data, client_input_imag.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(
-            runner.getOutput(output_real->GetName(), client_output_real.data, client_output_real.size));
-        TOSA_RETURN_ON_ERROR(
-            runner.getOutput(output_imag->GetName(), client_output_imag.data, client_output_imag.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -399,33 +472,35 @@ extern "C"
         TosaFullyConnectedAttribute attr(client_input_zp, client_weight_zp);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* weight = translate_client_tensor(client_weight, "weight");
-        tosa::TosaSerializationTensor* bias   = translate_client_tensor(client_bias, "bias");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+        addTensor(inputTensors, client_weight, "weight");
+        addTensor(inputTensors, client_bias, "bias");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(
-            tosa::Op::Op_FULLY_CONNECTED, tosa::Attribute::Attribute_FullyConnectedAttribute, &attr,
-            { input->GetName(), weight->GetName(), bias->GetName() }, { output->GetName() });
+        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_FULLY_CONNECTED,
+                                                      tosa::Attribute::Attribute_FullyConnectedAttribute, &attr,
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("fully_connected", "main", { op }, { input, weight, bias, output },
-                                                { input->GetName(), weight->GetName(), bias->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("fully_connected", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(bias->GetName(), client_bias.data, client_bias.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -441,29 +516,33 @@ extern "C"
         TosaMatMulAttribute attr(client_a_zp, client_b_zp);
 
         // Create tensors
-        tosa::TosaSerializationTensor* a      = translate_client_tensor(client_a, "a");
-        tosa::TosaSerializationTensor* b      = translate_client_tensor(client_b, "b");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_a, "a");
+        addTensor(inputTensors, client_b, "b");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_MATMUL, tosa::Attribute::Attribute_MatMulAttribute,
-                                                      &attr, { a->GetName(), b->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_MATMUL, tosa::Attribute::Attribute_MatMulAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("matmul", "main", { op }, { a, b, output },
-                                                { a->GetName(), b->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("matmul", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(a->GetName(), client_a.data, client_a.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(b->GetName(), client_b.data, client_b.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -485,27 +564,32 @@ extern "C"
         TosaPoolAttribute attr(pad, kernel, stride, client_input_zp, client_output_zp, accum_dtype);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_MAX_POOL2D, tosa::Attribute::Attribute_PoolAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_MAX_POOL2D, tosa::Attribute::Attribute_PoolAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("max_pool2d", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("max_pool2d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -520,33 +604,33 @@ extern "C"
         TosaRFFTAttribute attr(client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input       = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output_real = translate_client_tensor(client_output_real, "output_real");
-        tosa::TosaSerializationTensor* output_imag = translate_client_tensor(client_output_imag, "output_imag");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output_real, "output_real");
+        addTensor(outputTensors, client_output_imag, "output_imag");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RFFT2D, tosa::Attribute::Attribute_RFFTAttribute,
-                                                      &attr, { input->GetName() },
-                                                      { output_real->GetName(), output_imag->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_RFFT2D, tosa::Attribute::Attribute_RFFTAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("rfft2d", "main", { op }, { input, output_real, output_imag },
-                                                { input->GetName() },
-                                                { output_real->GetName(), output_imag->GetName() });
+        tosa::TosaSerializationBasicBlock block("rfft2d", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(
-            runner.getOutput(output_real->GetName(), client_output_real.data, client_output_real.size));
-        TOSA_RETURN_ON_ERROR(
-            runner.getOutput(output_imag->GetName(), client_output_imag.data, client_output_imag.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -571,33 +655,35 @@ extern "C"
                                         client_local_bound);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* weight = translate_client_tensor(client_weight, "weight");
-        tosa::TosaSerializationTensor* bias   = translate_client_tensor(client_bias, "bias");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+        addTensor(inputTensors, client_weight, "weight");
+        addTensor(inputTensors, client_bias, "bias");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(
-            tosa::Op::Op_TRANSPOSE_CONV2D, tosa::Attribute::Attribute_TransposeConvAttribute, &attr,
-            { input->GetName(), weight->GetName(), bias->GetName() }, { output->GetName() });
+        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_TRANSPOSE_CONV2D,
+                                                      tosa::Attribute::Attribute_TransposeConvAttribute, &attr,
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("transpose_conv2d", "main", { op }, { input, weight, bias, output },
-                                                { input->GetName(), weight->GetName(), bias->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("transpose_conv2d", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(weight->GetName(), client_weight.data, client_weight.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(bias->GetName(), client_bias.data, client_bias.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -614,27 +700,32 @@ extern "C"
         TosaClampAttribute attr(client_min_int, client_max_int, client_min_fp, client_max_fp);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CLAMP, tosa::Attribute::Attribute_ClampAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_CLAMP, tosa::Attribute::Attribute_ClampAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("clamp", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("clamp", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -645,27 +736,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ERF, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("erf", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("erf", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -676,27 +771,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_SIGMOID, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("sigmoid", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("sigmoid", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -707,27 +806,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_TANH, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("tanh", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("tanh", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -741,29 +844,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ADD, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("add", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("add", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -778,30 +884,34 @@ extern "C"
         TosaArithmeticRightShiftAttribute attr(client_round);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ARITHMETIC_RIGHT_SHIFT,
                                                       tosa::Attribute::Attribute_ArithmeticRightShiftAttribute, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("arithmetic_right_shift", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("arithmetic_right_shift", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -815,29 +925,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_BITWISE_AND, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_and", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("bitwise_and", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -851,29 +964,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_BITWISE_OR, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_or", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("bitwise_or", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -887,29 +1003,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_BITWISE_XOR, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_xor", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("bitwise_xor", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -923,29 +1042,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_INTDIV, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("intdiv", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("intdiv", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -959,29 +1081,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_AND, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_and", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_and", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -995,30 +1120,34 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op =
             new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_LEFT_SHIFT, tosa::Attribute::Attribute_NONE, &attr,
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_left_shift", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_left_shift", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1032,30 +1161,34 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op =
             new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_RIGHT_SHIFT, tosa::Attribute::Attribute_NONE,
-                                                &attr, { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_right_shift", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_right_shift", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1069,29 +1202,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_OR, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_or", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_or", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1105,29 +1241,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_XOR, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_xor", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_xor", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1141,29 +1280,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_MAXIMUM, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("maximum", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("maximum", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1177,29 +1319,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_MINIMUM, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("minimum", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("minimum", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1214,29 +1359,32 @@ extern "C"
         TosaMulAttribute attr(client_shift);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_MUL, tosa::Attribute::Attribute_MulAttribute, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("mul", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("mul", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1250,29 +1398,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_POW, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("pow", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("pow", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1286,29 +1437,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_SUB, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("sub", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("sub", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1324,27 +1478,32 @@ extern "C"
         TosaTableAttribute attr(table);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_TABLE, tosa::Attribute::Attribute_TableAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_TABLE, tosa::Attribute::Attribute_TableAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("table", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("table", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1355,27 +1514,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_ABS, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("abs", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("abs", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1387,27 +1550,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_BITWISE_NOT, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("bitwise_not", "main", { op }, { input1, output },
-                                                { input1->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("bitwise_not", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1418,27 +1585,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CEIL, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("ceil", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("ceil", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1449,27 +1620,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CLZ, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("clz", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("clz", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1480,27 +1655,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_EXP, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("exp", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("exp", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1511,27 +1690,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_FLOOR, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("floor", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("floor", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1542,27 +1725,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_LOG, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("log", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("log", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1574,27 +1761,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_LOGICAL_NOT, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("logical_not", "main", { op }, { input1, output },
-                                                { input1->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("logical_not", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1609,27 +1800,32 @@ extern "C"
         TosaNegateAttribute attr(client_input1_zp, client_output_zp);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_NEGATE, tosa::Attribute::Attribute_NegateAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_NEGATE, tosa::Attribute::Attribute_NegateAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("negate", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("negate", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1641,27 +1837,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RECIPROCAL, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reciprocal", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reciprocal", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1672,27 +1872,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RSQRT, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("rsqrt", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("rsqrt", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1707,33 +1911,33 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* input3 = translate_client_tensor(client_input3, "input3");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+        addTensor(inputTensors, client_input3, "input3");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_SELECT, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName(), input3->GetName() },
-                                                      { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("select", "main", { op }, { input1, input2, input3, output },
-                                                { input1->GetName(), input2->GetName(), input3->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("select", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input3->GetName(), client_input3.data, client_input3.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1747,29 +1951,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_EQUAL, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("equal", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("equal", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1783,29 +1990,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_GREATER, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("greater", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("greater", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1819,30 +2029,34 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* input2 = translate_client_tensor(client_input2, "input2");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+        addTensor(inputTensors, client_input2, "input2");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op =
             new tosa::TosaSerializationOperator(tosa::Op::Op_GREATER_EQUAL, tosa::Attribute::Attribute_NONE, &attr,
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("greater_equal", "main", { op }, { input1, input2, output },
-                                                { input1->GetName(), input2->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("greater_equal", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input2->GetName(), client_input2.data, client_input2.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1856,27 +2070,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_ALL, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_ALL, tosa::Attribute::Attribute_AxisAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_all", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_all", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1890,27 +2109,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_ANY, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_ANY, tosa::Attribute::Attribute_AxisAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_any", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_any", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1924,27 +2148,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_MAX, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_MAX, tosa::Attribute::Attribute_AxisAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_max", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_max", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1958,27 +2187,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_MIN, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_MIN, tosa::Attribute::Attribute_AxisAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_min", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_min", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -1992,28 +2226,33 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op =
             new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_PRODUCT, tosa::Attribute::Attribute_AxisAttribute,
-                                                &attr, { input->GetName() }, { output->GetName() });
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_product", "main", { op }, { input, output },
-                                                { input->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_product", "main", { op },
+                                                allTensors(inputTensors, outputTensors), op->GetInputTensorNames(),
+                                                op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2027,32 +2266,37 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_SUM, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REDUCE_SUM, tosa::Attribute::Attribute_AxisAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reduce_sum", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reduce_sum", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
 
-    tosa_status_t tosa_run_concat(tosa_tensor_t client_input1,
+    tosa_status_t tosa_run_concat(const tosa_tensor_list_t client_input1,
                                   const int32_t client_axis,
                                   tosa_tensor_t client_output,
                                   const func_ctx_t& func_ctx)
@@ -2061,27 +2305,35 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        for (int i = 0; i < client_input1.size; i++)
+        {
+            addTensor(inputTensors, client_input1.tensors[i], "input1-" + std::to_string(i));
+        }
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CONCAT, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_CONCAT, tosa::Attribute::Attribute_AxisAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("concat", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("concat", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2101,27 +2353,31 @@ extern "C"
         TosaPadAttribute attr(padding, client_pad_const_int, client_pad_const_fp);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_PAD, tosa::Attribute::Attribute_PadAttribute, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("pad", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("pad", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2135,27 +2391,31 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_DIM, tosa::Attribute::Attribute_AxisAttribute, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("dim", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("dim", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2173,27 +2433,32 @@ extern "C"
         TosaReshapeAttribute attr(shape);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RESHAPE, tosa::Attribute::Attribute_ReshapeAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_RESHAPE, tosa::Attribute::Attribute_ReshapeAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reshape", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reshape", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2207,27 +2472,32 @@ extern "C"
         TosaAxisAttribute attr(client_axis);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_REVERSE, tosa::Attribute::Attribute_AxisAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_REVERSE, tosa::Attribute::Attribute_AxisAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("reverse", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("reverse", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2246,27 +2516,32 @@ extern "C"
         TosaSliceAttribute attr(start, size);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_SLICE, tosa::Attribute::Attribute_SliceAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_SLICE, tosa::Attribute::Attribute_SliceAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("slice", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("slice", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2284,27 +2559,32 @@ extern "C"
         TosaTileAttribute attr(multiples);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_TILE, tosa::Attribute::Attribute_TileAttribute,
-                                                      &attr, { input1->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_TILE, tosa::Attribute::Attribute_TileAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("tile", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("tile", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2320,28 +2600,32 @@ extern "C"
         TosaTransposeAttribute attr(perms);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op =
             new tosa::TosaSerializationOperator(tosa::Op::Op_TRANSPOSE, tosa::Attribute::Attribute_TransposeAttribute,
-                                                &attr, { input1->GetName() }, { output->GetName() });
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("transpose", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("transpose", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2355,29 +2639,32 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* values  = translate_client_tensor(client_values, "values");
-        tosa::TosaSerializationTensor* indices = translate_client_tensor(client_indices, "indices");
-        tosa::TosaSerializationTensor* output  = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_values, "values");
+        addTensor(inputTensors, client_indices, "indices");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_GATHER, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { values->GetName(), indices->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("gather", "main", { op }, { values, indices, output },
-                                                { values->GetName(), indices->GetName() }, { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("gather", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(values->GetName(), client_values.data, client_values.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(indices->GetName(), client_indices.data, client_indices.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2392,33 +2679,33 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* values_in  = translate_client_tensor(client_values_in, "values_in");
-        tosa::TosaSerializationTensor* indices    = translate_client_tensor(client_indices, "indices");
-        tosa::TosaSerializationTensor* input      = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* values_out = translate_client_tensor(client_values_out, "values_out");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_values_in, "values_in");
+        addTensor(inputTensors, client_indices, "indices");
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_values_out, "values_out");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_SCATTER, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { values_in->GetName(), indices->GetName(), input->GetName() },
-                                                      { values_out->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("scatter", "main", { op }, { values_in, indices, input, values_out },
-                                                { values_in->GetName(), indices->GetName(), input->GetName() },
-                                                { values_out->GetName() });
+        tosa::TosaSerializationBasicBlock block("scatter", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(values_in->GetName(), client_values_in.data, client_values_in.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(indices->GetName(), client_indices.data, client_indices.size));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(values_out->GetName(), client_values_out.data, client_values_out.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2448,27 +2735,32 @@ extern "C"
         TosaResizeAttribute attr(scale, offset, border, mode);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RESIZE, tosa::Attribute::Attribute_ResizeAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_RESIZE, tosa::Attribute::Attribute_ResizeAttribute, &attr,
+                                                getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("resize", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("resize", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2479,27 +2771,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_CAST, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("cast", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("cast", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2527,27 +2823,32 @@ extern "C"
                                   client_output_unsigned);
 
         // Create tensors
-        tosa::TosaSerializationTensor* input  = translate_client_tensor(client_input, "input");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input, "input");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
-        auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_RESCALE, tosa::Attribute::Attribute_RescaleAttribute,
-                                                      &attr, { input->GetName() }, { output->GetName() });
+        auto op =
+            new tosa::TosaSerializationOperator(tosa::Op::Op_RESCALE, tosa::Attribute::Attribute_RescaleAttribute,
+                                                &attr, getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("rescale", "main", { op }, { input, output }, { input->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("rescale", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input->GetName(), client_input.data, client_input.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }
@@ -2559,27 +2860,31 @@ extern "C"
         TosaNoneAttribute attr;
 
         // Create tensors
-        tosa::TosaSerializationTensor* input1 = translate_client_tensor(client_input1, "input1");
-        tosa::TosaSerializationTensor* output = translate_client_tensor(client_output, "output");
+        std::vector<TosaTensorInfo> inputTensors;
+        addTensor(inputTensors, client_input1, "input1");
+
+        std::vector<TosaTensorInfo> outputTensors;
+        addTensor(outputTensors, client_output, "output");
 
         // Create operator
         auto op = new tosa::TosaSerializationOperator(tosa::Op::Op_IDENTITY, tosa::Attribute::Attribute_NONE, &attr,
-                                                      { input1->GetName() }, { output->GetName() });
+                                                      getTensorNames(inputTensors), getTensorNames(outputTensors));
 
         // Create a tosa single-op basic block
-        tosa::TosaSerializationBasicBlock block("identity", "main", { op }, { input1, output }, { input1->GetName() },
-                                                { output->GetName() });
+        tosa::TosaSerializationBasicBlock block("identity", "main", { op }, allTensors(inputTensors, outputTensors),
+                                                op->GetInputTensorNames(), op->GetOutputTensorNames());
 
         // Setup model
         TosaReference::ModelRunnerImpl runner(func_ctx.func_config, func_ctx.func_debug);
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.initialize(block));
-        TOSA_RETURN_ON_ERROR(runner.setInput(input1->GetName(), client_input1.data, client_input1.size));
+
+        TOSA_RETURN_ON_ERROR(setInputTensors(runner, inputTensors));
 
         // Execute
         TOSA_RETURN_ON_GRAPH_STATUS_ERROR(runner.run());
 
         // Extract outputs
-        TOSA_RETURN_ON_ERROR(runner.getOutput(output->GetName(), client_output.data, client_output.size));
+        TOSA_RETURN_ON_ERROR(getOutputTensors(runner, outputTensors));
 
         return tosa_status_valid;
     }

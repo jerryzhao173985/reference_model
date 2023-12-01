@@ -75,6 +75,12 @@ extern "C"
         size_t size;
     };
 
+    struct tosa_tensor_list_t
+    {
+        tosa_tensor_t* tensors;
+        size_t size;
+    };
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
