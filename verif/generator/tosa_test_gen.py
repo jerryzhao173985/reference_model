@@ -341,7 +341,7 @@ class TosaTestGen:
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
-        elif op["op"] in (Op.EXP, Op.POW):
+        elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
             mode = gtu.ComplianceMode.ABS_ERROR
         else:
             mode = gtu.ComplianceMode.EXACT
@@ -3243,7 +3243,6 @@ class TosaTestGen:
             "data_gen": {
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
             },
-            "compliance": {"ulp": 5},
         },
         "tanh": {
             "op": Op.TANH,
@@ -3264,7 +3263,6 @@ class TosaTestGen:
             "data_gen": {
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
             },
-            "compliance": {"ulp": 5},
         },
         "erf": {
             "op": Op.ERF,
