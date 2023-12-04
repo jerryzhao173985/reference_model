@@ -89,7 +89,15 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.f / (1.f + (expf(-1.f * a)))); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return (1.L / (1.L + (exp(-1.L * a)))); };
+            if (g_func_config.abs_mode)
+            {
+                // ABS_ERROR bounds return 2*(1+abs(a))
+                this->fcn = [](InEigenType a) -> OutEigenType { return 2.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+            }
+            else
+            {
+                this->fcn = [](InEigenType a) -> OutEigenType { return (1.L / (1.L + (exp(-1.L * a)))); };
+            }
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -113,7 +121,15 @@ int OpTanh<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(tanhf(a)); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return tanh(a); };
+            if (g_func_config.abs_mode)
+            {
+                // ABS_ERROR bounds return 2*(1+abs(a))
+                this->fcn = [](InEigenType a) -> OutEigenType { return 2.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+            }
+            else
+            {
+                this->fcn = [](InEigenType a) -> OutEigenType { return tanh(a); };
+            }
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
