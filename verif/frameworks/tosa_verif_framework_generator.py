@@ -709,6 +709,24 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.LogSoftmax, TGen.tgBasic, ArgGen.agNone),
         "types": TYPE_F,
     },
+    "dynamic_linear": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.DynamicLinear, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": [],
+            "tflite": list(TYPE_F),
+        },
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(14, 19)],
+        },
+        # number of operands of tuples which spcifies which dim to set to None
+        # In this case, we have 1 input. So we have 1 tuple
+        # We're setting the first input's first dim to None
+        "dynamic_shape_dim": [
+            (0,),
+        ],
+    },
     "matmul": {
         "operands": (2, 0),
         "build_fcn": (TBuilder.MatMul, TGen.tgMatmul, ArgGen.agNone),
@@ -771,15 +789,70 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.BatchToSpace, TGen.tgBasic, ArgGen.agBatchToSpace),
         "types": TYPE_F,
     },
+    "dynamic_batch_to_space": {
+        "operands": (1, 0),
+        "build_fcn": (
+            TBuilder.DynamicBatchToSpace,
+            TGen.tgBasic,
+            ArgGen.agBatchToSpace,
+        ),
+        "types": TYPE_F,
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(8, 4, 4, 4)],
+        },
+        # number of operands of tuples which spcifies which dim to set to None
+        # In this case, we have 1 input. So we have 1 tuple
+        # We're setting the first input's 0th dim to None
+        "dynamic_shape_dim": [
+            (0,),
+        ],
+    },
     "space_to_depth": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.SpaceToDepth, TGen.tgBasic, ArgGen.agSpaceToDepth),
         "types": TYPE_F,
     },
+    "dynamic_space_to_depth": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.DynamicSpaceToDepth, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": [],
+            "tflite": list(TYPE_F),
+        },
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(1, 32, 32, 8)],
+        },
+        # number of operands of tuples which spcifies which dim to set to None
+        # In this case, we have 1 input. So we have 1 tuple
+        # We're setting the first input's third dim to None
+        "dynamic_shape_dim": [
+            (3,),
+        ],
+    },
     "depth_to_space": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.DepthToSpace, TGen.tgBasic, ArgGen.agDepthToSpace),
         "types": TYPE_F,
+    },
+    "dynamic_depth_to_space": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.DynamicDepthToSpace, TGen.tgBasic, ArgGen.agNone),
+        "types": {
+            "tf": [],
+            "tflite": list(TYPE_F),
+        },
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(1, 1, 1, 4)],
+        },
+        # number of operands of tuples which spcifies which dim to set to None
+        # In this case, we have 1 input. So we have 1 tuple
+        # We're setting the first input's third dim to None
+        "dynamic_shape_dim": [
+            (3,),
+        ],
     },
     "one_hot": {
         "operands": (3, 1),
@@ -1095,9 +1168,22 @@ def run_unit_test(
         placeholder_shapes = []
 
         for idx, (name, val) in enumerate(placeholders):
+            input_shape = val.shape
+            try:
+                dynamic_shape_dim_tuples = op["dynamic_shape_dim"]
+                dim_tuple = dynamic_shape_dim_tuples[idx]
+                dim = dim_tuple[0]
+                input_shape = list(val.shape)
+                input_shape[dim] = None
+                dynamic_input_shape = tuple(input_shape)
+
+                addl_args.append(dynamic_input_shape)
+            except KeyError:
+                pass
+
             placeholder_names.append(name)
             placeholder_signatures = placeholder_signatures + (
-                tf.TensorSpec(shape=val.shape, dtype=val.dtype, name=name),
+                tf.TensorSpec(shape=dynamic_input_shape, dtype=val.dtype, name=name),
             )
             placeholder_npy_filenames.append("{}.npy".format(name.split(":")[0]))
             placeholder_shapes.append(val.shape)
@@ -1301,10 +1387,17 @@ def run_unit_test(
                 assert 0, "unknown tflite interpreter mode {}".format(
                     args.tflite_kernel_mode
                 )
-            interpreter.allocate_tensors()
 
             input_details = interpreter.get_input_details()
             output_details = interpreter.get_output_details()
+
+            # Prototype dynamic_shape testing
+            # Need to resize the input tensors to known shapes when evaluating
+            for idx, val in enumerate(placeholder_vals):
+                interpreter.resize_tensor_input(
+                    input_details[idx]["index"], placeholder_shapes[idx]
+                )
+            interpreter.allocate_tensors()
 
             assert len(input_details) == len(
                 placeholder_vals

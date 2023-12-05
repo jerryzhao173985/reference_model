@@ -886,6 +886,19 @@ class TBuilder:
         def eval(self, a):
             return tf.nn.log_softmax(a, name=self.result_name)
 
+    class DynamicLinear:
+        def __init__(self, dynamic_input_shape, name):
+            self.result_name = name
+            self.model = tf.keras.Sequential(
+                [
+                    tf.keras.layers.Input(shape=dynamic_input_shape),
+                    tf.keras.layers.Dense(units=5),
+                ]
+            )
+
+        def eval(self, a):
+            return self.model(a)
+
     class MatMul:
         def __init__(self, name):
             self.result_name = name
@@ -1064,6 +1077,26 @@ class TBuilder:
                 transpose_op, self.block_shape, self.cropping, name=self.result_name
             )
 
+    class DynamicBatchToSpace:
+        def __init__(self, block_shape, cropping, dynamic_input_shape, name):
+            self.result_name = name
+
+            dynamic_input_shape_with_batch = list(dynamic_input_shape)
+            dynamic_input_shape_no_batch = dynamic_input_shape_with_batch[1:]
+            dynamic_input_shape_no_batch = tuple(dynamic_input_shape_no_batch)
+
+            self.model = tf.keras.Sequential(
+                [
+                    tf.keras.layers.Input(shape=dynamic_input_shape_no_batch),
+                    tf.keras.layers.Lambda(
+                        lambda x: tf.batch_to_space(x, block_shape, cropping, name=None)
+                    ),
+                ]
+            )
+
+        def eval(self, a):
+            return self.model(a)
+
     class SpaceToDepth:
         def __init__(self, block_shape, name):
             self.block_shape = block_shape
@@ -1072,6 +1105,28 @@ class TBuilder:
         def eval(self, a):
             return tf.nn.space_to_depth(a, self.block_shape, name=self.result_name)
 
+    class DynamicSpaceToDepth:
+        def __init__(self, dynamic_input_shape, name):
+            self.result_name = name
+
+            dynamic_input_shape_with_batch = list(dynamic_input_shape)
+            dynamic_input_shape_no_batch = dynamic_input_shape_with_batch[1:]
+            dynamic_input_shape_no_batch = tuple(dynamic_input_shape_no_batch)
+
+            self.model = tf.keras.Sequential(
+                [
+                    tf.keras.layers.Input(shape=dynamic_input_shape_no_batch),
+                    tf.keras.layers.Lambda(
+                        lambda x: tf.nn.space_to_depth(
+                            x, 2, data_format="NHWC", name=None
+                        )
+                    ),
+                ]
+            )
+
+        def eval(self, a):
+            return self.model(a)
+
     class DepthToSpace:
         def __init__(self, block_shape, name):
             self.block_shape = block_shape
@@ -1079,6 +1134,28 @@ class TBuilder:
 
         def eval(self, a):
             return tf.nn.depth_to_space(a, self.block_shape, name=self.result_name)
+
+    class DynamicDepthToSpace:
+        def __init__(self, dynamic_input_shape, name):
+            self.result_name = name
+
+            dynamic_input_shape_with_batch = list(dynamic_input_shape)
+            dynamic_input_shape_no_batch = dynamic_input_shape_with_batch[1:]
+            dynamic_input_shape_no_batch = tuple(dynamic_input_shape_no_batch)
+
+            self.model = tf.keras.Sequential(
+                [
+                    tf.keras.layers.Input(shape=dynamic_input_shape_no_batch),
+                    tf.keras.layers.Lambda(
+                        lambda x: tf.nn.depth_to_space(
+                            x, 2, data_format="NHWC", name=None
+                        )
+                    ),
+                ]
+            )
+
+        def eval(self, a):
+            return self.model(a)
 
     class OneHot:
         def __init__(self, depth, axis, name):
