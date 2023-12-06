@@ -197,6 +197,12 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
             status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
+        case TOSA_REF_TYPE_INT16: {
+            auto typed_ptr     = reinterpret_cast<int16_t*>(raw_ptr);
+            const int elements = size / sizeof(int16_t);
+            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            break;
+        }
         case TOSA_REF_TYPE_INT32: {
             auto typed_ptr     = reinterpret_cast<int*>(raw_ptr);
             const int elements = size / sizeof(int);
@@ -272,6 +278,12 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
         case TOSA_REF_TYPE_BOOL: {
             auto typed_ptr     = reinterpret_cast<unsigned char*>(raw_ptr);
             const int elements = size / sizeof(unsigned char);
+            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_INT16: {
+            auto typed_ptr     = reinterpret_cast<int16_t*>(raw_ptr);
+            const int elements = size / sizeof(int16_t);
             status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }

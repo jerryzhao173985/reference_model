@@ -122,6 +122,36 @@ TEST_SUITE("model_runner")
         compareOutput(dstData, expectedData, expectedData.size());
     }
 
+    TEST_CASE("op_entry_cast")
+    {
+        // Inputs/Outputs
+        std::vector<int32_t> shape   = { 1, 2, 2, 1 };
+        std::vector<int16_t> srcData = { 15, 13, 5, -51 };
+        std::vector<float> dstData(4, 0.f);
+
+        tosa_tensor_t input;
+        input.shape     = shape.data();
+        input.num_dims  = shape.size();
+        input.data_type = tosa_datatype_int16_t;
+        input.data      = reinterpret_cast<uint8_t*>(srcData.data());
+        input.size      = srcData.size() * sizeof(int16_t);
+
+        tosa_tensor_t output;
+        output.shape     = shape.data();
+        output.num_dims  = shape.size();
+        output.data_type = tosa_datatype_fp32_t;
+        output.data      = reinterpret_cast<uint8_t*>(dstData.data());
+        output.size      = dstData.size() * sizeof(float);
+
+        // Execution
+        auto status = tosa_run_cast(input, output, {});
+        CHECK((status == tosa_status_valid));
+
+        // Compare results
+        std::vector<float> expectedData = { 15.f, 13.f, 5.f, -51.f };
+        compareOutput(dstData, expectedData, expectedData.size());
+    }
+
     TEST_CASE("op_entry_conv2d")
     {
         // Conv parameters
