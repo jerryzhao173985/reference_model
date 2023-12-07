@@ -1502,11 +1502,15 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "4,64"
+                        "4,64",
+                        "--max-batch-size",
+                        "64"
                     ],
                     [
                         "--target-dtype",
                         "int8",
+                        "--tensor-dim-range",
+                        "5,20",
                         "--target-shape",
                         "2,65533,1",
                         "--target-shape",
@@ -3229,7 +3233,9 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "4,64"
+                        "4,64",
+                        "--max-batch-size",
+                        "64"
                     ],
                     [
                         "--target-dtype",

@@ -448,7 +448,7 @@ TEST_CASE("positive - FP32 conv2d dot product (last 3 values)")
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", 2, lastExpected);
     }
 }
-TEST_CASE("positive - pseudo random")
+TEST_CASE("positive - FP32 pseudo random")
 {
     std::string templateJsonCfg = R"({
         "tensors" : {
@@ -821,6 +821,79 @@ TEST_CASE("positive - FP32 avg_pool2d dot product (first 3 values)")
     {
         std::vector<uint32_t> expected = { 0x5dd5b529, 0x5e4bbbf9, 0x5eb4fe79 };
         avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "5", expected);
+    }
+}
+
+TEST_CASE("positive - INT32 pseudo random")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT32",
+                "input_type": "VARIABLE",
+                "shape" : [ 2, 12 ],
+                "input_pos": 0,
+                "op" : "SCATTER",
+                "pseudo_random_info": {
+                    "rng_seed": 13,
+                    "range": [ "-5", "5" ]
+                }
+            },
+            "input1" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT32",
+                "input_type": "VARIABLE",
+                "shape" : [ 2, 10 ],
+                "input_pos": 1,
+                "op" : "SCATTER",
+                "pseudo_random_info": {
+                    "rng_seed": 14,
+                    "range": [ "0", "9" ]
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaNameP0 = "input0";
+    const size_t tosaElementsP0  = 2 * 12;
+    const std::string tosaNameP1 = "input1";
+    const size_t tosaElementsP1  = 2 * 10;
+
+    SUBCASE("scatter - int32 random")
+    {
+        std::string jsonCfg = templateJsonCfg;
+
+        std::vector<int32_t> bufferP0(tosaElementsP0);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaElementsP0 * 4));
+        for (auto e = bufferP0.begin(); e < bufferP0.end(); ++e)
+        {
+            // Check the values are within range
+            bool withinRange = (*e >= -5 && *e <= 5);
+            REQUIRE(withinRange);
+        }
+    }
+
+    SUBCASE("scatter - int32 row shuffle")
+    {
+        std::string jsonCfg = templateJsonCfg;
+
+        std::vector<int32_t> bufferP1(tosaElementsP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaElementsP1 * 4));
+
+        std::vector<bool> set;
+        for (int32_t n = 0; n < 2; ++n)
+        {
+            set.assign(10, false);
+            for (int32_t i = 0; i < 10; ++i)
+            {
+                auto idx = bufferP1[i];
+                // Check that the values in the buffer only occur once
+                REQUIRE(!set[idx]);
+                set[idx] = true;
+            }
+        }
     }
 }
 TEST_SUITE_END();    // generate
