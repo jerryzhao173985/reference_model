@@ -213,17 +213,17 @@ class TosaTensorGen:
             assert rank == 3
 
         values_in_shape = testGen.makeShape(rank)
+        K = values_in_shape[1]
 
         # ignore max batch size if target shape is set
         if testGen.args.max_batch_size and not testGen.args.target_shapes:
             values_in_shape[0] = min(values_in_shape[0], testGen.args.max_batch_size)
 
-        W = testGen.randInt(
-            testGen.args.tensor_shape_range[0], testGen.args.tensor_shape_range[1]
-        )
-        # Constrict W if one dimension is too large to keep tensor size reasonable
-        if max(values_in_shape) > 5000:
-            W = testGen.randInt(0, 16)
+        # Make sure W is not greater than K, as we can only write each output index
+        # once (having a W greater than K means that you have to repeat a K index)
+        W_min = min(testGen.args.tensor_shape_range[0], K)
+        W_max = min(testGen.args.tensor_shape_range[1], K)
+        W = testGen.randInt(W_min, W_max) if W_min < W_max else W_min
 
         input_shape = [values_in_shape[0], W, values_in_shape[2]]
 
