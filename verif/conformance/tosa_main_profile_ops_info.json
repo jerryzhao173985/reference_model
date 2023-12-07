@@ -1133,6 +1133,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -1145,15 +1146,19 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
-                        "5,72"
+                        "5,72",
+                        "--max-batch-size",
+                        "72"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "5,20",
                         "--target-shape",
                         "2,65536,1",
                         "--target-shape",
@@ -1992,6 +1997,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -2004,15 +2010,17 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
-                        "5,56"
+                        "5,56",
+                        "--max-batch-size",
+                        "56"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,65541,1",
                         "--target-shape",

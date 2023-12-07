@@ -66,6 +66,12 @@ class TosaTestGen:
                     v = maxFP
                 elif v == "-max":
                     v = -maxFP
+                elif v < 0:
+                    # Trim to minimum data type value
+                    v = max(v, -maxFP)
+                elif v > 0:
+                    # Trim to maximum data type value
+                    v = min(v, maxFP)
                 vals.append(v)
             return tuple(sorted(vals))
 
@@ -1722,27 +1728,19 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
 
-    def build_gather(self, op, values, validator_fcns=None, error_name=None):
+    def build_gather(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 2
+        values, indices = inputs
 
-        # Create a new indicies tensor
-        # here with data that doesn't exceed the dimensions of the values tensor
-
-        K = values.shape[1]  # K
-        W = self.randInt(
-            self.args.tensor_shape_range[0], self.args.tensor_shape_range[1]
-        )  # W
-        indicies_arr = np.int32(
-            self.rng.integers(low=0, high=K, size=[values.shape[0], W])
-        )  # (N, W)
-        indicies = self.ser.addConst(indicies_arr.shape, DType.INT32, indicies_arr)
-
-        result_tens = OutputShaper.gatherOp(
-            self.ser, self.rng, values, indicies, error_name
+        result_tensor = OutputShaper.gatherOp(
+            self.ser, self.rng, values, indices, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [values.name, indicies.name]
-        output_list = [result_tens.name]
+        input_list = [values.name, indices.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1755,10 +1753,10 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=values.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             input_dtype=values.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1767,33 +1765,24 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list)
 
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            op, values.dtype, args_dict, result_tensor, error_name
+        )
 
-    def build_scatter(self, op, values_in, input, validator_fcns=None, error_name=None):
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-        K = values_in.shape[1]  # K
-        W = input.shape[1]  # W
-
-        # Create an indices tensor here with data that doesn't exceed the
-        # dimension K of the values_in tensor and does NOT repeat the same K
-        # location as needed by the spec:
-        # "It is not permitted to repeat the same output index within a single
-        # SCATTER operation and so each output index occurs at most once."
-        assert K >= W
-        arr = []
-        for n in range(values_in.shape[0]):
-            # Get a shuffled list of output indices and limit it to size W
-            arr.append(self.rng.permutation(K)[:W])
-        indices_arr = np.array(arr, dtype=np.int32)  # (N, W)
-        indices = self.ser.addConst(indices_arr.shape, DType.INT32, indices_arr)
-
-        result_tens = OutputShaper.scatterOp(
+    def build_scatter(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 3
+        values_in, indices, input = inputs
+        result_tensor = OutputShaper.scatterOp(
             self.ser, self.rng, values_in, indices, input, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [values_in.name, indices.name, input.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1806,10 +1795,10 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=values_in.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             input_dtype=values_in.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1818,7 +1807,11 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list)
 
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            op, values_in.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_resize(
         self,
@@ -4328,14 +4321,13 @@ class TosaTestGen:
         # Scatter/Gather
         "gather": {
             "op": Op.GATHER,
-            # Only specify 'values' tensor here. 'indices' is generated in op building stage
-            "operands": (1, 0),
+            "operands": (2, 0),
             "rank": (3, 3),
             "build_fcn": (
                 build_gather,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorGen.tgGather,
+                TosaTensorValuesGen.tvgGather,
+                TosaArgGen.agNone,
             ),
             "types": (
                 DType.INT8,
@@ -4352,18 +4344,19 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "scatter": {
             "op": Op.SCATTER,
-            # Only specify 'values_in' tensor here.
-            # 'indices' and 'input' are generated in op building stage
-            "operands": (2, 0),
+            "operands": (3, 0),
             "rank": (3, 3),
             "build_fcn": (
                 build_scatter,
                 TosaTensorGen.tgScatter,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgScatter,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_INT_FP,
             "error_if_validators": (
@@ -4373,6 +4366,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         # Image operations
         "resize": {

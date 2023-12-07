@@ -666,12 +666,8 @@ class TosaErrorValidator:
         error_reason = "Op input list does not match expected input"
 
         if check:
-            op = kwargs["op"]
             input_list = kwargs["input_list"]
             num_operands = kwargs["num_operands"]
-            if op["op"] in [Op.SCATTER, Op.GATHER]:
-                # SCATTER/GATHER add an indices input tensor in their build functions
-                num_operands += 1
             if len(input_list) != num_operands:
                 error_result = True
 
