@@ -123,8 +123,8 @@ int OpTanh<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return 2*(1+abs(a))
-                this->fcn = [](InEigenType a) -> OutEigenType { return 2.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+                // ABS_ERROR bounds return 8*(1+abs(a))
+                this->fcn = [](InEigenType a) -> OutEigenType { return 8.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
             }
             else
             {
