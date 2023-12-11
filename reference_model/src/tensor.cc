@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -580,6 +580,14 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
     uint32_t elements = getElementCount();
     switch (getDtype())
     {
+        case TOSA_REF_TYPE_FP64:
+            if (!g_func_config.precise_mode)
+            {
+                WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                        EnumNameTOSAREFTYPE(getDtype()));
+                return -2;
+            }
+            // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_FP32:
             if (vals.size() != elements)
@@ -622,6 +630,14 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
 
     switch (getDtype())
     {
+        case TOSA_REF_TYPE_FP64:
+            if (!g_func_config.precise_mode)
+            {
+                WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                        EnumNameTOSAREFTYPE(getDtype()));
+                return -2;
+            }
+            // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP16:
             if (vals.size() != elements)
             {
@@ -953,7 +969,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<unsigned char> vals)
 template <class T>
 int TosaReference::TensorTemplate<T>::setTensorValueDouble(const size_t buflen, const double* vals)
 {
-    FATAL_ERROR("TensorTemplate<T>::setTensorValueFloat should not be called.  "
+    FATAL_ERROR("TensorTemplate<T>::setTensorValueDouble should not be called.  "
                 "Implement template specialization version.");
     return 0;
 }
@@ -1227,6 +1243,150 @@ int TosaReference::Tensor5<float>::setTensorValueFloat(const size_t bufLen, cons
 
 template <>
 int TosaReference::Tensor6<float>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            (*tensor)(i0, i1, i2, i3, i4, i5) = vals[idx++];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    (*tensor)(0) = vals[0];
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        (*tensor)(i0) = vals[idx++];
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            (*tensor)(i0, i1) = vals[idx++];
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                (*tensor)(i0, i1, i2) = vals[idx++];
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    (*tensor)(i0, i1, i2, i3) = vals[idx++];
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        (*tensor)(i0, i1, i2, i3, i4) = vals[idx++];
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<double>::setTensorValueFloat(const size_t bufLen, const float* vals)
 {
     uint32_t idx = 0;
 
