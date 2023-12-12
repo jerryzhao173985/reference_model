@@ -47,6 +47,11 @@ GraphStatus IModelRunner::initialize(tosa::TosaSerializationHandler& serializati
     return model_runner_impl->initialize(serialization_handler);
 }
 
+GraphStatus IModelRunner::initialize(tosa::TosaSerializationBasicBlock& basic_block)
+{
+    return model_runner_impl->initialize(basic_block);
+}
+
 GraphStatus IModelRunner::run()
 {
     return model_runner_impl->run();

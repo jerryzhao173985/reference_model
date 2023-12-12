@@ -52,6 +52,7 @@ public:
      * The status of the graph will be returned upon completion.
      */
     GraphStatus initialize(tosa::TosaSerializationHandler& serialization_handler);
+    GraphStatus initialize(tosa::TosaSerializationBasicBlock& basic_block);
 
     /*
      * Run the model using the internal SubgraphTraverser created during initialization.
