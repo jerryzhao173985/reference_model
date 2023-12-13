@@ -4198,8 +4198,6 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
-                TosaErrorValidator.evReshapeOutputSizeMultiInference,
-                TosaErrorValidator.evReshapeOutputSizeNonInteger,
             ),
             "data_gen": {
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
