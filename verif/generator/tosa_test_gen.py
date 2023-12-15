@@ -1775,12 +1775,16 @@ class TosaTestGen:
         in_type_width = self.typeWidth(val.dtype)
         out_type_width = self.typeWidth(out_dtype)
 
+        input_unsigned = False
+        output_unsigned = False
+
         if val.dtype == DType.INT8:
             input_zp = self.randInt(-128, 128)
             in_type_width += 1
         elif val.dtype == DType.UINT8:
             input_zp = self.randInt(0, 256)
             in_type_width += 1
+            input_unsigned = True
         elif error_name in [
             ErrorIf.InputZeroPointNotZero,
             ErrorIf.U16InputZeroPointNotValid,
@@ -1793,6 +1797,7 @@ class TosaTestGen:
             # Must come after ErrorIf.U16InputZeroPointNotValid check
             input_zp = self.rng.choice([0, 32768])
             in_type_width += 1
+            input_unsigned = True
         else:
             input_zp = 0
 
@@ -1802,6 +1807,7 @@ class TosaTestGen:
         elif out_dtype == DType.UINT8:
             output_zp = self.randInt(0, 256)
             out_type_width += 1
+            output_unsigned = True
         elif error_name in [
             ErrorIf.OutputZeroPointNotZero,
             ErrorIf.U16OutputZeroPointNotValid,
@@ -1814,6 +1820,7 @@ class TosaTestGen:
             # Must come after ErrorIf.U16OutputZeroPointNotValid check
             output_zp = self.rng.choice([0, 32768])
             out_type_width += 1
+            output_unsigned = True
         else:
             output_zp = 0
 
@@ -1902,6 +1909,8 @@ class TosaTestGen:
             scale32,
             double_round,
             per_channel,
+            input_unsigned,
+            output_unsigned,
         )
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
