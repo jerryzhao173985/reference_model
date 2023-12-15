@@ -1,4 +1,5 @@
 {
+  "name": "test_conv2d_1x1_1x32x32x8_qi8_st11_padSAME_dilat11",
   "tflite_model_filename": "model.tflite",
   "tflite_result_npy_filename": "tflite_result.npy",
   "tflite_result_name": "PartitionedCall:0",
