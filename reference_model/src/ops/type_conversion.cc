@@ -506,9 +506,13 @@ CastHelper<TOSA_REF_TYPE_FP32, OutDtype>::CastHelper()
 {
     // fp32 data converted to integer
     fcn = [](float in) -> OutEigenType {
+        if (in >= float(OutMax))
+            return OutMax;
+
+        if (in <= float(OutMin))
+            return OutMin;
+
         OutEigenType out = std::rint(in);
-        out              = std::max<OutEigenType>(out, OutMin);
-        out              = std::min<OutEigenType>(out, OutMax);
         return out;
     };
 }
