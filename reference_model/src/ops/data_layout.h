@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public:
     using InEigenType  = typename GetEigenType<Dtype>::type;
     using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
     using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, 0>;
+    using TOut         = Eigen::Tensor<OutEigenType, 1>;
 
 protected:
     TosaReference::TensorTemplate<TIn>* in;
@@ -107,7 +107,6 @@ protected:
     Eigen::array<Eigen::Index, InRank> in_reverser;
     Eigen::array<Eigen::Index, OutRank> out_reverser;
     TosaReference::TensorTemplate<TIn>* in;
-    TosaReshapeAttribute* attribute;
     TosaReference::TensorTemplate<TOut>* out;
 };
 
@@ -165,14 +164,17 @@ public:
 
     virtual int checkTensorAttributes();
 
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+    using InEigenType      = typename GetEigenType<Dtype>::type;
+    using InEigenShapeType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using OutEigenType     = typename GetEigenType<Dtype>::type;
+    using TIn              = Eigen::Tensor<InEigenType, Rank>;
+    using TInMultiples     = Eigen::Tensor<InEigenShapeType, 1>;
+    using TOut             = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
     TosaTileAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TInMultiples>* multiples;
     TosaReference::TensorTemplate<TOut>* out;
 };
 

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -855,8 +855,16 @@ public:
                 }
                 break;
             case TOSA_REF_TYPE_SHAPE:
-                assert(rank == 0);
-                return new Tensor0<int64_t>(tensorName_, dtype_, shape_);
+                switch (rank)
+                {
+                    case 0:
+                        return new Tensor0<int64_t>(tensorName_, dtype_, shape_);
+                    case 1:
+                        return new Tensor1<int64_t>(tensorName_, dtype_, shape_);
+                    default:
+                        assert(0);    // shape tensors must have rank of 0 or 1
+                }
+                break;
             case TOSA_REF_TYPE_BOOL:
                 switch (rank)
                 {

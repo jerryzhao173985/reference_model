@@ -263,7 +263,7 @@ class TosaTestGen:
             return gtu.vect_f32_to_bf16(rand_f32)
         elif dtype == DType.BOOL:
             return self.rng.choice([False, True])
-        elif dtype == DType.INT48:
+        elif dtype == DType.INT48 or dtype == DType.SHAPE:
             # Special size
             return np.int64(self.rng.integers(low, high, size=1))[0]
 
@@ -1556,15 +1556,24 @@ class TosaTestGen:
     def build_reshape(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 2
         a = inputs[0]
-        new_shape = args_dict["new_shape"]
+        # second input is not properly generated yet
+        # new_shape = inputs[1]
+
+        # modify inputs[1] by a shape tensor from new_shape arg value
+        new_shape_attr = args_dict["new_shape"]
+        shape_array = np.array(new_shape_attr)
+        shape = shape_array.shape
+        new_shape = self.ser.addPlaceholder(shape, DType.SHAPE, shape_array)
+        inputs[1] = new_shape
+
         result_tensor = OutputShaper.reshapeOp(
-            self.ser, self.rng, a, new_shape, error_name
+            self.ser, self.rng, a, new_shape_attr, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
+        input_list = [a.name, new_shape.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1588,10 +1597,7 @@ class TosaTestGen:
         ):
             return None
 
-        attr = ts.TosaSerializerAttribute()
-        attr.ReshapeAttribute(new_shape)
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -1717,16 +1723,24 @@ class TosaTestGen:
     def build_tile(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 2
         a = inputs[0]
-        multiples = args_dict["multiples"]
+        # second input is not properly generated yet
+        # multiples = inputs[1]
+
+        # modify inputs[1] by a shape tensor from multiples arg value
+        multiples_attr = args_dict["multiples"]
+        shape_array = np.int64(np.array(multiples_attr))
+        shape = shape_array.shape
+        multiples = self.ser.addPlaceholder(shape, DType.SHAPE, shape_array)
+        inputs[1] = multiples
 
         result_tensor = OutputShaper.tileOp(
-            self.ser, self.rng, a, multiples, error_name
+            self.ser, self.rng, a, multiples_attr, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
+        input_list = [a.name, multiples.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1751,10 +1765,7 @@ class TosaTestGen:
         ):
             return None
 
-        attr = ts.TosaSerializerAttribute()
-        attr.TileAttribute(multiples)
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -1989,12 +2000,16 @@ class TosaTestGen:
         in_type_width = self.typeWidth(val.dtype)
         out_type_width = self.typeWidth(out_dtype)
 
+        input_unsigned = False
+        output_unsigned = False
+
         if val.dtype == DType.INT8:
             input_zp = self.randInt(-128, 128)
             in_type_width += 1
         elif val.dtype == DType.UINT8:
             input_zp = self.randInt(0, 256)
             in_type_width += 1
+            input_unsigned = True
         elif error_name in [
             ErrorIf.InputZeroPointNotZero,
             ErrorIf.U16InputZeroPointNotValid,
@@ -2007,6 +2022,7 @@ class TosaTestGen:
             # Must come after ErrorIf.U16InputZeroPointNotValid check
             input_zp = self.rng.choice([0, 32768])
             in_type_width += 1
+            input_unsigned = True
         else:
             input_zp = 0
 
@@ -2016,6 +2032,7 @@ class TosaTestGen:
         elif out_dtype == DType.UINT8:
             output_zp = self.randInt(0, 256)
             out_type_width += 1
+            output_unsigned = True
         elif error_name in [
             ErrorIf.OutputZeroPointNotZero,
             ErrorIf.U16OutputZeroPointNotValid,
@@ -2028,6 +2045,7 @@ class TosaTestGen:
             # Must come after ErrorIf.U16OutputZeroPointNotValid check
             output_zp = self.rng.choice([0, 32768])
             out_type_width += 1
+            output_unsigned = True
         else:
             output_zp = 0
 
@@ -2116,6 +2134,8 @@ class TosaTestGen:
             scale32,
             double_round,
             per_channel,
+            input_unsigned,
+            output_unsigned,
         )
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
@@ -4212,7 +4232,7 @@ class TosaTestGen:
         },
         "reshape": {
             "op": Op.RESHAPE,
-            "operands": (1, 0),
+            "operands": (2, 0),
             "build_fcn": (
                 build_reshape,
                 TosaTensorGen.tgBasic,
@@ -4277,7 +4297,7 @@ class TosaTestGen:
         },
         "tile": {
             "op": Op.TILE,
-            "operands": (1, 0),
+            "operands": (2, 0),
             "rank": (1, 6),
             "build_fcn": (
                 build_tile,
@@ -5141,7 +5161,7 @@ class OutputShaper:
 
     @staticmethod
     def dimOp(ser, rng, a, axis, error_name=None):
-        output_shape = []
+        output_shape = [1]
 
         if error_name == ErrorIf.WrongOutputType:
             all_dtypes = [

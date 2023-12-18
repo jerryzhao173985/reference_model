@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 #include "image.h"
 #include "reduction.h"
 #include "scatter_gather.h"
+#include "shape.h"
 #include "tensor_ops.h"
 #include "type_conversion.h"
 
@@ -599,6 +600,19 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             return new OpCondIf(sgt, tsh, attribute, id);
         case Op_WHILE_LOOP:
             return new OpWhileLoop(sgt, tsh, attribute, id);
+
+        case Op_CONST_SHAPE:
+            return new OpConstShape(sgt, id);
+        case Op_CONCAT_SHAPE:
+            return new OpConcatShape(sgt, id);
+        case Op_ADD_SHAPE:
+            return new OpAddShape(sgt, id);
+        case Op_SUB_SHAPE:
+            return new OpSubShape(sgt, id);
+        case Op_MUL_SHAPE:
+            return new OpMulShape(sgt, id);
+        case Op_DIV_SHAPE:
+            return new OpDivShape(sgt, id);
 
         // Ops not recognized
         default:

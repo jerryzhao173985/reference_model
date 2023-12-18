@@ -97,6 +97,7 @@ set(CXX_SOURCE
     src/ops/data_nodes.cc
     src/ops/custom.cc
     src/ops/control_flow.cc
+    src/ops/shape.cc
 )
 
 set(PUBLIC_INCLUDE_DIRS
