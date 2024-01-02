@@ -323,6 +323,8 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
     float* f32databuf               = nullptr;
     double* f64databuf              = nullptr;
     half_float::half* f16databuf    = nullptr;
+    uint8_t* ui8databuf             = nullptr;
+    int8_t* i8databuf               = nullptr;
     int32_t* i32databuf             = nullptr;
     int64_t* i64databuf             = nullptr;
     bool* bdatabuf                  = nullptr;
@@ -369,9 +371,48 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
             free(f16databuf);
             break;
         case TOSA_REF_TYPE_INT32:
+            i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
+            ASSERT_MEM(i32databuf);
+
+            if (getTensorValueInt32(elements, i32databuf))
+            {
+                free(i32databuf);
+                return 1;
+            }
+
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, i32databuf);
+
+            free(i32databuf);
+            break;
         case TOSA_REF_TYPE_UINT8:
+            ui8databuf = (uint8_t*)calloc(sizeof(uint8_t), elements);
+            ASSERT_MEM(ui8databuf);
+
+            if (getTensorValueUInt8(elements, ui8databuf))
+            {
+                free(ui8databuf);
+                return 1;
+            }
+
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, ui8databuf);
+
+            free(ui8databuf);
+            break;
         case TOSA_REF_TYPE_INT4:
         case TOSA_REF_TYPE_INT8:
+            i8databuf = (int8_t*)calloc(sizeof(int8_t), elements);
+            ASSERT_MEM(i8databuf);
+
+            if (getTensorValueInt8(elements, i8databuf))
+            {
+                free(i8databuf);
+                return 1;
+            }
+
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, i8databuf);
+
+            free(i8databuf);
+            break;
         case TOSA_REF_TYPE_INT16:
         case TOSA_REF_TYPE_UINT16:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
@@ -647,6 +688,31 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
     return 0;
 }
 
+int TosaReference::Tensor::readfromVector(const ArrayProxy<int8_t> vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_UINT8:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            setTensorValueInt8(elements, vals.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
 int TosaReference::Tensor::readfromVector(const ArrayProxy<int16_t> vals)
 {
     uint32_t elements = getElementCount();
@@ -838,6 +904,30 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
             {
                 vals[i] = half_float::half_cast<half_float::half, float>(tensor[i]);
             }
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(ArrayProxy<int8_t> vals)
+{
+    uint32_t elements = getElementCount();
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_UINT8:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueInt8(elements, vals.data());
             break;
         default:
             WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
@@ -1245,6 +1335,310 @@ int TosaReference::Tensor6<float>::setTensorValueFloat(const size_t bufLen, cons
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
                             (*tensor)(i0, i1, i2, i3, i4, i5) = vals[idx++];
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    FATAL_ERROR("TensorTemplate<T>::setTensorValueUInt8 should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    (*tensor)(0) = static_cast<int32_t>(vals[0]);
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        (*tensor)(i0) = static_cast<int32_t>(vals[idx++]);
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            (*tensor)(i0, i1) = static_cast<int32_t>(vals[idx++]);
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                (*tensor)(i0, i1, i2) = static_cast<int32_t>(vals[idx++]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    (*tensor)(i0, i1, i2, i3) = static_cast<int32_t>(vals[idx++]);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        (*tensor)(i0, i1, i2, i3, i4) = static_cast<int32_t>(vals[idx++]);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            (*tensor)(i0, i1, i2, i3, i4, i5) = static_cast<int32_t>(vals[idx++]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    FATAL_ERROR("TensorTemplate<T>::setTensorValueInt8 should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    (*tensor)(0) = static_cast<int32_t>(vals[0]);
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        (*tensor)(i0) = static_cast<int32_t>(vals[idx++]);
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            (*tensor)(i0, i1) = static_cast<int32_t>(vals[idx++]);
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                (*tensor)(i0, i1, i2) = static_cast<int32_t>(vals[idx++]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    (*tensor)(i0, i1, i2, i3) = static_cast<int32_t>(vals[idx++]);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        (*tensor)(i0, i1, i2, i3, i4) = static_cast<int32_t>(vals[idx++]);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals)
+{
+    uint32_t idx = 0;
+
+    ASSERT_MSG(bufLen == getElementCount(), "Total elements must match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            (*tensor)(i0, i1, i2, i3, i4, i5) = static_cast<int32_t>(vals[idx++]);
                         }
                     }
                 }
@@ -2209,6 +2603,388 @@ int TosaReference::Tensor5<float>::getTensorValueFloat(const size_t bufLen, floa
 
 template <>
 int TosaReference::Tensor6<float>::getTensorValueFloat(const size_t bufLen, float* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    std::cout << "T is: " << typeid(T).name() << std::endl;
+    FATAL_ERROR("TensorTemplate<T>::getTensorValueUInt8 should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    int totalVals = 1;
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    vals[0] = (*tensor)(0);
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        vals[idx++] = (*tensor)(i0);
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            vals[idx++] = (*tensor)(i0, i1);
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                vals[idx++] = (*tensor)(i0, i1, i2);
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        for (int i5 = 0; i5 < shape[5]; i5++)
+                        {
+                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+
+template <class T>
+int TosaReference::TensorTemplate<T>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    std::cout << "T is: " << typeid(T).name() << std::endl;
+    FATAL_ERROR("TensorTemplate<T>::getTensorValueInt8 should not be called.  "
+                "Implement template specialization version.");
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor0<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    int totalVals = 1;
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    vals[0] = (*tensor)(0);
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor1<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        vals[idx++] = (*tensor)(i0);
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor2<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            vals[idx++] = (*tensor)(i0, i1);
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor3<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                vals[idx++] = (*tensor)(i0, i1, i2);
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor4<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor5<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
+{
+    uint32_t idx  = 0;
+    int totalVals = 1;
+
+    for (size_t i = 0; i < shape.size(); i++)
+    {
+        totalVals *= shape[i];
+    }
+
+    ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
+
+    for (int i0 = 0; i0 < shape[0]; i0++)
+    {
+        for (int i1 = 0; i1 < shape[1]; i1++)
+        {
+            for (int i2 = 0; i2 < shape[2]; i2++)
+            {
+                for (int i3 = 0; i3 < shape[3]; i3++)
+                {
+                    for (int i4 = 0; i4 < shape[4]; i4++)
+                    {
+                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+template <>
+int TosaReference::Tensor6<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const
 {
     uint32_t idx  = 0;
     int totalVals = 1;

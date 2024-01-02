@@ -1863,7 +1863,16 @@ class TosaTestGen:
             val_adj = np.subtract(values, input_zp, dtype=np.int64)
             val_adj = np.maximum(val_adj, min_shift_value_arr, dtype=np.int64)
             val_adj = np.minimum(val_adj, max_shift_value_arr, dtype=np.int64)
-            val_adj = np.add(val_adj, input_zp, dtype=values.dtype)
+            val_adj = np.add(val_adj, input_zp, dtype=np.int64)
+            # Check we can safely convert to the expected dtype
+            assert (
+                val_adj.all() >= np.iinfo(values.dtype).min
+                and val_adj.all() <= np.iinfo(values.dtype).max
+            )
+
+            # Force casting to output datatype
+            val_adj = val_adj.astype(values.dtype, casting="unsafe")
+
             if not np.all(np.array_equal(values, val_adj)):
                 # Values changed so overwrite file with new values
                 np.save(
