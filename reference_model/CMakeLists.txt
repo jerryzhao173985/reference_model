@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.4)
 
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -68,7 +68,6 @@ set(CXX_SOURCE
     src/graph_node.cc
     src/model_runner_impl.cc
     src/model_runner.cc
-    src/operators.cc
     src/subgraph_traverser.cc
     src/tensor.cc
     src/generate/generate_dot_product_states.cc

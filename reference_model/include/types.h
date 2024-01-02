@@ -1,5 +1,5 @@
 
-// Copyright (c) 2022-2023, ARM Limited.
+// Copyright (c) 2022-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,23 +24,6 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-    // Note status needs to be aligned with graph_status
-    enum tosa_status_t
-    {
-        tosa_status_valid         = 0,
-        tosa_status_unpredictable = 1,
-        tosa_status_error         = 2
-    };
-
-    enum tosa_mode_t
-    {
-        tosa_mode_unknown  = 0,
-        tosa_mode_nearest  = 1,
-        tosa_mode_bilinear = 2,
-        tosa_mode_min      = 3,
-        tosa_mode_max      = 4
-    };
-
     enum tosa_datatype_t
     {
         tosa_datatype_bf16_t   = 0,
@@ -56,13 +39,6 @@ extern "C"
         tosa_datatype_uint8_t  = 10,
         tosa_datatype_shape_t  = 11,
         tosa_datatype_fp64_t   = 99
-    };
-
-    enum tosa_acc_size_t
-    {
-        tosa_acc_size_int32_t = 0,
-        tosa_acc_size_fp16_t  = 1,
-        tosa_acc_size_fp32_t  = 2
     };
 
     struct tosa_tensor_t
