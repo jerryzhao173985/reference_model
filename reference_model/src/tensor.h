@@ -241,12 +241,16 @@ public:
 
     virtual int setTensorValueDouble(const size_t bufLen, const double* vals) = 0;
     virtual int setTensorValueFloat(const size_t bufLen, const float* vals)   = 0;
+    virtual int setTensorValueUInt8(const size_t bufLen, const uint8_t* vals) = 0;
+    virtual int setTensorValueInt8(const size_t bufLen, const int8_t* vals)   = 0;
     virtual int setTensorValueInt16(const size_t bufLen, const int16_t* vals) = 0;
     virtual int setTensorValueInt32(const size_t bufLen, const int32_t* vals) = 0;
     virtual int setTensorValueInt64(const size_t bufLen, const int64_t* vals) = 0;
     virtual int setTensorValueBool(const size_t bufLen, const bool* vals)     = 0;
     virtual int getTensorValueDouble(const size_t bufLen, double* fbuf) const = 0;
     virtual int getTensorValueFloat(const size_t bufLen, float* fbuf) const   = 0;
+    virtual int getTensorValueUInt8(const size_t bufLen, uint8_t* ibuf) const = 0;
+    virtual int getTensorValueInt8(const size_t bufLen, int8_t* ibuf) const   = 0;
     virtual int getTensorValueInt16(const size_t bufLen, int16_t* ibuf) const = 0;
     virtual int getTensorValueInt32(const size_t bufLen, int32_t* ibuf) const = 0;
     virtual int getTensorValueInt64(const size_t bufLen, int64_t* ibuf) const = 0;
@@ -259,6 +263,7 @@ public:
     virtual int readfromVector(const ArrayProxy<double> vals);
     virtual int readfromVector(const ArrayProxy<float> vals);
     virtual int readfromVector(const ArrayProxy<half_float::half> vals);
+    virtual int readfromVector(const ArrayProxy<int8_t> vals);
     virtual int readfromVector(const ArrayProxy<int16_t> vals);
     virtual int readfromVector(const ArrayProxy<int32_t> vals);
     virtual int readfromVector(const ArrayProxy<int64_t> vals);
@@ -267,6 +272,7 @@ public:
     virtual int writeToVector(ArrayProxy<double> vals);
     virtual int writeToVector(ArrayProxy<float> vals);
     virtual int writeToVector(ArrayProxy<half_float::half> vals);
+    virtual int writeToVector(ArrayProxy<int8_t> vals);
     virtual int writeToVector(ArrayProxy<int16_t> vals);
     virtual int writeToVector(ArrayProxy<int32_t> vals);
     virtual int writeToVector(ArrayProxy<int64_t> vals);
@@ -361,6 +367,8 @@ public:
 
     virtual int setTensorValueDouble(const size_t bufLen, const double* vals);
     virtual int setTensorValueFloat(const size_t bufLen, const float* vals);
+    virtual int setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+    virtual int setTensorValueInt8(const size_t bufLen, const int8_t* vals);
     virtual int setTensorValueInt16(const size_t bufLen, const int16_t* vals);
     virtual int setTensorValueInt32(const size_t bufLen, const int32_t* vals);
     virtual int setTensorValueInt64(const size_t bufLen, const int64_t* vals);
@@ -368,6 +376,8 @@ public:
 
     virtual int getTensorValueDouble(const size_t bufLen, double* fbuf) const;
     virtual int getTensorValueFloat(const size_t bufLen, float* fbuf) const;
+    virtual int getTensorValueUInt8(const size_t bufLen, uint8_t* ibuf) const;
+    virtual int getTensorValueInt8(const size_t bufLen, int8_t* ibuf) const;
     virtual int getTensorValueInt16(const size_t bufLen, int16_t* ibuf) const;
     virtual int getTensorValueInt32(const size_t bufLen, int32_t* ibuf) const;
     virtual int getTensorValueInt64(const size_t bufLen, int64_t* ibuf) const;
@@ -532,6 +542,36 @@ template <>
 int Tensor6<bool>::copyValueFrom(Tensor* src);
 
 template <>
+int Tensor0<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor1<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor2<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor3<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor4<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor5<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+template <>
+int Tensor6<int32_t>::setTensorValueUInt8(const size_t bufLen, const uint8_t* vals);
+
+template <>
+int Tensor0<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor1<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor2<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor3<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor4<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor5<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+template <>
+int Tensor6<int32_t>::setTensorValueInt8(const size_t bufLen, const int8_t* vals);
+
+template <>
 int Tensor0<int32_t>::setTensorValueInt16(const size_t bufLen, const int16_t* vals);
 template <>
 int Tensor1<int32_t>::setTensorValueInt16(const size_t bufLen, const int16_t* vals);
@@ -560,6 +600,36 @@ template <>
 int Tensor5<int32_t>::setTensorValueInt32(const size_t bufLen, const int32_t* vals);
 template <>
 int Tensor6<int32_t>::setTensorValueInt32(const size_t bufLen, const int32_t* vals);
+
+template <>
+int Tensor0<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor1<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor2<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor3<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor4<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor5<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+template <>
+int Tensor6<int32_t>::getTensorValueUInt8(const size_t bufLen, uint8_t* vals) const;
+
+template <>
+int Tensor0<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor1<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor2<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor3<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor4<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor5<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
+template <>
+int Tensor6<int32_t>::getTensorValueInt8(const size_t bufLen, int8_t* vals) const;
 
 template <>
 int Tensor0<int32_t>::getTensorValueInt16(const size_t bufLen, int16_t* vals) const;

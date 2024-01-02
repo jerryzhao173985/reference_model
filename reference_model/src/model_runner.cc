@@ -82,12 +82,16 @@ int IModelRunner::getOutput(std::string output_name, uint8_t* raw_ptr, size_t si
 // Template explicit specialization
 template int IModelRunner::setInput<float>(std::string input_name, std::vector<float>& vals);
 template int IModelRunner::setInput<half_float::half>(std::string input_name, std::vector<half_float::half>& vals);
+template int IModelRunner::setInput<int8_t>(std::string input_name, std::vector<int8_t>& vals);
+template int IModelRunner::setInput<int16_t>(std::string input_name, std::vector<int16_t>& vals);
 template int IModelRunner::setInput<int32_t>(std::string input_name, std::vector<int32_t>& vals);
 template int IModelRunner::setInput<int64_t>(std::string input_name, std::vector<int64_t>& vals);
 template int IModelRunner::setInput<unsigned char>(std::string input_name, std::vector<unsigned char>& vals);
 
 template std::vector<float> IModelRunner::getOutput<float>(std::string output_name);
 template std::vector<half_float::half> IModelRunner::getOutput<half_float::half>(std::string output_name);
+template std::vector<int8_t> IModelRunner::getOutput<int8_t>(std::string output_name);
+template std::vector<int16_t> IModelRunner::getOutput<int16_t>(std::string output_name);
 template std::vector<int32_t> IModelRunner::getOutput<int32_t>(std::string output_name);
 template std::vector<int64_t> IModelRunner::getOutput<int64_t>(std::string output_name);
 template std::vector<unsigned char> IModelRunner::getOutput<unsigned char>(std::string output_name);
