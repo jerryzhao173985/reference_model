@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -349,6 +349,10 @@ class TosaTestGen:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
         elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
             mode = gtu.ComplianceMode.ABS_ERROR
+            if "compliance" in op and "abs_error_lower_bound" in op["compliance"]:
+                compliance_tens["abs_error_info"] = {
+                    "lower_bound": op["compliance"]["abs_error_lower_bound"]
+                }
         else:
             mode = gtu.ComplianceMode.EXACT
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name
@@ -3279,6 +3283,9 @@ class TosaTestGen:
             ),
             "data_gen": {
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {
+                "abs_error_lower_bound": 0.5,
             },
         },
         "erf": {

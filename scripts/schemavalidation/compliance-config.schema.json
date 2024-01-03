@@ -1,5 +1,5 @@
  {
-    "$comment": "Copyright (c) 2024, ARM Limited.",
+    "$comment": "Copyright (c) 2023-2024, ARM Limited.",
     "$comment": "SPDX-License-Identifier: Apache-2.0",
     "$id": "compliance-config.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -61,6 +61,18 @@
                                 "s",
                                 "ks"
                             ]
+                        },
+                        "abs_error_info": {
+                            "description": "info required for the ABS_ERROR mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "lower_bound": {
+                                    "description": "lower bound multiplier for error bounds",
+                                    "type": "number"
+                                }
+                            },
+                            "additionalProperties": false
                         }
                     },
                     "additionalProperties": false,
