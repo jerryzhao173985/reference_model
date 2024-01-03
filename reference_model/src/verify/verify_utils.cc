@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::AbsError, "ABS_ERROR" },
                              })
 
-void from_json(const nlohmann::json& j, UlpInfo& ulpInfo)
+void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
 {
     j.at("ulp").get_to(ulpInfo.ulp);
 }
@@ -68,6 +68,14 @@ void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceIn
 {
     j.at("m").get_to(reduceProduceInfo.m);
     j.at("n").get_to(reduceProduceInfo.n);
+}
+
+void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
+{
+    if (j.contains("lower_bound"))
+    {
+        j.at("lower_bound").get_to(absErrorInfo.lowerBound);
+    }
 }
 
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
@@ -85,6 +93,12 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     if (j.contains("reduce_product_info"))
     {
         j.at("reduce_product_info").get_to(cfg.reduceProductInfo);
+    }
+    // Set up defaults for optional AbsErrorVerifyInfo
+    cfg.absErrorInfo.lowerBound = 0;
+    if (j.contains("abs_error_info"))
+    {
+        j.at("abs_error_info").get_to(cfg.absErrorInfo);
     }
 }
 

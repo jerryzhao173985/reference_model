@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -50,9 +50,9 @@ enum class VerifyMode
 };
 
 /// \brief ULP verification meta-data
-struct UlpInfo
+struct UlpVerifyInfo
 {
-    UlpInfo() = default;
+    UlpVerifyInfo() = default;
 
     double ulp;
 };
@@ -75,6 +75,14 @@ struct ReduceProductVerifyInfo
     int64_t n;
 };
 
+/// \brief abs-error verification meta-data
+struct AbsErrorVerifyInfo
+{
+    AbsErrorVerifyInfo() = default;
+
+    double lowerBound;
+};
+
 /// \brief Verification meta-data
 struct VerifyConfig
 {
@@ -82,9 +90,10 @@ struct VerifyConfig
 
     VerifyMode mode;
     DType dataType;
-    UlpInfo ulpInfo;
+    UlpVerifyInfo ulpInfo;
     DotProductVerifyInfo dotProductInfo;
     ReduceProductVerifyInfo reduceProductInfo;
+    AbsErrorVerifyInfo absErrorInfo;
 };
 
 /// \brief Parse the verification config for a tensor when given in JSON form

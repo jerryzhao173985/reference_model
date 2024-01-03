@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -123,8 +123,8 @@ int OpTanh<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return 8*(1+abs(a))
-                this->fcn = [](InEigenType a) -> OutEigenType { return 8.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+                // ABS_ERROR bounds return 4*(1+abs(a))
+                this->fcn = [](InEigenType a) -> OutEigenType { return 4.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
             }
             else
             {

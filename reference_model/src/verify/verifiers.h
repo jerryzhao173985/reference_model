@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -55,19 +55,20 @@ bool verifyReduceProduct(const CTensor* referenceTensor, const CTensor* implemen
 ///
 /// \param referenceTensor    Reference tensor
 /// \param implementationTensor    Implementation resulting tensor
-/// \param ulp    The ULP tolerence for the comparison of the two tensors
+/// \param ulpInfo    The ULP tolerence info for the comparison of the two tensors
 ///
 /// \return True if compliant else false
-bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, const UlpInfo& ulpInfo);
+bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, const UlpVerifyInfo& ulpInfo);
 
 /// \brief Perform abs-error based verification
 ///
 /// \param ref    Reference tensor
 /// \param refBnd Reference bounds tensor (according to op)
 /// \param imp    Implementation resulting tensor
+/// \param aeInfo Abs-error verification meta-data
 ///
 /// \return True if compliant else false
-bool verifyAbsError(const CTensor* ref, const CTensor* refBnd, const CTensor* imp);
+bool verifyAbsError(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const AbsErrorVerifyInfo& aeInfo);
 
 };    // namespace TosaReference
 
