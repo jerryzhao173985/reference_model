@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,64 +19,60 @@
 #include "verifiers.h"
 #include "verify/verify_utils.h"
 
-namespace
-{
-
-auto calculateError(uint64_t M, uint64_t N)
-{
-    return std::pow(1 + std::pow(2, -static_cast<int64_t>(M) - 1), N) - 1;
-}
-
-template <typename FP>
-auto calculateTolerance(uint64_t M, uint64_t N, FP value)
-{
-    return std::abs(value) * calculateError(M, N);
-}
-}    // namespace
-
 namespace TosaReference
 {
 
-bool verifyReduceProduct(const CTensor* referenceTensor, const CTensor* implementationTensor, uint64_t m, uint64_t n)
+namespace
+{
+template <typename OutDtype>
+bool validateData(const double* ref,
+                  const OutDtype* imp,
+                  const std::vector<int32_t>& shape,
+                  const ReduceProductVerifyInfo& cfg)
+{
+    const size_t T = static_cast<size_t>(numElements(shape));
+    TOSA_REF_REQUIRE(T > 0, "[RP] Invalid shape for reference tensor");
+
+    for (size_t i = 0; i < T; ++i)
+    {
+        double errBound =
+            std::abs(ref[i]) * (std::pow(1 + std::pow(2, -AccPrecision<OutDtype>::normal_frac - 1), cfg.n) - 1);
+        bool valid = tosaCheckFloatBound(imp[i], ref[i], errBound);
+        if (!valid)
+        {
+            auto pos = indexToPosition(T, shape);
+            WARNING("[Verifier][RP] Location %s", positionToString(pos).c_str());
+            return false;
+        }
+    }
+    return true;
+}
+}    // namespace
+
+bool verifyReduceProduct(const CTensor* referenceTensor,
+                         const CTensor* implementationTensor,
+                         const ReduceProductVerifyInfo& rpInfo)
 {
     // Validate that tensors are provided
     TOSA_REF_REQUIRE(referenceTensor != nullptr, "[RP] Reference tensor is missing");
     TOSA_REF_REQUIRE(implementationTensor != nullptr, "[RP] Implementation tensor is missing");
 
-    // Get number of elements
-    const auto elementCount =
-        numElements(std::vector<int32_t>(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims));
-    TOSA_REF_REQUIRE(elementCount > 0, "[RP] Invalid shape for reference tensor");
+    const std::vector<int32_t> refShape(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims);
+
+    const double* refData = reinterpret_cast<const double*>(referenceTensor->data);
+    TOSA_REF_REQUIRE(refData != nullptr, "[RP] Missing data for reference");
 
     switch (implementationTensor->data_type)
     {
         case tosa_datatype_fp32_t: {
-            const auto* refData = reinterpret_cast<const float*>(referenceTensor->data);
-            TOSA_REF_REQUIRE(refData != nullptr, "[RP] Missing data for reference");
-
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
-
-            return std::equal(refData, std::next(refData, elementCount), impData, std::next(impData, elementCount),
-                              [m, n](const auto& referenceValue, const auto& implementationValue) {
-                                  // Result overflows must be set to zero of the correct sign.
-                                  if (std::isinf(implementationValue))
-                                  {
-                                      return implementationValue == referenceValue;
-                                  }
-
-                                  // Result underflows must be set to a zero of the correct sign.
-                                  if (implementationValue == 0.f || implementationValue == -0.f)
-                                  {
-                                      return implementationValue == referenceValue;
-                                  }
-
-                                  // Otherwise we are in the normal range.
-                                  const auto absoulteError = (referenceValue < implementationValue)
-                                                                 ? implementationValue - referenceValue
-                                                                 : referenceValue - implementationValue;
-                                  return absoulteError <= calculateTolerance(m, n, implementationValue);
-                              });
+            return validateData(refData, impData, refShape, rpInfo);
+        }
+        case tosa_datatype_fp16_t: {
+            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
+            return validateData(refData, impData, refShape, rpInfo);
         }
         default:
             WARNING("[Verifier][RP] Data-type not supported.");

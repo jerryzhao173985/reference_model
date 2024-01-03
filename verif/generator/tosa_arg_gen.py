@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, ARM Limited.
+# Copyright (c) 2021-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import itertools
 import math
@@ -1273,6 +1273,30 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.tvgLazyGenDefault(
                 testGen, opName, dtypeList, shapeList, argsDict, error_name
             )
+
+    @staticmethod
+    def tvgReduceProduct(
+        testGen, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        dtype = dtypeList[0]
+        if error_name is None:
+            # Limit ranges for (non error) tests by using
+            # values that can be multiplied on any axis to not hit infinity
+            highval_lookup = {
+                dtype: math.pow(
+                    TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype],
+                    1 / max(shapeList[0]),
+                )
+            }
+            data_range = TosaTensorValuesGen._get_data_range(
+                testGen, dtype, highval_lookup
+            )
+            assert data_range is not None
+            argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     # Set the POW exponent high data range
     TVG_FLOAT_HIGH_VALUE_POW_EXP = {

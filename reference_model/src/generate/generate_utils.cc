@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_RSQRT, "RSQRT" },
                                  { Op::Op_REDUCE_MAX, "REDUCE_MAX" },
                                  { Op::Op_REDUCE_MIN, "REDUCE_MIN" },
+                                 { Op::Op_REDUCE_PRODUCT, "REDUCE_PRODUCT" },
                                  { Op::Op_REDUCE_SUM, "REDUCE_SUM" },
                                  { Op::Op_SCATTER, "SCATTER" },
                                  { Op::Op_SIGMOID, "SIGMOID" },
