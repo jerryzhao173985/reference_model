@@ -45,11 +45,12 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
 ///
 /// \param referenceTensor    Reference tensor
 /// \param implementationTensor    Implementation resulting tensor
-/// \param m    Number of manisa bits in the floating point representation
-/// \param n    Number of elements in the product
+/// \param rpInfo Reduce-product verification meta-data
 ///
 /// \return True if compliant else false
-bool verifyReduceProduct(const CTensor* referenceTensor, const CTensor* implementationTensor, uint64_t m, uint64_t n);
+bool verifyReduceProduct(const CTensor* referenceTensor,
+                         const CTensor* implementationTensor,
+                         const ReduceProductVerifyInfo& rpInfo);
 
 /// \brief Perform ULP result verification
 ///

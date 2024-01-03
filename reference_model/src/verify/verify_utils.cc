@@ -66,7 +66,6 @@ void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 
 void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceInfo)
 {
-    j.at("m").get_to(reduceProduceInfo.m);
     j.at("n").get_to(reduceProduceInfo.n);
 }
 

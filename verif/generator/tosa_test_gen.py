@@ -347,6 +347,7 @@ class TosaTestGen:
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
+            compliance_tens["reduce_product_info"] = {"n": argsDict["n"]}
         elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
             mode = gtu.ComplianceMode.ABS_ERROR
             if "compliance" in op and "abs_error_lower_bound" in op["compliance"]:
@@ -1251,13 +1252,13 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
-        if op["op"] == Op.REDUCE_PRODUCT:
-            # TODO: Add compliance support!
-            compliance = None
-        else:
-            compliance = self.tensorComplianceMetaData(
-                op, a.dtype, args_dict, result_tensor, error_name
-            )
+        if error_name is None and op["op"] == Op.REDUCE_PRODUCT:
+            # Number of products - needed for compliance
+            args_dict["n"] = a.shape[axis]
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
@@ -4066,7 +4067,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgReduceProduct,
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_FP,
@@ -4080,6 +4081,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "reduce_sum": {
             "op": Op.REDUCE_SUM,

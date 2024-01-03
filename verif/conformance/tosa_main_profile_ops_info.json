@@ -2507,6 +2507,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2518,13 +2519,15 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,34"
                     ],
                     [
                         "--target-dtype",
                         "fp16",
+                        "--fp-values-range",
+                        "-max,max",
                         "--target-shape",
                         "2,65527,3,1",
                         "--target-shape",

@@ -35,7 +35,7 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
             return verifyExact(ref, imp);
         }
         case VerifyMode::ReduceProduct: {
-            return verifyReduceProduct(ref, imp, cfg.reduceProductInfo.m, cfg.reduceProductInfo.n);
+            return verifyReduceProduct(ref, imp, cfg.reduceProductInfo);
         }
         case VerifyMode::Ulp: {
             return verifyULP(ref, imp, cfg.ulpInfo);

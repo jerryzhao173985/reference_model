@@ -73,6 +73,21 @@
                                 }
                             },
                             "additionalProperties": false
+                        },
+                        "reduce_product_info": {
+                            "description": "info required for the REDUCE_PRODUCT mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "n": {
+                                    "description": "number of products in the operation",
+                                    "type": "integer"
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "n"
+                            ]
                         }
                     },
                     "additionalProperties": false,
