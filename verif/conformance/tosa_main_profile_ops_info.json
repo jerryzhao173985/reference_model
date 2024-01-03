@@ -662,6 +662,17 @@
                     "shape",
                     "type",
                     "pad"
+                ],
+                "preselected": [
+                    {
+                        "shape": "1x34x19x27",
+                        "type": "f32xf32",
+                        "kernel": "3x1",
+                        "pad": "pad0000",
+                        "accum_type": "accf32",
+                        "stride": "st11",
+                        "dilation": "dilat11"
+                    }
                 ]
             }
         }
