@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 #include "generate.h"
+#include "half.hpp"
 
 #include <doctest.h>
 
@@ -33,7 +34,8 @@ void update_json_template(std::string& str, const std::string& find, const std::
     }
 }
 
-void check_value(bool match, uint32_t result, uint32_t expected, uint32_t idx)
+template <typename T>
+void check_value(bool match, T result, T expected, uint32_t idx)
 {
     std::stringstream msg;
     msg << "index: " << idx << " expected: " << std::hex << expected << " got: " << result;
@@ -53,6 +55,15 @@ void check_output(const std::vector<T>& results, const std::vector<uint32_t>& ex
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
         check_value(true, *(uint32_t*)&results[idx], expected[idx], idx);
+    }
+}
+
+template <typename T>
+void check_output(const std::vector<T>& results, const std::vector<uint16_t>& expected)
+{
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        check_value(true, *(uint16_t*)&results[idx], expected[idx], idx);
     }
 }
 
@@ -896,4 +907,162 @@ TEST_CASE("positive - INT32 pseudo random")
         }
     }
 }
+void depthwise_conv2d_test_FP16(const std::string tosaName[3],
+                                const size_t tosaElements[3],
+                                const std::string templateJsonCfg,
+                                const std::string setStr,
+                                int32_t param,
+                                const std::vector<uint16_t> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<half_float::half> buffer(tosaElements[param]);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
+    check_output<half_float::half>(buffer, expected);
+}
+
+TEST_CASE("positive - FP16 depthwise_conv2d dot product (first 3 values)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [1, 6, 3, 4],
+                "input_pos": 0,
+                "op" : "DEPTHWISE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 3,
+                    "acc_type": "FP16",
+                    "kernel": [1, 3]
+                }
+            },
+            "weight" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [1, 3, 4, 2],
+                "input_pos": 1,
+                "op" : "DEPTHWISE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 3,
+                    "acc_type": "FP16"
+                }
+            },
+            "bias" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [ 2 ],
+                "input_pos": 2,
+                "op" : "DEPTHWISE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 3,
+                    "acc_type": "FP16"
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaName[3] = { "input", "weight", "bias" };
+    const size_t tosaElements[3]  = { (1 * 6 * 3 * 4), (1 * 3 * 4 * 2), 2 };
+
+    SUBCASE("depthwise_conv2d, set 0, param 0")
+    {
+        std::vector<uint16_t> expected = { 0xbb33, 0xbb9b, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 0, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x39a8 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 0, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 2, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 1, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x541c, 0x5482, 0x54fb };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 1, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x57ee, 0x56a2, 0x5520 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 1, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x7005, 0x7204 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 2, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 2, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x3c00, 0x3c00, 0x3c00 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 2, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x3c00, 0x3c00, 0x3c00 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 2, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 2, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 3, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x4c00, 0x4c00, 0x4c00 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 3, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x4c00, 0x4c00, 0x4c00 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 3, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 2, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 4, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x5798 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 4, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x49a3, 0xd866, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 4, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 2, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 5, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x4ead, 0x525d, 0x55a7 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 0, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 5, param 1")
+    {
+        std::vector<uint16_t> expected = { 0xcf61, 0x5224, 0x550b };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
+    }
+    SUBCASE("depthwise_conv2d, set 5, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0 };
+        depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 2, expected);
+    }
+}
+
 TEST_SUITE_END();    // generate
