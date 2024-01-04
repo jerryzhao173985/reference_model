@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
         uint32_t ic = t % IC;
         uint32_t kx = (t / IC) % KW;
         uint32_t ky = ((t / IC) / KW) % KH;
-        uint32_t k  = (ky + KW * kx) * IC + ic;
+        uint32_t k  = (ky * KW + kx) * IC + ic;
 
         data[t] = static_cast<DataType>(generator(k));
     }
