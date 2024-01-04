@@ -402,7 +402,7 @@ bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
     }
 }
 //---------------------------------------------------------------------------//
-//                              Avg Pool 2D                                   //
+//                              Avg Pool 2D                                  //
 //---------------------------------------------------------------------------//
 
 template <typename DataType>
@@ -469,6 +469,139 @@ bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
 
     return true;
 }
+//---------------------------------------------------------------------------//
+//                              Depthwise Conv2D                             //
+//---------------------------------------------------------------------------//
+
+template <typename DataType>
+bool generateDepthwiseConv2DInput(const TosaReference::GenerateConfig& cfg,
+                                  TosaReference::IDotProductGenerator& generator,
+                                  DataType* data,
+                                  size_t size)
+{
+    if (cfg.dotProductInfo.kernel.size() != 2 || cfg.dotProductInfo.kernel[0] <= 0 || cfg.dotProductInfo.kernel[1] <= 0)
+    {
+        WARNING("[Generator][DP][DWConv2D][Input] Missing or incorrect kernel size information.");
+        return false;
+    }
+    if (cfg.shape.size() != 4)
+    {
+        WARNING("[Generator][DP][DWConv2D][Input] Tensor shape expected 4 dimensions.");
+        return false;
+    }
+
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t IH = cfg.shape[1];
+    const uint32_t IW = cfg.shape[2];
+    const uint32_t C  = cfg.shape[3];
+    const uint32_t KH = cfg.dotProductInfo.kernel[0];
+    const uint32_t KW = cfg.dotProductInfo.kernel[1];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t ix = (t / C) % IW;
+        uint32_t iy = ((t / C) / IW) % IH;
+        uint32_t k  = ((iy % KH) * KW + (ix % KW));
+
+        data[t] = static_cast<DataType>(generator(k));
+    }
+    return true;
+}
+
+template <typename DataType>
+bool generateDepthwiseConv2DWeight(const TosaReference::GenerateConfig& cfg,
+                                   TosaReference::IDotProductGenerator& generator,
+                                   DataType* data,
+                                   size_t size)
+{
+    if (cfg.shape.size() != 4)
+    {
+        WARNING("[Generator][DP][DWConv2D][Weight] Tensor shape expected 4 dimensions.");
+        return false;
+    }
+
+    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t KH = cfg.shape[0];
+    const uint32_t KW = cfg.shape[1];
+    const uint32_t C  = cfg.shape[2];
+    const uint32_t M  = cfg.shape[3];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t kx = ((t / M) / C) % KW;
+        uint32_t ky = (((t / M) / C) / KW) % KH;
+        uint32_t k  = (ky * KW + kx);
+
+        data[t] = static_cast<DataType>(generator(k));
+    }
+    return true;
+}
+
+template <typename DataType>
+bool generateDepthwiseConv2DBias(const TosaReference::GenerateConfig& cfg,
+                                 TosaReference::IDotProductGenerator& generator,
+                                 DataType* data,
+                                 size_t size)
+{
+    if (cfg.shape.size() != 1)
+    {
+        WARNING("[Generator][DP][DWConv2D][Bias] Tensor shape expected 1 dimension.");
+        return false;
+    }
+
+    const uint32_t T = cfg.shape[0];
+
+    for (uint32_t t = 0; t < T; ++t)
+    {
+        data[t] = static_cast<DataType>(generator(2));
+    }
+    return true;
+}
+
+bool generateDepthwiseConv2D(const TosaReference::GenerateConfig& cfg,
+                             TosaReference::IDotProductGenerator& generator,
+                             void* data,
+                             size_t size)
+{
+    switch (cfg.dataType)
+    {
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateDepthwiseConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateDepthwiseConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateDepthwiseConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][DWConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateDepthwiseConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateDepthwiseConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateDepthwiseConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][DWConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        default:
+            WARNING("[Generator][DP][DWConv2D] Only supports FP32 or FP16.");
+            return false;
+    }
+}
 }    // namespace
 
 namespace TosaReference
@@ -501,6 +634,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
             return generateFullyConnected(cfg, *generator, data, size);
         case tosa::Op_AVG_POOL2D:
             return generateAvgPool2D(cfg, *generator, data, size);
+        case tosa::Op_DEPTHWISE_CONV2D:
+            return generateDepthwiseConv2D(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;

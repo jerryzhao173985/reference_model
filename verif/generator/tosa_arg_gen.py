@@ -1952,9 +1952,12 @@ class TosaArgGen:
 
                             # Compliance - number of dot product calculations
                             if depthwise:
-                                # TODO - add support
-                                dots = 0
+                                # N*OH*OW*C*M
+                                dots = gtu.product(
+                                    (ifm_shape[0], *outputs, *filter_shape[2:])
+                                )
                             else:
+                                # N*OH*OW*OC or N*OD*OH*OW*OC
                                 dots = gtu.product(
                                     (ifm_shape[0], *outputs, filter_shape[0])
                                 )
