@@ -129,6 +129,35 @@
             }
         }
     },
+    "add_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape"
+                ]
+            }
+        }
+    },
     "argmax": {
         "group": "tensor",
         "profile": [
@@ -974,6 +1003,36 @@
             }
         }
     },
+    "concat_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--target-rank",
+                        "1",
+                        "--target-shape",
+                        "1",
+                        "--num-const-inputs-concat",
+                        "2"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                ]
+            }
+        }
+    },
     "cond_if": {
         "group": "control_flow",
         "profile": [
@@ -1076,6 +1135,35 @@
                 "permutes": [
                     "shape",
                     "type"
+                ]
+            }
+        }
+    },
+    "const_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--target-rank",
+                        "1",
+                        "--target-shape",
+                        "1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
                 ]
             }
         }
@@ -1370,6 +1458,35 @@
                 "permutes": [
                     "shape",
                     "type"
+                ]
+            }
+        }
+    },
+    "div_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape"
                 ]
             }
         }
@@ -2542,6 +2659,35 @@
             }
         }
     },
+    "mul_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape"
+                ]
+            }
+        }
+    },
     "negate": {
         "group": "ew_unary",
         "profile": [
@@ -3498,6 +3644,35 @@
                 "permutes": [
                     "shape",
                     "type"
+                ]
+            }
+        }
+    },
+    "sub_shape": {
+        "group": "shape",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape"
                 ]
             }
         }

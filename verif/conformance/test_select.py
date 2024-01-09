@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, ARM Limited.
+# Copyright (c) 2021-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Select generated tests."""
 import argparse
@@ -437,6 +437,12 @@ class AddOperator(Operator):
     name = "add"
 
 
+class AddShapeOperator(Operator):
+    """Test selector for the ADD_SHAPE operator."""
+
+    name = "add_shape"
+
+
 class ArgmaxOperator(Operator):
     """Test selector for the ARGMAX operator."""
 
@@ -507,6 +513,12 @@ class ConcatOperator(Operator):
     param_names = ["shape", "type", "axis"]
 
 
+class ConcatShapeOperator(Operator):
+    """Test selector for the CONCAT_SHAPE operator."""
+
+    name = "concat_shape"
+
+
 class CondIfOperator(Operator):
     """Test selector for the COND_IF operator."""
 
@@ -518,6 +530,12 @@ class ConstOperator(Operator):
     """Test selector for the CONST operator."""
 
     name = "const"
+
+
+class ConstShapeOperator(Operator):
+    """Test selector for the CONST_SHAPE operator."""
+
+    name = "const_shape"
 
 
 class Conv2dOperator(Operator):
@@ -546,6 +564,12 @@ class DimOeprator(Operator):
 
     name = "dim"
     param_names = ["shape", "type", "axis"]
+
+
+class DivShapeOperator(Operator):
+    """Test selector for the DIV_SHAPE operator."""
+
+    name = "div_shape"
 
 
 class EqualOperator(Operator):
@@ -694,6 +718,12 @@ class MulOperator(Operator):
 
     name = "mul"
     param_names = ["shape", "type", "perm", "shift"]
+
+
+class MulShapeOperator(Operator):
+    """Test selector for the MUL_SHAPE operator."""
+
+    name = "mul_shape"
 
 
 class NegateOperator(Operator):
@@ -847,6 +877,12 @@ class SubOperator(Operator):
     """Test selector for the SUB operator."""
 
     name = "sub"
+
+
+class SubShapeOperator(Operator):
+    """Test selector for the SUB_SHAPE operator."""
+
+    name = "sub_shape"
 
 
 class TableOperator(Operator):
