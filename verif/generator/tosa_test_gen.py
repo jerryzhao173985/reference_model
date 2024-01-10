@@ -601,12 +601,19 @@ class TosaTestGen:
 
         return result_tens
 
-    def build_select(self, op, cond, a, b, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.selectOp(self.ser, self.rng, cond, a, b, error_name)
+    def build_select(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 3
+        cond, a, b = inputs
+
+        result_tensor = OutputShaper.selectOp(
+            self.ser, self.rng, cond, a, b, error_name
+        )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [cond.name, a.name, b.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -623,8 +630,8 @@ class TosaTestGen:
             input3=b,
             input_shape=a.shape,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -636,7 +643,11 @@ class TosaTestGen:
             input_list,
             output_list,
         )
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_comparison(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -3882,7 +3893,7 @@ class TosaTestGen:
                 build_select,
                 TosaTensorGen.tgBroadcastFuzz,
                 TosaTensorValuesGen.tvgSelect,
-                None,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FIB,
             "error_if_validators": (
@@ -3894,6 +3905,9 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         # Comparison operators
         "equal": {
