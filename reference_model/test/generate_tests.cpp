@@ -1065,4 +1065,163 @@ TEST_CASE("positive - FP16 depthwise_conv2d dot product (first 3 values)")
     }
 }
 
+void transpose_conv2d_test_FP16(const std::string tosaName[3],
+                                const size_t tosaElements[3],
+                                const std::string templateJsonCfg,
+                                const std::string setStr,
+                                int32_t param,
+                                const std::vector<uint16_t> lastExpected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<half_float::half> buffer(tosaElements[param]);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
+    std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+    check_output<half_float::half>(last_three, lastExpected);
+}
+
+TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [1, 5, 6, 3],
+                "input_pos": 0,
+                "op" : "TRANSPOSE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 30,
+                    "acc_type": "FP16",
+                    "kernel": [5, 2]
+                }
+            },
+            "weight" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [3, 5, 2, 3],
+                "input_pos": 1,
+                "op" : "TRANSPOSE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 30,
+                    "acc_type": "FP16"
+                }
+            },
+            "bias" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [3],
+                "input_pos": 2,
+                "op" : "TRANSPOSE_CONV2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 30,
+                    "acc_type": "FP16"
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaName[3] = { "input", "weight", "bias" };
+    const size_t tosaElements[3]  = { (1 * 5 * 6 * 3), (3 * 5 * 2 * 3), 3 };
+
+    SUBCASE("transpose_conv2d, set 0, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x30e3, 0x0, 0x38e7 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 0, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x312a, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 0, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 2, expected);
+    }
+    SUBCASE("transpose_conv2d, set 1, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x4eb3, 0x4fce, 0x4e4e };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 1, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x4e79, 0x4ed8, 0x502e };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 1, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x6426, 0x6635, 0x680e };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 2, expected);
+    }
+    SUBCASE("transpose_conv2d, set 2, param 0")
+    {
+        std::vector<uint16_t> expected = { 0xb05d, 0xaf37, 0xa424 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 2, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x3182, 0xacff, 0xaf9a };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 2, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 2, expected);
+    }
+    SUBCASE("transpose_conv2d, set 3, param 0")
+    {
+        std::vector<uint16_t> expected = { 0xbc41, 0x1cbe, 0x3009 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 3, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x35ac, 0x3b2a, 0x2db4 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 3, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 2, expected);
+    }
+    SUBCASE("transpose_conv2d, set 4, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x4953 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 4, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x4e62, 0xcd17, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 4, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 2, expected);
+    }
+    SUBCASE("transpose_conv2d, set 5, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x505a, 0x4ff8, 0xd174 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 0, expected);
+    }
+    SUBCASE("transpose_conv2d, set 5, param 1")
+    {
+        std::vector<uint16_t> expected = { 0xd10e, 0xc728, 0xcd2e };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
+    }
+    SUBCASE("transpose_conv2d, set 5, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 2, expected);
+    }
+}
+
 TEST_SUITE_END();    // generate
