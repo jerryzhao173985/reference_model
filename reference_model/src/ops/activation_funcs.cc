@@ -52,12 +52,19 @@ int OpClamp<Rank, Dtype>::register_fcn()
             this->fcn = [min, max](InEigenType a) -> OutEigenType { return (a <= min ? min : a >= max ? max : a); };
         }
         break;
-        case TOSA_REF_TYPE_INT8:
-        case TOSA_REF_TYPE_INT16: {
-            InEigenType min = (InEigenType)attribute->min_int();
-            InEigenType max = (InEigenType)attribute->max_int();
+        case TOSA_REF_TYPE_INT8: {
+            int8_t min = (int8_t)attribute->min_int();
+            int8_t max = (int8_t)attribute->max_int();
+
             ERROR_IF(max < min, "OpClamp: max smaller than min");
-            this->fcn = [min, max](InEigenType a) -> OutEigenType { return a <= min ? min : a >= max ? max : a; };
+            this->fcn = [min, max](int8_t a) -> int8_t { return a <= min ? min : a >= max ? max : a; };
+        }
+        case TOSA_REF_TYPE_INT16: {
+            int16_t min = (int16_t)attribute->min_int();
+            int16_t max = (int16_t)attribute->max_int();
+
+            ERROR_IF(max < min, "OpClamp: max smaller than min");
+            this->fcn = [min, max](int16_t a) -> int16_t { return a <= min ? min : a >= max ? max : a; };
         }
         break;
         default:
