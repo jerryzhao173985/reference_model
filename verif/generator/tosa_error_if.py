@@ -2741,7 +2741,7 @@ class TosaInvalidValidator:
     @staticmethod
     def ivNonPositiveOutputShape(**kwargs):
         args = kwargs["args"]
-        output_shape = args[3]
+        output_shape = args["out_shape"]
         if output_shape[1] <= 0 or output_shape[2] <= 0:
             # Negative output shape
             return True

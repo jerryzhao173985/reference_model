@@ -2174,6 +2174,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -2186,7 +2187,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "10,24,9,13",
                         "--target-shape",
@@ -2197,11 +2198,11 @@
                     ],
                     [
                         "--target-dtype",
-                        "fp16",
+                        "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
-                        "1,65536,1",
+                        "1,65536,1,2",
                         "--tensor-dim-range",
                         "1,17",
                         "--max-conv-dilation",

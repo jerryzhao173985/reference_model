@@ -2100,6 +2100,8 @@ class TosaArgGen:
             assert len(filter_shape) == 4
 
         k_shape = tuple(filter_shape[1:3])
+        # compliance size - KS
+        k_size = gtu.product((*k_shape, ifm_shape[3]))
 
         if not testGen.args.level8k:
             # Generate comprehensive argument lists
@@ -2197,6 +2199,19 @@ class TosaArgGen:
                     ow = (ifm_shape[2] - 1) * s[1] + p[2] + p[3] + k_shape[1]
                     os = [ifm_shape[0], oh, ow, filter_shape[0]]
 
+                    # N*OH*OW*OC
+                    dots = gtu.product((ifm_shape[0], oh, ow, filter_shape[0]))
+                    args_dict = {
+                        "acc_type": accum_dtype,
+                        "stride": s,
+                        "pad": p,
+                        "kernel": k_shape,
+                        "ks": k_size,
+                        "dot_products": dots,
+                        "shape": ifm_shape,
+                        "out_shape": os,
+                    }
+
                     # Support for larger values than 9 needs different delimiter
                     delim = "" if max(s + p) <= 9 else "x"
                     arg_list.append(
@@ -2207,11 +2222,19 @@ class TosaArgGen:
                                 delim.join([str(x) for x in p]),
                                 "x".join([str(x) for x in os]),
                             ),
-                            [accum_dtype, s, p, os],
+                            args_dict,
                         )
                     )
                 n += 1
 
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtypes[0],
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod

@@ -80,6 +80,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_SUB, "SUB" },
                                  { Op::Op_TANH, "TANH" },
                                  { Op::Op_TILE, "TILE" },
+                                 { Op::Op_TRANSPOSE_CONV2D, "TRANSPOSE_CONV2D" },
                              })
 
 }    // namespace tosa
