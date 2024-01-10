@@ -1442,7 +1442,12 @@ class TosaTestGen:
         attr.AxisAttribute(axis)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return TosaTestGen.BuildInfo(result_tensor, None)
+
+        compliance = self.tensorComplianceMetaData(
+            op, inputs[0].dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_pad(
         self,
@@ -4145,6 +4150,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "pad": {
             "op": Op.PAD,
