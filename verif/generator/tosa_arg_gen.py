@@ -1006,12 +1006,12 @@ class TosaTensorValuesGen:
         return placeholders
 
     @staticmethod
-    def tvgSelect(testGen, op, dtypeList, shapeList, testArgs, error_name=None):
+    def tvgSelect(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
         # Set datatype of condition tensor to boolean
         dtypeList[0] = DType.BOOL
 
-        return TosaTensorValuesGen.tvgDefault(
-            testGen, op, dtypeList, shapeList, testArgs, error_name
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
         )
 
     @staticmethod
