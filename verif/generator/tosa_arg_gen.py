@@ -697,6 +697,14 @@ class TosaTensorValuesGen:
     ):
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
+        if "p_count" in argsDict:
+            # Override for operators like CONCAT
+            pCount = argsDict["p_count"]
+            cCount = argsDict["c_count"]
+        assert pCount + cCount == len(
+            shapeList
+        ), "Placeholders & Constant tensors must match shapes list"
+
         tens_ser_list = []
 
         if (
@@ -1154,15 +1162,13 @@ class TosaTensorValuesGen:
             testGen, shapeList, argsDict["axis"], error_name
         )
 
-        tens_ser_list = []
-        tens_ser_list.extend(
-            testGen.buildPlaceholderTensors(shapeList[0:count], dtypeList[0:count])
-        )
-        tens_ser_list.extend(
-            testGen.buildConstTensors(shapeList[count:], dtypeList[count:])
-        )
+        # Override default pCount/cCount for operator
+        argsDict["p_count"] = count
+        argsDict["c_count"] = len(shapeList) - count
 
-        return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgLogicalShift(
