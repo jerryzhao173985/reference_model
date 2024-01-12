@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 
@@ -16,6 +16,7 @@ def write_test_json(
     ifm_name=None,
     ifm_file=None,
     ifm_shape=None,
+    ifm_dynamic=False,
     framework_exclusions=None,
     quantized=False,
     test_name=None,
@@ -59,6 +60,9 @@ def write_test_json(
         if not isinstance(ifm_shape, list):
             ifm_shape = [ifm_shape]
         test_desc["ifm_shape"] = ifm_shape
+
+    if ifm_dynamic:
+        test_desc["ifm_dynamic"] = True
 
     # Some tests cannot be used with specific frameworks.
     # This list indicates which tests should be excluded from a given framework.

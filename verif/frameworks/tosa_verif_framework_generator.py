@@ -826,9 +826,9 @@ TF_OP_LIST = {
         },
         # number of operands of tuples which spcifies which dim to set to None
         # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's third dim to None
+        # We're setting the first input's first (batch) dim to None
         "dynamic_shape_dim": [
-            (3,),
+            (0,),
         ],
     },
     "depth_to_space": {
@@ -849,9 +849,9 @@ TF_OP_LIST = {
         },
         # number of operands of tuples which spcifies which dim to set to None
         # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's third dim to None
+        # We're setting the first input's first (batch) dim to None
         "dynamic_shape_dim": [
-            (3,),
+            (0,),
         ],
     },
     "one_hot": {
@@ -1166,6 +1166,7 @@ def run_unit_test(
         placeholder_signatures = ()
         placeholder_npy_filenames = []
         placeholder_shapes = []
+        placeholder_dynamic = False
 
         for idx, (name, val) in enumerate(placeholders):
             input_shape = tuple(val.shape)
@@ -1176,6 +1177,8 @@ def run_unit_test(
                 dim = dim_tuple[0]
                 input_shape = list(input_shape)
                 input_shape[dim] = None
+                # When any dimension size is unknown, mark the placeholder as dynamic type.
+                placeholder_dynamic = True
 
                 addl_args.append(tuple(input_shape))
             except KeyError:
@@ -1432,6 +1435,7 @@ def run_unit_test(
             ifm_name=placeholder_names,
             ifm_file=placeholder_npy_filenames,
             ifm_shape=placeholder_shapes,
+            ifm_dynamic=placeholder_dynamic,
             framework_exclusions=excluded_framework_list,
             quantized=is_quantized,
             test_name=test_name,

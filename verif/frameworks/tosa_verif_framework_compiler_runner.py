@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -276,6 +276,97 @@ def write_reference_runner_json(
         json.dump(test_desc, f, indent="  ")
 
 
+""" For dynamic shape model, apply 2 steps to perform compilation, shape inference,
+    and serialization."""
+
+
+def compile_dynamic_model(
+    args,
+    framework,
+    test_path,
+    test_name,
+    pre_opt_filename,
+    post_opt_filename,
+    tosa_mlir_filename,
+    compiler_cmd,
+    flatbuffer_dir_fullpath,
+    shape,
+):
+    try:
+        # 1. Compile the dynamic shape model with unknown shapes and tosa shape ops.
+        dyn_tosa_mlir_filename = str(test_path / f"output_{framework}.dyn.tosa.mlir")
+        compile_dynamic_cmd = compiler_cmd.copy()
+        compile_dynamic_cmd.extend(
+            [
+                "--verify-each",
+                post_opt_filename,
+                "-o",
+                dyn_tosa_mlir_filename,
+            ]
+        )
+        compiler_stdout, compiler_stderr = run_sh_command(
+            compile_dynamic_cmd, args.verbose, True
+        )
+
+        compiler_rc_1 = parse_compiler_output(compiler_stdout, compiler_stderr)
+
+        if compiler_rc_1 == TestResult.NOT_LOWERED:
+            print_color(
+                LogColors.RED,
+                f"Results NOT_LOWERED {test_name}, framework {framework}",
+            )
+            return (TestResult.NOT_LOWERED, 0.0, "", test_name)
+
+        def convert_shape_tuple_to_string(tup):
+            string = ""
+            for dim in tup:
+                string = string + str(dim) + ","
+            # skip the last `,` character.
+            return string[0:-1]
+
+        # 2. Resolve unknown shapes, and perform serialization.
+        if not isinstance(shape, tuple):
+            raise Exception("Only single input is supported currently")
+
+        arg0_argument = '"arg0=' + convert_shape_tuple_to_string(shape) + '"'
+
+        compile_and_shape_infer_cmd = compiler_cmd.copy()
+        compile_and_shape_infer_cmd.extend(
+            [
+                f"--tosa-input-shape={arg0_argument}",
+                "--tosa-infer-shapes",
+                dyn_tosa_mlir_filename,
+                "-o",
+                tosa_mlir_filename,
+                "--tosa-serialize",
+                f"--tosa-flatbuffer-filename={flatbuffer_dir_fullpath / f'{test_name}.tosa'}",
+            ]
+        )
+
+        # Convert list type to string type as double quote \" in list structure causes
+        # single quote \' residue in the final command.
+        compiler_stdout, compiler_stderr = run_sh_command(
+            " ".join(map(str, compile_and_shape_infer_cmd)), args.verbose, True
+        )
+
+        compiler_rc_2 = parse_compiler_output(compiler_stdout, compiler_stderr)
+
+        if compiler_rc_2 == TestResult.NOT_LOWERED:
+            print_color(
+                LogColors.RED,
+                f"Results NOT_LOWERED {test_name}, framework {framework}",
+            )
+            return (TestResult.NOT_LOWERED, 0.0, "", test_name)
+
+    except Exception as e:
+        if "same scale constraint" in str(e):
+            print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
+            return (TestResult.INVALID_MLIR, 0.0, e, test_name)
+        else:
+            print_color(LogColors.RED, f"Results COMPILER_ERROR {test_name}: {e}")
+            return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
+
+
 def run_test(args, test_path, framework):
     msg = ""
 
@@ -431,7 +522,8 @@ def run_test(args, test_path, framework):
 
     flatbuffer_dir_fullpath.mkdir(exist_ok=True)
 
-    compiler_cmd.extend(
+    compile_and_serialize_cmd = compiler_cmd.copy()
+    compile_and_serialize_cmd.extend(
         [
             "--verify-each",
             post_opt_filename,
@@ -452,27 +544,43 @@ def run_test(args, test_path, framework):
             print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
             return (TestResult.INVALID_MLIR, 0.0, e, test_name)
 
-        try:
-            compiler_stdout, compiler_stderr = run_sh_command(
-                compiler_cmd, args.verbose, True
+        if "ifm_dynamic" in test_desc and test_desc["ifm_dynamic"] == 1:
+            compile_dynamic_model(
+                args,
+                framework,
+                test_path,
+                test_name,
+                pre_opt_filename,
+                post_opt_filename,
+                tosa_mlir_filename,
+                compiler_cmd,
+                flatbuffer_dir_fullpath,
+                ifm_np.shape,
             )
-            compiler_rc = parse_compiler_output(compiler_stdout, compiler_stderr)
-            if compiler_rc == TestResult.NOT_LOWERED:
-                print_color(
-                    LogColors.RED,
-                    f"Results NOT_LOWERED {test_name}, framework {framework}",
+        else:
+            try:
+                compiler_stdout, compiler_stderr = run_sh_command(
+                    compile_and_serialize_cmd, args.verbose, True
                 )
-                return (TestResult.NOT_LOWERED, 0.0, "", test_name)
+                compiler_rc = parse_compiler_output(compiler_stdout, compiler_stderr)
+                if compiler_rc == TestResult.NOT_LOWERED:
+                    print_color(
+                        LogColors.RED,
+                        f"Results NOT_LOWERED {test_name}, framework {framework}",
+                    )
+                    return (TestResult.NOT_LOWERED, 0.0, "", test_name)
 
-            pass
+                pass
 
-        except Exception as e:
-            if "same scale constraint" in str(e):
-                print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
-                return (TestResult.INVALID_MLIR, 0.0, e, test_name)
-            else:
-                print_color(LogColors.RED, f"Results COMPILER_ERROR {test_name}: {e}")
-                return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
+            except Exception as e:
+                if "same scale constraint" in str(e):
+                    print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
+                    return (TestResult.INVALID_MLIR, 0.0, e, test_name)
+                else:
+                    print_color(
+                        LogColors.RED, f"Results COMPILER_ERROR {test_name}: {e}"
+                    )
+                    return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
 
     if framework == "tf":
         try:
