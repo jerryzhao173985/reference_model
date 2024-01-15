@@ -1714,12 +1714,20 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
 
-    def build_tile(self, op, a, multiples, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.tileOp(self.ser, self.rng, a, multiples, error_name)
+    def build_tile(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        a = inputs[0]
+        multiples = args_dict["multiples"]
+
+        result_tensor = OutputShaper.tileOp(
+            self.ser, self.rng, a, multiples, error_name
+        )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1732,10 +1740,10 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=a.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1747,7 +1755,12 @@ class TosaTestGen:
         attr.TileAttribute(multiples)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_gather(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -4287,7 +4300,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_tile,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agTile,
             ),
             "types": TYPE_FIB,
@@ -4299,6 +4312,9 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "transpose": {
             "op": Op.TRANSPOSE,
