@@ -77,6 +77,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_SIGMOID, "SIGMOID" },
                                  { Op::Op_SUB, "SUB" },
                                  { Op::Op_TANH, "TANH" },
+                                 { Op::Op_TILE, "TILE" },
                              })
 
 }    // namespace tosa

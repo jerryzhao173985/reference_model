@@ -2851,8 +2851,17 @@ class TosaArgGen:
                     multiples.append(2)
                 else:
                     multiples.append(testGen.randInt(1, 4))
-            arg_list.append(("perm{}".format(p), [multiples]))
+            arg_list.append(("perm{}".format(p), {"multiples": multiples}))
 
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod
