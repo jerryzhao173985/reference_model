@@ -1,5 +1,5 @@
  {
-    "$comment": "Copyright (c) 2023, ARM Limited.",
+    "$comment": "Copyright (c) 2023-2024, ARM Limited.",
     "$comment": "SPDX-License-Identifier: Apache-2.0",
     "$id": "datagen-config.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -147,6 +147,23 @@
                             },
                             "additionalProperties": false,
                             "required": [ "sub_generator" ]
+                        },
+                        "fixed_data_info": {
+                            "description": "info required for FIXED_DATA generator",
+                            "type": "object",
+                            "properties":
+                            {
+                                "data": {
+                                    "description": "flattened fixed data",
+                                    "type": "array",
+                                    "items": {
+                                        "description": "integer tensor data",
+                                        "type": "integer"
+                                    }
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [ "data" ]
                         }
                     },
                     "additionalProperties": false,

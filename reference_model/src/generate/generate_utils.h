@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ enum class GeneratorType
     OpFullRange,
     OpBoundary,
     OpSpecial,
+    FixedData,
 };
 
 /// \brief Supported input types
@@ -65,6 +66,14 @@ struct PseudoRandomInfo
     bool round;
 };
 
+/// \brief Fixed data generator meta-data
+struct FixedDataInfo
+{
+    FixedDataInfo() = default;
+
+    std::vector<int32_t> data;
+};
+
 /// \brief Generator configuration
 struct GenerateConfig
 {
@@ -76,6 +85,7 @@ struct GenerateConfig
     tosa::Op opType;
     DotProductInfo dotProductInfo;
     PseudoRandomInfo pseudoRandomInfo;
+    FixedDataInfo fixedDataInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form

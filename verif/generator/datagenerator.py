@@ -78,7 +78,7 @@ class GenerateLibrary:
             size_bytes = size * 2
             # Create buffer of bytes and initialize to zero
             buffer = (ct.c_ubyte * size_bytes)(0)
-        elif dtype == "INT32":
+        elif dtype == "INT32" or dtype == "SHAPE":
             # Create buffer and initialize to zero
             buffer = (ct.c_int32 * size)(0)
             size_bytes = size * 4

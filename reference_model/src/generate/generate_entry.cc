@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include "generate.h"
 
 #include "generate_dot_product.h"
+#include "generate_fixed_data.h"
 #include "generate_pseudo_random.h"
 #include "generate_utils.h"
 
@@ -34,6 +35,10 @@ bool generate(const GenerateConfig& cfg, void* data, size_t size)
         }
         case GeneratorType::PseudoRandom: {
             return generatePseudoRandom(cfg, data, size);
+            break;
+        }
+        case GeneratorType::FixedData: {
+            return generateFixedData(cfg, data, size);
             break;
         }
         default: {

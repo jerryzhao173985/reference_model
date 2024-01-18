@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2023, ARM Limited.
+# Copyright (c) 2021-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import struct
 import sys
@@ -49,13 +49,14 @@ class DataGenType(IntEnum):
     OP_BOUNDARY = 2
     OP_FULLSET = 3
     OP_SPECIAL = 4
+    FIXED_DATA = 5
 
 
 def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         dtype = dtype[0]
-    return dtype in (DType.FP32, DType.FP16)
+    return dtype in (DType.FP32, DType.FP16, DType.SHAPE)
 
 
 def getOpNameFromOpListName(opName):

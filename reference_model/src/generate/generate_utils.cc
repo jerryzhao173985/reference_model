@@ -33,6 +33,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                                  { DType::DType_FP16, "FP16" },
                                  { DType::DType_BF16, "BF16" },
                                  { DType::DType_FP32, "FP32" },
+                                 { DType::DType_SHAPE, "SHAPE" },
                              })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Op,
@@ -93,6 +94,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::OpFullRange, "OP_FULL_RANGE" },
                                  { GeneratorType::OpBoundary, "OP_BOUNDARY" },
                                  { GeneratorType::OpSpecial, "OP_SPECIAL" },
+                                 { GeneratorType::FixedData, "FIXED_DATA" },
                              })
 
 // NOTE: This assumes it's VARIABLE if the InputType is not recognized
@@ -130,6 +132,11 @@ void from_json(const nlohmann::json& j, PseudoRandomInfo& pseudoRandomInfo)
     }
 }
 
+void from_json(const nlohmann::json& j, FixedDataInfo& fixedDataInfo)
+{
+    j.at("data").get_to(fixedDataInfo.data);
+}
+
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)
 {
     j.at("data_type").get_to(cfg.dataType);
@@ -157,6 +164,13 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     if (j.contains("pseudo_random_info"))
     {
         j.at("pseudo_random_info").get_to(cfg.pseudoRandomInfo);
+    }
+
+    // Set up defaults for fixedDataInfo
+    cfg.fixedDataInfo.data = std::vector<int32_t>();
+    if (j.contains("fixed_data_info"))
+    {
+        j.at("fixed_data_info").get_to(cfg.fixedDataInfo);
     }
 }
 
@@ -209,6 +223,7 @@ size_t elementSizeFromType(DType type)
             return 2;
         case DType::DType_INT32:
         case DType::DType_FP32:
+        case DType::DType_SHAPE:
             return 4;
         default:
             return 0;

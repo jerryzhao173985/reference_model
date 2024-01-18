@@ -1558,22 +1558,14 @@ class TosaTestGen:
     ):
         assert len(inputs) == 2
         a = inputs[0]
-        # second input is not properly generated yet
-        # new_shape = inputs[1]
-
-        # modify inputs[1] by a shape tensor from new_shape arg value
-        new_shape_attr = args_dict["new_shape"]
-        shape_array = np.array(new_shape_attr)
-        shape = shape_array.shape
-        new_shape = self.ser.addPlaceholder(shape, DType.SHAPE, shape_array)
-        inputs[1] = new_shape
-
+        shape = inputs[1]
+        shape_attr = args_dict["new_shape"]
         result_tensor = OutputShaper.reshapeOp(
-            self.ser, self.rng, a, new_shape_attr, error_name
+            self.ser, self.rng, a, shape_attr, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, new_shape.name]
+        input_list = [a.name, shape.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1725,16 +1717,8 @@ class TosaTestGen:
     ):
         assert len(inputs) == 2
         a = inputs[0]
-        # second input is not properly generated yet
-        # multiples = inputs[1]
-
-        # modify inputs[1] by a shape tensor from multiples arg value
+        multiples = inputs[1]
         multiples_attr = args_dict["multiples"]
-        shape_array = np.int64(np.array(multiples_attr))
-        shape = shape_array.shape
-        multiples = self.ser.addPlaceholder(shape, DType.SHAPE, shape_array)
-        inputs[1] = multiples
-
         result_tensor = OutputShaper.tileOp(
             self.ser, self.rng, a, multiples_attr, error_name
         )
@@ -4236,7 +4220,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_reshape,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgReshape,
                 TosaArgGen.agReshape,
             ),
             "types": TYPE_FIB,
@@ -4302,7 +4286,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_tile,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgTile,
                 TosaArgGen.agTile,
             ),
             "types": TYPE_FIB,
