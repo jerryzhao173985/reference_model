@@ -1,5 +1,5 @@
 """TOSA result checker script."""
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -55,9 +55,9 @@ def _print_result(color, msg):
 
 
 def compliance_check(
-    imp_result_path,
-    ref_result_path,
-    bnd_result_path,
+    imp_result_data,
+    ref_result_data,
+    bnd_result_data,
     test_name,
     compliance_config,
     ofm_name,
@@ -78,14 +78,18 @@ def compliance_check(
         return (TestResult.INTERNAL_ERROR, 0.0, msg)
 
     success = vlib.verify_data(
-        ofm_name, compliance_config, imp_result_path, ref_result_path, bnd_result_path
+        ofm_name, compliance_config, imp_result_data, ref_result_data, bnd_result_data
     )
     if success:
         _print_result(LogColors.GREEN, f"Compliance Results PASS {test_name}")
         return (TestResult.PASS, 0.0, "")
     else:
         _print_result(LogColors.RED, f"Results NON-COMPLIANT {test_name}")
-        return (TestResult.MISMATCH, 0.0, "Non-compliance results found")
+        return (
+            TestResult.MISMATCH,
+            0.0,
+            f"Non-compliance results found for {ofm_name}",
+        )
 
 
 def test_check(

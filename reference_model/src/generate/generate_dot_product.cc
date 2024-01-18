@@ -736,6 +736,92 @@ bool generateTransposeConv2D(const TosaReference::GenerateConfig& cfg,
             return false;
     }
 }
+//---------------------------------------------------------------------------//
+//                              FFT2D                                        //
+//---------------------------------------------------------------------------//
+
+template <typename DataType>
+bool generateFFT2DReal(const TosaReference::GenerateConfig& cfg,
+                       TosaReference::IDotProductGenerator& generator,
+                       DataType* data,
+                       size_t size)
+{
+    const int64_t T  = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t H = cfg.shape[1];
+    const uint32_t W = cfg.shape[2];
+
+    for (int64_t t = 0; t < T; ++t)
+    {
+        uint32_t x = t % W;
+        uint32_t y = (t / W) % H;
+        uint32_t k = y * W + x;
+
+        data[t] = static_cast<DataType>(generator(k));
+    }
+    return true;
+}
+
+template <typename DataType>
+bool generateFFT2DImag(const TosaReference::GenerateConfig& cfg,
+                       TosaReference::IDotProductGenerator& generator,
+                       DataType* data,
+                       size_t size)
+{
+    const int64_t T  = TosaReference::numElementsFromShape(cfg.shape);
+    const uint32_t H = cfg.shape[1];
+    const uint32_t W = cfg.shape[2];
+
+    // The index expression of ((1*N+n)*H+y)*W+x in the spec equates to
+    // using the values after those used for the Real tensor, but we need
+    // to iterate through all those values to get to the Imaginary data
+    for (int64_t n = 0; n < 2; ++n)
+    {
+        for (int64_t t = 0; t < T; ++t)
+        {
+            uint32_t x = t % W;
+            uint32_t y = (t / W) % H;
+            uint32_t k = y * W + x;
+
+            data[t] = static_cast<DataType>(generator(k));
+        }
+    }
+    return true;
+}
+
+bool generateFFT2D(const TosaReference::GenerateConfig& cfg,
+                   TosaReference::IDotProductGenerator& generator,
+                   void* data,
+                   size_t size)
+{
+    if (cfg.shape.size() != 3)
+    {
+        WARNING("[Generator][DP][FFT2D] Tensor shape expected 3 dimensions.");
+        return false;
+    }
+
+    switch (cfg.dataType)
+    {
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFFT2DReal(cfg, generator, outData, size);
+                case 1:
+                    return generateFFT2DImag(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FFT2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        default:
+            WARNING("[Generator][DP][FFT2D] Only supports FP32.");
+            return false;
+    }
+
+    return true;
+}
 }    // namespace
 
 namespace TosaReference
@@ -772,6 +858,8 @@ bool generateDotProduct(const GenerateConfig& cfg, void* data, size_t size)
             return generateDepthwiseConv2D(cfg, *generator, data, size);
         case tosa::Op_TRANSPOSE_CONV2D:
             return generateTransposeConv2D(cfg, *generator, data, size);
+        case tosa::Op_FFT2D:
+            return generateFFT2D(cfg, *generator, data, size);
         default:
             WARNING("[Generator][DP] Unsupported operator.");
             return false;

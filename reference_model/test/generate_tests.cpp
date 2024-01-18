@@ -1224,4 +1224,122 @@ TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
     }
 }
 
+void fft2d_test_FP32(const std::string tosaName,
+                     const size_t tosaElements,
+                     const std::string templateJsonCfg,
+                     const std::string setStr,
+                     const std::vector<uint32_t> lastExpected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<float> buffer(tosaElements);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    // Get values at positions -8, -7 and -6 from the end
+    std::vector<float> last_three_ish(buffer.end() - 8, buffer.end() - 5);
+
+    check_output<float>(last_three_ish, lastExpected);
+}
+
+TEST_CASE("positive - FP32 fft2d dot product (values -8, -7 & -6 from the end)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "real" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 8, 2, 4 ],
+                "input_pos": 0,
+                "op" : "FFT2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 16,
+                    "acc_type": "FP32"
+                }
+            },
+            "imag" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 8, 2, 4 ],
+                "input_pos": 1,
+                "op" : "FFT2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 16,
+                    "acc_type": "FP32"
+                }
+            }
+        }
+    })";
+
+    const std::string tosaNameReal = "real";
+    const std::string tosaNameImag = "imag";
+    const size_t tosaElements      = 8 * 2 * 4;
+
+    SUBCASE("fft2d, set 0, real")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x0, 0x3ee06867 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "0", expected);
+    }
+    SUBCASE("fft2d, set 0, imag")
+    {
+        std::vector<uint32_t> expected = { 0x3e6d1d36, 0x0, 0x0 };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "0", expected);
+    }
+    SUBCASE("fft2d, set 1, real")
+    {
+        // NOTE: Python test script produced 0x5e7219eb - so off by 1
+        std::vector<uint32_t> expected = { 0x5e18358e, 0x5e7219ec, 0x5e2beab2 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "1", expected);
+    }
+    SUBCASE("fft2d, set 1, imag")
+    {
+        std::vector<uint32_t> expected = { 0x5e71fbcc, 0x5e1bd27a, 0x5e46c84a };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "1", expected);
+    }
+    SUBCASE("fft2d, set 2, real")
+    {
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3d704bae, 0x3e4443a6 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "2", expected);
+    }
+    SUBCASE("fft2d, set 2, imag")
+    {
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3dacbd02, 0xbe26be6a };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "2", expected);
+    }
+    SUBCASE("fft2d, set 3, real")
+    {
+        // NOTE: Python test script produced 0x3de257cf, 0x3f144b53 - so off by 1
+        std::vector<uint32_t> expected = { 0x41800000, 0x3de257ce, 0x3f144b54 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "3", expected);
+    }
+    SUBCASE("fft2d, set 3, imag")
+    {
+        std::vector<uint32_t> expected = { 0x41800000, 0x3f86492c, 0xbf5bd4b3 };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "3", expected);
+    }
+    SUBCASE("fft2d, set 4, real")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x5d8c6475, 0x0 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "4", expected);
+    }
+    SUBCASE("fft2d, set 4, imag")
+    {
+        std::vector<uint32_t> expected = { 0xdca65b4f, 0x5c98b5d2, 0xdd14ddd8 };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "4", expected);
+    }
+    SUBCASE("fft2d, set 5, real")
+    {
+        std::vector<uint32_t> expected = { 0x5cb9bbd4, 0x5d8c0c21, 0x5daa1928 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "5", expected);
+    }
+    SUBCASE("fft2d, set 5, imag")
+    {
+        std::vector<uint32_t> expected = { 0x5e708eb3, 0x5e2c1a78, 0x5ddbbc3f };
+        fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "5", expected);
+    }
+}
+
 TEST_SUITE_END();    // generate
