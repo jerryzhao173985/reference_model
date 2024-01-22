@@ -2519,6 +2519,56 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
+    def evReshapeOutputSizeMultiInference(check=False, **kwargs):
+        error_name = ErrorIf.ReshapeOutputSizeMultiInference
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Reshape output tensor contains more than one inferred dimension"
+
+        if check:
+            output_shape = kwargs["output_shape"]
+            inferences = 0
+            for dim in output_shape:
+                if dim == -1:
+                    inferences += 1
+            if inferences > 1:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evReshapeOutputSizeNonInteger(check=False, **kwargs):
+        error_name = ErrorIf.ReshapeOutputSizeNonInteger
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Reshape inferred output tensor dimension is non-integer"
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            input_size = np.prod(input_shape)
+            output_size = 1
+            for dim in output_shape:
+                if dim != -1:
+                    output_size *= dim
+            if -1 in output_shape and input_size % output_size != 0:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
     def calculateBroadcastShape(input_shape_a, input_shape_b):
         if input_shape_a is not None and input_shape_b is not None:
             calculated_shape = input_shape_a.copy()
