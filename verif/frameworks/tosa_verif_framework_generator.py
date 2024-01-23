@@ -784,6 +784,25 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.SpaceToBatch, TGen.tgBasic, ArgGen.agSpaceToBatch),
         "types": TYPE_F,
     },
+    "dynamic_space_to_batch": {
+        "operands": (1, 0),
+        "build_fcn": (
+            TBuilder.DynamicSpaceToBatch,
+            TGen.tgBasic,
+            ArgGen.agSpaceToBatch,
+        ),
+        "types": TYPE_F,
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(13, 21, 3)],
+        },
+        "dynamic_shape_dim": [
+            (
+                0,
+                1,
+            ),
+        ],
+    },
     "batch_to_space": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.BatchToSpace, TGen.tgBasic, ArgGen.agBatchToSpace),
@@ -1174,9 +1193,12 @@ def run_unit_test(
             try:
                 dynamic_shape_dim_tuples = op["dynamic_shape_dim"]
                 dim_tuple = dynamic_shape_dim_tuples[idx]
-                dim = dim_tuple[0]
                 input_shape = list(input_shape)
-                input_shape[dim] = None
+
+                # Set the dimensions of input that are listed in the builder profile to unknown.
+                for dim in dim_tuple:
+                    input_shape[dim] = None
+
                 # When any dimension size is unknown, mark the placeholder as dynamic type.
                 placeholder_dynamic = True
 
