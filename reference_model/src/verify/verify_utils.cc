@@ -143,6 +143,7 @@ std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& 
         pos.insert(pos.begin(), index % *d);
         index /= *d;
     }
+    ASSERT_MSG(index == 0, "index too large for given shape")
     return pos;
 }
 
@@ -225,8 +226,7 @@ bool tosaCheckFloatBound(OutType testValue, double referenceValue, double errorB
         {
             return true;
         }
-        WARNING("[Verifier][Bound] Non-matching NaN values - ref (%10f) versus test (%10f).", referenceValue,
-                testValue);
+        WARNING("[Verifier][Bound] Non-matching NaN values - ref (%g) versus test (%g).", referenceValue, testValue);
         return false;
     }
 
@@ -294,9 +294,8 @@ bool tosaCheckFloatBound(OutType testValue, double referenceValue, double errorB
     bool withinBound   = testValue64 >= referenceMin && testValue64 <= referenceMax;
     if (!withinBound)
     {
-        WARNING(
-            "[Verifier][Bound] value (%10.10f) is not in error bound %g range (%10.10f <= ref (%10.10f) <= %10.10f).",
-            testValue64, errorBound, referenceMin, referenceValue, referenceMax);
+        WARNING("[Verifier][Bound] value %.20f is not in error bound %g range (%.20f <= ref %.20f <= %.20f).",
+                testValue64, testValue64, errorBound, referenceMin, referenceValue, referenceValue, referenceMax);
     }
     return withinBound;
 }

@@ -47,7 +47,7 @@ bool validateData(const double* ref,
         bool valid      = tosaCheckFloatBound(imp[i], ref[i], errBound);
         if (!valid)
         {
-            auto pos = indexToPosition(T, shape);
+            auto pos = indexToPosition(i, shape);
             WARNING("[Verifier][AE] Location %s", positionToString(pos).c_str());
             return false;
         }
