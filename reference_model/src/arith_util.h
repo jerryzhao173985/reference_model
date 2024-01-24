@@ -201,21 +201,8 @@ constexpr T saturate(const uint32_t width, const intmax_t value)
 inline void float_trunc_bytes(float* src)
 {
     /* Set the least significant two bytes to zero for the input float value.*/
-    char src_as_bytes[sizeof(float)];
-    memcpy(src_as_bytes, src, sizeof(float));
-
-    if (g_func_config.float_is_big_endian)
-    {
-        src_as_bytes[2] = '\000';
-        src_as_bytes[3] = '\000';
-    }
-    else
-    {
-        src_as_bytes[0] = '\000';
-        src_as_bytes[1] = '\000';
-    }
-
-    memcpy(src, &src_as_bytes, sizeof(float));
+    uint32_t* ptr = reinterpret_cast<uint32_t*>(src);
+    *ptr          = *ptr & UINT32_C(0xffff0000);
 }
 
 inline void truncateFloatToBFloat(float* src, int64_t size)
@@ -233,32 +220,8 @@ inline void truncateFloatToBFloat(float* src, int64_t size)
 inline bool checkValidBFloat(float src)
 {
     /* Checks if the least significant two bytes are zero. */
-    char src_as_bytes[sizeof(float)];
-    memcpy(src_as_bytes, &src, sizeof(float));
-
-    if (g_func_config.float_is_big_endian)
-    {
-        return (src_as_bytes[2] == '\000' && src_as_bytes[3] == '\000');
-    }
-    else
-    {
-        return (src_as_bytes[0] == '\000' && src_as_bytes[1] == '\000');
-    }
-}
-
-inline bool float_is_big_endian()
-{
-    /* Compares float values 1.0 and -1.0 by checking whether the
-    negation causes the first or the last byte to change.
-    First byte changing would indicate the float representation
-    is big-endian.*/
-    float f = 1.0;
-    char f_as_bytes[sizeof(float)];
-    memcpy(f_as_bytes, &f, sizeof(float));
-    f = -f;
-    char f_neg_as_bytes[sizeof(float)];
-    memcpy(f_neg_as_bytes, &f, sizeof(float));
-    return f_as_bytes[0] != f_neg_as_bytes[0];
+    uint32_t* ptr = reinterpret_cast<uint32_t*>(&src);
+    return (*ptr & UINT32_C(0x0000ffff)) == 0;
 }
 
 template <TOSA_REF_TYPE Dtype>

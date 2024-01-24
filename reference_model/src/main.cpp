@@ -76,8 +76,6 @@ int main(int argc, char** argv)
             return TOSA_VERSION_MISMATCH;
     }
 
-    g_func_config.float_is_big_endian = float_is_big_endian();
-
     json test_desc;
 
     // Initialize test descriptor
