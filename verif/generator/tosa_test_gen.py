@@ -1675,14 +1675,21 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return result_tens
 
-    def build_slice(self, op, a, start, size, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.sliceOp(
+    def build_slice(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        a = inputs[0]
+        start = args_dict["start"]
+        size = args_dict["size"]
+
+        result_tensor = OutputShaper.sliceOp(
             self.ser, self.rng, a, start, size, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1695,12 +1702,12 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=a.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
+            output_dtype=result_tensor.dtype,
             start=start,
             size=size,
-            result_tensors=[result_tens],
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1712,7 +1719,12 @@ class TosaTestGen:
         attr.SliceAttribute(start, size)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_tile(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -4277,7 +4289,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_slice,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agSlice,
             ),
             "types": TYPE_FIB,
@@ -4294,6 +4306,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "tile": {
             "op": Op.TILE,
