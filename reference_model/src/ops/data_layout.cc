@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -267,7 +267,7 @@ template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
 OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESHAPE, id_)
 {
-    setRequiredOperands(1, 1);
+    setRequiredOperands(2, 1);
 
     INIT_ATTRIBUTE(Reshape);
 }
@@ -291,7 +291,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
         return 1;
 
     // output and input must be the same types
-    if (inputs[0]->matchType(*outputs[0]))
+    if (inputs[1]->matchType(*outputs[0]))
     {
         printNodeValidationError("OpReshape: Input and output types must match");
         return 1;
@@ -300,7 +300,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
     // -1 shape inferencing
     auto inferred_size  = -1;
     auto inferred_dim   = -1;
-    auto total_size     = getInputs()[0]->getElementCount();
+    auto total_size     = getInputs()[1]->getElementCount();
     uint32_t accum_size = 1;
 
     for (int32_t d = 0; d < OutRank; d++)
@@ -341,7 +341,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
         }
     }
 
-    ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
+    ERROR_IF(inputs[1]->getElementCount() != outputs[0]->getElementCount(),
              "Input tensor size does not match output tensor size");
 
     for (uint32_t d = 0; d < OutRank; d++)
@@ -351,7 +351,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
                  "OpReshape: new_shape doesn't match output shape");
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[1]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     return 0;
