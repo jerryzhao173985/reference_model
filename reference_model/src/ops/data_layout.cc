@@ -126,7 +126,7 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_PAD, id_)
 {
-    setRequiredOperands(1, 1);
+    setRequiredOperands(2, 1);
     setRequiredRank(1);
 
     INIT_ATTRIBUTE(Pad);
@@ -158,24 +158,10 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    in      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    padding = dynamic_cast<TosaReference::TensorTemplate<TPadding>*>(inputs[1]);
+    out     = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
     ASSERT_MEM(in && out);
-
-    // padding in spec is 2D array in shape of [Rank, 2]
-    // Reference model implement this as 1D array of [Rank * 2], with ordering:
-    // [Rank0_front, Rank0_back, Rank1_front, Rank1_back, ..., Rank(N-1)_front, Rank(N-1)_back]
-    ERROR_IF(attribute->padding().size() != (Rank * 2), "OpPad: padding length needs to be (rank(input1) * 2)");
-
-    for (int i = 0; i < Rank; i++)
-    {
-        int32_t pad_front = attribute->padding()[2 * i];
-        int32_t pad_back  = attribute->padding()[2 * i + 1];
-        ERROR_IF((pad_front < 0) || (pad_back < 0), "OpPad: padding can't be smaller than 0");
-        ERROR_IF(out->getShape()[i] != pad_front + in->getShape()[i] + pad_back,
-                 "OpPad: output shape not equal to input plus padding");
-        paddings_array[i] = std::make_pair(pad_front, pad_back);
-    }
 
     return 0;
 }
@@ -202,6 +188,20 @@ int OpPad<Rank, Dtype>::eval()
         default:
             printNodeValidationError("Unsupported data type");
             break;
+    }
+
+    // padding is an 1D array of [Rank * 2], with ordering:
+    // [Rank0_front, Rank0_back, Rank1_front, Rank1_back, ..., Rank(N-1)_front, Rank(N-1)_back]
+    TPadding padding_val = this->padding->getTensor();
+    ERROR_IF(padding_val.size() != (Rank * 2), "OpPad: padding length needs to be (rank(input1) * 2)");
+    for (int i = 0; i < Rank; i++)
+    {
+        auto pad_front = padding_val(2 * i);
+        auto pad_back  = padding_val(2 * i + 1);
+        ERROR_IF((pad_front < 0) || (pad_back < 0), "OpPad: padding can't be smaller than 0");
+        ERROR_IF(out->getShape()[i] != pad_front + in->getShape()[i] + pad_back,
+                 "OpPad: output shape not equal to input plus padding");
+        paddings_array[i] = std::make_pair(pad_front, pad_back);
     }
 
     this->out->getTensor() = this->in->getTensor().pad(this->paddings_array, pad_value);

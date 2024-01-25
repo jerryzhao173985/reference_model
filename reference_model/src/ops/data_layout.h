@@ -54,14 +54,17 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+    using InEigenType      = typename GetEigenType<Dtype>::type;
+    using InEigenShapeType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using OutEigenType     = typename GetEigenType<Dtype>::type;
+    using TIn              = Eigen::Tensor<InEigenType, Rank>;
+    using TPadding         = Eigen::Tensor<InEigenShapeType, 1>;
+    using TOut             = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
     Eigen::array<std::pair<ptrdiff_t, ptrdiff_t>, Rank> paddings_array;
     TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TPadding>* padding;
     TosaReference::TensorTemplate<TOut>* out;
     TosaPadAttribute* attribute;
 };

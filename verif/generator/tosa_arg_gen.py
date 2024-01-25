@@ -1046,6 +1046,19 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
+    def tvgPad(testGen, op, dtypeList, shapeList, argsDict, error_name=None):
+        # argsDict["pad"] is 2D array, need to flatten it to get list of values
+        pad_values = argsDict["pad"].flatten()
+        dtypeList[1] = DType.SHAPE
+        shapeList[1] = [len(pad_values)]
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [None, pad_values]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, op, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
     def tvgTile(testGen, op, dtypeList, shapeList, argsDict, error_name=None):
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(argsDict["multiples"])]

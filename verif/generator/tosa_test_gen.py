@@ -1487,21 +1487,21 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 2
         a = inputs[0]
+        pad_input = inputs[1]
         padding = args_dict["pad"]
         pad_const_int = args_dict["pad_const_int"]
         pad_const_float = args_dict["pad_const_fp"]
 
         result_tensor = OutputShaper.padOp(self.ser, self.rng, a, padding, error_name)
 
+        # write empty padding into PadAttribute to ensure inputs[1] is used
         attr = ts.TosaSerializerAttribute()
-        attr.PadAttribute(
-            self.ser.builder, padding.flatten(), pad_const_int, pad_const_float
-        )
+        attr.PadAttribute(self.ser.builder, [], pad_const_int, pad_const_float)
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
+        input_list = [a.name, pad_input.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -4275,11 +4275,11 @@ class TosaTestGen:
         },
         "pad": {
             "op": Op.PAD,
-            "operands": (1, 0),
+            "operands": (2, 0),
             "build_fcn": (
                 build_pad,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgPad,
                 TosaArgGen.agPad,
             ),
             "types": TYPE_FIB,
@@ -5305,7 +5305,7 @@ class OutputShaper:
 
         if error_name == ErrorIf.PadOutputShapeMismatch:
             bad_dim = rng.choice(range(len(output_shape)))
-            output_shape[bad_dim] -= rng.choice([1, 2])
+            output_shape[bad_dim] += rng.choice([1, 2])
         elif error_name == ErrorIf.RankMismatch:
             output_shape = gtu.get_rank_mismatch_shape(rng, output_shape)
 

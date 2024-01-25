@@ -3,7 +3,7 @@
 
 __pycache__/
 build/
-build-debug/
+debug-build/
 .cache
 compile_commands.json
 dist/
