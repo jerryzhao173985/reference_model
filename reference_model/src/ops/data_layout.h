@@ -145,15 +145,18 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+    using InEigenType      = typename GetEigenType<Dtype>::type;
+    using InEigenShapeType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using OutEigenType     = typename GetEigenType<Dtype>::type;
+    using TIn              = Eigen::Tensor<InEigenType, Rank>;
+    using TInShape         = Eigen::Tensor<InEigenShapeType, 1>;
+    using TOut             = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    TosaSliceAttribute* attribute;
     Eigen::array<Eigen::Index, Rank> begin_array;
     Eigen::array<Eigen::Index, Rank> size_array;
+    TosaReference::TensorTemplate<TInShape>* start;
+    TosaReference::TensorTemplate<TInShape>* size;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
 };

@@ -422,18 +422,13 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 OpSlice<Rank, Dtype>::OpSlice(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_SLICE, id_)
 {
-    setRequiredOperands(1, 1);
+    setRequiredOperands(3, 1);
     setRequiredRank(1);
-
-    INIT_ATTRIBUTE(Slice);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpSlice<Rank, Dtype>::~OpSlice()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSlice<Rank, Dtype>::checkTensorAttributes()
@@ -457,19 +452,26 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    in    = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    start = dynamic_cast<TosaReference::TensorTemplate<TInShape>*>(inputs[1]);
+    size  = dynamic_cast<TosaReference::TensorTemplate<TInShape>*>(inputs[2]);
+    out   = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(in && out);
 
-    ERROR_IF((int32_t)attribute->start().size() != in->getRank(),
-             "OpSlice: begin array length needs to be rank(input)");
-    ERROR_IF((int32_t)attribute->size().size() != in->getRank(), "OpSlice: size array length needs to be rank(input)");
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
+int OpSlice<Rank, Dtype>::eval()
+{
+    ERROR_IF(start->getElementCount() != in->getRank(), "OpSlice: start array length needs to be rank(input)");
+    ERROR_IF(size->getElementCount() != in->getRank(), "OpSlice: size array length needs to be rank(input)");
 
     for (int32_t i = 0; i < in->getRank(); i++)
     {
-        int32_t b = attribute->start()[i];
-        int32_t s = attribute->size()[i];
+        int32_t b = start->getTensor()(i);
+        int32_t s = size->getTensor()(i);
         ERROR_IF(b < 0 || b >= in->getShape()[i], "OpSlice: start out of boundary");
         ERROR_IF((b + s) < 0 || (b + s) > in->getShape()[i], "OpSlice: (start+size) out of boundary");
         ERROR_IF(s <= 0, "OpSlice: output must be positive");
@@ -478,12 +480,6 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
         size_array[i]  = s;
     }
 
-    return 0;
-}
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-int OpSlice<Rank, Dtype>::eval()
-{
     out->getTensor() = in->getTensor().slice(begin_array, size_array);
 
     return GraphNode::eval();
