@@ -622,28 +622,6 @@ class TosaTensorGen:
 
         return new_shapeList
 
-    @staticmethod
-    def tgShape(testGen, opName, rank, error_name=None):
-        pl, const = opName["operands"]
-        shape = [rank]
-
-        # Constrict the overall size of the shape when creating ERROR_IF tests
-        if error_name:
-            shape = TosaErrorIfArgGen.eiRestrictDimensions(shape)
-
-        shape_list = []
-        for i in range(pl + const):
-            shape_list.append(shape.copy())
-
-            # Generates an input rank mismatch for operators with more than one input
-            if error_name == ErrorIf.RankMismatch:
-                if rank == 1 and i != 1:
-                    shape = testGen.makeShape(rank + testGen.rng.choice([1, 2, 3]))
-                elif i != 1:
-                    shape = testGen.makeShape(rank + testGen.rng.choice([-1, 1]))
-
-        return shape_list
-
 
 class TosaTensorValuesGen:
     """Tensor Value generators create the random data for each tensor in each test."""

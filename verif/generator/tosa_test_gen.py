@@ -4714,9 +4714,10 @@ class TosaTestGen:
         "add_shape": {
             "op": Op.ADD_SHAPE,
             "operands": (2, 0),
+            "rank": (1, 1),
             "build_fcn": (
                 build_shape_op,
-                TosaTensorGen.tgShape,
+                TosaTensorGen.tgBasic,
                 TosaTensorValuesGen.tvgAddSub,
                 TosaArgGen.agNone,
             ),
@@ -4726,9 +4727,10 @@ class TosaTestGen:
         "sub_shape": {
             "op": Op.SUB_SHAPE,
             "operands": (2, 0),
+            "rank": (1, 1),
             "build_fcn": (
                 build_shape_op,
-                TosaTensorGen.tgShape,
+                TosaTensorGen.tgBasic,
                 TosaTensorValuesGen.tvgAddSub,
                 TosaArgGen.agNone,
             ),
@@ -4738,9 +4740,10 @@ class TosaTestGen:
         "mul_shape": {
             "op": Op.MUL_SHAPE,
             "operands": (2, 0),
+            "rank": (1, 1),
             "build_fcn": (
                 build_shape_op,
-                TosaTensorGen.tgShape,
+                TosaTensorGen.tgBasic,
                 TosaTensorValuesGen.tvgMul,
                 TosaArgGen.agNone,
             ),
@@ -4750,9 +4753,10 @@ class TosaTestGen:
         "div_shape": {
             "op": Op.DIV_SHAPE,
             "operands": (2, 0),
+            "rank": (1, 1),
             "build_fcn": (
                 build_shape_op,
-                TosaTensorGen.tgShape,
+                TosaTensorGen.tgBasic,
                 TosaTensorValuesGen.tvgIntDiv,
                 TosaArgGen.agNone,
             ),
@@ -4762,6 +4766,7 @@ class TosaTestGen:
         "concat_shape": {
             "op": Op.CONCAT_SHAPE,
             "operands": (2, 0),
+            "rank": (1, 1),
             "build_fcn": (
                 build_concat,
                 TosaTensorGen.tgConcat,
@@ -4774,6 +4779,7 @@ class TosaTestGen:
         "const_shape": {
             "op": Op.CONST_SHAPE,
             "operands": (0, 1),
+            "rank": (1, 1),
             "build_fcn": (
                 build_const,
                 TosaTensorGen.tgBasic,
