@@ -587,7 +587,11 @@ def run_test(args, test_path, framework):
         tf_result = tf_result.astype(np.int8)
     elif tf_result.dtype == np.uint8:
         tf_result = tf_result.astype(np.uint8)
-    elif tf_result.dtype == np.int16 or tf_result.dtype == np.int64:
+    elif tf_result.dtype == np.int16:
+        tf_result = tf_result.astype(np.int16)
+    elif tf_result.dtype == np.uint16:
+        tf_result = tf_result.astype(np.uint16)
+    elif tf_result.dtype == np.int64:
         tf_result = tf_result.astype(np.int32)
 
     # For now, search for the first output from ref_model
