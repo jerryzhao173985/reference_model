@@ -544,6 +544,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "no_negative_tests": "true",
@@ -556,7 +557,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -572,7 +573,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
@@ -584,7 +585,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,65540,1,1,1",
                         "--target-shape",
@@ -1905,6 +1906,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1916,7 +1918,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--tensor-dim-range",
                         "1,48"
                     ],
@@ -1924,7 +1926,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,1,65537",
                         "--target-shape",
@@ -2104,6 +2106,7 @@
         "profile": [
             "tosa-mi"
         ],
+        "support_for": [ "lazy_data_gen" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2115,7 +2118,7 @@
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -2133,7 +2136,7 @@
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-rank",
                         "3",
                         "--target-rank",
@@ -2147,7 +2150,7 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-2.0,2.0",
+                        "-max,max",
                         "--target-shape",
                         "1,1,65539,2",
                         "--target-shape",

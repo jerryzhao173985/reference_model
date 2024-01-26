@@ -2864,9 +2864,18 @@ class TosaArgGen:
 
         # Create list of required amount of permutations
         arg_list = [
-            ("perm{}".format(p), [random_permutations[p].tolist()])
+            ("perm{}".format(p), {"perms": random_permutations[p].tolist()})
             for p in range(limit)
         ]
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod
