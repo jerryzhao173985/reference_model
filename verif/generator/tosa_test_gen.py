@@ -1666,15 +1666,23 @@ class TosaTestGen:
         self.ser.addOperator(op["op"], input_list, output_list, attr)
         return TosaTestGen.BuildInfo(result_tensor, None)
 
-    def build_transpose(self, op, a, perms, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.transposeOp(self.ser, self.rng, a, perms, error_name)
+    def build_transpose(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        a = inputs[0]
+        perms = args_dict["perms"]
+
+        result_tensor = OutputShaper.transposeOp(
+            self.ser, self.rng, a, perms, error_name
+        )
 
         attr = ts.TosaSerializerAttribute()
         attr.TransposeAttribute(perms)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1687,11 +1695,11 @@ class TosaTestGen:
             error_name,
             op=op,
             input_shape=a.shape,
-            output_shape=result_tens.shape,
+            output_shape=result_tensor.shape,
             perms=perms,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -1700,7 +1708,12 @@ class TosaTestGen:
             return None
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_slice(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -1954,9 +1967,18 @@ class TosaTestGen:
         )
         return result_tens
 
-    def build_const(self, op, val, validator_fcns=None, error_name=None):
+    def build_const(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        val = inputs[0]
         self.ser.addOutputTensor(val)
-        return val
+
+        compliance = self.tensorComplianceMetaData(
+            op, val.dtype, args_dict, val, error_name
+        )
+
+        return TosaTestGen.BuildInfo(val, compliance)
 
     # Type Conversion
     def build_cast(
@@ -4356,6 +4378,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "slice": {
             "op": Op.SLICE,
@@ -4419,7 +4444,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_transpose,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agTranspose,
             ),
             "types": TYPE_FIB,
@@ -4434,6 +4459,9 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evTensorSizeInputOutputMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         # Data nodes
         "const": {
@@ -4442,10 +4470,13 @@ class TosaTestGen:
             "build_fcn": (
                 build_const,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT48],
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
         },
         "identity": {
             "op": Op.IDENTITY,
@@ -4788,8 +4819,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_const,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
             ),
             "types": [DType.SHAPE],
         },
