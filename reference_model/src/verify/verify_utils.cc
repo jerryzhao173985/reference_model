@@ -18,6 +18,7 @@
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
+#include <cfloat>
 #include <map>
 
 namespace tosa
@@ -294,8 +295,9 @@ bool tosaCheckFloatBound(OutType testValue, double referenceValue, double errorB
     bool withinBound   = testValue64 >= referenceMin && testValue64 <= referenceMax;
     if (!withinBound)
     {
-        WARNING("[Verifier][Bound] value %.20f is not in error bound %g range (%.20f <= ref %.20f <= %.20f).",
-                testValue64, testValue64, errorBound, referenceMin, referenceValue, referenceValue, referenceMax);
+        WARNING("[Verifier][Bound] value %.*g is not in error bound %.*g range (%.*g <= ref %.*g <= %.*g).", DBL_DIG,
+                testValue64, DBL_DIG, errorBound, DBL_DIG, referenceMin, DBL_DIG, referenceValue, DBL_DIG,
+                referenceMax);
     }
     return withinBound;
 }
