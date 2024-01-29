@@ -1224,6 +1224,164 @@ TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
     }
 }
 
+void conv3d_test_FP16(const std::string tosaName[3],
+                      const size_t tosaElements[3],
+                      const std::string templateJsonCfg,
+                      const std::string setStr,
+                      int32_t param,
+                      const std::vector<uint16_t> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_SET_", setStr);
+
+    std::vector<half_float::half> buffer(tosaElements[param]);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
+    check_output<half_float::half>(buffer, expected);
+}
+
+TEST_CASE("positive - FP16 conv3d dot product (first 3 values)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [1, 3, 2, 2, 3],
+                "input_pos": 0,
+                "op" : "CONV3D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 27,
+                    "acc_type": "FP16",
+                    "kernel": [3, 1, 3]
+                }
+            },
+            "weight" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [4, 3, 1, 3, 3],
+                "input_pos": 1,
+                "op" : "CONV3D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 27,
+                    "acc_type": "FP16"
+                }
+            },
+            "bias" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP16",
+                "input_type": "CONSTANT",
+                "shape" : [ 4 ],
+                "input_pos": 2,
+                "op" : "CONV3D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 27,
+                    "acc_type": "FP16"
+                }
+            }
+
+        }
+    })";
+
+    const std::string tosaName[3] = { "input", "weight", "bias" };
+    const size_t tosaElements[3]  = { (1 * 3 * 2 * 2 * 3), (4 * 3 * 1 * 3 * 3), 4 };
+
+    SUBCASE("conv3d, set 0, param 0")
+    {
+        std::vector<uint16_t> expected = { 0xbb33, 0xbb9b, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 0, expected);
+    }
+    SUBCASE("conv3d, set 0, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x39a8 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 1, expected);
+    }
+    SUBCASE("conv3d, set 0, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "0", 2, expected);
+    }
+    SUBCASE("conv3d, set 1, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x4e37, 0x4ed1, 0x4f87 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 0, expected);
+    }
+    SUBCASE("conv3d, set 1, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x51fe, 0x5104, 0x4fbf };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 1, expected);
+    }
+    SUBCASE("conv3d, set 1, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x6498, 0x66e0, 0x687d };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "1", 2, expected);
+    }
+    SUBCASE("conv3d, set 2, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x3c00, 0x2bdb, 0xad62 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
+    }
+    SUBCASE("conv3d, set 2, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x3c00, 0x1814, 0x31be };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
+    }
+    SUBCASE("conv3d, set 2, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 2, expected);
+    }
+    SUBCASE("conv3d, set 3, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x4c00, 0xb92b, 0x30f4 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
+    }
+    SUBCASE("conv3d, set 3, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x4c00, 0x3a2e, 0x3bf5 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
+    }
+    SUBCASE("conv3d, set 3, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 2, expected);
+    }
+    SUBCASE("conv3d, set 4, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x5110 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
+    }
+    SUBCASE("conv3d, set 4, param 1")
+    {
+        std::vector<uint16_t> expected = { 0x4384, 0xd1de, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
+    }
+    SUBCASE("conv3d, set 4, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 2, expected);
+    }
+    SUBCASE("conv3d, set 5, param 0")
+    {
+        std::vector<uint16_t> expected = { 0x490c, 0x4ccf, 0x5046 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 0, expected);
+    }
+    SUBCASE("conv3d, set 5, param 1")
+    {
+        std::vector<uint16_t> expected = { 0xc994, 0x4ca4, 0x4f9f };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 1, expected);
+    }
+    SUBCASE("conv3d, set 5, param 2")
+    {
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
+        conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "5", 2, expected);
+    }
+}
+
 void fft2d_test_FP32(const std::string tosaName,
                      const size_t tosaElements,
                      const std::string templateJsonCfg,
