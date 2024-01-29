@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2023, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -220,9 +220,6 @@ int SubgraphTraverser::initializeGraph()
                 weight_index = 1;
                 break;
             case Op_SELECT:
-                input_index = 1;
-                break;
-            case Op_RESHAPE:
                 input_index = 1;
                 break;
             default:
