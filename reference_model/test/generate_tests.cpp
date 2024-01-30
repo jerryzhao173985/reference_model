@@ -1500,4 +1500,60 @@ TEST_CASE("positive - FP32 fft2d dot product (values -8, -7 & -6 from the end)")
     }
 }
 
+TEST_CASE("positive - FP32 rfft2d dot product (values -8, -7 & -6 from the end)")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "real" : {
+                "generator": "DOT_PRODUCT",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 4, 2, 4 ],
+                "input_pos": 0,
+                "op" : "FFT2D",
+                "dot_product_info": {
+                    "s": _SET_,
+                    "ks": 8,
+                    "acc_type": "FP32"
+                }
+            }
+        }
+    })";
+
+    const std::string tosaNameReal = "real";
+    const size_t tosaElements      = 4 * 2 * 4;
+
+    SUBCASE("fft2d, set 0, real")
+    {
+        std::vector<uint32_t> expected = { 0xbe14f2f5, 0xbdb6fe4d, 0x3f30b473 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "0", expected);
+    }
+    SUBCASE("fft2d, set 1, real")
+    {
+        // NOTE: Python test script produced 0x5e7219eb - so off by 1
+        std::vector<uint32_t> expected = { 0x5e490017, 0x5e57dd30, 0x5e992496 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "1", expected);
+    }
+    SUBCASE("fft2d, set 2, real")
+    {
+        std::vector<uint32_t> expected = { 0x3f800000, 0xbe7f1cd4, 0xbdfc67ff };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "2", expected);
+    }
+    SUBCASE("fft2d, set 3, real")
+    {
+        std::vector<uint32_t> expected = { 0x41800000, 0xbf6d219b, 0x3f2bd153 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "3", expected);
+    }
+    SUBCASE("fft2d, set 4, real")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x0, 0x0 };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "4", expected);
+    }
+    SUBCASE("fft2d, set 5, real")
+    {
+        std::vector<uint32_t> expected = { 0xdd3f6b86, 0xde49ecfd, 0x5e0be03d };
+        fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "5", expected);
+    }
+}
+
 TEST_SUITE_END();    // generate

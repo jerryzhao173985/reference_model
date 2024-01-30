@@ -1820,6 +1820,9 @@ int OpRFFT2d<Dtype>::eval()
     int32_t out_imag_height = out_imag->getShape()[1];
     int32_t out_imag_width  = out_imag->getShape()[2];
 
+    int32_t half_in_height = in_height / 2;
+    int32_t half_in_width  = in_width / 2;
+
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
     LEVEL_CHECK(in_height <= tosa_level.MAX_KERNEL, "H should be smaller than or equal to MAX_KERNEL");
@@ -1831,7 +1834,8 @@ int OpRFFT2d<Dtype>::eval()
                in_batch, in_height, in_width, out_real_batch, out_real_height, out_real_width, out_imag_batch,
                out_imag_height, out_imag_width);
 
-    OutEigenType sum_real, sum_imag, a;
+    OutEigenType sum_real, sum_imag;
+    OutEigenType a, a_cos, a_sin, v_ir;
 
     TIn in_val = this->in->getTensor();
 
@@ -1853,10 +1857,41 @@ int OpRFFT2d<Dtype>::eval()
                 {
                     for (int ix = 0; ix < in_width; ix++)
                     {
-                        // Use explicit cast to ensure intermmediate calculations are completed using OutEigenType
-                        a = 2 * M_PI * ((iy * (OutEigenType)oy) / in_height + (ix * (OutEigenType)ox) / in_width);
-                        sum_real += in_val(n, iy, ix) * cos(a);
-                        sum_imag += -in_val(n, iy, ix) * sin(a);
+                        OutEigenType val = in_val(n, iy, ix);
+                        // Perform the periodic calculation in integer maths to keep
+                        // the accuracy of the co-efficients similar for FP32 normal
+                        // and FP64 precise mode
+                        int32_t ay = (static_cast<int64_t>(iy) * static_cast<int64_t>(oy)) % in_height;
+                        int32_t ax = (static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_width;
+
+                        // Use explicit cast to ensure intermediate calculations are completed using OutEigenType
+                        a = 2 * M_PI * ((OutEigenType)ay / in_height + (OutEigenType)ax / in_width);
+
+                        // Calculate weight values (co-efficients)
+                        a_cos = cos(a);
+                        a_sin = sin(a);
+
+                        if (g_func_config.abs_mode)
+                        {
+                            // Bounded op - Use abs weight values
+                            a_cos = std::abs(a_cos);
+                            a_sin = std::abs(a_sin);
+                            // Bounded op - Use abs real value for imaginary calc
+                            v_ir = val;
+                        }
+                        else
+                        {
+                            // Normal op - Use negative real value for imaginary calc
+                            v_ir = -val;
+                        }
+                        sum_real += val * a_cos;
+                        // Imaginary values with locations (0,0), (0,W/2), (H/2,0) and (H/2,W/2) are zero.
+                        // But due to sin(M_PI) not returning 0 because of M_PI being approximate, only
+                        // add to the imaginary sum when not processing these locations.
+                        if ((ay % (half_in_height)) + (ax % (half_in_width)) > 0)
+                        {
+                            sum_imag += v_ir * a_sin;
+                        }
                     }
                 }
                 this->out_real->getTensor()(n, oy, ox) = sum_real;
