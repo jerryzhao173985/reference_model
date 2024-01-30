@@ -2582,10 +2582,14 @@ class TosaTestGen:
     def build_rfft2d(
         self,
         op,
-        val,
+        inputs,
+        args_dict,
         validator_fcns=None,
         error_name=None,
+        qinfo=None,
     ):
+        assert len(inputs) == 1
+        val = inputs[0]
         results = OutputShaper.rfft2dOp(self.ser, self.rng, val, error_name)
 
         input_names = [val.name]
@@ -2623,7 +2627,14 @@ class TosaTestGen:
         attr.RFFTAttribute(local_bound)
 
         self.ser.addOperator(op["op"], input_names, output_names, attr)
-        return results
+
+        compliance = []
+        for res in results:
+            compliance.append(
+                self.tensorComplianceMetaData(op, val.dtype, args_dict, res, error_name)
+            )
+
+        return TosaTestGen.BuildInfo(results, compliance)
 
     def create_filter_lists(
         self, op, shapeFilter, rankFilter, dtypeFilter, testType, validator=None
@@ -4728,8 +4739,8 @@ class TosaTestGen:
             "build_fcn": (
                 build_rfft2d,
                 TosaTensorGen.tgRFFT2d,
-                TosaTensorValuesGen.tvgDefault,
-                None,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agRFFT2d,
             ),
             "types": [DType.FP32],
             "error_if_validators": (
@@ -4742,6 +4753,9 @@ class TosaTestGen:
                 TosaErrorValidator.evKernelNotPowerOfTwo,
                 TosaErrorValidator.evFFTOutputShapeMismatch,
             ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.DOT_PRODUCT,),
+            },
         },
     }
 

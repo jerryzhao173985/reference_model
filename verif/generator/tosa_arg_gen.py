@@ -2734,6 +2734,31 @@ class TosaArgGen:
         # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
+    @staticmethod
+    def agRFFT2d(testGen, opName, shapeList, dtype, error_name=None):
+        arg_list = []
+
+        shape = shapeList[0]
+        dot_products = gtu.product(shape)
+        ks = shape[1] * shape[2]  # H*W
+        args_dict = {
+            "dot_products": dot_products,
+            "shape": shape,
+            "ks": ks,
+            "acc_type": dtype,
+        }
+        arg_list.append(("", args_dict))
+
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
+        return arg_list
+
     # Helper function for reshape.  Gets some factors of a larger number.
     @staticmethod
     def getFactors(val, start=1):
