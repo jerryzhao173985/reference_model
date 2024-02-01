@@ -52,6 +52,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::FpSpecial, "FP_SPECIAL" },
                                  { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
                                  { VerifyMode::AbsError, "ABS_ERROR" },
+                                 { VerifyMode::Relative, "RELATIVE" },
                              })
 
 void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
@@ -78,6 +79,12 @@ void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
     }
 }
 
+void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
+{
+    j.at("max").get_to(rInfo.max);
+    j.at("scale").get_to(rInfo.scale);
+}
+
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
@@ -99,6 +106,10 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);
+    }
+    if (j.contains("relative_info"))
+    {
+        j.at("relative_info").get_to(cfg.relativeInfo);
     }
 }
 

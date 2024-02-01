@@ -39,6 +39,7 @@ class ComplianceMode(IntEnum):
     FP_SPECIAL = 3
     REDUCE_PRODUCT = 4
     ABS_ERROR = 5
+    RELATIVE = 6
 
 
 class DataGenType(IntEnum):

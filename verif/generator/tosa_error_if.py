@@ -2585,9 +2585,9 @@ class TosaInvalidValidator:
     @staticmethod
     def ivWrongDataTypeOrModeResize(**kwargs):
         input_dtype = kwargs["input_dtype"]
-        args = kwargs["args"]
-        mode = args[0]
-        output_dtype = args[5]
+        args_dict = kwargs["args"]
+        mode = args_dict["mode"]
+        output_dtype = args_dict["output_dtype"]
 
         if mode == ResizeMode.BILINEAR:
             # Invalid output data type / Invalid input datatype

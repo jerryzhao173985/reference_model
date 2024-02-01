@@ -43,6 +43,9 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
         case VerifyMode::AbsError: {
             return verifyAbsError(ref, refBnd, imp, cfg.absErrorInfo);
         }
+        case VerifyMode::Relative: {
+            return verifyRelative(ref, imp, cfg.relativeInfo);
+        }
         default: {
             WARNING("[Verifier] Unsupported verification mode.");
             break;

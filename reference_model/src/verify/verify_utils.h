@@ -46,7 +46,8 @@ enum class VerifyMode
     DotProduct,
     FpSpecial,
     ReduceProduct,
-    AbsError
+    AbsError,
+    Relative
 };
 
 /// \brief ULP verification meta-data
@@ -83,6 +84,15 @@ struct AbsErrorVerifyInfo
     double lowerBound;
 };
 
+/// \brief relative verification meta-data
+struct RelativeVerifyInfo
+{
+    RelativeVerifyInfo() = default;
+
+    double max;
+    double scale;
+};
+
 /// \brief Verification meta-data
 struct VerifyConfig
 {
@@ -94,6 +104,7 @@ struct VerifyConfig
     DotProductVerifyInfo dotProductInfo;
     ReduceProductVerifyInfo reduceProductInfo;
     AbsErrorVerifyInfo absErrorInfo;
+    RelativeVerifyInfo relativeInfo;
 };
 
 /// \brief Parse the verification config for a tensor when given in JSON form

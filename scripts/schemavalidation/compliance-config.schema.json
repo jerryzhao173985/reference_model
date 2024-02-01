@@ -88,7 +88,30 @@
                             "required": [
                                 "n"
                             ]
+                        },
+                        "relative_info": {
+                            "description": "info required for the RELATIVE mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "max": {
+                                    "description": "maximum absolute input value",
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "scale": {
+                                    "description": "relative scaling factor",
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "max",
+                                "scale"
+                            ]
                         }
+
                     },
                     "additionalProperties": false,
                     "required": [
