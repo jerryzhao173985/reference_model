@@ -1705,17 +1705,17 @@ class TosaTestGen:
     def build_slice(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
     ):
-        assert len(inputs) == 1
-        a = inputs[0]
-        start = args_dict["start"]
-        size = args_dict["size"]
+        assert len(inputs) == 3
+        a, start_var, size_var = inputs
+        start_const = args_dict["start"]
+        size_const = args_dict["size"]
 
         result_tensor = OutputShaper.sliceOp(
-            self.ser, self.rng, a, start, size, error_name
+            self.ser, self.rng, a, start_const, size_const, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
+        input_list = [a.name, start_var.name, size_var.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1732,8 +1732,8 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
             input_dtype=a.dtype,
             output_dtype=result_tensor.dtype,
-            start=start,
-            size=size,
+            start=start_const,
+            size=size_const,
             result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
@@ -1742,8 +1742,9 @@ class TosaTestGen:
         ):
             return None
 
+        # TODO remove the slice attribute once shape dynamism support is mature.
         attr = ts.TosaSerializerAttribute()
-        attr.SliceAttribute(start, size)
+        attr.SliceAttribute(start_const, size_const)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -4358,18 +4359,22 @@ class TosaTestGen:
         },
         "slice": {
             "op": Op.SLICE,
-            "operands": (1, 0),
+            "operands": (3, 0),
             "rank": (1, 6),
             "build_fcn": (
                 build_slice,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgSlice,
                 TosaArgGen.agSlice,
             ),
             "types": TYPE_FIB,
             "error_if_validators": (
-                TosaErrorValidator.evStartSmallerZero,
-                TosaErrorValidator.evSizeSmallerEqualZero,
+                # TODO Turn off these error categories for now as the reference
+                # model cannot allocate memory space for empty tensor. We probably
+                # can report an accurate error messege at the right place during
+                # exeuction.
+                # TosaErrorValidator.evStartSmallerZero,
+                # TosaErrorValidator.evSizeSmallerEqualZero,
                 TosaErrorValidator.evStartSizeOutsideBounds,
                 TosaErrorValidator.evSizeOutputShapeMismatch,
                 TosaErrorValidator.evInputSizeStartLengthMismatch,

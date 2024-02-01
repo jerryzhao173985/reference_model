@@ -305,6 +305,11 @@ class TosaErrorIfArgGen:
             return newStart, newSize
         elif error_name == ErrorIf.InputSizeStartLengthMismatch:
             remove = testGen.rng.choice([True, False])
+
+            # Get an empty tensor when diminishing dimension on 1-d tensor.
+            if len(start) == 1 or len(size) == 1:
+                remove = False
+
             if remove:
                 newStart = start[1:]
                 newSize = size[1:]

@@ -1059,6 +1059,19 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
+    def tvgSlice(testGen, op, dtypeList, shapeList, argsDict, error_name=None):
+        dtypeList[1] = DType.SHAPE
+        shapeList[1] = [len(argsDict["start"])]
+        dtypeList[2] = DType.SHAPE
+        shapeList[2] = [len(argsDict["size"])]
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [None, argsDict["start"], argsDict["size"]]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, op, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
     def tvgTile(testGen, op, dtypeList, shapeList, argsDict, error_name=None):
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(argsDict["multiples"])]
