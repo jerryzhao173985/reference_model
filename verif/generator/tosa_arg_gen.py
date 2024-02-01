@@ -1304,6 +1304,22 @@ class TosaTensorValuesGen:
             testGen, opName, dtypeList, shapeList, argsDict, error_name
         )
 
+    @staticmethod
+    def tvgResize(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        data_range = TosaTensorValuesGen._get_data_range(
+            testGen,
+            dtypeList[0],
+            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
+            # Needed for compliance
+            argsDict["max_abs_value"] = data_range[1]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
     # Set the POW exponent high data range
     TVG_FLOAT_HIGH_VALUE_POW_EXP = {
         DType.FP32: 10.0,
@@ -3303,14 +3319,13 @@ class TosaArgGen:
                             border[0],
                             border[1],
                         ),
-                        [
-                            mode,
-                            scale,
-                            offset,
-                            border,
-                            dtype,
-                            outputDTypeNew,
-                        ],
+                        {
+                            "mode": mode,
+                            "scale": scale,
+                            "offset": offset,
+                            "border": border,
+                            "output_dtype": outputDTypeNew,
+                        },
                     )
                     if arg_to_append in arg_list:
                         # Skip already generated test params
@@ -3319,6 +3334,16 @@ class TosaArgGen:
                     # Valid permutation
                     perm += 1
                     arg_list.append(arg_to_append)
+
+        # Now add data generator types
+        arg_list = TosaArgGen._add_data_generators(
+            testGen,
+            opName,
+            dtype,
+            arg_list,
+            error_name,
+        )
+        # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
     @staticmethod

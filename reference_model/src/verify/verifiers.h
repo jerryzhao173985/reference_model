@@ -71,6 +71,17 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
 /// \return True if compliant else false
 bool verifyAbsError(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const AbsErrorVerifyInfo& aeInfo);
 
+/// \brief Perform relative result verification
+///
+/// \param referenceTensor    Reference tensor
+/// \param implementationTensor    Implementation resulting tensor
+/// \param rInfo Relative verification meta-data
+///
+/// \return True if compliant else false
+bool verifyRelative(const CTensor* referenceTensor,
+                    const CTensor* implementationTensor,
+                    const RelativeVerifyInfo& rInfo);
+
 };    // namespace TosaReference
 
 #endif    // VERIFIERS_H_

@@ -29,6 +29,16 @@
 
 namespace
 {
+void update_json_template(std::string& str, const std::string& find, const std::string& change)
+{
+    // Update the 'str' by looking for instances of 'find' and replacing them with 'change'
+    auto pos = str.find(find);
+    while (pos != std::string::npos)
+    {
+        str.replace(pos, find.length(), change);
+        pos = str.find(find);
+    }
+}
 
 class TosaTensor
 {
@@ -472,7 +482,7 @@ TEST_CASE("positive - abs error")
 
     SUBCASE("outside")
     {
-        // Generate some data that exceeds a specified number of ULP for each value in the tensor.
+        // Generate some data that exceeds a requirements for each value in the tensor.
         auto otherData_fp32 = data_fp32;
         std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [outsideErrBound](auto& value) {
             if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
@@ -487,6 +497,78 @@ TEST_CASE("positive - abs error")
             TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
                                       jsonCfg.c_str()));
+    }
+}
+
+TEST_CASE("positive - relative")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "RELATIVE",
+                "data_type": "FP32",
+                "relative_info": {
+                    "max": _MAXIMUM_,
+                    "scale": _SCALE_
+                }
+            }
+        }
+    })";
+
+    const auto shape        = std::vector<int32_t>{ 3, 3, 3 };
+    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+
+    // Generate some random floats using the full range of fp32.
+    auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
+    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
+
+    float scale = 0.0006;
+    float max   = 0.0;
+    std::for_each(std::begin(data_fp32), std::end(data_fp32), [&max](auto& value) {
+        if (!std::isinf(value) && !std::isnan(value))
+        {
+            max = std::max(max, std::abs(value));
+        }
+    });
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_MAXIMUM_", std::to_string(max));
+    update_json_template(jsonCfg, "_SCALE_", std::to_string(scale));
+
+    float errBound = max * scale;
+    // Use 10% error margin to test due to using v.large values in our random data
+    float insideErrBound  = errBound * 0.9;
+    float outsideErrBound = errBound * 1.1;
+
+    SUBCASE("inside")
+    {
+        // Generate some data that meets the requirements of the result.
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [insideErrBound](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value += insideErrBound;
+        });
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
+    }
+
+    SUBCASE("outside")
+    {
+        // Generate some data that exceeds the requirements for each value in the tensor.
+        auto otherData_fp32 = data_fp32;
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [outsideErrBound](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value += outsideErrBound;
+        });
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+        REQUIRE_FALSE(
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 }
 TEST_SUITE_END();    // verify
