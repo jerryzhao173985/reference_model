@@ -453,11 +453,11 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
     }
 
     in    = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    start = dynamic_cast<TosaReference::TensorTemplate<TInShape>*>(inputs[1]);
-    size  = dynamic_cast<TosaReference::TensorTemplate<TInShape>*>(inputs[2]);
+    start = dynamic_cast<TosaReference::TensorTemplate<TSlicing>*>(inputs[1]);
+    size  = dynamic_cast<TosaReference::TensorTemplate<TSlicing>*>(inputs[2]);
     out   = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    ASSERT_MEM(in && out);
+    ASSERT_MEM(in && out && start && size);
 
     return 0;
 }
@@ -465,13 +465,21 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSlice<Rank, Dtype>::eval()
 {
-    ERROR_IF(start->getElementCount() != in->getRank(), "OpSlice: start array length needs to be rank(input)");
-    ERROR_IF(size->getElementCount() != in->getRank(), "OpSlice: size array length needs to be rank(input)");
+    TSlicing start_tensor = start->getTensor();
+    TSlicing size_tensor  = size->getTensor();
+
+    // According to https://eigen.tuxfamily.org/dox/unsupported/eigen_tensors.html
+    // The type of size() is <Tensor-Type>::Index, but can always handily use it like an int.
+    // However, apply explicit cast to int32_t is preferred.
+    ERROR_IF(static_cast<int32_t>(start_tensor.size()) != in->getRank(),
+             "OpSlice: start array length needs to be rank(input)");
+    ERROR_IF(static_cast<int32_t>(size_tensor.size()) != in->getRank(),
+             "OpSlice: size array length needs to be rank(input)");
 
     for (int32_t i = 0; i < in->getRank(); i++)
     {
-        int32_t b = start->getTensor()(i);
-        int32_t s = size->getTensor()(i);
+        int32_t b = start_tensor(i);
+        int32_t s = size_tensor(i);
         ERROR_IF(b < 0 || b >= in->getShape()[i], "OpSlice: start out of boundary");
         ERROR_IF((b + s) < 0 || (b + s) > in->getShape()[i], "OpSlice: (start+size) out of boundary");
         ERROR_IF(s <= 0, "OpSlice: output must be positive");

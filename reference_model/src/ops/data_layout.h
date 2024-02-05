@@ -149,14 +149,14 @@ public:
     using InEigenShapeType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
     using OutEigenType     = typename GetEigenType<Dtype>::type;
     using TIn              = Eigen::Tensor<InEigenType, Rank>;
-    using TInShape         = Eigen::Tensor<InEigenShapeType, 1>;
+    using TSlicing         = Eigen::Tensor<InEigenShapeType, 1>;
     using TOut             = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
     Eigen::array<Eigen::Index, Rank> begin_array;
     Eigen::array<Eigen::Index, Rank> size_array;
-    TosaReference::TensorTemplate<TInShape>* start;
-    TosaReference::TensorTemplate<TInShape>* size;
+    TosaReference::TensorTemplate<TSlicing>* start;
+    TosaReference::TensorTemplate<TSlicing>* size;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
 };
