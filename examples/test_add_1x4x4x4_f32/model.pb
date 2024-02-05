@@ -92,5 +92,5 @@ node {
   }
 }
 versions {
-  producer: 1387
+  producer: 1707
 }

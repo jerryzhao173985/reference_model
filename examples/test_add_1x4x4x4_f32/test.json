@@ -1,4 +1,5 @@
 {
+  "name": "test_add_1x4x4x4_f32",
   "tf_model_filename": "model.pb",
   "tf_result_npy_filename": "tf_result.npy",
   "tf_result_name": "result",
