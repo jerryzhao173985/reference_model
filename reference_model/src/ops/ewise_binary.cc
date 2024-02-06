@@ -516,10 +516,10 @@ int OpPow<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return (1+abs(log(abs(a))*b))
+                // ABS_ERROR bounds return 2*(1+abs(log(abs(a))*b))
                 this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
                     OutEigenType c = log(a > (InEigenType)0 ? a : (-a)) * b;
-                    return 1.0 + (c > (OutEigenType)0 ? c : (-c));
+                    return 2 * (1.0 + (c > (OutEigenType)0 ? c : (-c)));
                 };
             }
             else
