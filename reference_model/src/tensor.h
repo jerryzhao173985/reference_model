@@ -863,6 +863,8 @@ public:
             case TOSA_REF_TYPE_FP32:
             case TOSA_REF_TYPE_FP16:
             case TOSA_REF_TYPE_BF16:
+            case TOSA_REF_TYPE_FP8E4M3:
+            case TOSA_REF_TYPE_FP8E5M2:
                 switch (rank)
                 {
                     case 0:

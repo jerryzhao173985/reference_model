@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -83,6 +83,18 @@ struct GetEigenType<TOSA_REF_TYPE_FP16>
 };
 template <>
 struct GetEigenType<TOSA_REF_TYPE_BF16>
+{
+    // NOTE: full precision used
+    using type = float;
+};
+template <>
+struct GetEigenType<TOSA_REF_TYPE_FP8E4M3>
+{
+    // NOTE: full precision used
+    using type = float;
+};
+template <>
+struct GetEigenType<TOSA_REF_TYPE_FP8E5M2>
 {
     // NOTE: full precision used
     using type = float;
@@ -199,6 +211,16 @@ template <>
 struct GetNumBits<TOSA_REF_TYPE_FP16>
 {
     static constexpr int32_t value = 16;
+};
+template <>
+struct GetNumBits<TOSA_REF_TYPE_FP8E4M3>
+{
+    static constexpr int32_t value = 8;
+};
+template <>
+struct GetNumBits<TOSA_REF_TYPE_FP8E5M2>
+{
+    static constexpr int32_t value = 8;
 };
 
 // Meta function to get quantized min/max in compile time

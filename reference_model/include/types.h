@@ -26,19 +26,21 @@ extern "C"
 
     enum tosa_datatype_t
     {
-        tosa_datatype_bf16_t   = 0,
-        tosa_datatype_bool_t   = 1,
-        tosa_datatype_fp16_t   = 2,
-        tosa_datatype_fp32_t   = 3,
-        tosa_datatype_int16_t  = 4,
-        tosa_datatype_int32_t  = 5,
-        tosa_datatype_int48_t  = 6,
-        tosa_datatype_int4_t   = 7,
-        tosa_datatype_int8_t   = 8,
-        tosa_datatype_uint16_t = 9,
-        tosa_datatype_uint8_t  = 10,
-        tosa_datatype_shape_t  = 11,
-        tosa_datatype_fp64_t   = 99
+        tosa_datatype_bf16_t    = 0,
+        tosa_datatype_bool_t    = 1,
+        tosa_datatype_fp16_t    = 2,
+        tosa_datatype_fp32_t    = 3,
+        tosa_datatype_int16_t   = 4,
+        tosa_datatype_int32_t   = 5,
+        tosa_datatype_int48_t   = 6,
+        tosa_datatype_int4_t    = 7,
+        tosa_datatype_int8_t    = 8,
+        tosa_datatype_uint16_t  = 9,
+        tosa_datatype_uint8_t   = 10,
+        tosa_datatype_shape_t   = 11,
+        tosa_datatype_fp8e4m3_t = 12,
+        tosa_datatype_fp8e5m2_t = 13,
+        tosa_datatype_fp64_t    = 99
     };
 
     struct tosa_tensor_t

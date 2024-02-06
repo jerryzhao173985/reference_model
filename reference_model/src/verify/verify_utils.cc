@@ -36,6 +36,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                                  { DType::DType_FP16, "FP16" },
                                  { DType::DType_BF16, "BF16" },
                                  { DType::DType_FP32, "FP32" },
+                                 { DType::DType_FP8E4M3, "FP8E4M3" },
+                                 { DType::DType_FP8E5M2, "FP8E5M2" },
                              })
 
 }    // namespace tosa
@@ -177,12 +179,13 @@ std::string positionToString(const std::vector<int32_t>& pos)
 DType mapToDType(tosa_datatype_t dataType)
 {
     static std::map<tosa_datatype_t, DType> typeMap = {
-        { tosa_datatype_bool_t, DType_BOOL },   { tosa_datatype_int4_t, DType_INT4 },
-        { tosa_datatype_int8_t, DType_INT8 },   { tosa_datatype_uint16_t, DType_UINT16 },
-        { tosa_datatype_int16_t, DType_INT16 }, { tosa_datatype_int32_t, DType_INT32 },
-        { tosa_datatype_int48_t, DType_INT48 }, { tosa_datatype_fp16_t, DType_FP16 },
-        { tosa_datatype_bf16_t, DType_BF16 },   { tosa_datatype_fp32_t, DType_FP32 },
-        { tosa_datatype_shape_t, DType_SHAPE },
+        { tosa_datatype_bool_t, DType_BOOL },       { tosa_datatype_int4_t, DType_INT4 },
+        { tosa_datatype_int8_t, DType_INT8 },       { tosa_datatype_uint16_t, DType_UINT16 },
+        { tosa_datatype_int16_t, DType_INT16 },     { tosa_datatype_int32_t, DType_INT32 },
+        { tosa_datatype_int48_t, DType_INT48 },     { tosa_datatype_fp16_t, DType_FP16 },
+        { tosa_datatype_bf16_t, DType_BF16 },       { tosa_datatype_fp32_t, DType_FP32 },
+        { tosa_datatype_shape_t, DType_SHAPE },     { tosa_datatype_fp8e4m3_t, DType_FP8E4M3 },
+        { tosa_datatype_fp8e5m2_t, DType_FP8E5M2 },
     };
 
     if (typeMap.count(dataType))

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -236,6 +236,8 @@ DEF_INSTANTIATE_ONE_TYPE(OpGather, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, BF16);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, FP32);
 DEF_INSTANTIATE_ONE_TYPE(OpGather, FP64);
+DEF_INSTANTIATE_ONE_TYPE(OpGather, FP8E4M3);
+DEF_INSTANTIATE_ONE_TYPE(OpGather, FP8E5M2);
 
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, INT8);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, INT16);
@@ -244,3 +246,5 @@ DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, BF16);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP32);
 DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP64);
+DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP8E4M3);
+DEF_INSTANTIATE_ONE_TYPE(OpScatter, FP8E5M2);

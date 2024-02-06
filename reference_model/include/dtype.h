@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ enum TOSA_REF_TYPE : uint32_t
     TOSA_REF_TYPE_FP16    = 10,
     TOSA_REF_TYPE_BF16    = 11,
     TOSA_REF_TYPE_SHAPE   = 12,
+    TOSA_REF_TYPE_FP8E4M3 = 13,
+    TOSA_REF_TYPE_FP8E5M2 = 14,
     TOSA_REF_TYPE_FP64    = 99,    // FP64 is special: add new data types above
 };
 
@@ -74,6 +76,10 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
             return EnumNameDType(DType_BF16);
         case TOSA_REF_TYPE_SHAPE:
             return EnumNameDType(DType_SHAPE);
+        case TOSA_REF_TYPE_FP8E4M3:
+            return EnumNameDType(DType_FP8E4M3);
+        case TOSA_REF_TYPE_FP8E5M2:
+            return EnumNameDType(DType_FP8E5M2);
         case TOSA_REF_TYPE_FP64:
             return "FP64";
         default:
@@ -85,7 +91,7 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
 // return corresponding TOSA_REF_TYPE for DType
 inline TOSA_REF_TYPE ConvertDType(const DType dtype)
 {
-    assert(DType_MAX == DType_SHAPE);    // must update whenever DType_MAX changes
+    assert(DType_MAX == DType_FP8E5M2);    // must update whenever DType_MAX changes
 
     if (g_func_config.precise_mode)
     {
@@ -95,6 +101,8 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
             case DType_FP16:
             case DType_FP32:
             case DType_BF16:
+            case DType_FP8E4M3:
+            case DType_FP8E5M2:
                 return TOSA_REF_TYPE_FP64;
             default:
                 break;
@@ -127,6 +135,10 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
             return TOSA_REF_TYPE_BF16;
         case DType_SHAPE:
             return TOSA_REF_TYPE_SHAPE;
+        case DType_FP8E4M3:
+            return TOSA_REF_TYPE_FP8E4M3;
+        case DType_FP8E5M2:
+            return TOSA_REF_TYPE_FP8E5M2;
         default:
             break;
     }

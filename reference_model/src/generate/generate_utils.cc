@@ -34,6 +34,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                                  { DType::DType_BF16, "BF16" },
                                  { DType::DType_FP32, "FP32" },
                                  { DType::DType_SHAPE, "SHAPE" },
+                                 { DType::DType_FP8E4M3, "FP8E4M3" },
+                                 { DType::DType_FP8E5M2, "FP8E5M2" },
                              })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Op,
@@ -225,6 +227,8 @@ size_t elementSizeFromType(DType type)
         case DType::DType_BOOL:
         case DType::DType_UINT8:
         case DType::DType_INT8:
+        case DType::DType_FP8E4M3:
+        case DType::DType_FP8E5M2:
             return 1;
         case DType::DType_UINT16:
         case DType::DType_INT16:

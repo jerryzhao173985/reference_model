@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -35,10 +35,8 @@
 #include "func_debug.h"
 #include "half.hpp"
 #include "inttypes.h"
-#include <Eigen/Core>
 #include <bitset>
 #include <cassert>
-#include <iostream>
 #include <limits>
 #include <stdint.h>
 #include <typeinfo>
@@ -244,7 +242,7 @@ float fpTrunc(float f_in)
             // No-op for fp32
             break;
         default:
-            ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-truncated.", EnumNameTOSAREFTYPE(Dtype));
+            ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-cast.", EnumNameTOSAREFTYPE(Dtype));
     }
     return f_in;
 }

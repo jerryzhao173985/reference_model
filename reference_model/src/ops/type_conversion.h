@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -266,6 +266,282 @@ public:
     using FcnType                   = std::function<OutEigenType(InEigenType)>;
     static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
     static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_FP8E4M3, OutDtype>
+{
+public:
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using OutEigenType              = typename GetEigenType<OutDtype>::type;
+    using FcnType                   = std::function<OutEigenType(InEigenType)>;
+    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
+    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP16>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_BF16>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP32>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE OutDtype>
+class CastHelper<TOSA_REF_TYPE_FP8E5M2, OutDtype>
+{
+public:
+    using InEigenType               = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using OutEigenType              = typename GetEigenType<OutDtype>::type;
+    using FcnType                   = std::function<OutEigenType(InEigenType)>;
+    static constexpr int32_t OutMin = GetQMin<OutDtype>::value;
+    static constexpr int32_t OutMax = GetQMax<OutDtype>::value;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP16>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_BF16>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP32>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_FP8E4M3>
+{
+public:
+    using InEigenType  = typename GetEigenType<InDtype>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP8E4M3>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP8E4M3>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP8E4M3>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <TOSA_REF_TYPE InDtype>
+class CastHelper<InDtype, TOSA_REF_TYPE_FP8E5M2>
+{
+public:
+    using InEigenType  = typename GetEigenType<InDtype>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP8E5M2>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP8E5M2>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_BF16>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP8E5M2>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
     {

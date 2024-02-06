@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -584,6 +584,22 @@ int SubgraphTraverser::allocateTensor(std::string name)
                 // Ensure valid bfloat16 stored in each float
                 for (auto f : fp32_data)
                     ASSERT_MSG(checkValidBFloat(f), "Float value %f not valid bfloat16", f);
+                if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
+                {
+                    std::vector<double> f64_data(fp32_data.begin(), fp32_data.end());
+                    tensor->setTensorValueDouble(f64_data.size(), f64_data.data());
+                }
+                else
+                {
+                    tensor->setTensorValueFloat(fp32_data.size(), fp32_data.data());
+                }
+            }
+            break;
+            case DType_FP8E4M3:
+            case DType_FP8E5M2: {
+                std::vector<float> fp32_data;
+                TosaSerializationHandler::ConvertU8toF32(ts->GetData(), tensor->getElementCount(), fp32_data);
+                // Ensure valid fp8 stored in each float
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data(fp32_data.begin(), fp32_data.end());

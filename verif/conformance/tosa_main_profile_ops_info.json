@@ -185,6 +185,30 @@
                         "2"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -231,6 +255,24 @@
                         "--target-shape",
                         "1,65539,2,1",
                         "--allow-pooling-and-conv-oversizes"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -313,6 +355,30 @@
                         "1,1,1,65533,1",
                         "--target-shape",
                         "2,65538,1,1"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -527,6 +593,30 @@
                         "2"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -592,6 +682,30 @@
                         "1,2,1,65529"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -645,6 +759,24 @@
                         "--max-conv-dilation",
                         "1",
                         "--allow-pooling-and-conv-oversizes"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -722,6 +854,28 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,7,18,5,4",
+                        "--target-shape",
+                        "1,6,12,17,3",
+                        "--tensor-dim-range",
+                        "1,4",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -787,6 +941,24 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -838,6 +1010,30 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -1183,6 +1379,30 @@
                         "5000,1,1"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1505,6 +1725,30 @@
                         "1,65538,3"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1549,6 +1793,24 @@
                         "--max-conv-dilation",
                         "1",
                         "--allow-pooling-and-conv-oversizes"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -1697,6 +1959,30 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65539,1"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -1889,6 +2175,30 @@
                         "2"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -1933,6 +2243,30 @@
                         "1,1,65537",
                         "--target-shape",
                         "1,65535,1,2"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -2046,6 +2380,24 @@
                         "2989,6,1"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -2089,6 +2441,30 @@
                         "65535",
                         "--target-shape",
                         "1,65543,2,1"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -2161,6 +2537,30 @@
                         "1"
                     ]
                 ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
             }
         },
         "selection": {
@@ -2212,6 +2612,30 @@
                         "1,17",
                         "--max-conv-dilation",
                         "1"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-shape",
+                        "10,24,9,13",
+                        "--target-shape",
+                        "8,14,20,5",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
@@ -3107,6 +3531,30 @@
                         "1,1,655341,1",
                         "--target-shape",
                         "1,65539,1,1",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ]
+            },
+            "float8": {
+                "from_version" : "v0.100.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
                         "--num-rand-permutations",
                         "2"
                     ]
