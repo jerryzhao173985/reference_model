@@ -823,6 +823,7 @@ class TosaTestGen:
             input_dtype=input.dtype,
             output_shape=result_tensor.shape,
             output_dtype=result_tensor.dtype,
+            accum_dtype=accum_dtype,
             kernel=kernel,
             stride=stride,
             pad=pad,
@@ -3135,6 +3136,7 @@ class TosaTestGen:
                 TosaErrorValidator.evPadLargerEqualKernel,
                 TosaErrorValidator.evPoolingOutputShapeMismatch,
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
+                TosaErrorValidator.evWrongAccumulatorType,
             ),
             "data_gen": {
                 "fp": (gtu.DataGenType.DOT_PRODUCT,),

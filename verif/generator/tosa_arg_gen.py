@@ -2379,6 +2379,9 @@ class TosaArgGen:
             # incorrect input data-type
             accum_dtypes = [DType.INT32]
 
+        if error_name == ErrorIf.WrongAccumulatorType:
+            accum_dtypes = list(gtu.usableDTypes(excludes=accum_dtypes))
+
         if not test_level8k:
             if testGen.args.oversize:
                 # add some oversize argument values
