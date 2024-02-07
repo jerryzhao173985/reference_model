@@ -15,6 +15,7 @@
 #include "generate.h"
 
 #include "generate_dot_product.h"
+#include "generate_full_range.h"
 #include "generate_pseudo_random.h"
 #include "generate_utils.h"
 
@@ -34,6 +35,10 @@ bool generate(const GenerateConfig& cfg, void* data, size_t size)
         }
         case GeneratorType::PseudoRandom: {
             return generatePseudoRandom(cfg, data, size);
+            break;
+        }
+        case GeneratorType::FullRange: {
+            return generateFullRange(cfg, data, size);
             break;
         }
         default: {

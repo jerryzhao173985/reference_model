@@ -31,9 +31,9 @@ enum class GeneratorType
     Unknown,
     PseudoRandom,
     DotProduct,
-    OpFullRange,
-    OpBoundary,
-    OpSpecial,
+    FullRange,
+    Boundary,
+    Special,
 };
 
 /// \brief Supported input types
@@ -65,6 +65,14 @@ struct PseudoRandomInfo
     bool round;
 };
 
+/// \brief Op specific generator meta-data
+struct FullRangeInfo
+{
+    FullRangeInfo() = default;
+
+    uint16_t startVal;
+};
+
 /// \brief Generator configuration
 struct GenerateConfig
 {
@@ -76,6 +84,7 @@ struct GenerateConfig
     tosa::Op opType;
     DotProductInfo dotProductInfo;
     PseudoRandomInfo pseudoRandomInfo;
+    FullRangeInfo fullRangeInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form

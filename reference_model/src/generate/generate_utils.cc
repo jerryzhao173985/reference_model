@@ -100,9 +100,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::Unknown, "UNKNOWN" },
                                  { GeneratorType::PseudoRandom, "PSEUDO_RANDOM" },
                                  { GeneratorType::DotProduct, "DOT_PRODUCT" },
-                                 { GeneratorType::OpFullRange, "OP_FULL_RANGE" },
-                                 { GeneratorType::OpBoundary, "OP_BOUNDARY" },
-                                 { GeneratorType::OpSpecial, "OP_SPECIAL" },
+                                 { GeneratorType::FullRange, "FULL_RANGE" },
+                                 { GeneratorType::Boundary, "BOUNDARY" },
+                                 { GeneratorType::Special, "SPECIAL" },
                              })
 
 // NOTE: This assumes it's VARIABLE if the InputType is not recognized
@@ -140,6 +140,14 @@ void from_json(const nlohmann::json& j, PseudoRandomInfo& pseudoRandomInfo)
     }
 }
 
+void from_json(const nlohmann::json& j, FullRangeInfo& fullRangeInfo)
+{
+    if (j.contains("start_val"))
+    {
+        j.at("start_val").get_to(fullRangeInfo.startVal);
+    }
+}
+
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)
 {
     j.at("data_type").get_to(cfg.dataType);
@@ -167,6 +175,13 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     if (j.contains("pseudo_random_info"))
     {
         j.at("pseudo_random_info").get_to(cfg.pseudoRandomInfo);
+    }
+
+    //Set up defaults for fullRangeInfo
+    cfg.fullRangeInfo.startVal = 0;
+    if (j.contains("full_range_info"))
+    {
+        j.at("full_range_info").get_to(cfg.fullRangeInfo);
     }
 }
 
