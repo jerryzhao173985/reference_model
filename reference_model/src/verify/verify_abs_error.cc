@@ -30,12 +30,17 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
 {
     const auto cfg = reinterpret_cast<const AbsErrorVerifyInfo*>(cfgPtr);
 
-    double valBound = std::abs(referenceValue) * boundsValue;
-    if (cfg->lowerBound > 0)
+    double errorBound = 0.0;
+    if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
     {
-        valBound = std::max(cfg->lowerBound, valBound);
+        double valBound = std::abs(referenceValue) * boundsValue;
+        if (cfg->lowerBound > 0)
+        {
+            valBound = std::max(cfg->lowerBound, valBound);
+        }
+        errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valBound;
     }
-    return exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valBound;
+    return errorBound;
 }
 }    // namespace
 

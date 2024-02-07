@@ -13,22 +13,23 @@ MAX_RESIZE_DIMENSION = 16384
 # Data type information dictionary
 # - str: filename abbreviation
 # - width: number of bytes needed for type
+# - fullset: precalculated number of possible values in the data type's range, equal to 2^width
 # - json: JSON type string
 DTYPE_ATTRIBUTES = {
-    DType.BOOL: {"str": "b", "width": 1, "json": "BOOL"},
-    DType.INT4: {"str": "i4", "width": 4, "json": "INT4"},
-    DType.INT8: {"str": "i8", "width": 8, "json": "INT8"},
-    DType.UINT8: {"str": "u8", "width": 8, "json": "UINT8"},
-    DType.INT16: {"str": "i16", "width": 16, "json": "INT16"},
-    DType.UINT16: {"str": "u16", "width": 16, "json": "UINT16"},
-    DType.INT32: {"str": "i32", "width": 32, "json": "INT32"},
-    DType.INT48: {"str": "i48", "width": 48, "json": "INT48"},
-    DType.SHAPE: {"str": "s", "width": 64, "json": "SHAPE"},
-    DType.FP16: {"str": "f16", "width": 16, "json": "FP16"},
-    DType.BF16: {"str": "bf16", "width": 16, "json": "BF16"},
-    DType.FP32: {"str": "f32", "width": 32, "json": "FP32"},
-    DType.FP8E4M3: {"str": "f8e4m3", "width": 8, "json": "FP8E4M3"},
-    DType.FP8E5M2: {"str": "f8e5m2", "width": 8, "json": "FP8E5M2"},
+    DType.BOOL: {"str": "b", "width": 1, "fullset": 2, "json": "BOOL"},
+    DType.INT4: {"str": "i4", "width": 4, "fullset": 16, "json": "INT4"},
+    DType.INT8: {"str": "i8", "width": 8, "fullset": 256, "json": "INT8"},
+    DType.UINT8: {"str": "u8", "width": 8, "fullset": 256, "json": "UINT8"},
+    DType.INT16: {"str": "i16", "width": 16, "fullset": 65536, "json": "INT16"},
+    DType.UINT16: {"str": "u16", "width": 16, "fullset": 65536, "json": "UINT16"},
+    DType.INT32: {"str": "i32", "width": 32, "fullset": 1 << 32, "json": "INT32"},
+    DType.INT48: {"str": "i48", "width": 48, "fullset": 1 << 48, "json": "INT48"},
+    DType.SHAPE: {"str": "s", "width": 64, "fullset": 1 << 64, "json": "SHAPE"},
+    DType.FP16: {"str": "f16", "width": 16, "fullset": 65536, "json": "FP16"},
+    DType.BF16: {"str": "bf16", "width": 16, "fullset": 65536, "json": "BF16"},
+    DType.FP32: {"str": "f32", "width": 32, "fullset": 1 << 32, "json": "FP32"},
+    DType.FP8E4M3: {"str": "f8e4m3", "width": 8, "fullset": 256, "json": "FP8E4M3"},
+    DType.FP8E5M2: {"str": "f8e5m2", "width": 8, "fullset": 256, "json": "FP8E5M2"},
 }
 
 
@@ -49,9 +50,9 @@ class DataGenType(IntEnum):
 
     PSEUDO_RANDOM = 0
     DOT_PRODUCT = 1
-    OP_BOUNDARY = 2
-    OP_FULLSET = 3
-    OP_SPECIAL = 4
+    BOUNDARY = 2
+    FULL_RANGE = 3
+    SPECIAL = 4
     FIXED_DATA = 5
 
 

@@ -365,7 +365,7 @@ class TosaTestGen:
                 if "ksb" in argsDict
                 else int(argsDict["ks"]),
             }
-        elif argsDict["dg_type"] == gtu.DataGenType.OP_SPECIAL:
+        elif argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
             mode = gtu.ComplianceMode.FP_SPECIAL
         elif "compliance" in op and "ulp" in op["compliance"]:
             mode = gtu.ComplianceMode.ULP
@@ -3959,7 +3959,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
         },
         "bitwise_not": {
@@ -3996,7 +3996,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
             "compliance": {"ulp": 0.5},
         },
@@ -4055,7 +4055,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
         },
         "floor": {
@@ -4075,7 +4075,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
             "compliance": {"ulp": 0.5},
         },
@@ -4096,7 +4096,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
             "compliance": {"ulp": 5},
         },
@@ -4137,7 +4137,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
         },
         "reciprocal": {
@@ -4157,7 +4157,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
             "compliance": {"ulp": 1.0},
         },
@@ -4178,7 +4178,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+                "fp": (gtu.DataGenType.FULL_RANGE,),
             },
             "compliance": {"ulp": 2},
         },

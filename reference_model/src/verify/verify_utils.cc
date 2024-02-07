@@ -356,21 +356,23 @@ bool validateData(const double* referenceData,
     TOSA_REF_REQUIRE(calcErrorBound != nullptr, "Missing error bound function validation");
 
     std::string warning, worstWarning;
-    double difference, worstDifference = 0.0;
-    size_t worstPosition;
-    bool compliant = true;
+    double worstDifference = 0.0;
+    // Set to invalid index
+    size_t worstIndex = T;
+    bool compliant    = true;
 
     for (size_t i = 0; i < T; ++i)
     {
-        double boundVal = (boundsData == nullptr) ? 0.0 : boundsData[i];
-        double errBound = calcErrorBound(referenceData[i], boundVal, cfgPtr);
-        bool valid      = tosaCheckFloatBound(implementationData[i], referenceData[i], errBound, difference, warning);
+        double difference = 0.0;
+        double boundVal   = (boundsData == nullptr) ? 0.0 : boundsData[i];
+        double errBound   = calcErrorBound(referenceData[i], boundVal, cfgPtr);
+        bool valid        = tosaCheckFloatBound(implementationData[i], referenceData[i], errBound, difference, warning);
         if (!valid)
         {
             compliant = false;
             if (std::isnan(difference) || std::abs(difference) > std::abs(worstDifference))
             {
-                worstPosition   = i;
+                worstIndex      = i;
                 worstDifference = difference;
                 worstWarning.assign(warning);
                 if (std::isnan(difference))
@@ -379,11 +381,18 @@ bool validateData(const double* referenceData,
                     break;
                 }
             }
+            else if (std::abs(difference) == 0.0)
+            {
+                auto pos = indexToPosition(i, shape);
+                WARNING("[Verifier][%s] Invalid error bound, no difference found. Location: %s", modeStr.c_str(),
+                        positionToString(pos).c_str());
+                return false;
+            }
         }
     }
     if (!compliant)
     {
-        auto pos = indexToPosition(worstPosition, shape);
+        auto pos = indexToPosition(worstIndex, shape);
         WARNING("[Verifier][%s] Largest deviance at location %s: %s", modeStr.c_str(), positionToString(pos).c_str(),
                 worstWarning.c_str());
     }

@@ -1556,4 +1556,57 @@ TEST_CASE("positive - FP32 rfft2d dot product (values -8, -7 & -6 from the end)"
     }
 }
 
+TEST_CASE("positive - FP16 full range")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "FULL_RANGE",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [ 48, 49, 47 ],
+                "input_pos": 0,
+                "op" : "CEIL",
+                "full_range_info": {
+                    "start_val": _START_
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName = "input0";
+    const size_t tosaElements  = 48 * 49 * 47;
+
+    SUBCASE("ceil - startVal 0")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_START_", "0");
+
+        std::vector<half_float::half> buffer(tosaElements);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
+        std::vector<uint16_t> expected = { 0, 1, 2 };
+        check_output<half_float::half>(buffer, expected);
+
+        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+        // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
+        std::vector<uint16_t> last_expected = { 45005, 45006, 45007 };
+        check_output<half_float::half>(last_three, last_expected);
+    }
+    SUBCASE("ceil - startVal 100")
+    {
+        std::string jsonCfg = templateJsonCfg;
+        update_json_template(jsonCfg, "_START_", "100");
+
+        std::vector<half_float::half> buffer(tosaElements);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
+        std::vector<uint16_t> expected = { 100, 101, 102 };
+        check_output<half_float::half>(buffer, expected);
+
+        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+        // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
+        std::vector<uint16_t> last_expected = { 45105, 45106, 45107 };
+        check_output<half_float::half>(last_three, last_expected);
+    }
+}
+
 TEST_SUITE_END();    // generate

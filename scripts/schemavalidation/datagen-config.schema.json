@@ -22,7 +22,7 @@
                     "type": "object",
                     "properties": {
                         "generator": {
-                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT or OP_SPECIFIC",
+                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT, FULL_RANGE, BOUNDARY, or SPECIAL",
                             "type": "string"
                         },
                         "data_type": {
@@ -120,33 +120,19 @@
                                 "acc_type"
                             ]
                         },
-                        "op_specific_info": {
-                            "description": "info required for the OP_SPECIFIC generator",
+                        "full_range_info": {
+                            "description": "info required for the FULL_RANGE generator",
                             "type": "object",
                             "properties":
                             {
-                                "sub_generator": {
-                                    "description": "sub generator type for this op - FULL, SPECIAL or BOUNDARY",
-                                    "type": "string"
-                                },
-                                "offset": {
-                                    "description": "starting offset within the test data",
+                                "start_val": {
+                                    "description": "starting value of the test data",
                                     "type": "integer",
                                     "minimum": 0
-                                },
-                                "attributes": {
-                                    "description": "attribute data from the op needed to compute the data",
-                                    "type": "object",
-                                    "properties": {
-                                        "TBD": {
-                                            "description": "Probably needed for RESCALE and MUL",
-                                            "type": "string"
-                                        }
-                                    }
                                 }
                             },
                             "additionalProperties": false,
-                            "required": [ "sub_generator" ]
+                            "required": [ ]
                         },
                         "fixed_data_info": {
                             "description": "info required for FIXED_DATA generator",

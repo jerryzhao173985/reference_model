@@ -31,9 +31,9 @@ enum class GeneratorType
     Unknown,
     PseudoRandom,
     DotProduct,
-    OpFullRange,
-    OpBoundary,
-    OpSpecial,
+    FullRange,
+    Boundary,
+    Special,
     FixedData,
 };
 
@@ -74,6 +74,14 @@ struct FixedDataInfo
     std::vector<int32_t> data;
 };
 
+/// \brief Op specific generator meta-data
+struct FullRangeInfo
+{
+    FullRangeInfo() = default;
+
+    uint16_t startVal;
+};
+
 /// \brief Generator configuration
 struct GenerateConfig
 {
@@ -86,6 +94,7 @@ struct GenerateConfig
     DotProductInfo dotProductInfo;
     PseudoRandomInfo pseudoRandomInfo;
     FixedDataInfo fixedDataInfo;
+    FullRangeInfo fullRangeInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form
