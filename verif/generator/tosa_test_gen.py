@@ -4150,7 +4150,6 @@ class TosaTestGen:
         "reduce_all": {
             "op": Op.REDUCE_ALL,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
@@ -4172,7 +4171,6 @@ class TosaTestGen:
         "reduce_any": {
             "op": Op.REDUCE_ANY,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
@@ -4194,7 +4192,6 @@ class TosaTestGen:
         "reduce_max": {
             "op": Op.REDUCE_MAX,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
@@ -4219,7 +4216,6 @@ class TosaTestGen:
         "reduce_min": {
             "op": Op.REDUCE_MIN,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
@@ -4244,7 +4240,6 @@ class TosaTestGen:
         "reduce_product": {
             "op": Op.REDUCE_PRODUCT,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,
@@ -4269,7 +4264,6 @@ class TosaTestGen:
         "reduce_sum": {
             "op": Op.REDUCE_SUM,
             "operands": (1, 0),
-            "rank": (1, 4),
             "build_fcn": (
                 build_reduce,
                 TosaTensorGen.tgBasic,

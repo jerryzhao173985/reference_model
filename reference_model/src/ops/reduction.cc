@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ ReduceNode<Rank, Dtype>::ReduceNode(SubgraphTraverser* sgt_, const Op& op_, Tosa
     : GraphNode(sgt_, op_, id_)
 {
     setRequiredOperands(1, 1);
-    setRequiredRank(1, 4);
+    setRequiredRank(1);
 
     INIT_ATTRIBUTE(Axis);
 }
@@ -40,6 +40,10 @@ ReduceNode<Rank, Dtype>::~ReduceNode()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int ReduceNode<Rank, Dtype>::checkTensorAttributes()
 {
+    // Check Tosa Level
+    auto tosa_level = g_func_config.tosa_level;
+    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
+
     if (validateRequiredOperands())
         return 1;
 

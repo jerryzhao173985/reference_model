@@ -2732,7 +2732,15 @@
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
-                        "1,32"
+                        "1,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2741,6 +2749,22 @@
                         "65530,1,1,1",
                         "--target-shape",
                         "2,65538,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "from_version": "v0.80.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -2769,7 +2793,15 @@
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
-                        "1,32"
+                        "1,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2778,6 +2810,22 @@
                         "65530,1,1,1",
                         "--target-shape",
                         "2,65538,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "from_version": "v0.80.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "1,9",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -2810,7 +2858,15 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "1,32"
+                        "1,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2819,6 +2875,26 @@
                         "65530,1,1,1",
                         "--target-shape",
                         "2,65538,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "from_version": "v0.80.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,11",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -2851,7 +2927,15 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "1,24"
+                        "1,24",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2860,6 +2944,26 @@
                         "1,1,65538,1",
                         "--target-shape",
                         "2,65535,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "from_version": "v0.80.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "--target-dtype",
+                        "int16",
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "2,10",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -2888,7 +2992,15 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "1,32"
+                        "1,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2897,6 +3009,22 @@
                         "3,65532,1,1",
                         "--target-shape",
                         "65536,1,1,2"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "from_version": "v0.80.0",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,12",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
