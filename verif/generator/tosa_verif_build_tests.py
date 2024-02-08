@@ -321,7 +321,7 @@ def main(argv=None):
 
         testStrings = []
         try:
-            for opName, testStr, dtype, error, shapeList, testArgs in testList:
+            for opName, testStr, dtype, error, shapeList, argsDict in testList:
                 # Check for and skip duplicate tests
                 if testStr in testStrings:
                     print(f"Skipping duplicate test: {testStr}")
@@ -331,7 +331,7 @@ def main(argv=None):
 
                 results.append(
                     ttg.serializeTest(
-                        opName, testStr, dtype, error, shapeList, testArgs
+                        opName, testStr, dtype, error, shapeList, argsDict
                     )
                 )
         except Exception as e:

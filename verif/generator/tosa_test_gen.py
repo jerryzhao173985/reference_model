@@ -514,15 +514,18 @@ class TosaTestGen:
         return result_tens
 
     def build_arithmetic_right_shift(
-        self, op, a, b, round, validator_fcns=None, error_name=None
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
     ):
-        result_tens = OutputShaper.binaryBroadcastOp(
+        assert len(inputs) == 2
+        a, b = inputs
+        round = args_dict["round"]
+        result_tensor = OutputShaper.binaryBroadcastOp(
             self.ser, self.rng, a, b, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, b.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -537,8 +540,8 @@ class TosaTestGen:
             input1=a,
             input2=b,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -549,7 +552,12 @@ class TosaTestGen:
         attr.ArithmeticRightShiftAttribute(round)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_mul(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -607,15 +615,20 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_table(self, op, a, table, validator_fcns=None, error_name=None):
-        result_tens = OutputShaper.tableOp(self.ser, self.rng, a, error_name)
+    def build_table(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        a = inputs[0]
+        table = args_dict["table"]
+        result_tensor = OutputShaper.tableOp(self.ser, self.rng, a, error_name)
 
         attr = ts.TosaSerializerAttribute()
         attr.TableAttribute(table)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -629,8 +642,8 @@ class TosaTestGen:
             op=op,
             input_shape=a.shape,
             input_dtype=a.dtype,
-            output_dtype=result_tens.dtype,
-            result_tensors=[result_tens],
+            output_dtype=result_tensor.dtype,
+            result_tensors=[result_tensor],
             input_list=input_list,
             output_list=output_list,
             num_operands=num_operands,
@@ -639,7 +652,11 @@ class TosaTestGen:
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_select(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
@@ -2068,15 +2085,20 @@ class TosaTestGen:
     def build_rescale(
         self,
         op,
-        val,
-        out_dtype,
-        scale32,
-        double_round,
-        per_channel,
-        validator_fcns,
-        error_name,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
-        result_tens = OutputShaper.typeConversionOp(
+        assert len(inputs) == 1
+        val = inputs[0]
+        out_dtype = args_dict["output_dtype"]
+        scale32 = args_dict["scale"]
+        double_round = args_dict["double_round"]
+        per_channel = args_dict["per_channel"]
+
+        result_tensor = OutputShaper.typeConversionOp(
             self.ser, self.rng, val, out_dtype, error_name
         )
 
@@ -2196,7 +2218,7 @@ class TosaTestGen:
 
         # Invalidate Input/Output list for error if checks.
         input_list = [val.name]
-        output_list = [result_tens.name]
+        output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -2217,7 +2239,7 @@ class TosaTestGen:
             double_round=double_round,
             input_list=input_list,
             output_list=output_list,
-            result_tensors=[result_tens],
+            result_tensors=[result_tensor],
             num_operands=num_operands,
         ):
             return None
@@ -2236,7 +2258,12 @@ class TosaTestGen:
         )
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return result_tens
+
+        compliance = self.tensorComplianceMetaData(
+            op, val.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def _get_condition_tensor(self, op, cond, error_name):
         if error_name == ErrorIf.CondIfCondNotMatchingBool:
@@ -2256,17 +2283,29 @@ class TosaTestGen:
         return cond_tens
 
     def build_cond_if_const(
-        self, op, then_tens, else_tens, cond, validator_fcns=None, error_name=None
+        self,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         # For cond_if with constants, we're supplied with then/else tensors that we ignore
         # (except for the generated shape) and the condition.  Build Then/Else blocks
         # and fill them with const nodes for the body.
+        assert len(inputs) == 2
+        then_tens, else_tens = inputs
+
+        cond = args_dict["condition"]
 
         # Condition tensor
         cond_tens = self._get_condition_tensor(op, cond, error_name)
 
         # Make then/else tensors
         out_shape = then_tens.shape
+
+        dtype = DType.INT32
 
         # Create an incorrect output shape for error_if tests
         if error_name in [
@@ -2286,7 +2325,7 @@ class TosaTestGen:
         else_arr = np.int32(self.rng.integers(0, 256, size=out_shape))
 
         # And the result tensor based on any of the outputs
-        result_tens = self.ser.addOutput(out_shape, DType.INT32)
+        result_tensor = self.ser.addOutput(out_shape, dtype)
 
         # Create the attribute with the names of the then/else blocks
         then_block = "THEN_BLOCK"
@@ -2295,21 +2334,21 @@ class TosaTestGen:
         attr.CondIfAttribute(then_block, else_block)
 
         # Finally, build the op and the two blocks
-        self.ser.addOperator(op["op"], [cond_tens.name], [result_tens.name], attr)
+        self.ser.addOperator(op["op"], [cond_tens.name], [result_tensor.name], attr)
 
         self.ser.addBasicBlock(then_block)
         # Build the actual then/else tensors inside their blocks
         if error_name == ErrorIf.CondIfOutputListThenGraphMismatch:
-            then_tens = self.ser.addConst(incorrect_shape, DType.INT32, incorrect_arr)
+            then_tens = self.ser.addConst(incorrect_shape, dtype, incorrect_arr)
         else:
-            then_tens = self.ser.addConst(out_shape, DType.INT32, then_arr)
+            then_tens = self.ser.addConst(out_shape, dtype, then_arr)
         self.ser.addOutputTensor(then_tens)
 
         self.ser.addBasicBlock(else_block)
         if error_name == ErrorIf.CondIfOutputListElseGraphMismatch:
-            else_tens = self.ser.addConst(incorrect_shape, DType.INT32, incorrect_arr)
+            else_tens = self.ser.addConst(incorrect_shape, dtype, incorrect_arr)
         else:
-            else_tens = self.ser.addConst(out_shape, DType.INT32, else_arr)
+            else_tens = self.ser.addConst(out_shape, dtype, else_arr)
         self.ser.addOutputTensor(else_tens)
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2322,18 +2361,32 @@ class TosaTestGen:
         ):
             return None
 
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            op, dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_cond_if_binary(
-        self, op, a, b, cond, validator_fcns=None, error_name=None
+        self,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
     ):
         # For cond_if with a binary op in the then/else blocks, take a and b and
         # alternately add or subtract them based on the condition
+        assert len(inputs) == 2
+        a, b = inputs
+
+        cond = args_dict["condition"]
 
         # Condition tensor
         cond_tens = self._get_condition_tensor(op, cond, error_name)
 
-        result_tens = self.ser.addOutput(a.shape, a.dtype)
+        result_tensor = self.ser.addOutput(a.shape, a.dtype)
 
         # Create the attribute with the names of the then/else blocks
         then_block = "THEN_BLOCK"
@@ -2355,17 +2408,24 @@ class TosaTestGen:
 
         # Finally, build the op and the two blocks
         self.ser.addOperator(
-            op["op"], [cond_tens.name, a.name, b.name], [result_tens.name], attr
+            op["op"], [cond_tens.name, a.name, b.name], [result_tensor.name], attr
         )
 
         if a.dtype in (DType.FP32, DType.BF16, DType.FP16, DType.INT32):
-            then_op, else_op = Op.ADD, Op.SUB
+            then_op, else_op = self.TOSA_OP_LIST["add"], self.TOSA_OP_LIST["sub"]
         elif a.dtype in (DType.INT8, DType.INT16):
-            then_op, else_op = Op.LOGICAL_RIGHT_SHIFT, Op.LOGICAL_LEFT_SHIFT
+            then_op, else_op = (
+                self.TOSA_OP_LIST["logical_right_shift"],
+                self.TOSA_OP_LIST["logical_left_shift"],
+            )
         else:
             assert False, f"No tests for DType: {a.dtype}"
 
-        for block, op in ((then_block, then_op), (else_block, else_op)):
+        # Determine the element-wise binary operation that compliance will need to
+        # check the results of
+        compliance_op = then_op if cond else else_op
+
+        for block, block_op in ((then_block, then_op), (else_block, else_op)):
             self.ser.addBasicBlock(block)
             if (
                 error_name == ErrorIf.CondIfInputListThenGraphMismatch
@@ -2391,7 +2451,7 @@ class TosaTestGen:
                 self.ser.addInputTensor(a)
                 self.ser.addInputTensor(b)
                 tens = self.ser.addOutput(a.shape, a.dtype)
-            self.ser.addOperator(op, [a.name, b.name], [tens.name])
+            self.ser.addOperator(block_op["op"], [a.name, b.name], [tens.name])
 
         if not TosaErrorValidator.evValidateErrorIfs(
             self.ser,
@@ -2405,9 +2465,19 @@ class TosaTestGen:
         ):
             return None
 
-        return result_tens
+        compliance = self.tensorComplianceMetaData(
+            compliance_op, a.dtype, args_dict, result_tensor, error_name
+        )
 
-    def build_while_loop(self, op, a, iter_val, validator_fcns=None, error_name=None):
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
+
+    def build_while_loop(
+        self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
+    ):
+        assert len(inputs) == 1
+        a = inputs[0]
+        iter_val = args_dict["iterations"]
+
         iter = self.ser.addPlaceholder([], DType.INT32, [np.int32(iter_val)])
 
         cond_block = "COND_BLOCK"
@@ -2526,7 +2596,11 @@ class TosaTestGen:
         ):
             return None
 
-        return acc_out
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, acc_out, error_name
+        )
+
+        return TosaTestGen.BuildInfo(acc_out, compliance)
 
     def build_fft2d(
         self,
@@ -2838,7 +2912,7 @@ class TosaTestGen:
         return testList
 
     def serializeTest(
-        self, opName, testStr, dtype_or_dtypeList, error_name, shapeList, testArgs
+        self, opName, testStr, dtype_or_dtypeList, error_name, shapeList, argsDict
     ):
         try:
             op = self.TOSA_OP_LIST[opName]
@@ -2894,60 +2968,27 @@ class TosaTestGen:
         # Extra meta data for the desc.json
         tensMeta = {}
 
-        # Check we are using the new testArgs interface with an argsDict dictionary
-        if isinstance(testArgs, dict):
-            # New interface with args info in dictionary
-            argsDict = testArgs
-            assert "dg_type" in argsDict
-            tvgInfo = tvgen_fcn(
-                self, opName, dtypeList, shapeList, argsDict, error_name
-            )
-            if tvgInfo.dataGenDict:
-                tensMeta["data_gen"] = tvgInfo.dataGenDict
-            tens = tvgInfo.tensorList
+        # Check we are using the new interface with an argsDict dictionary
+        assert isinstance(
+            argsDict, dict
+        ), f"{opName} is not using new tvg/build_fcn interface"
 
-            result = build_fcn(
-                self,
-                op,
-                tens,
-                argsDict,
-                validator_fcns=error_if_validators,
-                error_name=error_name,
-                qinfo=qinfo,
-            )
-        else:
-            # Old interface with args info in a list
-            tens = tvgen_fcn(self, op, dtypeList, shapeList, testArgs, error_name)
+        # New interface with args info in dictionary
+        assert "dg_type" in argsDict
+        tvgInfo = tvgen_fcn(self, opName, dtypeList, shapeList, argsDict, error_name)
+        if tvgInfo.dataGenDict:
+            tensMeta["data_gen"] = tvgInfo.dataGenDict
+        tens = tvgInfo.tensorList
 
-            try:
-                if error_if_validators is None:
-                    if qinfo is not None:
-                        result = build_fcn(self, op, *tens, *testArgs, qinfo)
-                    else:
-                        result = build_fcn(self, op, *tens, *testArgs)
-                else:
-                    if qinfo is not None:
-                        result = build_fcn(
-                            self,
-                            op,
-                            *tens,
-                            *testArgs,
-                            validator_fcns=error_if_validators,
-                            error_name=error_name,
-                            qinfo=qinfo,
-                        )
-                    else:
-                        result = build_fcn(
-                            self,
-                            op,
-                            *tens,
-                            *testArgs,
-                            validator_fcns=error_if_validators,
-                            error_name=error_name,
-                        )
-            except TypeError as e:
-                print(f"build_fcn: {build_fcn}\nTensors: {tens}\nArgs: {testArgs}\n")
-                raise e
+        result = build_fcn(
+            self,
+            op,
+            tens,
+            argsDict,
+            validator_fcns=error_if_validators,
+            error_name=error_name,
+            qinfo=qinfo,
+        )
 
         if result:
             # The test is valid, serialize it
@@ -3821,7 +3862,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_table,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agTable,
             ),
             "types": [DType.INT8, DType.INT16],
@@ -4631,7 +4672,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_rescale,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgDefault,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agRescale,
             ),
             "types": [
