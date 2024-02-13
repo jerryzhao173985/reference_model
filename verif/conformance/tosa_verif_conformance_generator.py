@@ -70,9 +70,12 @@ class GenConformanceError(Exception):
 def _run_sh_command(args, cwd, full_cmd):
     """Run an external command and capture stdout/stderr."""
     # Quote the command line for printing
-    full_cmd_esc = [shlex.quote(x) for x in full_cmd]
+    try:
+        full_cmd_esc = [shlex.quote(x) for x in full_cmd]
+    except Exception as e:
+        raise Exception(f"Error quoting command: {e}")
     if args.capture_output:
-        logger.debug(f"Command: {full_cmd_esc}")
+        logger.info(f"Command: {full_cmd_esc}")
 
     rc = subprocess.run(
         full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
@@ -80,7 +83,7 @@ def _run_sh_command(args, cwd, full_cmd):
 
     if args.capture_output:
         stdout = rc.stdout.decode("utf-8")
-        logger.debug(f"stdout: \n{stdout}")
+        logger.info(f"stdout: \n{stdout}")
     if rc.returncode != 0:
 
         raise Exception(
@@ -101,6 +104,7 @@ def build_op_tests(
     gen_neg_dim_range,
     supports=[],
     gen_filter=None,
+    selector_info=None,
 ):
     """Build tests for a given operator.
 
@@ -126,8 +130,30 @@ def build_op_tests(
         str(args.random_seed),
     ]
 
+    if args.verbosity:
+        build_cmd_base.append("-" + ("v" * args.verbosity))
+
+    if args.tests_list_file is not None:
+        build_cmd_base.append("--list-tests")
+
     if "lazy_data_gen" in supports and args.lazy_data_generation:
         build_cmd_base.append("--lazy-data-generation")
+
+    if "generator_select" in supports:
+        if selector_info is None:
+            logger.error(
+                "build_op_tests error: generator_select mode without selector information"
+            )
+            raise (GenConformanceError())
+        selector_config, selector_name = selector_info
+        build_cmd_base.extend(
+            [
+                "--test-selection-config",
+                str(selector_config),
+                "--test-selection-criteria",
+                selector_name,
+            ]
+        )
 
     build_cmds_list = []
 
@@ -159,14 +185,19 @@ def build_op_tests(
         build_cmd_neg_test.extend(target_dtypes_args)
         build_cmds_list.append(build_cmd_neg_test)
 
-    logger.debug(f"Creating {operator} tests with {len(build_cmds_list)} parameter(s)")
+    logger.info(f"Creating {operator} tests in {len(build_cmds_list)} batch(es)")
     error = False
     for i, cmd in enumerate(build_cmds_list):
         try:
-            _run_sh_command(args, args.ref_model_path.parent, cmd)
+            raw_stdout, _ = _run_sh_command(args, args.ref_model_path.parent, cmd)
             logger.info(
                 f"{operator} test batch {(i+1)}/{len(build_cmds_list)} created successfully"
             )
+
+            if args.tests_list_file is not None:
+                with args.tests_list_file.open("a") as fd:
+                    fd.write(raw_stdout.decode("utf-8"))
+
         except Exception as e:
             logger.error(
                 f"{operator} test batch {(i+1)}/{len(build_cmds_list)} unsuccessful, skipping"
@@ -179,20 +210,20 @@ def build_op_tests(
     return op_build_dir
 
 
-def _check_to_include_test(profile, test_name, exclude_negative_tests=False):
-    """Check test name for exclusions, return False to indicate excluded."""
-    excludes = ["ERRORIF"] if exclude_negative_tests else []
+def _check_to_include_test(test_type, test_name):
+    """Check test name for inclusion based on test_type, returns True to include."""
 
-    for exclusion in excludes:
-        if f"_{exclusion}_" in test_name:
-            return False
-    return True
+    if test_type == "both":
+        return True
+    else:
+        error_test = "_ERRORIF_" in test_name
+        return (error_test and test_type == "negative") or (
+            not error_test and test_type == "positive"
+        )
 
 
-def _get_all_tests_list(
-    profile, test_root_dir, operator, exclude_negative_tests=False, include_all=False
-):
-    """Create test list based on tests in the test_dir."""
+def _get_all_tests_list(test_type, test_root_dir, operator):
+    """Create test list from tests in the test_dir based on chosen type."""
     test_dir = test_root_dir / operator
     if not test_dir.is_dir():
         # Tests are split into multiple dirs, for example: conv2d_1x1, conv2d_3x3
@@ -209,8 +240,7 @@ def _get_all_tests_list(
             [
                 test
                 for test in tdir.glob("*")
-                if include_all
-                or _check_to_include_test(profile, test.name, exclude_negative_tests)
+                if _check_to_include_test(test_type, test.name)
             ]
         )
     return tests
@@ -240,22 +270,25 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
 
     if not tests:
         # Do not need to run ERRORIF tests as they don't have result files
-        tests = _get_all_tests_list(
-            profile, op_build_dir, operator, exclude_negative_tests=True
-        )
+        tests = _get_all_tests_list("positive", op_build_dir, operator)
 
+    skipped = 0
     for test in tests:
         desc = test / "desc.json"
         with desc.open("r") as fd:
             test_desc = json.load(fd)
         if "meta" in test_desc and "compliance" in test_desc["meta"]:
-            logger.info(
+            skipped += 1
+            logger.debug(
                 f"Skipping generating results for new compliance test - {str(test)}"
             )
             continue
         ref_cmd = ref_cmd_base.copy()
         ref_cmd.append(str(test.absolute()))
         ref_cmds.append(ref_cmd)
+
+    if skipped:
+        logger.info(f"{skipped} new compliance tests skipped for results generation")
 
     fail_string = "UNEXPECTED_FAILURE"
     failed_counter = 0
@@ -272,7 +305,7 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
             logger.error(f"Test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} failed.")
             failed_counter += 1
         else:
-            logger.info(f"Test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} passed.")
+            logger.debug(f"Test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} passed.")
 
     logger.info(f"{len(ref_cmds)-failed_counter}/{len(ref_cmds)} tests passed")
     logger.info("Ran tests on model and saved results of passing tests")
@@ -280,6 +313,7 @@ def generate_results(args, profile, operator, op_build_dir, supports=[], tests=N
 
 def convert_tests(
     args,
+    test_type,
     profile,
     operator,
     op_build_dir,
@@ -315,13 +349,13 @@ def convert_tests(
     c2c_args_list = []
 
     if not tests:
-        tests = _get_all_tests_list(profile, op_build_dir, operator)
-        logger.info(f"Converting all {profile} profile tests")
+        tests = _get_all_tests_list(test_type, op_build_dir, operator)
+        logger.info(f"Converting all {profile} profile tests of type {test_type}")
 
     # Controls if we copy the tests in their operator sub-directory or not
     output_dir_relative_pos = -1 if trim_op_subdir else -2
     for test in tests:
-        logger.info(f"Test chosen: {test}")
+        logger.debug(f"Test chosen: {test}")
         c2c_args = c2c_args_base.copy()
         full_output_directory = output_dir / test.relative_to(
             *test.parts[:output_dir_relative_pos]
@@ -350,7 +384,7 @@ def convert_tests(
             )
             failed_counter += 1
         else:
-            logger.info(
+            logger.debug(
                 f"test {i+1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} converted"
             )
     logger.info(
@@ -394,7 +428,8 @@ def check_op_tests(args, profile, operator, output_dir):
     """Move test folders than contain files larger than 30MB to new directory."""
     destination_dir = str(args.output_dir) + "_large_files"
 
-    tests = _get_all_tests_list(profile, output_dir, operator, include_all=True)
+    # Include all tests - both positive and negative
+    tests = _get_all_tests_list("both", output_dir, operator)
     if not tests:
         logger.error(
             f"Couldn't find any tests to size check for {operator} in {output_dir}"
@@ -617,6 +652,12 @@ def parse_args(argv=None):
         help="Converts all tests instead of those picked by test_select",
     )
     parser.add_argument(
+        "--list-tests-to-file",
+        dest="tests_list_file",
+        type=Path,
+        help="Lists out the tests to be generated to a file instead of generating them",
+    )
+    parser.add_argument(
         "--keep-large-files",
         action="store_true",
         help="Keeps tests that contain files larger than 30MB in output directory",
@@ -641,6 +682,66 @@ def parse_args(argv=None):
         help="Verbosity (can be used multiple times for more details)",
     )
     args = parser.parse_args(argv)
+
+    if args.ref_model_dir is not None:
+        # Assume the ref model exe path based on the ref model directory
+        args.ref_model_path = cmf.find_tosa_file(
+            cmf.TosaFileType.REF_MODEL, args.ref_model_dir, False
+        )
+    if not args.ref_model_path.is_file():
+        logger.error(
+            f"Missing reference model binary (--ref-model-path): {args.ref_model_path}"
+        )
+        return None
+    args.ref_model_path = args.ref_model_path.absolute()
+
+    if args.generate_lib_path is None:
+        args.generate_lib_path = cmf.find_tosa_file(
+            cmf.TosaFileType.GENERATE_LIBRARY, args.ref_model_path
+        )
+    if not args.generate_lib_path.is_file():
+        logger.error(
+            f"Missing TOSA generate data library (--generate-lib-path): {args.generate_lib_path}"
+        )
+        return None
+    args.generate_lib_path = args.generate_lib_path.absolute()
+
+    if args.schema_path is None:
+        args.schema_path = cmf.find_tosa_file(
+            cmf.TosaFileType.SCHEMA, args.ref_model_path
+        )
+    if not args.schema_path.is_file():
+        logger.error(
+            f"Missing reference model schema (--schema-path): {args.schema_path}"
+        )
+        return None
+    args.schema_path = args.schema_path.absolute()
+
+    if args.flatc_path is None:
+        args.flatc_path = cmf.find_tosa_file(
+            cmf.TosaFileType.FLATC, args.ref_model_path
+        )
+    if not args.flatc_path.is_file():
+        logger.error(f"Missing flatc binary (--flatc-path): {args.flatc_path}")
+        return None
+    args.flatc_path = args.flatc_path.absolute()
+
+    args.param_json_dir = args.param_json_dir.absolute()
+
+    if args.unit_tests in ["framework", "both"]:
+        logger.warning(
+            "DEPRECATION - Framework tests are not part of TOSA conformance testing"
+        )
+        if not args.framework_schema:
+            logger.error(
+                "Need to supply location of Framework flatbuffers schema via --framework-schema"
+            )
+            return None
+        if not args.framework_tests_dir.is_dir():
+            logger.error(
+                f"Missing or invalid framework tests directory: {args.framework_tests_dir}"
+            )
+            return None
 
     return args
 
@@ -678,71 +779,22 @@ def in_version(test_version, gen_dict):
         return True
 
 
+def _get_log_level(verbosity):
+    loglevels = (logging.WARNING, logging.INFO, logging.DEBUG)
+    verbosity = max(verbosity, 0)
+    return loglevels[min(verbosity, len(loglevels) - 1)]
+
+
 def main():
     args = parse_args()
-
-    if args.ref_model_dir is not None:
-        # Assume the ref model exe path based on the ref model directory
-        args.ref_model_path = cmf.find_tosa_file(
-            cmf.TosaFileType.REF_MODEL, args.ref_model_dir, False
-        )
-    if not args.ref_model_path.is_file():
-        logger.error(
-            f"Missing reference model binary (--ref-model-path): {args.ref_model_path}"
-        )
+    if args is None:
+        # Argument processing error
         return 2
-    args.ref_model_path = args.ref_model_path.absolute()
 
-    if args.generate_lib_path is None:
-        args.generate_lib_path = cmf.find_tosa_file(
-            cmf.TosaFileType.GENERATE_LIBRARY, args.ref_model_path
-        )
-    if not args.generate_lib_path.is_file():
-        logger.error(
-            f"Missing TOSA generate data library (--generate-lib-path): {args.generate_lib_path}"
-        )
-        return 2
-    args.generate_lib_path = args.generate_lib_path.absolute()
-
-    if args.schema_path is None:
-        args.schema_path = cmf.find_tosa_file(
-            cmf.TosaFileType.SCHEMA, args.ref_model_path
-        )
-    if not args.schema_path.is_file():
-        logger.error(
-            f"Missing reference model schema (--schema-path): {args.schema_path}"
-        )
-        return 2
-    args.schema_path = args.schema_path.absolute()
-
-    if args.flatc_path is None:
-        args.flatc_path = cmf.find_tosa_file(
-            cmf.TosaFileType.FLATC, args.ref_model_path
-        )
-    if not args.flatc_path.is_file():
-        logger.error(f"Missing flatc binary (--flatc-path): {args.flatc_path}")
-        return 2
-    args.flatc_path = args.flatc_path.absolute()
-
-    if args.unit_tests in ["framework", "both"]:
-        logger.warning(
-            "DEPRECATION - Framework tests are not part of TOSA conformance testing"
-        )
-        if not args.framework_schema:
-            logger.error(
-                "Need to supply location of Framework flatbuffers schema via --framework-schema"
-            )
-            return 2
-        if not args.framework_tests_dir.is_dir():
-            logger.error(
-                f"Missing or invalid framework tests directory: {args.framework_tests_dir}"
-            )
-            return 2
-
-    loglevels = (logging.WARNING, logging.INFO, logging.DEBUG)
-    loglevel = loglevels[min(args.verbosity, len(loglevels) - 1)]
+    loglevel = _get_log_level(args.verbosity)
     logger.setLevel(loglevel)
-    # Set other loggers the same
+    # Set other loggers to a quieter level
+    loglevel = _get_log_level(args.verbosity - 1)
     logging.getLogger("test_select").setLevel(loglevel)
     logging.getLogger("convert2conformance").setLevel(loglevel)
 
@@ -756,6 +808,11 @@ def main():
     args.build_dir = args.build_dir.resolve()
     logger.debug(f"Creating build directory: {args.build_dir}")
     args.build_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.tests_list_file is not None:
+        # Try creating tests list file
+        with args.tests_list_file.open("w") as fd:
+            fd.write("")
 
     # TODO: For tosa-mi should really generate tosa-bi profile as well
     # - for now leave it as subset instead of as superset (for testing)
@@ -822,6 +879,7 @@ def main():
                         )
                     convert_tests(
                         args,
+                        "positive",
                         profile,
                         op,
                         framework_test_dir,
@@ -846,6 +904,7 @@ def main():
                         f"Couldn't load operator test params - {test_params_file}: {e}"
                     )
                     return 1
+                logger.debug(f"Using config file: {str(test_params_file)}")
 
                 operators = args.operators
                 if not operators:
@@ -913,23 +972,6 @@ def main():
                             else None
                         )
 
-                        ignore_missing = gen_name != STANDARD_GENERATOR_GROUP
-                        tags = (
-                            [gen_name] if gen_name != STANDARD_GENERATOR_GROUP else None
-                        )
-
-                        op_build_dir = build_op_tests(
-                            args,
-                            test_type,
-                            profile,
-                            op,
-                            gen_name,
-                            gen_dict["generator_args"],
-                            gen_neg_dim_range,
-                            supports=supports,
-                            gen_filter=gen_filter,
-                        )
-
                         # Work out which selection criteria we are using
                         if "selector" in gen_dict:
                             selector_name = gen_dict["selector"]
@@ -946,19 +988,38 @@ def main():
                             )
                             raise (GenConformanceError())
 
-                        # Selection criteria
-                        selection_config = test_params[op]["selection"][selector_name]
+                        op_build_dir = build_op_tests(
+                            args,
+                            test_type,
+                            profile,
+                            op,
+                            gen_name,
+                            gen_dict["generator_args"],
+                            gen_neg_dim_range,
+                            supports=supports,
+                            gen_filter=gen_filter,
+                            selector_info=(test_params_file, selector_name),
+                        )
 
-                        if args.convert_all_tests:
-                            logger.debug(f"Running and converting all {op} tests")
-                            generate_results(
-                                args, profile, op, op_build_dir, supports=supports
-                            )
+                        if args.tests_list_file is not None:
+                            logger.info("Tests list file extended")
+                            continue
+
+                        if args.convert_all_tests or "generator_select" in supports:
+                            if test_type in ["positive", "both"]:
+                                logger.info(f"Running and converting all {op} tests")
+                                generate_results(
+                                    args, profile, op, op_build_dir, supports=supports
+                                )
                             operator_test_list = None
                         else:
-                            logger.debug(
+                            logger.info(
                                 f"Running and converting selection of {op} tests"
                             )
+                            # Selection criteria
+                            selection_config = test_params[op]["selection"][
+                                selector_name
+                            ]
                             if test_type in ["positive", "both"]:
                                 if (
                                     "all" in selection_config
@@ -967,13 +1028,16 @@ def main():
                                     # Just get all the positive tests
                                     tests_gen, tests_gen2 = tee(
                                         _get_all_tests_list(
-                                            profile,
+                                            "positive",
                                             op_build_dir,
                                             op,
-                                            exclude_negative_tests=True,
                                         )
                                     )
                                 else:
+                                    ignore_missing = (
+                                        gen_name != STANDARD_GENERATOR_GROUP
+                                    )
+
                                     # Get a selection of positive tests
                                     tests_gen, tests_gen2 = tee(
                                         get_op_tests_selection(
@@ -1007,8 +1071,14 @@ def main():
                                         negative=True,
                                     )
                                 )
+
+                        tags = (
+                            [gen_name] if gen_name != STANDARD_GENERATOR_GROUP else None
+                        )
+
                         output_dir = convert_tests(
                             args,
+                            test_type,
                             profile,
                             op,
                             op_build_dir,

@@ -1,5 +1,6 @@
 # Copyright (c) 2021-2023, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
+import logging
 import math
 
 import numpy as np
@@ -10,6 +11,9 @@ from generator.tosa_utils import valueToName
 from tosa.DType import DType
 from tosa.Op import Op
 from tosa.ResizeMode import ResizeMode
+
+logging.basicConfig()
+logger = logging.getLogger("tosa_verif_build_tests")
 
 
 class ErrorIf(object):
@@ -361,12 +365,12 @@ class TosaErrorValidator:
             if expected_result and error_result:
                 serializer.setExpectedReturnCode(2, True, desc=error_reason)
             elif error_result:  # and not expected_result
-                print(
+                logger.error(
                     f"Unexpected ERROR_IF: Op: {valueToName(Op, kwargs['op']['op'])}"
                     f" Expected: {error_name}, Got: {validator_name}"
                 )
             elif not expected_result:  # and not error_result
-                print(
+                logger.error(
                     f"Missed ERROR_IF: Op: {valueToName(Op, kwargs['op']['op'])}"
                     f" Expected: {error_name}"
                 )
@@ -376,7 +380,7 @@ class TosaErrorValidator:
                     if k != "op":
                         if k.endswith("dtype"):
                             v = valueToName(DType, v)
-                        print(f"  {k} = {v}")
+                        logger.error(f"  {k} = {v}")
 
         return overall_result
 
