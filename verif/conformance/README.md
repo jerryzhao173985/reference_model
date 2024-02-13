@@ -17,8 +17,10 @@ Each operator entry contains:
 
 * "group" - name of the group this operator is in, in the spec
 * "profile" - list of profiles that this operator covers
-* "support_for" - optional list of supported creation modes out of: lazy_data_gen (data generation just before test run)
 * "gen_filter" - optional filter string for op to give to tosa_verif_build_tests - defaults to "^opname$"
+* "support_for" - optional list of supported creation modes out of:
+    * lazy_data_gen - data generation just before test run
+    * generator_select - use generator selector instead of conformance test_select
 * "generation" - dictionary of test generation details - see below
 * "selection" - dictionary of test selection details - see below
 
@@ -42,7 +44,16 @@ Each selection criteria is a dictionary that contains:
 
 * "all": "true" - to select all tests (and not use test_select)
 
-or (more information for each entry in `test_select.py`):
+or for operators that have "support_for" "generator_select":
+
+* "permutes" - optional list of parameters whose values are to be permuted, the default is ["rank", "dtype"]
+* "maximum" - optional number - at most "maximum" tests (not including specific tests) will be captured per permuted "permutes" value, effects "full_params" as well
+* "full_params" - optional list of parameter names used to select tests covering a full range of values for these params up to "maximum"
+* "specifics" - optional dictionary of params with lists of values, tests that meet any of these "specifics" will be selected and kept (even using "post_sparsity")
+* "groups" - optional list of parameters that should be considered as a grouping of tests and treated as one test for "sparsity" and "specifics"
+* "num_errorifs" - optional value of error_if tests to keep per error_if case, the default is 1
+
+or for other operators it defaults to the old test select (more information for each entry in `test_select.py`):
 
 * "params" - optional dictionary with mappings of parameter names to the values to select
 * "permutes" - optional list of parameter names to be permuted

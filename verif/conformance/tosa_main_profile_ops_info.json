@@ -723,7 +723,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select" ],
         "gen_filter": "^conv2d",
         "generation": {
             "standard": {
@@ -784,31 +784,11 @@
         },
         "selection": {
             "default": {
-                "params": {
-                    "shape": [],
-                    "type": [],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
-                },
-                "permutes": [
-                    "kernel",
-                    "shape",
-                    "type",
-                    "pad"
-                ],
-                "preselected": [
-                    {
-                        "shape": "1x34x19x27",
-                        "type": "f32xf32",
-                        "kernel": "3x1",
-                        "pad": "pad0000",
-                        "accum_type": "accf32",
-                        "stride": "st11",
-                        "dilation": "dilat11"
-                    }
-                ]
+                "permutes": [ "rank", "dtype", "kernel", "acc_type" ],
+                "full_params": [ "stride", "dilation" ],
+                "specifics": { "pad": [ "(0, 0, 0, 0)" ] },
+                "groups": [ "s" ],
+                "maximum": 3
             }
         }
     },
@@ -1901,7 +1881,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1925,23 +1905,21 @@
                     ],
                     [
                         "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
                         "fp16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--tensor-dim-range",
-                        "1,17",
-                        "--target-rank",
-                        "4"
-                    ],
-                    [
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,16",
+                        "1,11",
                         "--target-rank",
-                        "5"
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--target-dtype",
@@ -1980,30 +1958,16 @@
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ],
-                "preselected": [
-                    {
-                        "shape": "50",
-                        "type": "bf16",
-                        "pad": "pad11"
-                    },
-                    {
-                        "shape": "63x46",
-                        "type": "bf16",
-                        "pad": "pad1010"
-                    },
-                    {
-                        "shape": "6",
-                        "type": "f16",
-                        "pad": "pad01"
-                    }
-                ],
-                "sparsity": {
-                    "pad": 21
+                "maximum": 5,
+                "specifics": {
+                    "pad": [
+                        "[[0 0]]",
+                        "[[0 0], [0 0]]",
+                        "[[0 0], [0 0], [0 0]]",
+                        "[[0 0], [0 0], [0 0], [0 0]]",
+                        "[[0 0], [0 0], [0 0], [0 0], [0 0]]",
+                        "[[0 0], [0 0], [0 0], [0 0], [0 0], [0 0]]"
+                    ]
                 }
             }
         }
