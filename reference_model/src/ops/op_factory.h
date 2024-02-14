@@ -62,10 +62,10 @@
         return new OP<TOSA_REF_TYPE_##DTYPE>(sgt, attribute, id);                                                      \
     }
 
-#define DEF_FACTORY_ONE_TYPE_ONE_ACCUM(OP, ATTR_NAME, DTYPE, ACCUM_DTYPE)                                              \
-    if (inputDTYPE == TOSA_REF_TYPE_##DTYPE && ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == TOSA_REF_TYPE_##ACCUM_DTYPE)         \
+#define DEF_FACTORY_ONE_TYPE_ONE_ACCUM(OP, ATTR_NAME, DTYPE, ACC_TYPE)                                                 \
+    if (inputDTYPE == TOSA_REF_TYPE_##DTYPE && ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == TOSA_REF_TYPE_##ACC_TYPE)            \
     {                                                                                                                  \
-        return new OP<TOSA_REF_TYPE_##DTYPE, TOSA_REF_TYPE_##ACCUM_DTYPE>(sgt, attribute, id);                         \
+        return new OP<TOSA_REF_TYPE_##DTYPE, TOSA_REF_TYPE_##ACC_TYPE>(sgt, attribute, id);                            \
     }
 
 #define DEF_FACTORY_TWO_TYPE(OP, DTYPE1, DTYPE2)                                                                       \
@@ -80,12 +80,11 @@
         return new OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2>(sgt, attribute, id);                             \
     }
 
-#define DEF_FACTORY_TWO_TYPE_ONE_ACCUM(OP, ATTR_NAME, DTYPE1, DTYPE2, ACCUM_DTYPE)                                     \
+#define DEF_FACTORY_TWO_TYPE_ONE_ACCUM(OP, ATTR_NAME, DTYPE1, DTYPE2, ACC_TYPE)                                        \
     if (inputDTYPE == TOSA_REF_TYPE_##DTYPE1 && weightDTYPE == TOSA_REF_TYPE_##DTYPE2 &&                               \
-        ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == TOSA_REF_TYPE_##ACCUM_DTYPE)                                                \
+        ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == TOSA_REF_TYPE_##ACC_TYPE)                                                   \
     {                                                                                                                  \
-        return new OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##ACCUM_DTYPE>(sgt, attribute,     \
-                                                                                                   id);                \
+        return new OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##ACC_TYPE>(sgt, attribute, id);   \
     }
 
 #define DEF_FACTORY_THREE_TYPE(OP, DTYPE1, DTYPE2, DTYPE3)                                                             \
@@ -103,7 +102,7 @@
         {                                                                                                              \
             auto attr = new tosa::Tosa##ATTRIBUTE_NAME##Attribute(p);                                                  \
             ASSERT_MEM(attr);                                                                                          \
-            accumDType = tosa::EnumValuesDType()[attr->accum_dtype()];                                                 \
+            accumDType = tosa::EnumValuesDType()[attr->acc_type()];                                                    \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \

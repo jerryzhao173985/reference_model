@@ -1,0 +1,16 @@
+{
+  "tosa_file": "test_lstm_stateful_13x21x3_f32.tosa",
+  "ifm_name": [
+    "TosaInput_0"
+  ],
+  "ifm_file": [
+    "../placeholder_0.npy"
+  ],
+  "ofm_name": [
+    "TosaOutput_0"
+  ],
+  "ofm_file": [
+    "ref_model_output_0.npy"
+  ],
+  "expected_failure": false
+}

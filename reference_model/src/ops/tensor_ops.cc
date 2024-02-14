@@ -496,11 +496,11 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     LEVEL_CHECK(pad_left <= tosa_level.MAX_KERNEL, "pad_left should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_right <= tosa_level.MAX_KERNEL, "pad_right should be smaller than or equal to MAX_KERNEL");
 
-    TOSA_REF_TYPE accum_dtype = ConvertDType(this->attribute->accum_dtype());
+    TOSA_REF_TYPE accum_dtype = ConvertDType(this->attribute->acc_type());
 
     DEBUG_INFO(OP,
                "perform AvgPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
-               "stride=[%d,%d], pad=[%d,%d,%d,%d], accum_dtype=%s",
+               "stride=[%d,%d], pad=[%d,%d,%d,%d], acc_type=%s",
                in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_y,
                kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right, EnumNamesDType()[accum_dtype]);
 

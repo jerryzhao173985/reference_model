@@ -178,7 +178,6 @@ public:
     using TOut             = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    TosaTileAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TInMultiples>* multiples;
     TosaReference::TensorTemplate<TOut>* out;

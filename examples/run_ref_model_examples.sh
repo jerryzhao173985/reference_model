@@ -30,3 +30,4 @@ run_test test_add_1x4x4x4_f32 tflite
 run_test test_conv2d_1x1_1x32x32x8_f32_st11_padSAME_dilat11 tf
 run_test test_conv2d_1x1_1x32x32x8_f32_st11_padSAME_dilat11 tflite
 run_test test_conv2d_1x1_1x32x32x8_qi8_st11_padSAME_dilat11 tflite
+run_test test_lstm_stateful_13x21x3_f32 tflite

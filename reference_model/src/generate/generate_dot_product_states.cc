@@ -101,7 +101,7 @@ public:
         else
             return 0.f;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         ASSERT_MSG(_set_data0.nextIndex() == _set_data1.nextIndex(), "Internal index inconsistency in GeneratorS0")
         return _set_data0.nextIndex();
@@ -134,7 +134,7 @@ public:
         else
             return (_B * _B / (_KS + 1)) * v;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         return _set_data.nextIndex();
     }
@@ -167,7 +167,7 @@ public:
         else
             return 0.f;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         return _set_data.nextIndex();
     }
@@ -199,7 +199,7 @@ public:
         else
             return 0.f;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         return _set_data.nextIndex();
     }
@@ -246,7 +246,7 @@ public:
         else
             return 0.f;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         ASSERT_MSG(_set_data0.nextIndex() == _set_data1.nextIndex(), "Internal index inconsistency in GeneratorS4")
         return _set_data0.nextIndex();
@@ -280,7 +280,7 @@ public:
         else
             return 0.f;
     }
-    uint32_t nextIndex()
+    uint32_t nextIndex() override
     {
         return _set_data.nextIndex();
     }

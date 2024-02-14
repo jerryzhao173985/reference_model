@@ -1835,11 +1835,7 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO remove the slice attribute once shape dynamism support is mature.
-        attr = ts.TosaSerializerAttribute()
-        attr.SliceAttribute(start_const, size_const)
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
