@@ -22,30 +22,30 @@ namespace TosaReference
 {
 /// \brief Perform dot-product based verification
 ///
-/// \param ref    Reference tensor
-/// \param refBnd Reference tensor when ran on abs(input)
-/// \param imp    Implementation resulting tensor
-/// \param dpInfo Dot-product verification meta-data
+/// \param referenceTensor      Reference tensor
+/// \param boundsTensor         Reference tensor when ran on abs(input)
+/// \param implementationTensor Implementation resulting tensor
+/// \param dpInfo               Dot-product verification meta-data
 ///
 /// \return True if compliant else false
-bool verifyDotProduct(const CTensor* ref,
-                      const CTensor* refBnd,
-                      const CTensor* imp,
+bool verifyDotProduct(const CTensor* referenceTensor,
+                      const CTensor* boundsTensor,
+                      const CTensor* implementationTensor,
                       const DotProductVerifyInfo& dpInfo);
 
 /// \brief Perform exact result verification
 ///
-/// \param referenceTensor    Reference tensor
-/// \param implementationTensor    Implementation resulting tensor
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
 ///
 /// \return True if compliant else false
 bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTensor);
 
 /// \brief Perform reduce product result verification
 ///
-/// \param referenceTensor    Reference tensor
-/// \param implementationTensor    Implementation resulting tensor
-/// \param rpInfo Reduce-product verification meta-data
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
+/// \param rpInfo               Reduce-product verification meta-data
 ///
 /// \return True if compliant else false
 bool verifyReduceProduct(const CTensor* referenceTensor,
@@ -54,28 +54,31 @@ bool verifyReduceProduct(const CTensor* referenceTensor,
 
 /// \brief Perform ULP result verification
 ///
-/// \param referenceTensor    Reference tensor
-/// \param implementationTensor    Implementation resulting tensor
-/// \param ulpInfo    The ULP tolerence info for the comparison of the two tensors
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
+/// \param ulpInfo              ULP tolerence info for the comparison
 ///
 /// \return True if compliant else false
 bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTensor, const UlpVerifyInfo& ulpInfo);
 
 /// \brief Perform abs-error based verification
 ///
-/// \param ref    Reference tensor
-/// \param refBnd Reference bounds tensor (according to op)
-/// \param imp    Implementation resulting tensor
-/// \param aeInfo Abs-error verification meta-data
+/// \param referenceTensor      Reference tensor
+/// \param boundsTensor         Reference bounds tensor (according to op)
+/// \param implementationTensor Implementation resulting tensor
+/// \param aeInfo               Abs-error verification meta-data
 ///
 /// \return True if compliant else false
-bool verifyAbsError(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const AbsErrorVerifyInfo& aeInfo);
+bool verifyAbsError(const CTensor* referenceTensor,
+                    const CTensor* boundsTensor,
+                    const CTensor* implementationTensor,
+                    const AbsErrorVerifyInfo& aeInfo);
 
 /// \brief Perform relative result verification
 ///
-/// \param referenceTensor    Reference tensor
-/// \param implementationTensor    Implementation resulting tensor
-/// \param rInfo Relative verification meta-data
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
+/// \param rInfo                Relative verification meta-data
 ///
 /// \return True if compliant else false
 bool verifyRelative(const CTensor* referenceTensor,
