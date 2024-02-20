@@ -2269,6 +2269,130 @@
             }
         }
     },
+    "cos": {
+        "group": "ew_unary",
+        "profile": [
+            "tosa-mi"
+        ],
+        "support_for": [ "lazy_data_gen" ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "15,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,15",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "2,1,65537,1",
+                        "--target-shape",
+                        "3,1,65539,2,1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
+    },
+    "sin": {
+        "group": "ew_unary",
+        "profile": [
+            "tosa-mi"
+        ],
+        "support_for": [ "lazy_data_gen" ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "15,64",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,15",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "3,1,65534,2",
+                        "--target-shape",
+                        "65533,1,3,2,1"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
+    },
     "rsqrt": {
         "group": "ew_unary",
         "profile": [

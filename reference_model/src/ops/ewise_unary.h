@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -65,12 +65,14 @@ DEF_TEMPLATE_UNARY_OP(Abs, ABS)
 DEF_TEMPLATE_UNARY_OP(BitwiseNot, BITWISE_NOT)
 DEF_TEMPLATE_UNARY_OP(Ceil, CEIL)
 DEF_TEMPLATE_UNARY_OP(Clz, CLZ)
+DEF_TEMPLATE_UNARY_OP(Cos, COS)
 DEF_TEMPLATE_UNARY_OP(Exp, EXP)
 DEF_TEMPLATE_UNARY_OP(Floor, FLOOR)
 DEF_TEMPLATE_UNARY_OP(Log, LOG)
 DEF_TEMPLATE_UNARY_OP(LogicalNot, LOGICAL_NOT)
 DEF_TEMPLATE_UNARY_OP(Reciprocal, RECIPROCAL)
 DEF_TEMPLATE_UNARY_OP(Rsqrt, RSQRT)
+DEF_TEMPLATE_UNARY_OP(Sin, SIN)
 
 #undef DEF_TEMPLATE_UNARY_OP
 

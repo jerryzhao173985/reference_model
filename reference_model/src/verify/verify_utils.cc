@@ -80,6 +80,10 @@ void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
     {
         j.at("lower_bound").get_to(absErrorInfo.lowerBound);
     }
+    if (j.contains("normal_divisor"))
+    {
+        j.at("normal_divisor").get_to(absErrorInfo.normalDivisor);
+    }
 }
 
 void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
@@ -108,7 +112,8 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     {
         j.at("reduce_product_info").get_to(cfg.reduceProductInfo);
     }
-    cfg.absErrorInfo.lowerBound = 0;
+    cfg.absErrorInfo.lowerBound    = 0;
+    cfg.absErrorInfo.normalDivisor = 1;
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);

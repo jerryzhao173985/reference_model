@@ -848,6 +848,18 @@ class RsqrtOperator(Operator):
     name = "rsqrt"
 
 
+class CosOperator(Operator):
+    """Test selector for the COS operator."""
+
+    name = "cos"
+
+
+class SinOperator(Operator):
+    """Test selector for the SIN operator."""
+
+    name = "sin"
+
+
 class ScatterOperator(Operator):
     """Test selector for the SCATTER operator."""
 

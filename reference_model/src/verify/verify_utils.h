@@ -82,6 +82,7 @@ struct AbsErrorVerifyInfo
     AbsErrorVerifyInfo() = default;
 
     double lowerBound;
+    double normalDivisor;
 };
 
 /// \brief relative verification meta-data

@@ -392,6 +392,12 @@ class TosaTestGen:
                 compliance_tens["abs_error_info"] = {
                     "lower_bound": op["compliance"]["abs_error_lower_bound"]
                 }
+        elif op["op"] in (Op.SIN, Op.COS):
+            mode = gtu.ComplianceMode.ABS_ERROR
+            if "compliance" in op and "abs_error_normal_divisor" in op["compliance"]:
+                compliance_tens["abs_error_info"] = {
+                    "normal_divisor": op["compliance"]["abs_error_normal_divisor"]
+                }
         else:
             mode = gtu.ComplianceMode.EXACT
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name
@@ -4036,6 +4042,27 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
         },
+        "cos": {
+            "op": Op.COS,
+            "operands": (1, 0),
+            "build_fcn": (
+                build_unary,
+                TosaTensorGen.tgBasic,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
+            ),
+            "types": TYPE_FP,
+            "error_if_validators": (
+                TosaErrorValidator.evWrongInputType,
+                TosaErrorValidator.evWrongOutputType,
+                TosaErrorValidator.evWrongInputList,
+                TosaErrorValidator.evWrongOutputList,
+            ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {"abs_error_normal_divisor": 2},
+        },
         "exp": {
             "op": Op.EXP,
             "operands": (1, 0),
@@ -4179,6 +4206,27 @@ class TosaTestGen:
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
             },
             "compliance": {"ulp": 2},
+        },
+        "sin": {
+            "op": Op.SIN,
+            "operands": (1, 0),
+            "build_fcn": (
+                build_unary,
+                TosaTensorGen.tgBasic,
+                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaArgGen.agNone,
+            ),
+            "types": TYPE_FP,
+            "error_if_validators": (
+                TosaErrorValidator.evWrongInputType,
+                TosaErrorValidator.evWrongOutputType,
+                TosaErrorValidator.evWrongInputList,
+                TosaErrorValidator.evWrongOutputList,
+            ),
+            "data_gen": {
+                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
+            },
+            "compliance": {"abs_error_normal_divisor": 2},
         },
         # Elementwise Ternary operators
         "select": {

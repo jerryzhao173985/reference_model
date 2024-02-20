@@ -70,6 +70,10 @@
                                 "lower_bound": {
                                     "description": "lower bound multiplier for error bounds",
                                     "type": "number"
+                                },
+                                "normal_divisor": {
+                                    "description": "normal_divisor for error bounds",
+                                    "type": "number"
                                 }
                             },
                             "additionalProperties": false

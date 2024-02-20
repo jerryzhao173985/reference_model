@@ -299,6 +299,12 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
         case Op_CLZ:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpClz, INT32);
             break;
+        case Op_COS:
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpCos, FP16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpCos, BF16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpCos, FP32);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpCos, FP64);
+            break;
         case Op_EXP:
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, FP16);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpExp, BF16);
@@ -340,6 +346,12 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, BF16);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP32);
             DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpRsqrt, FP64);
+            break;
+        case Op_SIN:
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSin, FP16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSin, BF16);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSin, FP32);
+            DEF_FACTORY_RANK0_6_ONE_RANK_ONE_TYPE(OpSin, FP64);
             break;
 
         // ewise_ternary

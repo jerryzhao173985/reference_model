@@ -20,7 +20,6 @@
 
 #include "half.hpp"
 #include "verifiers.h"
-
 namespace TosaReference
 {
 
@@ -36,7 +35,7 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     {
         valBound = std::max(cfg->lowerBound, valBound);
     }
-    return exp2(-AccPrecision<OutType>::normal_frac) * valBound;
+    return exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valBound;
 }
 }    // namespace
 
