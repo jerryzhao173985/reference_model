@@ -1402,6 +1402,17 @@ class TosaTensorValuesGen:
             # Needed for compliance
             argsDict["max_abs_value"] = data_range[1]
 
+        scale_values = argsDict["scale"]
+        offset_values = argsDict["offset"]
+        border_values = argsDict["border"]
+        dtypeList[1] = DType.SHAPE
+        dtypeList[2] = DType.SHAPE
+        dtypeList[3] = DType.SHAPE
+        shapeList[1] = [len(scale_values)]
+        shapeList[2] = [len(offset_values)]
+        shapeList[3] = [len(border_values)]
+        argsDict["fixed_data"] = [None, scale_values, offset_values, border_values]
+
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, opName, dtypeList, shapeList, argsDict, error_name
         )

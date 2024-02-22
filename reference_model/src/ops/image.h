@@ -32,18 +32,20 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval();
 
-    using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<OutDtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, 4>;
-    using TOut         = Eigen::Tensor<OutEigenType, 4>;
+    using InEigenType      = typename GetEigenType<InDtype>::type;
+    using InEigenShapeType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using OutEigenType     = typename GetEigenType<OutDtype>::type;
+    using TIn              = Eigen::Tensor<InEigenType, 4>;
+    using TInShape         = Eigen::Tensor<InEigenShapeType, 1>;
+    using TOut             = Eigen::Tensor<OutEigenType, 4>;
 
 protected:
     TosaResizeAttribute* attribute;
-    std::vector<int16_t> scale;
-    std::vector<int16_t> offset;
-    std::vector<int16_t> border;
     ResizeMode mode;
     TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TInShape>* scale;
+    TosaReference::TensorTemplate<TInShape>* offset;
+    TosaReference::TensorTemplate<TInShape>* border;
     TosaReference::TensorTemplate<TOut>* out;
 };
 

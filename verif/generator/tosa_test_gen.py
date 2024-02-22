@@ -1986,8 +1986,12 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 4
         input = inputs[0]
+        scale_input = inputs[1]
+        offset_input = inputs[2]
+        border_input = inputs[3]
+
         mode = args_dict["mode"]
         scale = args_dict["scale"]
         offset = args_dict["offset"]
@@ -2008,7 +2012,12 @@ class TosaTestGen:
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [input.name]
+        input_list = [
+            input.name,
+            scale_input.name,
+            offset_input.name,
+            border_input.name,
+        ]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -2037,7 +2046,8 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ResizeAttribute(scale, offset, border, mode)
+        # write empty scale/offset/border into ResizeAttribute
+        attr.ResizeAttribute([], [], [], mode)
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
@@ -4688,7 +4698,7 @@ class TosaTestGen:
         # Image operations
         "resize": {
             "op": Op.RESIZE,
-            "operands": (1, 0),
+            "operands": (4, 0),
             "rank": (4, 4),
             "build_fcn": (
                 build_resize,
