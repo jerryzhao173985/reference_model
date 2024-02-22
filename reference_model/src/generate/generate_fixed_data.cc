@@ -37,7 +37,7 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
             int32_t* outData            = reinterpret_cast<int32_t*>(data);
             std::vector<int32_t> inData = cfg.fixedDataInfo.data;
             const auto T                = TosaReference::numElementsFromShape(cfg.shape);
-            if (T != inData.size())
+            if (T != static_cast<int64_t>(inData.size()))
             {
                 WARNING("[Generator][FD] Size does not match.");
                 return false;
