@@ -29,7 +29,8 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     const auto cfg = reinterpret_cast<const ReduceProductVerifyInfo*>(cfgPtr);
     unused(boundsValue);
 
-    return std::abs(referenceValue) * (std::pow(1 + std::pow(2, -AccPrecision<OutType>::normal_frac - 1), cfg->n) - 1);
+    return std::abs(referenceValue) *
+           (std::pow(1 + std::pow(2, -AccPrecision<OutType>::normal_frac - 1), cfg->numberOfProducts) - 1);
 }
 }    // namespace
 

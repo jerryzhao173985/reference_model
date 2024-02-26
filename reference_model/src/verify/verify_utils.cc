@@ -63,13 +63,13 @@ void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
 
 void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 {
-    j.at("s").get_to(dotProductInfo.s);
-    j.at("ks").get_to(dotProductInfo.ks);
+    j.at("s").get_to(dotProductInfo.setNumber);
+    j.at("ks").get_to(dotProductInfo.kernelSize);
 }
 
 void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceInfo)
 {
-    j.at("n").get_to(reduceProduceInfo.n);
+    j.at("n").get_to(reduceProduceInfo.numberOfProducts);
 }
 
 void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
@@ -90,24 +90,29 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
     j.at("data_type").get_to(cfg.dataType);
+    cfg.ulpInfo.ulp = 0;
     if (j.contains("ulp_info"))
     {
         j.at("ulp_info").get_to(cfg.ulpInfo);
     }
+    cfg.dotProductInfo.setNumber  = 0;
+    cfg.dotProductInfo.kernelSize = 0;
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);
     }
+    cfg.reduceProductInfo.numberOfProducts = 0;
     if (j.contains("reduce_product_info"))
     {
         j.at("reduce_product_info").get_to(cfg.reduceProductInfo);
     }
-    // Set up defaults for optional AbsErrorVerifyInfo
     cfg.absErrorInfo.lowerBound = 0;
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);
     }
+    cfg.relativeInfo.max   = 0;
+    cfg.relativeInfo.scale = 0;
     if (j.contains("relative_info"))
     {
         j.at("relative_info").get_to(cfg.relativeInfo);

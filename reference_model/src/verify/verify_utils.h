@@ -64,8 +64,8 @@ struct DotProductVerifyInfo
 {
     DotProductVerifyInfo() = default;
 
-    int32_t s;
-    int32_t ks;
+    int32_t setNumber;
+    int32_t kernelSize;
 };
 
 /// \brief reduce-product verification meta-data
@@ -73,8 +73,7 @@ struct ReduceProductVerifyInfo
 {
     ReduceProductVerifyInfo() = default;
 
-    int64_t m;
-    int64_t n;
+    int64_t numberOfProducts;
 };
 
 /// \brief abs-error verification meta-data
