@@ -77,10 +77,10 @@ bool validateDataDP(const double* referenceData,
     const size_t T = static_cast<size_t>(numElements(shape));
     TOSA_REF_REQUIRE(T > 0, "[DP] Invalid shape for reference tensor");
 
-    const int32_t S = cfg.s;
+    const int32_t S = cfg.setNumber;
     // NOTE: KS in the compliance config MUST have already been updated to (KS + 1) if the bias
     // tensor is non-zero
-    const int32_t KS = cfg.ks;
+    const int32_t KS = cfg.kernelSize;
 
     double out_err_sum   = 0.0;
     double out_err_sumsq = 0.0;
