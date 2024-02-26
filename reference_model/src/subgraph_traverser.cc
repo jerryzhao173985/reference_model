@@ -564,8 +564,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             }
             break;
             case DType_FP16: {
-                // Interpret f16 data as float
-                std::vector<float> f16_data;
+                std::vector<half_float::half> f16_data;
                 TosaSerializationHandler::ConvertU8toF16(ts->GetData(), tensor->getElementCount(), f16_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
@@ -574,7 +573,8 @@ int SubgraphTraverser::allocateTensor(std::string name)
                 }
                 else
                 {
-                    tensor->setTensorValueFloat(f16_data.size(), f16_data.data());
+                    std::vector<float> f32_data(f16_data.begin(), f16_data.end());
+                    tensor->setTensorValueFloat(f32_data.size(), f32_data.data());
                 }
             }
             break;
