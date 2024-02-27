@@ -183,10 +183,12 @@ int OpPad<Rank, Dtype>::eval()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
+        case TOSA_REF_TYPE_FP8E4M3:
+        case TOSA_REF_TYPE_FP8E5M2:
             pad_value = (InEigenType)attribute->pad_const_fp();
             break;
         default:
-            printNodeValidationError("Unsupported data type");
+            ASSERT_MSG(false, "TOSA_REF_TYPE %s is not supported.", EnumNameTOSAREFTYPE(Dtype));
             break;
     }
 
