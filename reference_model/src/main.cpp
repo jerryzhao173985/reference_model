@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -616,8 +616,15 @@ int initTestDesc(json& test_desc)
     }
     else
     {
-        WARNING("Cannot open input file: %s", g_func_config.test_desc.c_str());
-        return 1;
+        // Users can also specify description info using command line arguments
+        // If they miss any info from command line AND no test_desc is provided,
+        // return error code
+        if (g_func_config.tosa_file.empty() || g_func_config.ifm_name.empty() || g_func_config.ifm_file.empty() ||
+            g_func_config.ofm_name.empty() || g_func_config.ofm_file.empty())
+        {
+            WARNING("Cannot open input file: %s", g_func_config.test_desc.c_str());
+            return 1;
+        }
     }
 
     // Overwrite flatbuffer_dir/output_dir with dirname(g_func_config.test_desc) if it's not specified.
