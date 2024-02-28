@@ -587,9 +587,9 @@ class TosaTestGen:
     def build_mul(
         self, op, inputs, args_dict, validator_fcns=None, error_name=None, qinfo=None
     ):
-        assert len(inputs) == 2
-        a, b = inputs
-        shift = args_dict["shift"]
+        # Note that mul is binary operator but it has a shift value tensor
+        assert len(inputs) == 3
+        a, b, s = inputs
 
         result_tensor = OutputShaper.binaryBroadcastOp(
             self.ser, self.rng, a, b, error_name
@@ -605,7 +605,7 @@ class TosaTestGen:
             result_tensor.setDtype(outputDType)
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, b.name]
+        input_list = [a.name, b.name, s.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -629,10 +629,7 @@ class TosaTestGen:
         ):
             return None
 
-        attr = ts.TosaSerializerAttribute()
-        attr.MulAttribute(shift)
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -3874,10 +3871,10 @@ class TosaTestGen:
         },
         "mul": {
             "op": Op.MUL,
-            "operands": (2, 0),
+            "operands": (3, 0),
             "build_fcn": (
                 build_mul,
-                TosaTensorGen.tgBroadcastFuzz,
+                TosaTensorGen.tgMul,
                 TosaTensorValuesGen.tvgMul,
                 TosaArgGen.agMul,
             ),

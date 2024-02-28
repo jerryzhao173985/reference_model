@@ -82,6 +82,10 @@ class GenerateLibrary:
             # Create buffer and initialize to zero
             buffer = (ct.c_int32 * size)(0)
             size_bytes = size * 4
+        elif dtype == "INT8":
+            size_bytes = size
+            # Create buffer of bytes and initialize to zero
+            buffer = (ct.c_ubyte * size_bytes)(0)
         else:
             raise GenerateError(f"Unsupported data type {dtype}")
 
