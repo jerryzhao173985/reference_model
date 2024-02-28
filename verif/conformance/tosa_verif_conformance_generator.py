@@ -82,7 +82,9 @@ def _run_sh_command(args, cwd, full_cmd):
     )
 
     if args.capture_output:
+        stderr = rc.stderr.decode("utf-8")
         stdout = rc.stdout.decode("utf-8")
+        logger.info(f"stderr: \n{stderr}")
         logger.info(f"stdout: \n{stdout}")
     if rc.returncode != 0:
 

@@ -185,7 +185,7 @@ class TestOpList:
         # Add a test to this op group and set up the permutations/group for it
         assert test.opName.startswith(self.opName)
         if str(test) in self.testStrings:
-            logger.info(f"Skipping duplicate test: {str(test)}")
+            logger.debug(f"Skipping duplicate test: {str(test)}")
             return
 
         self.tests.append(test)

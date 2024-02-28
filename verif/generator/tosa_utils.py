@@ -10,6 +10,9 @@ from tosa.DType import DType
 # Maximum dimension size for output and inputs for RESIZE
 MAX_RESIZE_DIMENSION = 16384
 
+# Maximum rank of tensor supported by test generator.
+MAX_TENSOR_RANK = 6
+
 # Data type information dictionary
 # - str: filename abbreviation
 # - width: number of bytes needed for type
