@@ -3,11 +3,8 @@
 import logging
 import math
 
+import generator.tosa_utils as gtu
 import numpy as np
-from generator.tosa_utils import MAX_RESIZE_DIMENSION
-from generator.tosa_utils import product
-from generator.tosa_utils import usableDTypes
-from generator.tosa_utils import valueToName
 from tosa.DType import DType
 from tosa.Op import Op
 from tosa.ResizeMode import ResizeMode
@@ -287,7 +284,7 @@ class TosaErrorIfArgGen:
         max_dim and max_items.
         """
         new_shape = [min(d, max_dim) for d in shape] if max(shape) > max_dim else shape
-        while product(new_shape) > max_items:
+        while gtu.product(new_shape) > max_items:
             new_shape = [max(d - 1, 1) for d in new_shape]
         return new_shape
 
@@ -366,12 +363,12 @@ class TosaErrorValidator:
                 serializer.setExpectedReturnCode(2, True, desc=error_reason)
             elif error_result:  # and not expected_result
                 logger.error(
-                    f"Unexpected ERROR_IF: Op: {valueToName(Op, kwargs['op']['op'])}"
+                    f"Unexpected ERROR_IF: Op: {gtu.valueToName(Op, kwargs['op']['op'])}"
                     f" Expected: {error_name}, Got: {validator_name}"
                 )
             elif not expected_result:  # and not error_result
                 logger.error(
-                    f"Missed ERROR_IF: Op: {valueToName(Op, kwargs['op']['op'])}"
+                    f"Missed ERROR_IF: Op: {gtu.valueToName(Op, kwargs['op']['op'])}"
                     f" Expected: {error_name}"
                 )
 
@@ -379,7 +376,7 @@ class TosaErrorValidator:
                 for k, v in sorted(kwargs.items()):
                     if k != "op":
                         if k.endswith("dtype"):
-                            v = valueToName(DType, v)
+                            v = gtu.valueToName(DType, v)
                         logger.error(f"  {k} = {v}")
 
         return overall_result
@@ -394,7 +391,8 @@ class TosaErrorValidator:
         allowed_input_dtypes = {
             t[0] if isinstance(t, list) else t for t in input_dtypes
         }
-        wrong_input_dtypes = list(usableDTypes(excludes=allowed_input_dtypes))
+        wrong_input_dtypes = list(gtu.usableDTypes(excludes=allowed_input_dtypes))
+        assert len(wrong_input_dtypes) > 0
 
         # Turn the wrong dtypes into required list of types
         if op["op"] in [
@@ -616,13 +614,13 @@ class TosaErrorValidator:
 
     @staticmethod
     def evWrongRank(check=False, **kwargs):
-        all_ranks = (1, 2, 3, 4, 5)
-
         # Make a list of incorrect ranks
         assert "op" in kwargs
         op = kwargs["op"]
         rmin, rmax = op["rank"]
         rank_range = range(rmin, rmax + 1)
+        # From 1 to rmax+1 inclusively
+        all_ranks = tuple(range(1, rmax + 2))
         incorrect_ranks = list(set(all_ranks) - set(rank_range))
         # Remove small incorrect ranks to avoid index errors
         incorrect_ranks = [rank for rank in incorrect_ranks if rank > rmin]
@@ -718,16 +716,16 @@ class TosaErrorValidator:
             "shape": [[1, 16584, 5, 1], [1, 2, 16499, 4]],
         }
         error_result = False
-        error_reason = f"At least one maximum dimension is greater than or equal to {MAX_RESIZE_DIMENSION}"
+        error_reason = f"At least one maximum dimension is greater than or equal to {gtu.MAX_RESIZE_DIMENSION}"
 
         if check:
             input_shape = kwargs["input_shape"]
             output_shape = kwargs["output_shape"]
             if (
-                (input_shape[1] >= MAX_RESIZE_DIMENSION)
-                or (input_shape[2] >= MAX_RESIZE_DIMENSION)
-                or (output_shape[1] >= MAX_RESIZE_DIMENSION)
-                or (output_shape[2] >= MAX_RESIZE_DIMENSION)
+                (input_shape[1] >= gtu.MAX_RESIZE_DIMENSION)
+                or (input_shape[2] >= gtu.MAX_RESIZE_DIMENSION)
+                or (output_shape[1] >= gtu.MAX_RESIZE_DIMENSION)
+                or (output_shape[2] >= gtu.MAX_RESIZE_DIMENSION)
             ):
                 error_result = True
 
@@ -1009,8 +1007,8 @@ class TosaErrorValidator:
 
             if (
                 params_valid
-                and max(output_shape) < MAX_RESIZE_DIMENSION
-                and max(input_shape) < MAX_RESIZE_DIMENSION
+                and max(output_shape) < gtu.MAX_RESIZE_DIMENSION
+                and max(input_shape) < gtu.MAX_RESIZE_DIMENSION
             ):
                 output_y = (
                     (input_shape[1] - 1) * scale[0] - offset[0] + border[0]

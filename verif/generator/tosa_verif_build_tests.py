@@ -428,6 +428,9 @@ def main(argv=None):
             logger.error(f"INTERNAL ERROR: Failure creating test output for {opName}")
             raise e
 
+    if results.count(False):
+        raise Exception(f"Failed to create {results.count(False)} tests")
+
     if not args.list_tests:
         print(f"Done creating {len(results)} tests")
     return 0
