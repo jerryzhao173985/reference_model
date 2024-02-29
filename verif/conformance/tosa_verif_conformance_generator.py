@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2023, ARM Limited.
+# Copyright (c) 2021-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Build conformance tests.
 
@@ -115,7 +115,7 @@ def build_op_tests(
         "--generate-lib-path",
         str(args.generate_lib_path),
         "--filter",
-        operator,
+        f"^{operator}$",
         "-o",
         str(op_build_dir),
         "--seed",
@@ -138,7 +138,6 @@ def build_op_tests(
     if test_type in ["negative", "both"]:
         # Get target-dtypes options and any filter string to limit tests
         target_dtypes_args = []
-        filter_str = None
         for arglist in gen_args_list:
             idx = 0
             while idx < len(arglist):
@@ -146,13 +145,8 @@ def build_op_tests(
                     if arglist[idx + 1] not in target_dtypes_args:
                         target_dtypes_args.extend(arglist[idx : idx + 2])
                     idx += 1  # skip over option (and then argument below)
-                elif arglist[idx] == "--filter":
-                    filter_str = arglist[idx + 1]
-                    idx += 1  # skip over option (and then argument below)
                 idx += 1
         build_cmd_neg_test = build_cmd_base.copy()
-        if filter_str:
-            build_cmd_neg_test.extend(["--filter", filter_str])
         build_cmd_neg_test.extend(["--test-type", "negative"])
         # Limit sizes of negative tests
         dim_range = gen_neg_dim_range if gen_neg_dim_range is not None else "1,16"

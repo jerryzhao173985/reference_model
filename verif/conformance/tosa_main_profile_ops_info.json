@@ -1205,8 +1205,6 @@
             "standard": {
                 "generator_args": [
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -1225,8 +1223,6 @@
                         "3"
                     ],
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -1239,8 +1235,6 @@
                         "5"
                     ],
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1402,8 +1396,6 @@
             "standard": {
                 "generator_args": [
                     [
-                        "--filter",
-                        "^log$",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -1422,8 +1414,6 @@
                         "3"
                     ],
                     [
-                        "--filter",
-                        "^log$",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1436,8 +1426,6 @@
                         "5"
                     ],
                     [
-                        "--filter",
-                        "^log$",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -2113,8 +2101,6 @@
             "standard": {
                 "generator_args": [
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -2129,8 +2115,6 @@
                         "2"
                     ],
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -2147,8 +2131,6 @@
                         "2"
                     ],
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",

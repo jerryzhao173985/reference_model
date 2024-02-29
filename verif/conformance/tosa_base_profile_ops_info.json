@@ -1541,8 +1541,6 @@
             "standard": {
                 "generator_args": [
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -1555,8 +1553,6 @@
                         "3"
                     ],
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -1567,8 +1563,6 @@
                         "5"
                     ],
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -1582,8 +1576,6 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
-                        "--filter",
-                        "^greater$",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -3774,8 +3766,6 @@
             "standard": {
                 "generator_args": [
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "int8",
                         "--target-rank",
@@ -3786,8 +3776,6 @@
                         "2"
                     ],
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "int8",
                         "--target-dtype",
@@ -3804,8 +3792,6 @@
                         "2"
                     ],
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -3821,8 +3807,6 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
-                        "--filter",
-                        "^transpose$",
                         "--target-dtype",
                         "int8",
                         "--target-dtype",
