@@ -55,6 +55,14 @@ class DataGenType(IntEnum):
     FIXED_DATA = 5
 
 
+def dtypeWidth(dtype):
+    """Get the datatype width for data types"""
+    if dtype in DTYPE_ATTRIBUTES:
+        return DTYPE_ATTRIBUTES[dtype]["width"]
+    else:
+        raise Exception(f"Unknown dtype, cannot determine width: {dtype}")
+
+
 def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):

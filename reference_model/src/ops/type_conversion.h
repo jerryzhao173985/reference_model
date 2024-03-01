@@ -32,10 +32,16 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<OutDtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+    using InEigenType    = typename GetEigenType<InDtype>::type;
+    using OutEigenType   = typename GetEigenType<OutDtype>::type;
+    using TIn            = Eigen::Tensor<InEigenType, Rank>;
+    using TOut           = Eigen::Tensor<OutEigenType, Rank>;
+    using I8EigenType    = typename GetEigenType<TOSA_REF_TYPE::TOSA_REF_TYPE_INT8>::type;
+    using I16EigenType   = typename GetEigenType<TOSA_REF_TYPE::TOSA_REF_TYPE_INT16>::type;
+    using I32EigenType   = typename GetEigenType<TOSA_REF_TYPE::TOSA_REF_TYPE_INT32>::type;
+    using TMultiplierI16 = Eigen::Tensor<I16EigenType, 1>;
+    using TMultiplierI32 = Eigen::Tensor<I32EigenType, 1>;
+    using TShift         = Eigen::Tensor<I8EigenType, 1>;
 
     static constexpr int32_t QMin = GetQMin<OutDtype>::value;
     static constexpr int32_t QMax = GetQMax<OutDtype>::value;
@@ -44,6 +50,9 @@ protected:
     TosaRescaleAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
+    TosaReference::TensorTemplate<TMultiplierI16>* multiplierI16;
+    TosaReference::TensorTemplate<TMultiplierI32>* multiplierI32;
+    TosaReference::TensorTemplate<TShift>* shift;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>

@@ -35,7 +35,7 @@ template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
-    setRequiredOperands(1, 1);
+    setRequiredOperands(3, 1);
     INIT_ATTRIBUTE(Rescale);
 }
 
@@ -67,6 +67,20 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(in && out);
+
+    multiplierI32 = dynamic_cast<TosaReference::TensorTemplate<TMultiplierI32>*>(inputs[1]);
+    multiplierI16 = dynamic_cast<TosaReference::TensorTemplate<TMultiplierI16>*>(inputs[1]);
+    shift         = dynamic_cast<TosaReference::TensorTemplate<TShift>*>(inputs[2]);
+    ASSERT_MEM(shift);
+
+    if (attribute->scale32())
+    {
+        ASSERT_MEM(multiplierI32);
+    }
+    else
+    {
+        ASSERT_MEM(multiplierI16);
+    }
 
     if ((InDtype != TOSA_REF_TYPE_INT8) && (InDtype != TOSA_REF_TYPE_UINT8) && (InDtype != TOSA_REF_TYPE_UINT16) &&
         (attribute->input_zp() != 0))
@@ -124,15 +138,15 @@ static int64_t zero_extend(int16_t val)
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::eval()
 {
-    int32_t input_zp                = attribute->input_zp();
-    int32_t output_zp               = attribute->output_zp();
-    std::vector<int32_t> multiplier = attribute->multiplier();
-    std::vector<int32_t> shift      = attribute->shift();
-    bool scale32                    = attribute->scale32();
-    bool double_round               = attribute->double_round();
-    bool per_channel                = attribute->per_channel();
-    bool input_unsigned             = attribute->input_unsigned();
-    bool output_unsigned            = attribute->output_unsigned();
+    int32_t input_zp  = attribute->input_zp();
+    int32_t output_zp = attribute->output_zp();
+    std::vector<int32_t> multiplier;
+    std::vector<int32_t> shift;
+    bool scale32         = attribute->scale32();
+    bool double_round    = attribute->double_round();
+    bool per_channel     = attribute->per_channel();
+    bool input_unsigned  = attribute->input_unsigned();
+    bool output_unsigned = attribute->output_unsigned();
 
     // reshape [d0, d1, ..., dn] into [d0 * d1 ..., dn]
     Eigen::array<Eigen::Index, 2> shape_2d;
@@ -152,6 +166,28 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     ETensor2<InEigenType> input_reshaped = this->in->getTensor().reshape(shape_2d);
 
     ETensor2<OutEigenType> output_2d(shape_2d);
+
+    if (scale32)
+    {
+        auto multiplier_val = this->multiplierI32->getTensor();
+        for (int i = 0; i < multiplier_val.size(); i++)
+        {
+            multiplier.push_back(static_cast<int32_t>(multiplier_val(i)));
+        }
+    }
+    else
+    {
+        auto multiplier_val = this->multiplierI16->getTensor();
+        for (int i = 0; i < multiplier_val.size(); i++)
+        {
+            multiplier.push_back(static_cast<int32_t>(multiplier_val(i)));
+        }
+    }
+    auto shift_val = this->shift->getTensor();
+    for (int i = 0; i < shift_val.size(); i++)
+    {
+        shift.push_back(static_cast<int32_t>(shift_val(i)));
+    }
 
     if (per_channel)
     {

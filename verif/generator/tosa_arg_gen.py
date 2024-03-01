@@ -744,6 +744,10 @@ class TosaTensorValuesGen:
                         arr = np.int64(argsDict["fixed_data"][idx])
                     elif dtype == DType.INT8:
                         arr = np.int8(argsDict["fixed_data"][idx])
+                    elif dtype == DType.INT16:
+                        arr = np.int16(argsDict["fixed_data"][idx])
+                    elif dtype == DType.INT32:
+                        arr = np.int32(argsDict["fixed_data"][idx])
                     else:
                         assert False, "Unsupported fixed_data type"
                 else:
@@ -1054,6 +1058,26 @@ class TosaTensorValuesGen:
         shapeList[1] = [len(argsDict["new_shape"])]
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [None, argsDict["new_shape"]]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
+    def tvgRescale(testGen, opName, dtypeList, shapeList, argsDict, error_name=None):
+        scale32 = argsDict["scale"]
+        multiplier_arr = argsDict["multiplier"]
+        shift_arr = argsDict["shift"]
+
+        if scale32:
+            dtypeList[1] = DType.INT32
+        else:
+            dtypeList[1] = DType.INT16
+        shapeList[1] = [len(multiplier_arr)]
+        dtypeList[2] = DType.INT8
+        shapeList[2] = [len(shift_arr)]
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [None, multiplier_arr, shift_arr]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, opName, dtypeList, shapeList, argsDict, error_name
@@ -2842,6 +2866,43 @@ class TosaArgGen:
                             # Illegal condition.  ERROR_IF(!scale32 && double_round)
                             continue
 
+                        if per_channel:
+                            nc = shapeList[0][-1]
+                        else:
+                            nc = 1
+
+                        in_type_width = gtu.dtypeWidth(inDtype)
+                        out_type_width = gtu.dtypeWidth(outDtype)
+
+                        # Calculate scale based on:
+                        # scale = a *(2^output_width)/(2^input_width))
+
+                        a = np.float32(testGen.rng.random(size=[nc]))
+                        scale_arr = a * np.float32(
+                            (1 << out_type_width) / (1 << in_type_width)
+                        )
+
+                        if scale32:
+                            # Cap the scaling at 2^31 - 1 for scale32
+                            scale_arr = np.clip(
+                                scale_arr, 1.0 / (1 << 31), (1 << 31) - 1
+                            )
+                        else:
+                            # Cap the scaling at 2^15 - 1 for scale16
+                            scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), 32767.0)
+
+                        # print('{} {} -> {}'.format(out_type_width, in_type_width, scale_arr))
+
+                        multiplier_arr = np.int32(np.zeros(shape=[nc]))
+                        shift_arr = np.int32(np.zeros(shape=[nc]))
+                        for i in range(nc):
+                            (
+                                multiplier_arr[i],
+                                shift_arr[i],
+                            ) = TosaQuantGen.computeMultiplierAndShift(
+                                scale_arr[i], scale32
+                            )
+
                         arg_list.append(
                             (
                                 "out{}_sc{}_dr{}_pc{}".format(
@@ -2855,6 +2916,8 @@ class TosaArgGen:
                                     "scale": scale32,
                                     "double_round": double_round,
                                     "per_channel": per_channel,
+                                    "multiplier": multiplier_arr,
+                                    "shift": shift_arr,
                                 },
                             )
                         )

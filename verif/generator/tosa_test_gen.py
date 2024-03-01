@@ -317,13 +317,6 @@ class TosaTestGen:
                     "Unknown dtype, cannot convert to string: {}".format(dtype)
                 )
 
-    def typeWidth(self, dtype):
-        """Get the datatype width for data types"""
-        if dtype in gtu.DTYPE_ATTRIBUTES:
-            return gtu.DTYPE_ATTRIBUTES[dtype]["width"]
-        else:
-            raise Exception(f"Unknown dtype, cannot determine width: {dtype}")
-
     def constrictBatchSize(self, shape):
         # Limit the batch size unless an explicit target shape set
         if self.args.max_batch_size and not self.args.target_shapes:
@@ -2130,12 +2123,15 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 3
         val = inputs[0]
+        multiplier_val = inputs[1]
+        shift_val = inputs[2]
         out_dtype = args_dict["output_dtype"]
         scale32 = args_dict["scale"]
         double_round = args_dict["double_round"]
         per_channel = args_dict["per_channel"]
+        shift_arr = args_dict["shift"]
 
         result_tensor = OutputShaper.typeConversionOp(
             self.ser, self.rng, val, out_dtype, error_name
@@ -2146,8 +2142,8 @@ class TosaTestGen:
         else:
             nc = 1
 
-        in_type_width = self.typeWidth(val.dtype)
-        out_type_width = self.typeWidth(out_dtype)
+        in_type_width = gtu.dtypeWidth(val.dtype)
+        out_type_width = gtu.dtypeWidth(out_dtype)
 
         input_unsigned = False
         output_unsigned = False
@@ -2198,31 +2194,10 @@ class TosaTestGen:
         else:
             output_zp = 0
 
-        # Calculate scale based on:
-        # scale = a *(2^output_width)/(2^input_width))
-
-        a = np.float32(self.rng.random(size=[nc]))
-        scale_arr = a * np.float32((1 << out_type_width) / (1 << in_type_width))
-
-        if scale32:
-            pass
-            # Cap the scaling at 2^31 - 1 for scale32
-            scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), (1 << 31) - 1)
-        else:
-            # Cap the scaling at 2^15 - 1 for scale16
-            scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), 32767.0)
-
-        # print('{} {} -> {}'.format(out_type_width, in_type_width, scale_arr))
-
-        multiplier_arr = np.int32(np.zeros(shape=[nc]))
-        shift_arr = np.int32(np.zeros(shape=[nc]))
         min_shift_value_arr = np.int64(np.zeros(shape=[nc]))
         max_shift_value_arr = np.int64(np.zeros(shape=[nc]))
 
         for i in range(nc):
-            multiplier_arr[i], shift_arr[i] = TosaQuantGen.computeMultiplierAndShift(
-                scale_arr[i], scale32
-            )
             min_shift_value_arr[i] = -1 << (shift_arr[i] - 1)
             max_shift_value_arr[i] = (1 << (shift_arr[i] - 1)) - 1
 
@@ -2256,7 +2231,7 @@ class TosaTestGen:
                 )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [val.name]
+        input_list = [val.name, multiplier_val.name, shift_val.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -2287,8 +2262,8 @@ class TosaTestGen:
         attr.RescaleAttribute(
             input_zp,
             output_zp,
-            multiplier_arr,
-            shift_arr,
+            [],
+            [],
             scale32,
             double_round,
             per_channel,
@@ -4809,11 +4784,11 @@ class TosaTestGen:
         },
         "rescale": {
             "op": Op.RESCALE,
-            "operands": (1, 0),
+            "operands": (3, 0),
             "build_fcn": (
                 build_rescale,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgRescale,
                 TosaArgGen.agRescale,
             ),
             "types": [
