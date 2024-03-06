@@ -191,6 +191,8 @@ class TosaTestGen:
 
         if dtype == DType.BOOL:
             return np.bool_(self.rng.choice(a=[False, True], size=shape))
+        elif dtype == DType.INT4:
+            return np.int8(self.rng.integers(low=low, high=high, size=shape))
         elif dtype == DType.INT8:
             return np.int8(self.rng.integers(low=low, high=high, size=shape))
         elif dtype == DType.UINT8:
@@ -4652,7 +4654,7 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agNone,
             ),
-            "types": TYPE_FIB,
+            "types": TYPE_FIB + [DType.INT4, DType.INT48],
             "data_gen": {
                 "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
             },
