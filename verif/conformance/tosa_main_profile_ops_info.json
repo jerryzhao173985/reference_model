@@ -610,6 +610,7 @@
             "tosa-mi"
         ],
         "support_for": [ "lazy_data_gen" ],
+        "gen_filter": "^conv2d",
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -685,6 +686,7 @@
             "tosa-mi"
         ],
         "support_for": [ "lazy_data_gen" ],
+        "gen_filter": "^conv3d",
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -750,6 +752,7 @@
             "tosa-mi"
         ],
         "support_for": [ "lazy_data_gen" ],
+        "gen_filter": "^depthwise_conv2d",
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
@@ -2162,6 +2165,7 @@
             "tosa-mi"
         ],
         "support_for": [ "lazy_data_gen" ],
+        "gen_filter": "^transpose_conv2d",
         "generation": {
             "standard": {
                 "negative_dim_range": "1,10",
