@@ -100,6 +100,7 @@ def build_op_tests(
     gen_args_list,
     gen_neg_dim_range,
     supports=[],
+    gen_filter=None,
 ):
     """Build tests for a given operator.
 
@@ -110,12 +111,15 @@ def build_op_tests(
     build_tests_cmd = "tosa_verif_build_tests"
     op_build_dir = args.build_dir / profile / group
 
+    if gen_filter is None:
+        gen_filter = f"^{operator}$"
+
     build_cmd_base = [
         build_tests_cmd,
         "--generate-lib-path",
         str(args.generate_lib_path),
         "--filter",
-        f"^{operator}$",
+        gen_filter,
         "-o",
         str(op_build_dir),
         "--seed",
@@ -872,6 +876,11 @@ def main():
                         if "support_for" in test_params[op]
                         else []
                     )
+                    gen_filter = (
+                        test_params[op]["gen_filter"]
+                        if "gen_filter" in test_params[op]
+                        else None
+                    )
 
                     # Iterate through the generation groups selecting tests from each
                     for gen_name, gen_dict in test_params[op]["generation"].items():
@@ -918,6 +927,7 @@ def main():
                             gen_dict["generator_args"],
                             gen_neg_dim_range,
                             supports=supports,
+                            gen_filter=gen_filter,
                         )
 
                         # Work out which selection criteria we are using

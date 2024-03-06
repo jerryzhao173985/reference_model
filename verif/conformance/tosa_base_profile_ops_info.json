@@ -1040,6 +1040,7 @@
             "tosa-bi",
             "tosa-mi"
         ],
+        "gen_filter": "^cond_if",
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1175,6 +1176,7 @@
             "tosa-bi",
             "tosa-mi"
         ],
+        "gen_filter": "^conv2d",
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1254,6 +1256,7 @@
             "tosa-bi",
             "tosa-mi"
         ],
+        "gen_filter": "^conv3d",
         "generation": {
             "standard": {
                 "generator_args": [
@@ -1334,6 +1337,7 @@
             "tosa-bi",
             "tosa-mi"
         ],
+        "gen_filter": "^depthwise_conv2d",
         "generation": {
             "standard": {
                 "generator_args": [
@@ -4020,6 +4024,7 @@
             "tosa-bi",
             "tosa-mi"
         ],
+        "gen_filter": "^transpose_conv2d",
         "generation": {
             "standard": {
                 "generator_args": [

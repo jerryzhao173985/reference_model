@@ -18,6 +18,7 @@ Each operator entry contains:
 * "group" - name of the group this operator is in, in the spec
 * "profile" - list of profiles that this operator covers
 * "support_for" - optional list of supported creation modes out of: lazy_data_gen (data generation just before test run)
+* "gen_filter" - optional filter string for op to give to tosa_verif_build_tests - defaults to "^opname$"
 * "generation" - dictionary of test generation details - see below
 * "selection" - dictionary of test selection details - see below
 
