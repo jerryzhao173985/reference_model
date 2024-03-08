@@ -17,6 +17,7 @@
 #include "arith_util.h"
 #include "quant_util.h"
 #include "template_types.h"
+#include "tosa_serialization_handler.h"
 #include <cmath>
 
 using namespace TosaReference;
@@ -35,8 +36,11 @@ int OpClamp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32: {
-            InEigenType min = (InEigenType)attribute->min_fp();
-            InEigenType max = (InEigenType)attribute->max_fp();
+            std::vector<float> min_float_data, max_float_data;
+            TosaSerializationHandler::ConvertU8toF32(attribute->min_val(), /* size = */ 1, min_float_data);
+            TosaSerializationHandler::ConvertU8toF32(attribute->max_val(), /* size = */ 1, max_float_data);
+            InEigenType min = (InEigenType)min_float_data[0];
+            InEigenType max = (InEigenType)max_float_data[0];
             ERROR_IF(max < min, "OpClamp: max smaller than min");
 
             this->fcn = [min, max](InEigenType a) -> OutEigenType {
@@ -45,23 +49,32 @@ int OpClamp<Rank, Dtype>::register_fcn()
         }
         break;
         case TOSA_REF_TYPE_FP64: {
-            InEigenType min = (InEigenType)attribute->min_fp();
-            InEigenType max = (InEigenType)attribute->max_fp();
+            std::vector<float> min_float_data, max_float_data;
+            TosaSerializationHandler::ConvertU8toF32(attribute->min_val(), /* size = */ 1, min_float_data);
+            TosaSerializationHandler::ConvertU8toF32(attribute->max_val(), /* size = */ 1, max_float_data);
+            InEigenType min = (InEigenType)min_float_data[0];
+            InEigenType max = (InEigenType)max_float_data[0];
             ERROR_IF(max < min, "OpClamp: max smaller than min");
 
             this->fcn = [min, max](InEigenType a) -> OutEigenType { return (a <= min ? min : a >= max ? max : a); };
         }
         break;
         case TOSA_REF_TYPE_INT8: {
-            int8_t min = (int8_t)attribute->min_int();
-            int8_t max = (int8_t)attribute->max_int();
+            std::vector<int32_t> min_int_data, max_int_data;
+            TosaSerializationHandler::ConvertU8toI32(attribute->min_val(), /* size = */ 1, min_int_data);
+            TosaSerializationHandler::ConvertU8toI32(attribute->max_val(), /* size = */ 1, max_int_data);
+            int8_t min = (int8_t)min_int_data[0];
+            int8_t max = (int8_t)max_int_data[0];
 
             ERROR_IF(max < min, "OpClamp: max smaller than min");
             this->fcn = [min, max](int8_t a) -> int8_t { return a <= min ? min : a >= max ? max : a; };
         }
         case TOSA_REF_TYPE_INT16: {
-            int16_t min = (int16_t)attribute->min_int();
-            int16_t max = (int16_t)attribute->max_int();
+            std::vector<int32_t> min_int_data, max_int_data;
+            TosaSerializationHandler::ConvertU8toI32(attribute->min_val(), /* size = */ 1, min_int_data);
+            TosaSerializationHandler::ConvertU8toI32(attribute->max_val(), /* size = */ 1, max_int_data);
+            int16_t min = (int16_t)min_int_data[0];
+            int16_t max = (int16_t)max_int_data[0];
 
             ERROR_IF(max < min, "OpClamp: max smaller than min");
             this->fcn = [min, max](int16_t a) -> int16_t { return a <= min ? min : a >= max ? max : a; };

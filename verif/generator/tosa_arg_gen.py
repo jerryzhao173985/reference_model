@@ -1813,13 +1813,7 @@ class TosaArgGen:
             and "data_gen" in testGen.TOSA_OP_LIST[opName]
             and gtu.dtypeIsSupportedByCompliance(dtype)
         ):
-            if dtype in [
-                DType.FP16,
-                DType.FP32,
-                DType.BF16,
-                DType.FP8E4M3,
-                DType.FP8E5M2,
-            ]:
+            if gtu.dtypeIsFloat(dtype):
                 dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"]["fp"]
             else:
                 dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"]["int"]
@@ -2462,13 +2456,7 @@ class TosaArgGen:
         if dtype in [DType.BOOL, DType.INT8, DType.INT16, DType.INT32]:
             pad_const_int = testGen.getRandNumberDType(dtype)
             pad_const_fp = 0
-        elif dtype in (
-            DType.FP16,
-            DType.BF16,
-            DType.FP32,
-            DType.FP8E4M3,
-            DType.FP8E5M2,
-        ):
+        elif gtu.dtypeIsFloat(dtype):
             pad_const_int = 0
             pad_const_fp = testGen.getRandNumberDType(dtype)
         else:

@@ -176,17 +176,25 @@ int OpPad<Rank, Dtype>::eval()
         case TOSA_REF_TYPE_BOOL:
         case TOSA_REF_TYPE_INT8:
         case TOSA_REF_TYPE_INT16:
-        case TOSA_REF_TYPE_INT32:
-            pad_value = (InEigenType)attribute->pad_const_int();
+        case TOSA_REF_TYPE_INT32: {
+            std::vector<int32_t> int32_data;
+            TosaSerializationHandler::ConvertU8toI32(attribute->pad_const(),
+                                                     /* size = */ 1, int32_data);
+            pad_value = (InEigenType)int32_data[0];
             break;
+        }
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
         case TOSA_REF_TYPE_FP8E4M3:
-        case TOSA_REF_TYPE_FP8E5M2:
-            pad_value = (InEigenType)attribute->pad_const_fp();
+        case TOSA_REF_TYPE_FP8E5M2: {
+            std::vector<float> float_data;
+            TosaSerializationHandler::ConvertU8toF32(attribute->pad_const(),
+                                                     /* size = */ 1, float_data);
+            pad_value = (InEigenType)float_data[0];
             break;
+        }
         default:
             ASSERT_MSG(false, "TOSA_REF_TYPE %s is not supported.", EnumNameTOSAREFTYPE(Dtype));
             break;
