@@ -338,7 +338,7 @@ class TosaTestGen:
                 if "ksb" in argsDict
                 else int(argsDict["ks"]),
             }
-        elif argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
+        elif argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
             mode = gtu.ComplianceMode.FP_SPECIAL
         elif "compliance" in op and "ulp" in op["compliance"]:
             mode = gtu.ComplianceMode.ULP
@@ -1691,9 +1691,7 @@ class TosaTestGen:
         assert len(inputs) == 1
         a = inputs[0]
         new_shape = args_dict["new_shape"]
-        result_tensor = OutputShaper.reshapeOp(
-            self.ser, rng, a, new_shape, error_name
-        )
+        result_tensor = OutputShaper.reshapeOp(self.ser, rng, a, new_shape, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1847,9 +1845,7 @@ class TosaTestGen:
         start = args_dict["start"]
         size = args_dict["size"]
 
-        result_tensor = OutputShaper.sliceOp(
-            self.ser, rng, a, start, size, error_name
-        )
+        result_tensor = OutputShaper.sliceOp(self.ser, rng, a, start, size, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -1904,9 +1900,7 @@ class TosaTestGen:
         a = inputs[0]
         multiples = args_dict["multiples"]
 
-        result_tensor = OutputShaper.tileOp(
-            self.ser, rng, a, multiples, error_name
-        )
+        result_tensor = OutputShaper.tileOp(self.ser, rng, a, multiples, error_name)
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
@@ -3344,7 +3338,11 @@ class TosaTestGen:
         DType.FP32: (gtu.DataGenType.DOT_PRODUCT,),
     }
     EW_UNARY_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE)
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
+    }
+    PR_FS_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
     }
 
     KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
@@ -3707,7 +3705,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "arithmetic_right_shift": {
@@ -3929,7 +3927,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "minimum": {
             "op": Op.MINIMUM,
@@ -4283,7 +4281,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "greater_equal": {
             "op": Op.GREATER_EQUAL,
@@ -4304,7 +4302,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "greater": {
             "op": Op.GREATER,
@@ -4325,7 +4323,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         # Reduction operators
         "reduce_all": {

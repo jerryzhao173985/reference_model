@@ -259,22 +259,25 @@ class TosaTensorGen:
 
     @staticmethod
     def tgBroadcastFuzz(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+        num_shapes = pl + const
+
         if rank == 0:
             # No broadcasting possible for rank 0
             return [[]] * num_shapes
 
         shape = testGen.makeShape(rng, rank)
-
-        pl, const = op["operands"]
-
+        # Do not broadcast for some tests
+        if error_name is None and rng.randInt(high=100) < 10:
+            return [shape] * num_shapes
         shape_list = []
 
         # Choose any one of the inputs to broadcast
         # Note for ERRORS: Simplifies OutputShaper code if we don't change first shape
-        bcast_idx = rng.randInt(0 if error_name is None else 1, pl + const)
+        bcast_idx = rng.randInt(0 if error_name is None else 1, num_shapes)
         fuzz_idx = rng.randInt(0, rank)
 
-        for i in range(pl + const):
+        for i in range(num_shapes):
             shape_bcast = shape.copy()
 
             # To test broadcasting, the chosen fuzz index dimension should not be 1
@@ -751,6 +754,10 @@ class TosaTensorValuesGen:
             "tensors": {},
         }
         dg_tens_meta = tens_data["tensors"]
+
+        fp_special_info = {}
+        fp_special_info["start_idx"] = int(rng.randInt())
+
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}
@@ -811,6 +818,8 @@ class TosaTensorValuesGen:
                     rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
                 )
                 tens_meta["full_range_info"] = info
+            elif dg_type == gtu.DataGenType.FP_SPECIAL:
+                tens_meta["fp_special_info"] = fp_special_info
             else:
                 # TODO - other data gen type
                 assert False, "TODO: support other data gen types"
@@ -888,7 +897,9 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgAddSub(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+    def tvgAddSub(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
         if dtypeList[0] == DType.INT32 and error_name is None:
             # Make sure the integer operation does not cause value saturation - where
             # the number wraps due to limited number of bits to store the answer
@@ -1222,10 +1233,14 @@ class TosaTensorValuesGen:
                 b_arr = b_arr // 2
 
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr.astype(np_type))
+                testGen.ser.addPlaceholder(
+                    shapeList[0], dtypeList[0], a_arr.astype(np_type)
+                )
             )
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr.astype(np_type))
+                testGen.ser.addPlaceholder(
+                    shapeList[1], dtypeList[1], b_arr.astype(np_type)
+                )
             )
 
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
@@ -1754,16 +1769,12 @@ class TosaArgGen:
         for dg_type in dataGenTypesList:
             for arg_str, args_dict in arg_list:
                 gen_args_dict = args_dict.copy()
+                # Only create one test by default - no sets of tests
+                num_test_sets = 0
+
                 if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
                     if error_name is None:
-                        num_test_sets = (
-                            args_dict["num_test_sets"]
-                            if "num_test_sets" in args_dict
-                            else 0
-                        )
-                    else:
-                        # Add single test for pseudo random
-                        num_test_sets = 0
+                        num_test_sets = args_dict.get("num_test_sets", 0)
 
                 elif dg_type == gtu.DataGenType.DOT_PRODUCT:
                     # Extra tests for each dot product test set
@@ -1792,9 +1803,22 @@ class TosaArgGen:
                             f"Skipping {opName}{shape_info} as tensor data size too small for full range of values {tensor_size} < {gtu.DTYPE_ATTRIBUTES[dtype]['fullset']}"
                         )
                         continue
-                    # Large enough tensor data size for full range, add a single test
-                    num_test_sets = 0
+                    # Large enough tensor data size for full range, add full test
                     arg_str = f"{arg_str}_full" if arg_str else "full"
+                    gen_args_dict["tags"] = args_dict.get("tags", []) + [
+                        "non_finite_fp_data"
+                    ]
+
+                elif dg_type == gtu.DataGenType.FP_SPECIAL:
+                    shapes_set = {tuple(x) for x in shapeList}
+                    if len(shapes_set) != 1:
+                        logger.info(
+                            f"Changing {opName} input shapes {shapes_set} - broadcasting incompatable with special test"
+                        )
+                        shapeList = [np.int32(np.broadcast_shapes(*shapeList))] * len(
+                            shapeList
+                        )
+                    arg_str = f"{arg_str}_fs" if arg_str else "fs"
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]

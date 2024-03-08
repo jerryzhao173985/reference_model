@@ -22,7 +22,7 @@
                     "type": "object",
                     "properties": {
                         "generator": {
-                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT, FULL_RANGE, BOUNDARY, or SPECIAL",
+                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT, FULL_RANGE, BOUNDARY, or FP_SPECIAL",
                             "type": "string"
                         },
                         "data_type": {
@@ -127,6 +127,20 @@
                             {
                                 "start_val": {
                                     "description": "starting value of the test data",
+                                    "type": "integer",
+                                    "minimum": 0
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [ ]
+                        },
+                        "fp_special_info": {
+                            "description": "info required for the FP_SPECIAL generator",
+                            "type": "object",
+                            "properties":
+                            {
+                                "start_idx": {
+                                    "description": "starting index for the test data",
                                     "type": "integer",
                                     "minimum": 0
                                 }

@@ -79,6 +79,7 @@ set(CXX_SOURCE
     src/generate/generate_dot_product.cc
     src/generate/generate_pseudo_random.cc
     src/generate/generate_full_range.cc
+    src/generate/generate_fp_special.cc
     src/generate/generate_entry.cc
     src/generate/generate_utils.cc
     src/verify/verify_abs_error.cc
@@ -88,6 +89,7 @@ set(CXX_SOURCE
     src/verify/verify_reduce_product.cc
     src/verify/verify_relative.cc
     src/verify/verify_ulp.cc
+    src/verify/verify_fp_special.cc
     src/verify/verify_utils.cc
     src/ops/op_factory.cc
     src/ops/tensor_ops.cc
@@ -164,6 +166,7 @@ add_library(tosa_reference_verify_lib SHARED
   src/verify/verify_reduce_product.cc
   src/verify/verify_relative.cc
   src/verify/verify_ulp.cc
+  src/verify/verify_fp_special.cc
   src/verify/verify_utils.cc
   src/verify/verify_config.cc
   src/func_debug.cc
@@ -181,6 +184,7 @@ add_library(tosa_reference_generate_lib SHARED
   src/generate/generate_dot_product.cc
   src/generate/generate_pseudo_random.cc
   src/generate/generate_full_range.cc
+  src/generate/generate_fp_special.cc
   src/generate/generate_entry.cc
   src/generate/generate_utils.cc
   src/generate/generate_config.cc
