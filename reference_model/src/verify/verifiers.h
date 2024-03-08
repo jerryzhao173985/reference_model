@@ -85,6 +85,14 @@ bool verifyRelative(const CTensor* referenceTensor,
                     const CTensor* implementationTensor,
                     const RelativeVerifyInfo& rInfo);
 
+/// \brief Perform FP special tests verification
+///
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
+///
+/// \return True if compliant else false
+bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementationTensor);
+
 };    // namespace TosaReference
 
 #endif    // VERIFIERS_H_

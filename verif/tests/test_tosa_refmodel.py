@@ -1,5 +1,5 @@
 """Tests for tosa_reference_model."""
-# Copyright (c) 2022-2023, ARM Limited.
+# Copyright (c) 2022-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 import re
@@ -134,9 +134,10 @@ class BuildTosaTest:
 
 
 # Tests - op_name, ref_model_type, num_expected_tests
+# FP Special datagen adds a second expected test to FP16 and FP32 tests for OPs it is added to
 TEST_PARAMS = [
     ("add", "int32", 1),
-    ("add", "fp32", 1),
+    ("add", "fp32", 2),
     ("abs", "int32", 1),
     ("abs", "fp32", 1),
     ("abs", "fp16", 1),
@@ -223,13 +224,20 @@ def test_refmodel_simple_op(tosaTest):
             assert const_file.is_file()
             consts.append(np.load(str(const_file)))
 
+        # Check if the data is from FP special datagen which can give invalid results
+        fp_special_data = test_dir.match("*_fs")
+
         # Perform Numpy operation
         if op_name == "abs":
             assert len(tensors) == 1
             result = np.abs(tensors[0])
         elif op_name == "add":
             assert len(tensors) == 2
-            result = np.add(tensors[0], tensors[1])
+            if fp_special_data:
+                with np.errstate(invalid="ignore"):
+                    result = np.add(tensors[0], tensors[1])
+            else:
+                result = np.add(tensors[0], tensors[1])
         elif op_name == "concat":
             assert len(consts) == 1
             # Get axis from test directory name

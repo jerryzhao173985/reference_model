@@ -1609,4 +1609,101 @@ TEST_CASE("positive - FP16 full range")
     }
 }
 
+void fp_special_test_FP32(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string templateJsonCfg,
+                          const std::string opStr,
+                          const std::string startIndexStr,
+                          const std::vector<uint32_t> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_OP_", opStr);
+    update_json_template(jsonCfg, "_START_", startIndexStr);
+
+    std::vector<float> buffer(tosaElements);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    check_output<float>(buffer, expected);
+}
+
+TEST_CASE("positive - FP32 FP Special")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "FP_SPECIAL",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 5, 6, 7 ],
+                "input_pos": 0,
+                "op" : "_OP_",
+                "fp_special_info": {
+                    "start_idx": _START_
+                }
+            },
+            "input1" : {
+                "generator": "FP_SPECIAL",
+                "data_type": "FP32",
+                "input_type": "VARIABLE",
+                "shape" : [ 5, 6, 7 ],
+                "input_pos": 1,
+                "op" : "_OP_",
+                "fp_special_info": {
+                    "start_idx": _START_
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName0 = "input0";
+    const std::string tosaName1 = "input1";
+    const size_t tosaElements   = 5 * 6 * 7;
+
+    SUBCASE("equal, input 0")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x7F800000, 0x0 };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+    }
+    SUBCASE("equal, input 1")
+    {
+        std::vector<uint32_t> expected = { 0x80000000, 0xFF800000, 0x80000000 };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+    }
+    SUBCASE("greater, input 0")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x7F800000, 0x0 };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "GREATER", "0", expected);
+    }
+    SUBCASE("greater, input 1")
+    {
+        std::vector<uint32_t> expected = { 0x80000000, 0xFF800000, 0x80000000 };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "GREATER", "0", expected);
+    }
+    SUBCASE("add, input 0")
+    {
+        std::vector<uint32_t> expected = { 0x7F7FFFFF, 0x7F800000, 0x7F7FFFFF };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "ADD", "0", expected);
+    }
+    SUBCASE("add, input 1")
+    {
+        std::vector<uint32_t> expected = { 0x3F800000, 0xFF800000, 0x3F800000 };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "ADD", "0", expected);
+    }
+    SUBCASE("maximum, input 0")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x80000000, 0x7F800000 };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
+    }
+    SUBCASE("maximum, input 1")
+    {
+        std::vector<uint32_t> expected = { 0x0, 0x80000000, 0x7F800000 };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
+    }
+    SUBCASE("maximum, startIndex 100")
+    {
+        // A startIndex of 100 creates an offset of 2 in the MAXIMUM op's test data (size: 7) 100 % 7 = 2
+        std::vector<uint32_t> expected = { 0x7F800000, 0xFF800000, 0x7FC00000 };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "100", expected);
+    }
+}
+
 TEST_SUITE_END();    // generate

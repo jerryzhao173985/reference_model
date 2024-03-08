@@ -55,7 +55,7 @@ class DataGenType(IntEnum):
     DOT_PRODUCT = 1
     BOUNDARY = 2
     FULL_RANGE = 3
-    SPECIAL = 4
+    FP_SPECIAL = 4
     FIXED_DATA = 5
 
 

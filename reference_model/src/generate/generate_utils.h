@@ -33,7 +33,7 @@ enum class GeneratorType
     DotProduct,
     FullRange,
     Boundary,
-    Special,
+    FpSpecial,
     FixedData,
 };
 
@@ -82,6 +82,14 @@ struct FullRangeInfo
     uint16_t startVal;
 };
 
+/// \brief Op specific generator meta-data
+struct FpSpecialInfo
+{
+    FpSpecialInfo() = default;
+
+    uint8_t startIndex;
+};
+
 /// \brief Generator configuration
 struct GenerateConfig
 {
@@ -95,6 +103,7 @@ struct GenerateConfig
     PseudoRandomInfo pseudoRandomInfo;
     FixedDataInfo fixedDataInfo;
     FullRangeInfo fullRangeInfo;
+    FpSpecialInfo fpSpecialInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form

@@ -259,9 +259,9 @@ class Operator:
                     negative and "ERRORIF" in str(path)
                 ):
                     # Check for test set paths
-                    match = re.match(r"(.*)_(s[0-9]+|full)", path.name)
+                    match = re.match(r"(.*)_(s[0-9]+|full|fs)", path.name)
                     if match:
-                        if match.group(2) in ["s0", "full"]:
+                        if match.group(2) in ["s0", "full", "fs"]:
                             # Only return the truncated test name
                             # of the first test of a set, and for full tests
                             yield path.with_name(match.group(1))
@@ -317,7 +317,7 @@ class Operator:
     def _get_extra_test_paths(path):
         """Expand a path to find extra tests."""
         paths = []
-        for suffix in ["full"]:
+        for suffix in ["full", "fs"]:
             suffix_path = path.with_name(f"{path.name}_{suffix}")
             if suffix_path.exists():
                 paths.append(suffix_path)

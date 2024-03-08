@@ -107,7 +107,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::DotProduct, "DOT_PRODUCT" },
                                  { GeneratorType::FullRange, "FULL_RANGE" },
                                  { GeneratorType::Boundary, "BOUNDARY" },
-                                 { GeneratorType::Special, "SPECIAL" },
+                                 { GeneratorType::FpSpecial, "FP_SPECIAL" },
                                  { GeneratorType::FixedData, "FIXED_DATA" },
                              })
 
@@ -159,6 +159,14 @@ void from_json(const nlohmann::json& j, FullRangeInfo& fullRangeInfo)
     }
 }
 
+void from_json(const nlohmann::json& j, FpSpecialInfo& fpSpecialInfo)
+{
+    if (j.contains("start_idx"))
+    {
+        j.at("start_idx").get_to(fpSpecialInfo.startIndex);
+    }
+}
+
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)
 {
     j.at("data_type").get_to(cfg.dataType);
@@ -200,6 +208,13 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     if (j.contains("full_range_info"))
     {
         j.at("full_range_info").get_to(cfg.fullRangeInfo);
+    }
+
+    //Set up defaults for fpSpecialInfo
+    cfg.fpSpecialInfo.startIndex = 0;
+    if (j.contains("fp_special_info"))
+    {
+        j.at("fp_special_info").get_to(cfg.fpSpecialInfo);
     }
 }
 
