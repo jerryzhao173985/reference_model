@@ -1794,7 +1794,12 @@ class TosaArgGen:
         for a in axes:
             args_dict = {"axis": int(a)}
             if opid == Op.REDUCE_SUM:
-                args_dict["dot_products"] = gtu.product(shape)
+                output_shape = shape.copy()
+                if error_name is None:
+                    # It only matters that we calculate the dot_products correctly
+                    # for non error_if tests as they should never be run
+                    output_shape[a] = 1
+                args_dict["dot_products"] = gtu.product(output_shape)
                 args_dict["shape"] = shape
                 args_dict["ks"] = int(shape[a]) if a >= 0 and a < len(shape) else 1
                 args_dict["acc_type"] = dtype if dtype != DType.BF16 else DType.FP32
