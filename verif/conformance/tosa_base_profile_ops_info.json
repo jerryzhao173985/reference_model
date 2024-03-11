@@ -358,7 +358,8 @@
                         "int16",
                         "--tensor-dim-range",
                         "3,10",
-                        "--level-8k-sizes"                    ]
+                        "--level-8k-sizes"
+                    ]
                 ]
             }
         },
@@ -1029,8 +1030,7 @@
         "selection": {
             "default": {
                 "params": {},
-                "permutes": [
-                ]
+                "permutes": []
             }
         }
     },
@@ -1173,8 +1173,7 @@
         "selection": {
             "default": {
                 "params": {},
-                "permutes": [
-                ]
+                "permutes": []
             }
         }
     },
@@ -1452,7 +1451,6 @@
             "8k_level": {
                 "from_version": "v0.80.0",
                 "no_negative_tests": "true",
-                "selector": "8k_level",
                 "generator_args": [
                     [
                         "--target-dtype",

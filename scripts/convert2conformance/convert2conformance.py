@@ -15,6 +15,7 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
+from conformance.tosa_profiles import TosaProfiles
 from json2fbbin.json2fbbin import fbbin_to_json
 from json2numpy.json2numpy import npy_to_json
 from schemavalidation.schemavalidation import TestDescSchemaValidator
@@ -28,7 +29,8 @@ NAME_DESC_FILENAME = "desc.json"
 NAME_CONFORMANCE_RESULT_PREFIX = "Conformance-"
 NAME_REFMODEL_RUN_RESULT_SUFFIX = ".runner.tosa_refmodel_sut_run.npy"
 
-PROFILES_LIST = ["tosa-bi", "tosa-mi"]
+PROFILES_LIST = TosaProfiles.profiles()
+EXTENSIONS_LIST = TosaProfiles.extensions()
 
 OUTPUT_TYPE_JSON = "json"
 OUTPUT_TYPE_BINARY = "binary"
@@ -93,10 +95,10 @@ def parse_args(argv):
     parser.add_argument(
         "--profile",
         dest="profile",
-        choices=PROFILES_LIST,
+        choices=PROFILES_LIST + EXTENSIONS_LIST,
         action="append",
         required=True,
-        help="Profiles this test is suitable for. May be repeated",
+        help="Profiles and extensions this test is suitable for. May be repeated",
     )
     parser.add_argument(
         "--tag",
