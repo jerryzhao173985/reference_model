@@ -5259,7 +5259,7 @@ class OutputShaper:
         if error_name == ErrorIf.WrongOutputType:
             if ifm.dtype == DType.FP16:
                 excludes = [DType.FP16, DType.FP32]
-            if ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
+            elif ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
                 excludes = [DType.FP16]
             else:
                 excludes = [out_dtype]
