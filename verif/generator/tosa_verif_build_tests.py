@@ -348,9 +348,15 @@ def main(argv=None):
             selectionCfg = json.load(fd)
     else:
         # Fallback to using anything defined in the TosaTestGen list
-        # by default this will mean only selecting a tests using a
-        # permutation of rank by type for each op
         selectionCfg = ttg.TOSA_OP_LIST
+        # Set up some defaults to create a quick testing selection
+        selectDefault = {"default": {"permutes": ["rank", "dtype"], "maximum": 10}}
+        for opName in selectionCfg:
+            if (
+                "selection" not in selectionCfg[opName]
+                or "default" not in selectionCfg[opName]["selection"]
+            ):
+                selectionCfg[opName]["selection"] = selectDefault
 
     if args.test_type == "both":
         testType = ["positive", "negative"]
