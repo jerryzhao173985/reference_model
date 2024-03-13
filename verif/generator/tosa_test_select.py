@@ -338,7 +338,8 @@ class TestList:
                 tests = opList.all()
             selection.extend(tests)
 
-        selection = sorted(selection)
+        if selectMode:
+            selection = sorted(selection)
         return selection
 
     def select(self, rng=None):
