@@ -119,6 +119,8 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_THREE_TYPE(OpFullyConnected, INT8, INT8, INT32);
             DEF_FACTORY_THREE_TYPE(OpFullyConnected, INT16, INT8, INT48);
             DEF_FACTORY_THREE_TYPE(OpFullyConnected, FP64, FP64, FP64);
+            DEF_FACTORY_THREE_TYPE(OpFullyConnected, FP8E4M3, FP8E4M3, FP16);
+            DEF_FACTORY_THREE_TYPE(OpFullyConnected, FP8E5M2, FP8E5M2, FP16);
             break;
         case Op_MATMUL:
             DEF_FACTORY_TWO_TYPE_IN_OUT(OpMatMul, FP16, FP16);
