@@ -739,9 +739,9 @@
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
-                        "1,34,19,27",
+                        "2,34,19,27",
                         "--target-shape",
-                        "1,16,51,7",
+                        "3,16,51,7",
                         "--tensor-dim-range",
                         "1,16",
                         "--allow-pooling-and-conv-oversizes"
@@ -760,6 +760,28 @@
                         "--max-conv-dilation",
                         "1",
                         "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--conv-kernel",
+                        "7,7",
+                        "--conv-kernel",
+                        "9,9",
+                        "--target-shape",
+                        "1,127,127,1",
+                        "--target-shape",
+                        "1,256,256,1",
+                        "--target-shape",
+                        "1,1080,720,1",
+                        "--tensor-dim-range",
+                        "1,8"
                     ]
                 ]
             },

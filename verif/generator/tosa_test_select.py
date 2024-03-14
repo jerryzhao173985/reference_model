@@ -164,9 +164,6 @@ class TestOpList:
             op, selectionCriteria, "all", False
         )
 
-        if self.paramArgs and self.maximumPerPermute > 1:
-            logger.warning(f"Unsupported - selection params AND maximum for {opName}")
-
         self.tests = []
         self.testStrings = set()
         self.shapes = set()
