@@ -168,6 +168,15 @@ def parseArgs(argv):
     )
 
     ops_group.add_argument(
+        "--conv-kernel",
+        dest="conv_kernels",
+        action="append",
+        default=[],
+        type=lambda x: str_to_list(x),
+        help="Create convolution tests with a particular kernel shape, e.g., 1,4 or 1,3,1 (only 2D kernel sizes will be used for 2D ops, etc.)",
+    )
+
+    ops_group.add_argument(
         "--max-pooling-padding",
         dest="max_pooling_padding",
         default=1,

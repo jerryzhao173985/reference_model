@@ -324,7 +324,13 @@ class TosaTensorGen:
         # The filter dimensions are OHWI
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
 
-        # The bias is OC
+        # The bias is OC or 1 if broadcastable
+        try:
+            if op["broadcastable_bias"]:
+                if rng.choice([True, False]):
+                    ofm_depth = 1
+        except KeyError:
+            pass
         bias_shape = np.asarray([ofm_depth])
 
         return [ifm_shape, filter_shape, bias_shape]
@@ -1742,7 +1748,7 @@ class TosaArgGen:
                             else ""
                         )
                         logger.info(
-                            f"Skipping {opName}{shape_info} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
+                            f"Skipping {opName}{shape_info} {gtu.DTYPE_ATTRIBUTES[dtype]['json']} dot product test as too few calculations {dot_products} < {testGen.TOSA_MI_DOT_PRODUCT_MIN}"
                         )
                         continue
                     # KS and acc_type is required by all dot product generators
@@ -1873,10 +1879,6 @@ class TosaArgGen:
         # Used by CONV2D, CONV3D and DEPTHWISE_CONV2D
         arg_list = []
 
-        if testGen.args.level8k and error_name is not None:
-            # Don't produce negative large tests
-            return arg_list
-
         # Shape: Batches, (Depth), Height, Width, Channels
         ifm_shape = shapeList[0]
         # Shape: (OFM channels), (KD), KH, KW, IFM channels
@@ -1884,124 +1886,116 @@ class TosaArgGen:
 
         accum_dtype = gtu.get_accum_dtype_from_tgTypes(dtypes)
 
-        # Op type checks
-        conv3d = opName.startswith("conv3d")
-        depthwise = opName.startswith("depthwise")
+        # For op type checks
+        op = testGen.TOSA_OP_LIST[opName]
 
         # Check the rank
-        rank = 5 if conv3d else 4
+        rank = 5 if op["op"] == Op.CONV3D else 4
         if error_name != ErrorIf.WrongRank:
             assert len(ifm_shape) == rank
             assert len(filter_shape) == rank
 
         # kernel rank omits channels
         k_rank = rank - 2
-        k_pos = 0 if depthwise else 1
+        k_pos = 0 if op["op"] == Op.DEPTHWISE_CONV2D else 1
         k_shape = tuple(filter_shape[k_pos : (k_pos + k_rank)])
         # compliance size - KS
         k_size = gtu.product(k_shape)
-        if not depthwise:
+        if not op["op"] == Op.DEPTHWISE_CONV2D:
             k_size *= ifm_shape[-1]
 
-        if not testGen.args.level8k:
-            if error_name in (
-                ErrorIf.PadSmallerZero,
-                ErrorIf.StrideSmallerOne,
-                ErrorIf.DilationSmallerOne,
-            ):
-                # Use specific invalid value(s)
-                if error_name == ErrorIf.PadSmallerZero:
-                    # Create negative paddings but with positive opposite paddings
-                    neg_pad = rng.choice(range(-5, 0))
-                    p_vals = [neg_pad, abs(neg_pad)]
-                else:
-                    p_vals = [0, 0]
-                if error_name == ErrorIf.StrideSmallerOne:
-                    # Can't use stride=0, as it is used to derive output shape, as a divisor
-                    s_vals = [rng.choice(range(-5, 0))]
-                else:
-                    s_vals = [1]
-                if error_name == ErrorIf.DilationSmallerOne:
-                    d_vals = [rng.choice(range(-5, 1))]
-                else:
-                    d_vals = [1]
-                p = p_vals * k_rank
-                s = s_vals * k_rank
-                d = d_vals * k_rank
-
-                # Fix values to produce valid error_if
-                for index in range(k_rank):
-                    pad_offset = index * 2
-                    fixed = False
-                    while not fixed:
-                        partial = (
-                            ifm_shape[index + 1]
-                            - 1
-                            + p[pad_offset]
-                            + p[pad_offset + 1]
-                            - (k_shape[index] - 1) * d[index]
-                        )
-                        remainder = partial % s[index]
-                        if partial <= 0:
-                            p[pad_offset + 1] += abs(partial) + 1
-                        elif remainder:
+        def get_conv_output_info(p, s, d, fix_up_padding=False):
+            # Work out remainders and output dimensions with an
+            # option to adjust paddings to create a valid operation
+            nonlocal ifm_shape, k_shape, error_name, k_rank
+            if fix_up_padding:
+                p = list(p)  # Make paddings editable
+            outputs_no_stride = []
+            remainders = []
+            outputs = []
+            for index in range(k_rank):
+                pad_offset = index * 2
+                fixed = False
+                # Fix up pad values to produce valid conv2d
+                while not fixed:
+                    # Output dimension without being adjusted for stride
+                    output_no_stride = (
+                        ifm_shape[index + 1]
+                        - 1
+                        + p[pad_offset]
+                        + p[pad_offset + 1]
+                        - (k_shape[index] - 1) * d[index]
+                    )
+                    # Tensor left over after applying striding
+                    remainder = output_no_stride % s[index]
+                    if not fix_up_padding:
+                        # Just want remainders and outputs
+                        break
+                    if output_no_stride <= 0:
+                        p[pad_offset + 1] += abs(output_no_stride) + 1
+                        continue
+                    if error_name == ErrorIf.ConvOutputShapeNonInteger:
+                        if remainder:
+                            # Conditions to trigger the test
+                            fixed = True
+                        else:
+                            p[pad_offset + 1] += 1
+                    else:
+                        if remainder:
                             # Stride will be negative for StrideSmallerOne
-                            assert remainder < 0
+                            assert remainder > 0 or (
+                                error_name == ErrorIf.StrideSmallerOne and remainder < 0
+                            )
                             p[pad_offset + 1] += abs(remainder)
                         else:
                             fixed = True
-                paddings = {tuple(p)}
-                strides = {tuple(s)}
-                dilations = {tuple(d)}
-                logger.debug(f"agConv: error pad={p} stride={s} dilation={d}")
+                outputs_no_stride.append(output_no_stride)
+                remainders.append(remainder)
+                # Output dimension taking in to account stride
+                outputs.append((output_no_stride // s[index]) + 1)
+
+            if fix_up_padding:
+                p = tuple(p)  # Make the paddings read-only
+                assert min(outputs_no_stride) > 0, "Fix up did not work!"
+            return p, remainders, outputs, outputs_no_stride
+
+        # Only fix up padding for conv2d and float types currently
+        fix_up_padding = gtu.dtypeIsFloat(dtypes[0]) and op["op"] == Op.CONV2D
+        # Allow any size of output dimension
+        max_dim_size = None
+        # Include all tests by default
+        sparsity = 1
+
+        # Work out padding, strides and dilation ranges depending on
+        # error and arguments
+        if error_name in (
+            ErrorIf.PadSmallerZero,
+            ErrorIf.StrideSmallerOne,
+            ErrorIf.DilationSmallerOne,
+        ):
+            # Use specific invalid value(s)
+            if error_name == ErrorIf.PadSmallerZero:
+                # Create negative paddings but with positive opposite paddings
+                neg_pad = rng.choice(range(-5, 0))
+                p_vals = [neg_pad, abs(neg_pad)]
             else:
-                # Generate comprehensive argument lists
-                p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
-                paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
-                # Stride must be greater than 1 to force non-integer error
-                startStride = (
-                    1 if error_name != ErrorIf.ConvOutputShapeNonInteger else 2
-                )
-                s_vals = [
-                    x for x in range(startStride, testGen.args.max_conv_stride + 1)
-                ]
-                d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
-
-                strides = {x for x in itertools.product(*([s_vals] * k_rank))}
-                dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
-
-            if not error_name and testGen.args.oversize:
-                # add some oversize argument values
-                if max(ifm_shape) < 64:
-                    bigPadding = 9
-                    paddings.update(
-                        {
-                            x
-                            for x in itertools.product(
-                                *([[0, bigPadding]] * (k_rank * 2))
-                            )
-                        }
-                    )
-                bigStride = 8
-                strides.update(
-                    {x for x in itertools.product(*([[1, bigStride]] * k_rank))}
-                )
-                bigDilation = 7
-                dilations.update(
-                    {x for x in itertools.product(*([[1, bigDilation]] * k_rank))}
-                )
-            max_dim_size = None
-
-            if error_name:
-                # Cycle through all error_if tests but we only keep the first few
-                sparsity = 1
+                p_vals = [0, 0]
+            if error_name == ErrorIf.StrideSmallerOne:
+                # Can't use stride=0, as it is used to derive output shape, as a divisor
+                s_vals = [rng.choice(range(-5, 0))]
             else:
-                # There are too many parameter combinations, so generate them sparsely,
-                sparsity_factor = 120
-                sparsity = TosaArgGen._calculate_sparsity(
-                    len(paddings) * len(strides) * len(dilations), sparsity_factor
-                )
-        else:
+                s_vals = [1]
+            if error_name == ErrorIf.DilationSmallerOne:
+                d_vals = [rng.choice(range(-5, 1))]
+            else:
+                d_vals = [1]
+            paddings = {tuple(p_vals) * k_rank}
+            strides = {tuple(s_vals) * k_rank}
+            dilations = {tuple(d_vals) * k_rank}
+
+            fix_up_padding = True  # Need to fix up paddings to be valid
+
+        elif testGen.args.level8k and error_name is None:
             # Only test 8k levels boundaries
             bigStride = testGen.TOSA_8K_LEVEL_MAX_STRIDE
             bigKernel = testGen.TOSA_8K_LEVEL_MAX_KERNEL
@@ -2009,7 +2003,7 @@ class TosaArgGen:
 
             dilation_shape = [1] * k_rank
             pad_shape = [0] * k_rank * 2
-            if conv3d:
+            if op["op"] == Op.CONV3D:
                 # Small stride apart from for big kernel (see below) to keep
                 # tensor size/calculation small
                 stride_shape = [1] * k_rank
@@ -2044,40 +2038,65 @@ class TosaArgGen:
 
             # Currently allow all combinations that are reasonable size
             sparsity = 1
+        else:
+            # Generate comprehensive argument lists
+            p_vals = [x for x in range(0, testGen.args.max_conv_padding + 1)]
+            paddings = {x for x in itertools.product(*([p_vals] * k_rank * 2))}
+            # Stride must be greater than 1 to force non-integer error
+            startStride = 1 if error_name != ErrorIf.ConvOutputShapeNonInteger else 2
+            s_vals = [x for x in range(startStride, testGen.args.max_conv_stride + 1)]
+            d_vals = [x for x in range(1, testGen.args.max_conv_dilation + 1)]
 
+            strides = {x for x in itertools.product(*([s_vals] * k_rank))}
+            dilations = {x for x in itertools.product(*([d_vals] * k_rank))}
+
+            if error_name is None and testGen.args.oversize:
+                # add some oversize argument values
+                if max(ifm_shape) < 64:
+                    bigPadding = 9
+                    paddings.update(
+                        {
+                            x
+                            for x in itertools.product(
+                                *([[0, bigPadding]] * (k_rank * 2))
+                            )
+                        }
+                    )
+                bigStride = 8
+                strides.update(
+                    {x for x in itertools.product(*([[1, bigStride]] * k_rank))}
+                )
+                bigDilation = 7
+                dilations.update(
+                    {x for x in itertools.product(*([[1, bigDilation]] * k_rank))}
+                )
+
+            if error_name is None:
+                # There are too many parameter combinations, so generate them sparsely,
+                sparsity_factor = 120
+                sparsity = TosaArgGen._calculate_sparsity(
+                    len(paddings) * len(strides) * len(dilations), sparsity_factor
+                )
+
+        # Run through all the argument options creating valid test cases
         more_tests = True
         n = 0
         for s in sorted(list(strides)):
             for p in sorted(list(paddings)):
                 for d in sorted(list(dilations)):
-                    if (
-                        more_tests
-                        and n % sparsity == 0
-                        # the padded shape must exceed the dilation * kernel to get a positive
-                        # sized output shape
-                        and (ifm_shape[1] - 1 + p[0] + p[1]) > d[0] * (k_shape[0] - 1)
-                        and (ifm_shape[2] - 1 + p[2] + p[3]) > d[1] * (k_shape[1] - 1)
-                        and (
-                            k_rank < 3
-                            or (
-                                (ifm_shape[3] - 1 + p[4] + p[5])
-                                > d[2] * (k_shape[2] - 1)
-                            )
-                        )
-                    ):
-                        remainders = []
-                        outputs = []
-                        for index in range(k_rank):
-                            pad_offset = index * 2
-                            partial = (
-                                ifm_shape[index + 1]
-                                - 1
-                                + p[pad_offset]
-                                + p[pad_offset + 1]
-                                - (k_shape[index] - 1) * d[index]
-                            )
-                            remainders.append(partial % s[index])
-                            outputs.append((partial // s[index]) + 1)
+                    if more_tests and (n % sparsity == 0):
+                        (
+                            p,
+                            remainders,
+                            outputs,
+                            outputs_no_stride,
+                        ) = get_conv_output_info(p, s, d, fix_up_padding)
+                        # Following is like checking each dimension N:
+                        # (ifm_shape[N+1] - 1 + p[N*2] + p[N*2+1]) > d[N] * (k_shape[N] - 1)
+                        if min(outputs_no_stride) <= 0:
+                            # Not a valid operation
+                            n += 1  # Increment count of tests
+                            continue
 
                         if (
                             # the parameters must produce integer exact output
@@ -2092,10 +2111,13 @@ class TosaArgGen:
                                 and max(outputs) >= max_dim_size
                             ):
                                 # Test will consume too much memory - skip it
+                                logger.debug(
+                                    "agConv: Convolution output too big - skipped"
+                                )
                                 continue
 
                             # Compliance - number of dot product calculations
-                            if depthwise:
+                            if op["op"] == Op.DEPTHWISE_CONV2D:
                                 # N*OH*OW*C*M
                                 dots = gtu.product(
                                     (ifm_shape[0], *outputs, *filter_shape[2:])

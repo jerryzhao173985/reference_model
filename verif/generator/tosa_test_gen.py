@@ -3181,64 +3181,54 @@ class TosaTestGen:
             return False
 
     def createDynamicOpLists(self):
-
-        if "conv2d_TEMPLATE" not in self.TOSA_OP_LIST:
-            # Already created these lists (can occur when class is initialized more than once)
-            return
-
-        # Dynamically create op lists for convolutions with a list of kernel sizes
-        if not self.args.level8k:
-            KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
-            KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
-        else:
-            bigK = self.TOSA_8K_LEVEL_MAX_KERNEL
-            KERNELS_2D = [[1, bigK], [bigK, 2]]
-            KERNELS_3D = [[1, bigK, 1], [2, 2, bigK]]
-
-        for k in KERNELS_2D:
-            testName = "conv2d_{}x{}".format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv2d_TEMPLATE"].copy()
-            self.TOSA_OP_LIST[testName]["filter"] = k
-            self.TOSA_OP_LIST[testName]["template"] = False
-            self.TOSA_OP_LIST[testName]["real_name"] = "conv2d"
-
-            testName = "depthwise_conv2d_{}x{}".format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST[
-                "depthwise_conv2d_TEMPLATE"
-            ].copy()
-            self.TOSA_OP_LIST[testName]["filter"] = k
-            self.TOSA_OP_LIST[testName]["template"] = False
-            self.TOSA_OP_LIST[testName]["real_name"] = "depthwise_conv2d"
-
-            testName = "transpose_conv2d_{}x{}".format(k[0], k[1])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST[
-                "transpose_conv2d_TEMPLATE"
-            ].copy()
-            self.TOSA_OP_LIST[testName]["filter"] = k
-            self.TOSA_OP_LIST[testName]["template"] = False
-            self.TOSA_OP_LIST[testName]["real_name"] = "transpose_conv2d"
-
-        for k in KERNELS_3D:
-            testName = "conv3d_{}x{}x{}".format(k[0], k[1], k[2])
-            self.TOSA_OP_LIST[testName] = self.TOSA_OP_LIST["conv3d_TEMPLATE"].copy()
-            self.TOSA_OP_LIST[testName]["filter"] = k
-            self.TOSA_OP_LIST[testName]["template"] = False
-            self.TOSA_OP_LIST[testName]["real_name"] = "conv3d"
-
-        # Delete any templates after having created any dynamic ops
-        # This is a two-pass operation because it's bad practice to delete
-        # keys from dictionaries while iterating
-        keyList = []
-        for k in self.TOSA_OP_LIST:
+        # Find all the ops marked as templates
+        templateKeys = []
+        for opName in self.TOSA_OP_LIST:
             try:
-                if self.TOSA_OP_LIST[k]["template"]:
-                    keyList.append(k)
-                    continue
+                if self.TOSA_OP_LIST[opName]["template"]:
+                    templateKeys.append(opName)
             except KeyError:
                 pass
 
-        for k in keyList:
-            del self.TOSA_OP_LIST[k]
+        bigK = self.TOSA_8K_LEVEL_MAX_KERNEL
+
+        # Add dynamic ops based on kernel sizes
+        for opName in templateKeys:
+            assert opName.endswith("_TEMPLATE"), "Found incorrect template"
+            realName = opName[: len(opName) - len("_TEMPLATE")]
+            template = self.TOSA_OP_LIST[opName]
+            k_rank = 3 if realName == "conv3d" else 2
+
+            # Choose kernels to build tests for from the template or args
+            if self.args.level8k:
+                if k_rank == 3:
+                    kernels = [[1, bigK, 1], [2, 2, bigK]]
+                else:
+                    kernels = [[1, bigK], [bigK, 2]]
+            else:
+                kernels = []
+                if len(self.args.conv_kernels) > 0:
+                    kernels = [k for k in self.args.conv_kernels if len(k) == k_rank]
+                    if len(kernels) == 0:
+                        logger.debug(
+                            f"{realName} op using defaults as no rank {k_rank} kernels found in {self.args.conv_kernels}"
+                        )
+                if len(kernels) == 0:
+                    # Fallback to use the defined template kernels
+                    kernels = self.TOSA_OP_LIST[opName]["filter"]
+
+            # Dynamically create ops for listed kernel sizes
+            for k in kernels:
+                kernelStr = "x".join([str(d) for d in k])
+                testName = f"{realName}_{kernelStr}"
+                kernelOp = template.copy()
+                kernelOp["filter"] = k
+                kernelOp["template"] = False
+                kernelOp["real_name"] = realName
+                self.TOSA_OP_LIST[testName] = kernelOp
+
+            # Delete the template after having created the dynamic ops
+            del self.TOSA_OP_LIST[opName]
 
     def initOpListDefaults(self):
         """Fill in default fields for ops if they aren't already specified.
@@ -3346,6 +3336,9 @@ class TosaTestGen:
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE)
     }
 
+    KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
+    KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
+
     TOSA_OP_LIST = {
         # Tensor operators
         "argmax": {
@@ -3432,6 +3425,8 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
             "data_gen": DOT_PRODUCT_DATAGEN,
+            "broadcastable_bias": True,
+            "filter": KERNELS_2D,
             "template": True,
         },
         # Templated operator.  Filled in by createDynamicOpLists
@@ -3463,13 +3458,13 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
             "data_gen": DOT_PRODUCT_DATAGEN,
+            "filter": KERNELS_3D,
             "template": True,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
             "operands": (1, 2),
-            "filter": [1, 1],
             "rank": (4, 4),
             "build_fcn": (
                 build_depthwise_conv2d,
@@ -3495,6 +3490,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
             "data_gen": DOT_PRODUCT_DATAGEN,
+            "filter": KERNELS_2D,
             "template": True,
         },
         "fully_connected": {
@@ -3599,6 +3595,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
             ),
             "data_gen": DOT_PRODUCT_DATAGEN,
+            "filter": KERNELS_2D,
             "template": True,
         },
         # Activation functions

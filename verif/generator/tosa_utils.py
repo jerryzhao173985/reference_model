@@ -56,6 +56,11 @@ class DataGenType(IntEnum):
     SPECIAL = 4
 
 
+def dtypeIsFloat(dtype):
+    """Is floating point data type"""
+    return dtype in (DType.BF16, DType.FP16, DType.FP32)
+
+
 def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
