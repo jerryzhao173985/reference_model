@@ -94,6 +94,14 @@
         return new OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##DTYPE3>(sgt, attribute, id);     \
     }
 
+#define DEF_FACTORY_THREE_TYPE_ONE_ACCUM(OP, ATTR_NAME, IN_DTYPE, W_DTYPE, ACC_DTYPE, OUT_DTYPE)                       \
+    if (inputDTYPE == TOSA_REF_TYPE_##IN_DTYPE && weightDTYPE == TOSA_REF_TYPE_##W_DTYPE &&                            \
+        outputDTYPE == TOSA_REF_TYPE_##OUT_DTYPE && ACCUM_FROM_ATTRIBUTE(ATTR_NAME) == TOSA_REF_TYPE_##ACC_DTYPE)      \
+    {                                                                                                                  \
+        return new OP<TOSA_REF_TYPE_##IN_DTYPE, TOSA_REF_TYPE_##W_DTYPE, TOSA_REF_TYPE_##ACC_DTYPE,                    \
+                      TOSA_REF_TYPE_##OUT_DTYPE>(sgt, attribute, id);                                                  \
+    }
+
 // Statement-expression to evaluate accumulate attribute in-place
 #define ACCUM_FROM_ATTRIBUTE(ATTRIBUTE_NAME)                                                                           \
     ({                                                                                                                 \

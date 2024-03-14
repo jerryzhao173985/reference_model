@@ -41,6 +41,10 @@
 #define DEF_INSTANTIATE_THREE_TYPE(OP, DTYPE1, DTYPE2, DTYPE3)                                                         \
     template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##DTYPE3>;
 
+#define DEF_INSTANTIATE_FOUR_TYPE(OP, DTYPE1, DTYPE2, DTYPE3, DTYPE4)                                                  \
+    template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, TOSA_REF_TYPE_##DTYPE3,           \
+                                     TOSA_REF_TYPE_##DTYPE4>;
+
 #define DEF_INSTANTIATE_THREE_TYPE_RESIZE(OP, DTYPE1, DTYPE2, OP_TYPE)                                                 \
     template class TosaReference::OP<TOSA_REF_TYPE_##DTYPE1, TOSA_REF_TYPE_##DTYPE2, OP_TYPE>;
 
