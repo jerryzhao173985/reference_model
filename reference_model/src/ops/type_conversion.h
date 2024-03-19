@@ -37,6 +37,16 @@ public:
     using TIn          = Eigen::Tensor<InEigenType, Rank>;
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
+    bool isI8(TOSA_REF_TYPE Dtype)
+    {
+        return Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8;
+    }
+
+    bool isI16(TOSA_REF_TYPE Dtype)
+    {
+        return Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16;
+    }
+
 protected:
     TosaRescaleAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
