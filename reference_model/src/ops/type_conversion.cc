@@ -82,29 +82,36 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         ASSERT_MEM(multiplierI16);
     }
 
-    if ((InDtype != TOSA_REF_TYPE_INT8) && (InDtype != TOSA_REF_TYPE_UINT8) && (InDtype != TOSA_REF_TYPE_UINT16) &&
-        (attribute->input_zp() != 0))
+    auto input_zp        = attribute->input_zp();
+    auto output_zp       = attribute->output_zp();
+    auto input_unsigned  = attribute->input_unsigned();
+    auto output_unsigned = attribute->output_unsigned();
+
+    // Note that how rescale op interprets signedness of the tensor depends on
+    // the value of input_unsigned and output_unsigned attributes, and doesn't
+    // care about the type of tensor itself.
+
+    if (!isI8(InDtype) && (!isI16(InDtype) || input_unsigned == false) && (input_zp != 0))
     {
         printNodeValidationError("OpRescale: Input TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
         return 1;
     }
 
-    if ((OutDtype != TOSA_REF_TYPE_INT8) && (OutDtype != TOSA_REF_TYPE_UINT8) && (OutDtype != TOSA_REF_TYPE_UINT16) &&
-        (attribute->output_zp() != 0))
+    if (!isI8(OutDtype) && (!isI16(OutDtype) || output_unsigned == false) && (output_zp != 0))
     {
         printNodeValidationError("OpRescale: Output TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
         return 1;
     }
 
-    if ((InDtype == TOSA_REF_TYPE_UINT16) && ((attribute->input_zp() != 0) && (attribute->input_zp() != 32768)))
+    if (isI16(InDtype) && (input_unsigned == true) && (input_zp != 0) && (input_zp != 32768))
     {
-        printNodeValidationError("OpRescale: Input TOSA_REF_TYPE UINT16 and zero point not 0 or 32768");
+        printNodeValidationError("OpRescale: Input unsigned int16 and zero point not 0 or 32768");
         return 1;
     }
 
-    if ((OutDtype == TOSA_REF_TYPE_UINT16) && ((attribute->output_zp() != 0) && (attribute->output_zp() != 32768)))
+    if (isI16(OutDtype) && (output_unsigned == true) && (output_zp != 0) && (output_zp != 32768))
     {
-        printNodeValidationError("OpRescale: Output TOSA_REF_TYPE UINT16 and zero point not 0 or 32768");
+        printNodeValidationError("OpRescale: Output unsigned int16 and zero point not 0 or 32768");
         return 1;
     }
 
