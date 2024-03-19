@@ -259,11 +259,11 @@ class Operator:
                     negative and "ERRORIF" in str(path)
                 ):
                     # Check for test set paths
-                    match = re.match(r"(.*)_s([0-9]+)", path.name)
+                    match = re.match(r"(.*)_(s[0-9]+|full)", path.name)
                     if match:
-                        if match.group(2) == "0":
+                        if match.group(2) in ["s0", "full"]:
                             # Only return the truncated test name
-                            # of the first test of a set
+                            # of the first test of a set, and for full tests
                             yield path.with_name(match.group(1))
                     else:
                         yield path
@@ -308,9 +308,19 @@ class Operator:
                 paths.append(set_path)
             else:
                 if s == 0:
-                    logger.error(f"Could not find test set 0 - {str(set_path)}")
+                    logger.warning(f"Could not find test set 0 - {str(set_path)}")
                 break
             s += 1
+        return paths
+
+    @staticmethod
+    def _get_extra_test_paths(path):
+        """Expand a path to find extra tests."""
+        paths = []
+        for suffix in ["full"]:
+            suffix_path = path.with_name(f"{path.name}_{suffix}")
+            if suffix_path.exists():
+                paths.append(suffix_path)
         return paths
 
     def select_tests(self):  # noqa: C901 (function too complex)
@@ -374,6 +384,9 @@ class Operator:
                     # Must be a test set - expand to all test sets
                     for p in Operator._get_test_set_paths(path):
                         yield p
+                # check for extra tests
+                for p in Operator._get_extra_test_paths(path):
+                    yield p
 
         # search for tests that match any unused parameter values
         for n, path in enumerate(sorted(list(unused_paths))):

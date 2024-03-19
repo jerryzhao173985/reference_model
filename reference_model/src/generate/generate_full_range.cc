@@ -41,7 +41,7 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
     // Check we support the operator
     if (cfg.opType == Op::Op_UNKNOWN)
     {
-        WARNING("[Generator][PR] Unknown operator.");
+        WARNING("[Generator][FR] Unknown operator.");
         return false;
     }
 
@@ -52,7 +52,7 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
             return generate(cfg, outData, size);
         }
         default:
-            WARNING("[Generator][PR] Unsupported type.");
+            WARNING("[Generator][FR] Unsupported type.");
             return false;
     }
 }
