@@ -110,7 +110,7 @@ class TosaTestGen:
     def getSerializer(self):
         return self.ser
 
-    def serialize(self, testName, metaData=None):
+    def serialize(self, testName, metaData=None, tags=None):
         path = Path(self.basePath) / self.testPath
 
         # Write out TOSA flatbuffer binary
@@ -124,6 +124,9 @@ class TosaTestGen:
         if metaData:
             # Add extra meta data to desc.json
             desc["meta"] = metaData
+
+        if tags:
+            desc["tag"] = tags
 
         # Validate desc.json before we output it
         self.descSchemaValidator.validate_config(desc)
@@ -3146,6 +3149,8 @@ class TosaTestGen:
             tensMeta["data_gen"] = tvgInfo.dataGenDict
         tens = tvgInfo.tensorList
 
+        tags = argsDict.get("tags", None)
+
         result = build_fcn(
             self,
             build_rng,
@@ -3164,7 +3169,7 @@ class TosaTestGen:
                 compliance = result.getComplianceInfo()
                 if compliance:
                     tensMeta["compliance"] = compliance
-            self.serialize("test", tensMeta)
+            self.serialize("test", tensMeta, tags)
             return True
         else:
             # The test is not valid
@@ -3326,6 +3331,18 @@ class TosaTestGen:
     KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
     KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
 
+    PSEUDO_RANDOM_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
+    }
+    DOT_PRODUCT_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.DOT_PRODUCT,),
+        DType.FP32: (gtu.DataGenType.DOT_PRODUCT,),
+    }
+    EW_UNARY_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE)
+    }
+
     TOSA_OP_LIST = {
         # Tensor operators
         "argmax": {
@@ -3350,9 +3367,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "avg_pool2d": {
             "op": Op.AVG_POOL2D,
@@ -3383,9 +3398,7 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
@@ -3416,9 +3429,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
             "broadcastable_bias": True,
             "filter": KERNELS_2D,
             "template": True,
@@ -3452,9 +3463,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
             "filter": KERNELS_3D,
             "template": True,
         },
@@ -3487,9 +3496,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
             "filter": KERNELS_2D,
             "template": True,
         },
@@ -3514,9 +3521,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         "matmul": {
             "op": Op.MATMUL,
@@ -3538,9 +3543,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         "max_pool2d": {
             "op": Op.MAX_POOL2D,
@@ -3567,9 +3570,7 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeMismatch,
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
@@ -3601,9 +3602,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
             "filter": KERNELS_2D,
             "template": True,
         },
@@ -3625,9 +3624,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "sigmoid": {
             "op": Op.SIGMOID,
@@ -3645,9 +3642,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "tanh": {
             "op": Op.TANH,
@@ -3665,9 +3660,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {
                 "abs_error_lower_bound": 0.5,
             },
@@ -3688,9 +3681,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"ulp": 5},
         },
         # Elementwise Binary Operators
@@ -3713,9 +3704,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "arithmetic_right_shift": {
@@ -3937,9 +3926,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "minimum": {
             "op": Op.MINIMUM,
@@ -3960,9 +3947,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "mul": {
             "op": Op.MUL,
@@ -3983,9 +3968,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "pow": {
@@ -4007,9 +3990,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "sub": {
             "op": Op.SUB,
@@ -4030,9 +4011,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "table": {
@@ -4072,9 +4051,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "bitwise_not": {
             "op": Op.BITWISE_NOT,
@@ -4109,9 +4086,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "clz": {
@@ -4147,9 +4122,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"abs_error_normal_divisor": 2},
         },
         "exp": {
@@ -4168,9 +4141,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "floor": {
             "op": Op.FLOOR,
@@ -4188,9 +4159,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "log": {
@@ -4209,9 +4178,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
             "compliance": {"ulp": 5},
         },
         "logical_not": {
@@ -4250,9 +4217,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "reciprocal": {
             "op": Op.RECIPROCAL,
@@ -4270,9 +4235,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
             "compliance": {"ulp": 1.0},
         },
         "rsqrt": {
@@ -4291,9 +4254,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.FULL_RANGE,),
-            },
+            "data_gen": EW_UNARY_DATAGEN,
             "compliance": {"ulp": 2},
         },
         "sin": {
@@ -4312,9 +4273,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"abs_error_normal_divisor": 2},
         },
         # Elementwise Ternary operators
@@ -4337,9 +4296,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Comparison operators
         "equal": {
@@ -4361,9 +4318,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "greater_equal": {
             "op": Op.GREATER_EQUAL,
@@ -4384,9 +4339,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "greater": {
             "op": Op.GREATER,
@@ -4407,9 +4360,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Reduction operators
         "reduce_all": {
@@ -4474,9 +4425,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "reduce_min": {
             "op": Op.REDUCE_MIN,
@@ -4498,9 +4447,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "reduce_product": {
             "op": Op.REDUCE_PRODUCT,
@@ -4522,9 +4469,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "reduce_sum": {
             "op": Op.REDUCE_SUM,
@@ -4546,9 +4491,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         # Data layout operators
         "concat": {
@@ -4571,9 +4514,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "pad": {
             "op": Op.PAD,
@@ -4595,9 +4536,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "dim": {
             "op": Op.DIM,
@@ -4635,9 +4574,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "reverse": {
             "op": Op.REVERSE,
@@ -4657,9 +4594,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "slice": {
             "op": Op.SLICE,
@@ -4689,9 +4624,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "tile": {
             "op": Op.TILE,
@@ -4712,9 +4645,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "transpose": {
             "op": Op.TRANSPOSE,
@@ -4738,9 +4669,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evTensorSizeInputOutputMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Data nodes
         "const": {
@@ -4753,9 +4682,7 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "identity": {
             "op": Op.IDENTITY,
@@ -4767,9 +4694,7 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT4, DType.INT48],
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Scatter/Gather
         "gather": {
@@ -4799,9 +4724,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "scatter": {
             "op": Op.SCATTER,
@@ -4821,9 +4744,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # Image operations
         "resize": {
@@ -4859,9 +4780,7 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeMismatch,
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"relative": 0.006},
         },
         # Type conversion
@@ -4891,9 +4810,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.PSEUDO_RANDOM,),
-            },
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
             "compliance": {"ulp": 0.5},
         },
         "rescale": {
@@ -5010,9 +4927,7 @@ class TosaTestGen:
                 TosaErrorValidator.evFFTInputShapeMismatch,
                 TosaErrorValidator.evFFTOutputShapeMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         "rfft2d": {
             "op": Op.RFFT2D,
@@ -5035,9 +4950,7 @@ class TosaTestGen:
                 TosaErrorValidator.evKernelNotPowerOfTwo,
                 TosaErrorValidator.evFFTOutputShapeMismatch,
             ),
-            "data_gen": {
-                "fp": (gtu.DataGenType.DOT_PRODUCT,),
-            },
+            "data_gen": DOT_PRODUCT_DATAGEN,
         },
         # Shape
         "add_shape": {
