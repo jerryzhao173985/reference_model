@@ -931,7 +931,9 @@ class TosaTensorValuesGen:
             ), "Op.ADD / Op.SUB must have 2 placeholders, 0 consts"
             tens_ser_list = []
             add = op["op"] in (Op.ADD, Op.ADD_SHAPE)
-            data_range = testGen.args.tensor_shape_range
+            data_range = None  # Use default
+            if op["op"] in (Op.ADD_SHAPE, Op.SUB_SHAPE):
+                data_range = testGen.args.tensor_shape_range
             a_arr = rng.randTensor(shapeList[0], dtypeList[0], data_range)
             b_arr = rng.randTensor(shapeList[1], dtypeList[1], data_range)
             if add:
