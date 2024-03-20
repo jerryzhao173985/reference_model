@@ -30,12 +30,12 @@ def test_run_command_fail():
 
 def test_run_command_fail_with_stderr():
     """Run unsuccessful command capturing output."""
-    cmd = ["ls", "--unknown-option"]
+    cmd = ["cat", "--unknown-option"]
     try:
         stdout, stderr = run_sh_command(cmd, capture_output=True)
         ok = True
     except RunShCommandError as e:
-        assert e.return_code == 2
+        assert e.return_code == 1
         assert e.stderr
         ok = False
     assert not ok
