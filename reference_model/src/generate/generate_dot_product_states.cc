@@ -195,7 +195,14 @@ public:
         const float s0 = _set_data();
         const float s1 = _set_data();
         if (_p != P2)
-            return k == 0 ? 16.f : std::exp(2 * s0) * s1;
+            if (k == 0)
+            {
+                return s0 < 0 ? -16.f : +16.f;
+            }
+            else
+            {
+                return std::exp(2 * s0) * s1;
+            }
         else
             return 0.f;
     }
