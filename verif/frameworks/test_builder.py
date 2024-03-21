@@ -1,8 +1,12 @@
 # Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
+import os
+
 import numpy as np
 import tensorflow as tf
 from frameworks.tensor_gen import TGen
+
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 
 
 class TBuilder:
