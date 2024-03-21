@@ -1,4 +1,5 @@
 {
+  "name": "test_conv2d_1x1_1x32x32x8_f32_st11_padSAME_dilat11",
   "tf_model_filename": "model.pb",
   "tf_result_npy_filename": "tf_result.npy",
   "tf_result_name": "result",
