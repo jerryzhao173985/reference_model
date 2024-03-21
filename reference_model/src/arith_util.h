@@ -22,6 +22,7 @@
  *      fix point arithmetic
  *      fp16 type conversion(in binary translation)
  *      fp16 arithmetic (disguised with fp32 now)
+ *    and include the arithmetic helpers listed in Section 4.3.1. of the spec
  */
 
 #ifndef ARITH_UTIL_H
@@ -36,6 +37,7 @@
 #include "half.hpp"
 #include "inttypes.h"
 #include <Eigen/Core>
+#include "ops/template_types.h"
 #include <bitset>
 #include <cassert>
 #include <iostream>
@@ -284,6 +286,74 @@ float fpTrunc(float f_in)
             ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-truncated.", EnumNameTOSAREFTYPE(Dtype));
     }
     return f_in;
+}
+
+// return the maximum value when interpreting type T as a signed value.
+template <TOSA_REF_TYPE Dtype>
+int32_t getSignedMaximum()
+{
+    if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
+        return GetQMax<TOSA_REF_TYPE_INT8>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16)
+        return GetQMax<TOSA_REF_TYPE_INT16>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT32)
+        return GetQMax<TOSA_REF_TYPE_INT32>::value;
+
+    FATAL_ERROR("Get maximum_s for the dtype input is not supported");
+    return 0;
+}
+
+// return the minimum value when interpreting type T as a signed value.
+template <TOSA_REF_TYPE Dtype>
+int32_t getSignedMinimum()
+{
+    if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
+        return GetQMin<TOSA_REF_TYPE_INT8>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16)
+        return GetQMin<TOSA_REF_TYPE_INT16>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT32)
+        return GetQMin<TOSA_REF_TYPE_INT32>::value;
+
+    FATAL_ERROR("Get minimum_s for the dtype input is not supported");
+    return 0;
+}
+
+// return the maximum value when interpreting type T as an unsigned value.
+template <TOSA_REF_TYPE Dtype>
+int32_t getUnsignedMaximum()
+{
+    if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
+        return GetQMax<TOSA_REF_TYPE_UINT8>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16)
+        return GetQMax<TOSA_REF_TYPE_UINT16>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT32)
+        return std::numeric_limits<uint32_t>::max();
+
+    FATAL_ERROR("Get maximum_u for the dtype input is not supported");
+    return 0;
+}
+
+// return the minimum value when interpreting type T as an unsigned value.
+template <TOSA_REF_TYPE Dtype>
+int32_t getUnsignedMinimum()
+{
+    if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
+        return GetQMin<TOSA_REF_TYPE_UINT8>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16)
+        return GetQMin<TOSA_REF_TYPE_UINT16>::value;
+
+    if (Dtype == TOSA_REF_TYPE_INT32)
+        return std::numeric_limits<uint32_t>::min();
+
+    FATAL_ERROR("Get minimum_u for the dtype input is not supported");
+    return 0;
 }
 
 #endif /* _ARITH_UTIL_H */

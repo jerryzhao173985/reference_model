@@ -37,9 +37,6 @@ public:
     using TIn          = Eigen::Tensor<InEigenType, Rank>;
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
-    static constexpr int32_t QMin = GetQMin<OutDtype>::value;
-    static constexpr int32_t QMax = GetQMax<OutDtype>::value;
-
 protected:
     TosaRescaleAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;

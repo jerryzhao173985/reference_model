@@ -133,6 +133,33 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
     return TOSA_REF_TYPE_UNKNOWN;
 }
 
+template <TOSA_REF_TYPE Dtype>
+bool IsSignedInt()
+{
+    switch (Dtype)
+    {
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_INT48:
+            return true;
+
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_UINT16:
+            return false;
+
+        case TOSA_REF_TYPE_BOOL:
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_BF16:
+        case TOSA_REF_TYPE_SHAPE:
+        default:
+            FATAL_ERROR("dtype is not an integer type");
+            break;
+    }
+}
+
 };    // namespace TosaReference
 
 #endif
