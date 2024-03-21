@@ -680,14 +680,13 @@ class TosaErrorValidator:
 
     @staticmethod
     def evWrongRank(check=False, **kwargs):
-        # From 1 to MAX_TENSOR_RANK+1 inclusively
-        all_ranks = tuple(range(1, gtu.MAX_TENSOR_RANK + 2))
-
         # Make a list of incorrect ranks
         assert "op" in kwargs
         op = kwargs["op"]
         rmin, rmax = op["rank"]
         rank_range = range(rmin, rmax + 1)
+        # From 1 to rmax+1 inclusively
+        all_ranks = tuple(range(1, rmax + 2))
         incorrect_ranks = list(set(all_ranks) - set(rank_range))
         # Remove small incorrect ranks to avoid index errors
         incorrect_ranks = [rank for rank in incorrect_ranks if rank > rmin]
