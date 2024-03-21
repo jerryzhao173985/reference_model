@@ -43,9 +43,6 @@ public:
     using TMultiplierI32 = Eigen::Tensor<I32EigenType, 1>;
     using TShift         = Eigen::Tensor<I8EigenType, 1>;
 
-    static constexpr int32_t QMin = GetQMin<OutDtype>::value;
-    static constexpr int32_t QMax = GetQMax<OutDtype>::value;
-
 protected:
     TosaRescaleAttribute* attribute;
     TosaReference::TensorTemplate<TIn>* in;
