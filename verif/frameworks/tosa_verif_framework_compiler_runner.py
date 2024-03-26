@@ -259,6 +259,8 @@ def write_reference_runner_json(
     ifm_file,
     ofm_name,
     ofm_file,
+    variable_name,
+    variable_file,
     expected_failure=False,
 ):
     """Write a json test file so that it is fairly easy to pick up the test
@@ -270,6 +272,8 @@ def write_reference_runner_json(
     test_desc["ifm_file"] = ifm_file
     test_desc["ofm_name"] = ofm_name
     test_desc["ofm_file"] = ofm_file
+    test_desc["variable_name"] = variable_name
+    test_desc["variable_file"] = variable_file
     test_desc["expected_failure"] = expected_failure
 
     with open(filename, "w") as f:
@@ -630,6 +634,19 @@ def run_test(args, test_path, framework):
     else:
         reference_runner_ofm_name = ["TosaOutput_0"]
 
+    if "num_variables" in test_desc:
+        num_variable = test_desc["num_variables"]
+    else:
+        num_variable = 0
+    reference_runner_variable_name = []
+    reference_runner_variable_file = []
+
+    for i in range(num_variable):
+        variable_name_str = "Variable_" + str(i)
+        variable_file_str = "variable_output_" + str(i) + ".npy"
+        reference_runner_variable_name.append(variable_name_str)
+        reference_runner_variable_file.append(variable_file_str)
+
     write_reference_runner_json(
         filename=str(test_path / flatbuffer_dir / "desc.json"),
         tosa_filename=f"{test_name}.tosa",
@@ -637,6 +654,8 @@ def run_test(args, test_path, framework):
         ifm_file=reference_runner_ifm_file,
         ofm_name=reference_runner_ofm_name,
         ofm_file=["ref_model_output_0.npy"],
+        variable_name=reference_runner_variable_name,
+        variable_file=reference_runner_variable_file,
     )
 
     ref_model_cmd = [

@@ -20,6 +20,7 @@ def write_test_json(
     framework_exclusions=None,
     quantized=False,
     test_name=None,
+    num_variables=None,
 ):
 
     test_desc = dict()
@@ -73,6 +74,9 @@ def write_test_json(
 
     if quantized:
         test_desc["quantized"] = 1
+
+    if num_variables:
+        test_desc["num_variables"] = num_variables
 
     with open(filename, "w") as f:
         json.dump(test_desc, f, indent="  ")

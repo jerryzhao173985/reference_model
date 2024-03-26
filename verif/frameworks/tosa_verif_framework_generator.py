@@ -940,6 +940,7 @@ TF_OP_LIST = {
                 tf.float32,
             ]
         },
+        "num_variables": 2,
     },
     "gru": {
         "operands": (1, 0),
@@ -1445,6 +1446,12 @@ def run_unit_test(
 
         _, test_name = os.path.split(test_dir)
 
+        # For specifying the number of variable tensors if the graph has any
+        try:
+            num_varaibles = op["num_variables"]
+        except KeyError:
+            num_varaibles = 0
+
         # Write out test descriptor
         write_test_json(
             filename=os.path.join(test_dir, "test.json"),
@@ -1461,6 +1468,7 @@ def run_unit_test(
             framework_exclusions=excluded_framework_list,
             quantized=is_quantized,
             test_name=test_name,
+            num_variables=num_varaibles,
         )
     except Exception as e:
         msg = "Error running task: {}".format(e)
