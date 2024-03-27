@@ -284,6 +284,7 @@ def parseArgs(argv):
     )
 
     ops_group.add_argument(
+        "--oversize",
         "--allow-pooling-and-conv-oversizes",
         dest="oversize",
         action="store_true",

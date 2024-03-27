@@ -1942,14 +1942,35 @@
                         "5",
                         "--target-rank",
                         "6"
-                    ],
+                    ]
+                ]
+            },
+            "extra": {
+                "selector": "minimal",
+                "no_negative_tests": "true",
+                "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,1,65539,1"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--oversize"
                     ]
                 ]
             },
@@ -1991,6 +2012,9 @@
                         "[[0 0], [0 0], [0 0], [0 0], [0 0], [0 0]]"
                     ]
                 }
+            },
+            "minimal": {
+                "maximum": 2
             }
         }
     },
