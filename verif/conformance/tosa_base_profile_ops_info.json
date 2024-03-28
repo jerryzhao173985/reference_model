@@ -992,7 +992,15 @@
                         "--target-dtype",
                         "int16",
                         "--target-dtype",
-                        "int32"
+                        "int32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -3176,6 +3184,14 @@
                         "int32",
                         "--target-dtype",
                         "bool",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -3298,7 +3314,15 @@
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
-                        "1,32"
+                        "1,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -3712,13 +3736,29 @@
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
-                        "4,32"
+                        "4,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
-                        "1,16"
+                        "1,16",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -3930,7 +3970,15 @@
                 "generator_args": [
                     [
                         "--target-dtype",
-                        "int32"
+                        "int32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",

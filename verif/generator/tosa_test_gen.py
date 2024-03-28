@@ -248,25 +248,26 @@ class TosaTestGen:
     def makeShape(self, rng, rank):
         if self.targetted_shape:
             return np.int32(self.targetted_shape)
-        return np.int32(
-            rng.integers(
-                low=self.args.tensor_shape_range[0],
-                high=self.args.tensor_shape_range[1],
-                size=rank,
+        else:
+            return np.int32(
+                rng.integers(
+                    low=self.args.tensor_shape_range[0],
+                    high=self.args.tensor_shape_range[1],
+                    size=rank,
+                )
             )
-        )
 
     def setTargetShape(self, shape):
         self.targetted_shape = shape
 
     def shapeStr(self, shape):
-
-        sStr = []
-        # Convert to strings
-        for i in shape:
-            sStr.append(str(i))
-
-        return "x".join(sStr)
+        assert shape is not None
+        if len(shape) > 0:
+            # Rank > 0
+            return "x".join([str(d) for d in shape])
+        else:
+            # Rank 0
+            return "0"
 
     def typeStr(self, dtype):
         if isinstance(dtype, list) or isinstance(dtype, tuple):
@@ -2843,29 +2844,36 @@ class TosaTestGen:
     def create_filter_lists(
         self, op, shapeFilter, rankFilter, dtypeFilter, testType, validator=None
     ):
-        # Create a default testing rank range, 1-4 inclusive to keep test sizes reasonably small.
-        default_test_rank_range = range(1, 5)
-        if not shapeFilter:
-            shapeFilter = [None]
+        # Create a default testing rank range
+        if testType == "positive":
+            # 0-3 inclusive to keep test sizes reasonably small.
+            default_test_rank_range = range(0, 4)
+        else:
+            # Some errors do not work with rank 0, use 1-3
+            default_test_rank_range = range(1, 4)
 
         # Calculate the filters based on what is requested and what the operator allows
         rmin, rmax = op["rank"]
-        if rankFilter is not None:
-            cleanRankFilter = []
-            # Ensure rankFilter values are allowed by operator
-            for rank in rankFilter:
-                if rank >= rmin and rank <= rmax:
-                    cleanRankFilter.append(rank)
-        elif rankFilter is None and shapeFilter[0] is None:
-            # Ensure default behaviour is bounded by default range or by operator,
-            # whichever is the smaller range of ranks.
-            opRankRange = range(rmin, rmax + 1)
-            cleanRankFilter = (
-                opRankRange
-                if len(opRankRange) <= len(default_test_rank_range)
-                else default_test_rank_range
-            )
+
+        if shapeFilter:
+            # Specified shapes - ignore rank filter and default to op ranks below
+            rankFilter = None
+            ranksToCheck = []
+        elif rankFilter is None:
+            # No set rank filter so ensure default behaviour is bounded
+            ranksToCheck = default_test_rank_range
         else:
+            ranksToCheck = rankFilter
+
+        cleanRankFilter = []
+        # Ensure rank values are allowed by operator
+        for rank in ranksToCheck:
+            if rank >= rmin and rank <= rmax:
+                cleanRankFilter.append(rank)
+
+        if shapeFilter or (len(cleanRankFilter) == 0 and rankFilter is None):
+            # Shapes specified or default test ranks didn't meet
+            # op requirements - so just use op ranks
             cleanRankFilter = range(rmin, rmax + 1)
 
         dtypes = op["types"]
@@ -2880,6 +2888,9 @@ class TosaTestGen:
                     cleanDtypeFilter.append(dtype)
         else:
             cleanDtypeFilter = dtypes
+
+        if not shapeFilter:
+            shapeFilter = [None]
 
         if testType == "positive":
             filterDict = {
@@ -3322,7 +3333,7 @@ class TosaTestGen:
         [DType.FP32, DType.FP32, DType.FP32],
     ]
 
-    DEFAULT_RANK_RANGE = (1, gtu.MAX_TENSOR_RANK)
+    DEFAULT_RANK_RANGE = (0, gtu.MAX_TENSOR_RANK)
 
     PSEUDO_RANDOM_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM,),
@@ -3344,7 +3355,7 @@ class TosaTestGen:
         "argmax": {
             "op": Op.ARGMAX,
             "operands": (1, 0),
-            "rank": (1, 6),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_argmax,
                 TosaTensorGen.tgBasic,
@@ -4473,6 +4484,7 @@ class TosaTestGen:
         "pad": {
             "op": Op.PAD,
             "operands": (1, 0),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_pad,
                 TosaTensorGen.tgBasic,
@@ -4495,6 +4507,7 @@ class TosaTestGen:
         "dim": {
             "op": Op.DIM,
             "operands": (1, 0),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_dim,
                 TosaTensorGen.tgBasic,
@@ -4514,6 +4527,7 @@ class TosaTestGen:
         "reshape": {
             "op": Op.RESHAPE,
             "operands": (1, 0),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_reshape,
                 TosaTensorGen.tgBasic,
@@ -4555,7 +4569,7 @@ class TosaTestGen:
         "slice": {
             "op": Op.SLICE,
             "operands": (1, 0),
-            "rank": (1, 6),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_slice,
                 TosaTensorGen.tgBasic,
@@ -4581,7 +4595,7 @@ class TosaTestGen:
         "tile": {
             "op": Op.TILE,
             "operands": (1, 0),
-            "rank": (1, 6),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_tile,
                 TosaTensorGen.tgBasic,
@@ -4602,7 +4616,7 @@ class TosaTestGen:
         "transpose": {
             "op": Op.TRANSPOSE,
             "operands": (1, 0),
-            "rank": (1, 6),
+            "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_transpose,
                 TosaTensorGen.tgBasic,
@@ -4917,6 +4931,7 @@ class OutputShaper:
             assert len(a.shape) == len(b.shape)
         assert a.dtype == b.dtype
 
+        # Work out broadcasted output shape (when not ERRORIF test)
         shape = []
         for i in range(len(a.shape)):
             if a.shape[i] == 1 and error_name is None:
@@ -4924,8 +4939,9 @@ class OutputShaper:
             else:
                 shape.append(a.shape[i])
 
-        fuzz_idx = rng.integers(0, len(a.shape))
-        if error_name == ErrorIf.DimensionMismatch:
+        if len(shape) > 0 and error_name == ErrorIf.DimensionMismatch:
+            # Can only create this error for rank > 0
+            fuzz_idx = rng.integers(0, len(shape))
             shape[fuzz_idx] += 1
 
         if error_name == ErrorIf.WrongOutputType:
@@ -4982,6 +4998,7 @@ class OutputShaper:
             assert len(a.shape) == len(b.shape) and len(a.shape) == len(cond.shape)
         assert a.dtype == b.dtype
 
+        # Work out broadcasted output shape (when not ERRORIF test)
         shape = []
         for i in range(len(cond.shape)):
             if cond.shape[i] == 1 and error_name is None:
@@ -4989,8 +5006,9 @@ class OutputShaper:
             else:
                 shape.append(cond.shape[i])
 
-        fuzz_idx = rng.integers(0, len(a.shape))
-        if error_name == ErrorIf.DimensionMismatch:
+        if len(shape) > 0 and error_name == ErrorIf.DimensionMismatch:
+            # Can only create this error for rank > 0
+            fuzz_idx = rng.integers(0, len(shape))
             shape[fuzz_idx] += 1
 
         if error_name == ErrorIf.WrongOutputType:
@@ -5016,7 +5034,7 @@ class OutputShaper:
             assert len(a.shape) == len(b.shape)
         assert a.dtype == b.dtype
 
-        # Do broadcast
+        # Work out broadcasted output shape
         shape = []
         for i in range(len(a.shape)):
             if a.shape[i] == 1 and len(b.shape) > i:
@@ -5024,8 +5042,9 @@ class OutputShaper:
             else:
                 shape.append(a.shape[i])
 
-        fuzz_idx = rng.integers(0, len(a.shape))
-        if error_name == ErrorIf.DimensionMismatch:
+        if len(shape) > 0 and error_name == ErrorIf.DimensionMismatch:
+            # Can only create this error for rank > 0
+            fuzz_idx = rng.integers(0, len(shape))
             shape[fuzz_idx] += 1
 
         if error_name == ErrorIf.WrongOutputType:

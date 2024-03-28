@@ -3,6 +3,12 @@
 
 __pycache__/
 build/
+debug-build/
+/conformance/
+conformance_build/
+conformance_large_files/
+.cache
+compile_commands.json
 dist/
 *.egg-info
 verif/tests/test-result-*.tests.tosa_mock_sut_run.npy

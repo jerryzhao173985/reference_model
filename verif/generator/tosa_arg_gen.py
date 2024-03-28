@@ -259,14 +259,18 @@ class TosaTensorGen:
 
     @staticmethod
     def tgBroadcastFuzz(testGen, rng, op, rank, error_name=None):
+        if rank == 0:
+            # No broadcasting possible for rank 0
+            return [[]] * num_shapes
+
         shape = testGen.makeShape(rng, rank)
 
         pl, const = op["operands"]
 
         shape_list = []
 
-        # Choose one of the inputs to broadcast
-        # Note: Simplifies OutputShaper code if we don't change first shape for errors
+        # Choose any one of the inputs to broadcast
+        # Note for ERRORS: Simplifies OutputShaper code if we don't change first shape
         bcast_idx = rng.randInt(0 if error_name is None else 1, pl + const)
         fuzz_idx = rng.randInt(0, rank)
 
@@ -1206,10 +1210,10 @@ class TosaTensorValuesGen:
                 b_arr = b_arr // 2
 
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
+                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr.astype(np.int32))
             )
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr)
+                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr.astype(np.int32))
             )
 
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
@@ -2864,7 +2868,9 @@ class TosaArgGen:
                 for double_round in [False, True]:
                     if error_name == ErrorIf.ScaleNotTrue and not double_round:
                         continue
-                    for per_channel in [False, True]:
+                    # Per_channel is only valid with rank > 0
+                    pc_options = (False, True) if len(shapeList[0]) > 0 else (False,)
+                    for per_channel in pc_options:
 
                         if (
                             inDtype == DType.INT48

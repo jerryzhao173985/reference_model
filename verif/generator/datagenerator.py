@@ -68,7 +68,11 @@ class GenerateLibrary:
 
     def _create_buffer(self, dtype: str, shape: tuple):
         """Helper to create a buffer of the required type."""
-        size = np.prod(shape)
+        if shape:
+            size = np.prod(shape)
+        else:
+            # Rank 0
+            size = 1
 
         if dtype == "FP32":
             # Create buffer and initialize to zero
