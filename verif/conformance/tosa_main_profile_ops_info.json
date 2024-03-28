@@ -1970,6 +1970,14 @@
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4",
                         "--oversize"
                     ]
                 ]
@@ -2160,6 +2168,14 @@
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -2233,7 +2249,15 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,48"
+                        "1,48",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
@@ -2555,7 +2579,15 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "4,32"
+                        "4,32",
+                        "--target-rank",
+                        "1",
+                        "--target-rank",
+                        "2",
+                        "--target-rank",
+                        "3",
+                        "--target-rank",
+                        "4"
                     ],
                     [
                         "--target-dtype",
