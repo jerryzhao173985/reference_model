@@ -85,8 +85,17 @@ int TosaReference::Tensor::addConsumer(GraphNode* node)
 
 int TosaReference::Tensor::dumpTensorParams(FILE* out) const
 {
-    fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(), EnumNameTOSAREFTYPE(getDtype()),
-            getIsValid(), getRank(), getShapeAsString().c_str());
+    if (this->getShapeValueSize() > 0)
+    {
+        fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s ShapeValue=%s\n", tensorName.c_str(),
+                EnumNameTOSAREFTYPE(getDtype()), getIsValid(), getRank(), getShapeAsString().c_str(),
+                getShapeValueAsString().c_str());
+    }
+    else
+    {
+        fprintf(out, "Name: %s DType=%s isValid=%d Rank=%d Shape=%s\n", tensorName.c_str(),
+                EnumNameTOSAREFTYPE(getDtype()), getIsValid(), getRank(), getShapeAsString().c_str());
+    }
 
     return 0;
 }

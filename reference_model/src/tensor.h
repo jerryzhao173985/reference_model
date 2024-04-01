@@ -109,6 +109,31 @@ public:
         return;
     }
 
+    void setShapeValue(std::vector<int>& shapeValue)
+    {
+        for (auto dim : shapeValue)
+        {
+            this->shapeValue.push_back(dim);
+        }
+        return;
+    }
+
+    int getShapeValueSize() const
+    {
+        return this->shapeValue.size();
+    }
+
+    std::string getShapeValueAsString() const
+    {
+        std::string shape_str("[");
+        for (auto& dim : shapeValue)
+        {
+            shape_str += (std::to_string(dim) + ", ");
+        }
+        shape_str.append("]");
+        return shape_str;
+    }
+
     std::string getShapeAsString() const
     {
         std::string shape_str("[");
@@ -297,6 +322,7 @@ protected:
     const std::string tensorName;
     const DType serializationDtype;
     std::vector<int> shape;
+    std::vector<int> shapeValue;
     const TOSA_REF_TYPE tensorDtype;
     bool isValid;
     bool isSubgraphInput;

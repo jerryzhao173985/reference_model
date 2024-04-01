@@ -37,6 +37,18 @@ int OpConstShape::checkTensorAttributes()
 
 int OpConstShape::eval()
 {
+    // set the shapeValue given the actual tensor value
+    using EigenType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    auto out        = dynamic_cast<TosaReference::TensorTemplate<Eigen::Tensor<EigenType, 1>>*>(this->getOutputs()[0]);
+
+    std::vector<int> shapeValue;
+    for (int i = 0; out != nullptr && i < out->getTensor().size(); ++i)
+    {
+        shapeValue.push_back(out->getTensor()(i));
+    }
+
+    this->getOutputs()[0]->setShapeValue(shapeValue);
+
     for (auto ct : getOutputs())
     {
         if (!ct->getIsValid())
@@ -106,6 +118,15 @@ int OpConcatShape::eval()
         }
     }
     out->getTensor() = out_tensor;
+
+    // set the shapeValue given the actual tensor value
+    std::vector<int> shapeValue;
+    for (int i = 0; i < out->getTensor().size(); ++i)
+    {
+        shapeValue.push_back(out->getTensor()(i));
+    }
+    this->getOutputs()[0]->setShapeValue(shapeValue);
+
     return GraphNode::eval();
 }
 
@@ -168,6 +189,15 @@ int ShapeBinaryNodeBase::eval()
     }
 
     result->getTensor() = out_tens;
+
+    // set the shapeValue given the actual tensor value
+    std::vector<int> shapeValue;
+    for (int i = 0; i < result->getTensor().size(); ++i)
+    {
+        shapeValue.push_back(result->getTensor()(i));
+    }
+    this->getOutputs()[0]->setShapeValue(shapeValue);
+
     return GraphNode::eval();
 }
 

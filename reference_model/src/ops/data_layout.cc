@@ -270,6 +270,15 @@ int OpDim<Rank, Dtype>::eval()
 
     this->out->getTensor().setValues({ out_val });
 
+    // set the shapeValue given the actual tensor value
+    std::vector<int> shapeValue;
+    for (int i = 0; i < out->getTensor().size(); ++i)
+    {
+        shapeValue.push_back(out->getTensor()(i));
+    }
+
+    this->getOutputs()[0]->setShapeValue(shapeValue);
+
     return GraphNode::eval();
 }
 
