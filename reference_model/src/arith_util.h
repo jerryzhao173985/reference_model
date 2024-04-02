@@ -317,4 +317,50 @@ int32_t getUnsignedMinimum()
     return 0;
 }
 
+template <typename T>
+T applyMax(T a, T b)
+{
+    if (std::is_floating_point<T>::value)
+    {
+        if (std::isnan(a) || std::isnan(b))
+        {
+            return NAN;
+        }
+    }
+    return (a >= b) ? a : b;
+}
+
+template <typename T>
+T applyMin(T a, T b)
+{
+    if (std::is_floating_point<T>::value)
+    {
+        if (std::isnan(a) || std::isnan(b))
+        {
+            return NAN;
+        }
+    }
+    return (a < b) ? a : b;
+}
+
+// Clip the input value of type T into the range [min, max] of type U, and return the result as type T.
+template <typename T, typename U>
+T applyClip(T value, U min_val, U max_val)
+{
+    assert(min_val <= max_val);
+    assert(sizeof(T) == sizeof(U));
+
+    value = applyMax<T>(value, min_val);
+
+    // Handle the numbers of an unsigned type U that becomes unrepresentable when type casting to signed.
+    if (std::is_signed_v<T> && std::is_unsigned_v<U> && max_val > std::numeric_limits<T>::max())
+    {
+        max_val = std::numeric_limits<T>::max();
+    }
+
+    value = applyMin<T>(value, max_val);
+
+    return value;
+}
+
 #endif /* _ARITH_UTIL_H */

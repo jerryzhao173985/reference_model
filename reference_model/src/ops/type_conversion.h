@@ -60,6 +60,15 @@ protected:
     TosaReference::TensorTemplate<TMultiplierI16>* multiplierI16;
     TosaReference::TensorTemplate<TMultiplierI32>* multiplierI32;
     TosaReference::TensorTemplate<TShift>* shift;
+
+    // The maximum value when interpreting OutDtype as a signed value
+    int32_t QMax_s;
+    // The minimum value when interpreting OutDtype as a signed value
+    int32_t QMin_s;
+    // The maximum value when interpreting OutDtype as an unsigned value
+    uint32_t QMax_u;
+    // The minimum value when interpreting OutDtype as an unsigned value
+    uint32_t QMin_u;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
