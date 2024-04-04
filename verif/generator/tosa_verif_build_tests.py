@@ -170,9 +170,10 @@ def parseArgs(argv):
     ops_group.add_argument(
         "--conv-kernel",
         dest="conv_kernels",
-        action="append",
+        action="extend",
         default=[],
         type=lambda x: str_to_list(x),
+        nargs="*",
         help="Create convolution tests with a particular kernel shape, e.g., 1,4 or 1,3,1 (only 2D kernel sizes will be used for 2D ops, etc.)",
     )
 
@@ -220,28 +221,31 @@ def parseArgs(argv):
     tens_group.add_argument(
         "--target-shape",
         dest="target_shapes",
-        action="append",
+        action="extend",
         default=[],
+        # Used for parsing a comma-separated list of integers in a string
         type=lambda x: str_to_list(x),
+        nargs="*",
         help="Create tests with a particular input tensor shape, e.g., 1,4,4,8 (may be repeated for tests that require multiple input shapes)",
     )
 
     tens_group.add_argument(
         "--target-rank",
         dest="target_ranks",
-        action="append",
+        action="extend",
         default=None,
         type=lambda x: auto_int(x),
-        help="Create tests with a particular input tensor rank",
+        nargs="*",
+        help="Create tests with a particular input tensor rank (may be repeated)",
     )
 
-    # Used for parsing a comma-separated list of integers in a string
     tens_group.add_argument(
         "--target-dtype",
         dest="target_dtypes",
-        action="append",
+        action="extend",
         default=None,
         type=lambda x: dtype_str_to_val(x),
+        nargs="*",
         help=f"Create test with a particular DType: [{', '.join([d.lower() for d in DTypeNames[1:]])}] (may be repeated)",
     )
 
