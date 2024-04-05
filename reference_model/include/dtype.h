@@ -89,26 +89,8 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
 }
 
 // return corresponding TOSA_REF_TYPE for DType
-inline TOSA_REF_TYPE ConvertDType(const DType dtype)
+inline TOSA_REF_TYPE DType2RefType(const DType dtype)
 {
-    assert(DType_MAX == DType_FP8E5M2);    // must update whenever DType_MAX changes
-
-    if (g_func_config.precise_mode)
-    {
-        // in precise mode, convert all floating DType to TOSA_REF_TYPE_FP64
-        switch (dtype)
-        {
-            case DType_FP16:
-            case DType_FP32:
-            case DType_BF16:
-            case DType_FP8E4M3:
-            case DType_FP8E5M2:
-                return TOSA_REF_TYPE_FP64;
-            default:
-                break;
-        }
-    }
-
     switch (dtype)
     {
         case DType_BOOL:
@@ -143,6 +125,31 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
             break;
     }
     return TOSA_REF_TYPE_UNKNOWN;
+}
+
+// return corresponding TOSA_REF_TYPE for DType
+// if precise_mode, convert all floating dtype to FP64
+inline TOSA_REF_TYPE ConvertDType(const DType dtype)
+{
+    assert(DType_MAX == DType_FP8E5M2);    // must update whenever DType_MAX changes
+
+    if (g_func_config.precise_mode)
+    {
+        // in precise mode, convert all floating DType to TOSA_REF_TYPE_FP64
+        switch (dtype)
+        {
+            case DType_FP16:
+            case DType_FP32:
+            case DType_BF16:
+            case DType_FP8E4M3:
+            case DType_FP8E5M2:
+                return TOSA_REF_TYPE_FP64;
+            default:
+                break;
+        }
+    }
+
+    return DType2RefType(dtype);
 }
 
 template <TOSA_REF_TYPE Dtype>

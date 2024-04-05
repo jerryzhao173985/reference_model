@@ -32,7 +32,6 @@ public:
         : UnaryNode<Rank, Dtype>(sgt_, Op_CLAMP, id_)
     {
         INIT_ATTRIBUTE(Clamp);
-        register_fcn();
     }
     virtual ~OpClamp();
     static constexpr int32_t QMin = GetQMin<Dtype>::value;

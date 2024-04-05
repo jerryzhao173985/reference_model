@@ -66,6 +66,13 @@ int UnaryNode<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int UnaryNode<Rank, Dtype>::eval()
 {
+    // call register_fcn() here to ensure inputs/outputs have been connected
+    // to the node by the time register_fcn() is called for Clamp Operator
+    if (register_fcn())
+    {
+        return 1;
+    }
+
     this->result->getTensor() = this->a->getTensor().unaryExpr(this->fcn);
 
     return GraphNode::eval();
