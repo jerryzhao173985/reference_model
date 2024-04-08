@@ -796,7 +796,17 @@ class TosaTensorValuesGen:
             tens_meta["input_pos"] = idx
             tens_meta["op"] = gtu.getOpNameFromOpListName(opName).upper()
 
-            if idx < pCount:
+            if testGen.args.random_const_inputs:
+                # Choose type of tensor biased by defaults
+                percentage = rng.randInt(0, 100)
+                variable = (idx < pCount and percentage < 70) or (
+                    idx >= pCount and percentage >= 70
+                )
+            else:
+                # Use default set up of constants versus inputs for the op
+                variable = idx < pCount
+
+            if variable:
                 tens_meta["input_type"] = "VARIABLE"
             else:
                 tens_meta["input_type"] = "CONSTANT"
@@ -876,7 +886,7 @@ class TosaTensorValuesGen:
             if testGen.args.lazy_data_gen:
                 data = None
 
-            if tens_meta["input_type"] == "VARIABLE":
+            if variable:
                 tens = testGen.ser.addPlaceholder(shape, dtypeList[idx], data)
             else:
                 tens = testGen.ser.addConst(shape, dtypeList[idx], data)
