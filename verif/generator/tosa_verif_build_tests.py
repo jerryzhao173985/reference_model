@@ -250,6 +250,13 @@ def parseArgs(argv):
     )
 
     ops_group.add_argument(
+        "--random-const-inputs",
+        dest="random_const_inputs",
+        action="store_true",
+        help="Allow any combination of input/constant tensors for operators",
+    )
+
+    ops_group.add_argument(
         "--num-const-inputs-concat",
         dest="num_const_inputs_concat",
         default=0,
