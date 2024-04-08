@@ -3185,26 +3185,25 @@ class TosaArgGen:
             start = []
             size = []
 
-            valid = True
-
             for i in range(rank):
                 if ifm_shape[i] > 1:
+                    # Start from 0 to dimension size - 1 to leave room for slice of 1
                     start.append(rng.randInt(0, ifm_shape[i]))
-                    size.append(rng.randInt(0, ifm_shape[i] - start[i]))
+                    # Size from 1 up to rest of room (dimension size - start)
+                    size.append(rng.randInt(1, ifm_shape[i] + 1 - start[i]))
 
-                    # Invalid slice size?
-                    if size[i] == 0:
-                        valid = False
+                    # Should never hit an invalid slice size
+                    assert size[i] > 0 and (size[i] + start[i]) <= ifm_shape[i]
                 else:
                     start.append(0)
                     size.append(1)
 
-            if valid:
-                # If ERROR_IF test required then incorrect start, size will be returned
-                start, size = TosaErrorIfArgGen.eiSliceErrorIf(
-                    rng, error_name, ifm_shape, start, size
-                )
-                arg_list.append(("perm{}".format(p), {"start": start, "size": size}))
+            # If ERROR_IF test required then incorrect start, size will be returned
+            start, size = TosaErrorIfArgGen.eiSliceErrorIf(
+                rng, error_name, ifm_shape, start, size
+            )
+            arg_list.append(("perm{}".format(p), {"start": start, "size": size}))
+
         # Now add data generator types
         arg_list = TosaArgGen._add_data_generators(
             testGen,
