@@ -406,7 +406,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -421,6 +421,8 @@
                         "-max,max",
                         "--tensor-dim-range",
                         "20,64",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -459,11 +461,6 @@
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
             }
         }
     },
@@ -2957,7 +2954,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -2972,6 +2969,8 @@
                         "-16.0,16.0",
                         "--tensor-dim-range",
                         "16,64",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -3010,11 +3009,6 @@
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
             }
         }
     },
@@ -3157,7 +3151,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -3172,6 +3166,8 @@
                         "-8.0,8.0",
                         "--tensor-dim-range",
                         "18,60",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -3210,11 +3206,6 @@
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
             }
         }
     },
@@ -3223,7 +3214,7 @@
         "profile": [
             "tosa-mi"
         ],
-        "support_for": [ "lazy_data_gen" ],
+        "support_for": [ "lazy_data_gen", "generator_select", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "standard": {
                 "generator_args": [
@@ -3238,6 +3229,8 @@
                         "-4.0,4.0",
                         "--tensor-dim-range",
                         "18,60",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -3276,11 +3269,6 @@
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
             }
         }
     }
