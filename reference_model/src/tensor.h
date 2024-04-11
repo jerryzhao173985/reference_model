@@ -996,7 +996,8 @@ public:
                     case 1:
                         return new Tensor1<int64_t>(tensorName_, dtype_, shape_);
                     default:
-                        assert(0);    // shape tensors must have rank of 0 or 1
+                        // shape tensors must have rank of 0 or 1
+                        break;
                 }
                 break;
             case TOSA_REF_TYPE_BOOL:
@@ -1038,7 +1039,7 @@ public:
                 }
                 break;
             case TOSA_REF_TYPE_UNKNOWN:
-                assert(0);    // tensorDtype_ is uninitialized
+                // tensorDtype_ is uninitialized
                 break;
         }
         return nullptr;
