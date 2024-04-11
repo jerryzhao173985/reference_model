@@ -83,6 +83,8 @@ struct AbsErrorVerifyInfo
 
     double lowerBound;
     double normalDivisor;
+    bool boundAsMagnitude;
+    double boundAddition;
 };
 
 /// \brief relative verification meta-data

@@ -84,6 +84,14 @@ void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
     {
         j.at("normal_divisor").get_to(absErrorInfo.normalDivisor);
     }
+    if (j.contains("bound_as_magnitude"))
+    {
+        j.at("bound_as_magnitude").get_to(absErrorInfo.boundAsMagnitude);
+    }
+    if (j.contains("bound_addition"))
+    {
+        j.at("bound_addition").get_to(absErrorInfo.boundAddition);
+    }
 }
 
 void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
@@ -112,8 +120,10 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     {
         j.at("reduce_product_info").get_to(cfg.reduceProductInfo);
     }
-    cfg.absErrorInfo.lowerBound    = 0;
-    cfg.absErrorInfo.normalDivisor = 1;
+    cfg.absErrorInfo.lowerBound       = 0;
+    cfg.absErrorInfo.normalDivisor    = 1;
+    cfg.absErrorInfo.boundAsMagnitude = false;
+    cfg.absErrorInfo.boundAddition    = 0;
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);
@@ -317,7 +327,8 @@ bool tosaCheckFloatBound(
 
         if (referenceMin < AccPrecision<OutType>::normal_min)
         {
-            referenceMin = 0.0;
+            // Large error bounds could mean referenceMin is negative
+            referenceMin = std::min(0.0, referenceMin);
         }
     }
 

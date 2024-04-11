@@ -74,6 +74,14 @@
                                 "normal_divisor": {
                                     "description": "normal_divisor for error bounds",
                                     "type": "number"
+                                },
+                                "bound_as_magnitude": {
+                                    "description": "when the bound magnitude is passed in the bound value",
+                                    "type": "boolean"
+                                },
+                                "bound_addition": {
+                                    "description": "addition to the bounds value",
+                                    "type": "number"
                                 }
                             },
                             "additionalProperties": false

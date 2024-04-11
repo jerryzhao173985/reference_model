@@ -30,15 +30,29 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
 {
     const auto cfg = reinterpret_cast<const AbsErrorVerifyInfo*>(cfgPtr);
 
-    double errorBound = 0.0;
-    if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
+    double boundsMagnitude;
+    if (cfg->boundAsMagnitude)
     {
-        double valBound = std::abs(referenceValue) * boundsValue;
+        // Special case for SIN/COS
+        // use the input value (stored in the bounds tensor) as the magnitude and value
+        boundsMagnitude = boundsValue;
+        boundsValue     = std::abs(boundsValue);
+    }
+    else
+    {
+        // Use the referenceValue as the magnitude
+        boundsMagnitude = referenceValue;
+    }
+
+    double errorBound = 0.0;
+    if (std::isfinite(boundsValue) || std::abs(boundsMagnitude) != 0.0)
+    {
+        double valueBound = std::abs(boundsMagnitude) * (boundsValue + cfg->boundAddition);
         if (cfg->lowerBound > 0)
         {
-            valBound = std::max(cfg->lowerBound, valBound);
+            valueBound = std::max(cfg->lowerBound, valueBound);
         }
-        errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valBound;
+        errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valueBound;
     }
     return errorBound;
 }

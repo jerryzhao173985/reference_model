@@ -181,8 +181,8 @@ int OpCos<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return 1.0
-                this->fcn = [](InEigenType a) -> OutEigenType { return 1.0; };
+                // ABS_ERROR bounds return
+                this->fcn = [](InEigenType a) -> OutEigenType { return a; };
             }
             else
             {
@@ -414,8 +414,8 @@ int OpSin<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return 1.0
-                this->fcn = [](InEigenType a) -> OutEigenType { return 1.0; };
+                // ABS_ERROR bounds return
+                this->fcn = [](InEigenType a) -> OutEigenType { return a; };
             }
             else
             {

@@ -290,10 +290,18 @@ class TosaTestGen:
                 }
         elif op["op"] in (Op.SIN, Op.COS):
             mode = gtu.ComplianceMode.ABS_ERROR
-            if "compliance" in op and "abs_error_normal_divisor" in op["compliance"]:
-                compliance_tens["abs_error_info"] = {
-                    "normal_divisor": op["compliance"]["abs_error_normal_divisor"]
-                }
+            if "compliance" in op:
+                normal_divisor = op["compliance"].get("abs_error_normal_divisor", 1)
+                bound_addition = op["compliance"].get("abs_error_bound_addition", 0)
+            else:
+                normal_divisor = 1
+                bound_addition = 0
+
+            compliance_tens["abs_error_info"] = {
+                "normal_divisor": normal_divisor,
+                "bound_as_magnitude": True,
+                "bound_addition": bound_addition,
+            }
         else:
             mode = gtu.ComplianceMode.EXACT
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name
@@ -4139,7 +4147,10 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
-            "compliance": {"abs_error_normal_divisor": 2},
+            "compliance": {
+                "abs_error_normal_divisor": 2,
+                "abs_error_bound_addition": 1,
+            },
         },
         "exp": {
             "op": Op.EXP,
