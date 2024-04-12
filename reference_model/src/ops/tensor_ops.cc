@@ -1892,7 +1892,8 @@ int OpRFFT2d<Dtype>::eval()
                         // Imaginary values with locations (0,0), (0,W/2), (H/2,0) and (H/2,W/2) are zero.
                         // But due to sin(M_PI) not returning 0 because of M_PI being approximate, only
                         // add to the imaginary sum when not processing these locations.
-                        if ((ay % (half_in_height)) + (ax % (half_in_width)) > 0)
+                        if ((in_height > 1 && (ay % (half_in_height)) > 0) ||
+                            (in_width > 1 && (ax % (half_in_width)) > 0))
                         {
                             sum_imag += v_ir * a_sin;
                         }
