@@ -1016,9 +1016,9 @@ class TosaTensorValuesGen:
         for idx, shape in enumerate(shapeList[:]):
             if idx == 1:
                 if dtypeList[idx] == DType.INT8:
-                    arr = np.int32(rng.integers(low=0, high=8, size=shape))
+                    arr = np.int8(rng.integers(low=0, high=8, size=shape))
                 elif dtypeList[idx] == DType.INT16:
-                    arr = np.int32(rng.integers(low=0, high=16, size=shape))
+                    arr = np.int16(rng.integers(low=0, high=16, size=shape))
                 elif dtypeList[idx] == DType.INT32:
                     arr = np.int32(rng.integers(low=0, high=32, size=shape))
                 elif error_name == ErrorIf.WrongInputType:
