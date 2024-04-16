@@ -353,7 +353,7 @@ T applyClip(T value, U min_val, U max_val)
     value = applyMax<T>(value, min_val);
 
     // Handle the numbers of an unsigned type U that becomes unrepresentable when type casting to signed.
-    if (std::is_signed_v<T> && std::is_unsigned_v<U> && max_val > std::numeric_limits<T>::max())
+    if (std::is_signed_v<T> && std::is_unsigned_v<U> && max_val > static_cast<U>(std::numeric_limits<T>::max()))
     {
         max_val = std::numeric_limits<T>::max();
     }
