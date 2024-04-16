@@ -866,8 +866,8 @@ class TosaTensorValuesGen:
             # range
             max_val = (1 << 31) - 1
             min_val = -max_val
-            arr = np.int32(
-                rng.integers(low=min_val, high=(max_val + 1), size=shapeList[0])
+            arr = rng.randTensor(
+                shapeList[0], dtypeList[0], data_range=(min_val, (max_val + 1))
             )
             tens_ser_list = []
             tens_ser_list.append(
@@ -982,9 +982,13 @@ class TosaTensorValuesGen:
             tens_ser_list = []
             for idx, shape in enumerate(shapeList[:]):
                 if dtypeList[0] == DType.INT32:
-                    arr = rng.randTensor(shapeList[idx], DType.INT16)
+                    # Limit data range to avoid saturation
+                    arr = np.int32(rng.randTensor(shapeList[idx], DType.INT16))
                 else:
-                    arr = np.int32(rng.integers(low=0, high=32, size=shapeList[idx]))
+                    arr = rng.randTensor(
+                        shapeList[idx], dtypeList[0], data_range=(0, 32)
+                    )
+
                 if pRemain > 0:
                     tens_ser_list.append(
                         testGen.ser.addPlaceholder(shape, dtypeList[idx], arr)
@@ -1016,13 +1020,13 @@ class TosaTensorValuesGen:
         for idx, shape in enumerate(shapeList[:]):
             if idx == 1:
                 if dtypeList[idx] == DType.INT8:
-                    arr = np.int8(rng.integers(low=0, high=8, size=shape))
+                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 8))
                 elif dtypeList[idx] == DType.INT16:
-                    arr = np.int16(rng.integers(low=0, high=16, size=shape))
+                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 16))
                 elif dtypeList[idx] == DType.INT32:
-                    arr = np.int32(rng.integers(low=0, high=32, size=shape))
+                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 32))
                 elif error_name == ErrorIf.WrongInputType:
-                    arr = np.int32(rng.integers(low=0, high=8, size=shape))
+                    arr = rng.randTensor(shape, DType.INT32, data_range=(0, 8))
                 else:
                     raise Exception("OpArithmeticRightShift: invalid input dtype")
             else:
@@ -1168,10 +1172,14 @@ class TosaTensorValuesGen:
 
             # Make sure multiply result in int32 range
             shift = argsDict["shift"]
+
+            np_type = np.int32
             if dtypeList[0] == DType.INT8:
                 num_bits = 8
+                np_type = np.int8
             elif dtypeList[0] == DType.INT16:
                 num_bits = 16
+                np_type = np.int16
             elif dtypeList[0] == DType.INT32:
                 num_bits = 32
             elif error_name == ErrorIf.WrongInputType:
@@ -1185,8 +1193,12 @@ class TosaTensorValuesGen:
                 low = -(2 ** (num_bits - 1))
                 high = (2 ** (num_bits - 1)) - 1
 
-                a_arr = np.int32(rng.integers(low=low, high=high, size=shapeList[0]))
-                b_arr = np.int32(rng.integers(low=low, high=high, size=shapeList[1]))
+                a_arr = rng.randTensor(
+                    shapeList[0], DType.INT32, data_range=(low, high)
+                )
+                b_arr = rng.randTensor(
+                    shapeList[1], DType.INT32, data_range=(low, high)
+                )
 
             i = 0
             while True:
@@ -1210,10 +1222,10 @@ class TosaTensorValuesGen:
                 b_arr = b_arr // 2
 
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr.astype(np.int32))
+                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr.astype(np_type))
             )
             tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr.astype(np.int32))
+                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr.astype(np_type))
             )
 
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
@@ -1250,7 +1262,8 @@ class TosaTensorValuesGen:
             pCount == 2 and cCount == 0
         ), "Op.LOGICAL_LEFT_SHIFT or Op.LOGICAL_RIGHT_SHIFT must have 2 placeholders, 0 consts"
         values_arr = rng.randTensor(shapeList[0], dtypeList[0])
-        shift_arr = np.int32(rng.integers(low=0, high=32, size=shapeList[1]))
+        shift_arr = rng.randTensor(shapeList[1], dtypeList[0], data_range=(0, 32))
+
         tens_ser_list = []
         tens_ser_list.append(
             testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
@@ -1320,8 +1333,8 @@ class TosaTensorValuesGen:
             # Limit values so that the sum cannot exceed the range of an int32 during
             # summation of any axis
             range_val = int((1 << 31) / max(shapeList[0]))
-            values_arr = np.int32(
-                rng.integers(low=-range_val, high=range_val, size=shapeList[0])
+            values_arr = rng.randTensor(
+                shapeList[0], dtype, data_range=(-range_val, range_val)
             )
             tens_ser_list = []
             tens_ser_list.append(
