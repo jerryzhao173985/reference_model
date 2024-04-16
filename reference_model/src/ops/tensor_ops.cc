@@ -1958,26 +1958,11 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttr
         return 1;
     }
 
-    if (attribute->output_shape().size() != 4)
-    {
-        printNodeValidationError("OpTransposeConv2d: illegal size for attribute output_shape");
-        return 1;
-    }
-
     for (int32_t i : attribute->stride())
     {
         if (i < 1)
         {
             printNodeValidationError("OpTransposeConv2d: At least one stride is smaller than one");
-            return 1;
-        }
-    }
-
-    for (int d = 0; d < 4; d++)
-    {
-        if (attribute->output_shape()[d] != this->output->getShape()[d])
-        {
-            printNodeValidationError("OpTransposeConv2d: illegal size for attribute output_shape");
             return 1;
         }
     }

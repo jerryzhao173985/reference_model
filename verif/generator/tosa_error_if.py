@@ -2788,7 +2788,6 @@ class TosaInvalidValidator:
 
         if opName.startswith("transpose_conv2d"):
             # transpose_conv2d
-            output_shape = args_dict["out_shape"]
             filter_shape = inputShapes[1]
             kernel_shape = filter_shape[1:-1]
 
@@ -2810,10 +2809,7 @@ class TosaInvalidValidator:
                 padding[2],
                 padding[3],
             )
-            if output_shape[1] == h and output_shape[2] == w:
-                return False
-            # output shape does not match the expected shape
-            return True
+            return h < 1 or w < 1
 
         if "conv2d" in opName or "conv3d" in opName:
             # conv2d, conv3d, depthwise_conv2d
