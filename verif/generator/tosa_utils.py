@@ -243,3 +243,18 @@ def float32_to_bfloat16(f):
 vect_f32_to_bf16 = np.vectorize(
     float32_to_bfloat16, otypes=(np.float32,)
 )  # NumPy vectorize: applies function to vector faster than looping
+
+
+def normal_frac(dtype):
+    if dtype == DType.FP32:
+        return 23
+    elif dtype == DType.FP16:
+        return 10
+    elif dtype == DType.BF16:
+        return 7
+    elif dtype == DType.FP8E4M3:
+        return 3
+    elif dtype == DType.FP8E5M2:
+        return 2
+    else:
+        raise Exception(f"Unknown support dtype for normal_frac: {dtype}")

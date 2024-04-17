@@ -312,6 +312,7 @@ public:
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
     using TBias           = Eigen::Tensor<OutEigenType, 1>;
     using TOut            = Eigen::Tensor<OutEigenType, 4>;
+    using TAcc            = Eigen::Tensor<AccEigenType, 4>;
 
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;

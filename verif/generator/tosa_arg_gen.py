@@ -878,9 +878,8 @@ class TosaTensorValuesGen:
 
             if idx == 2 and dg_type == gtu.DataGenType.DOT_PRODUCT:
                 # The KS value used by compliance verification is altered when the
-                # bias data is non-zero
-                if max(abs(data)) > 0.0:
-                    argsDict["ksb"] = argsDict["ks"] + 1
+                # bias data is non-zero, store this in ksb_increment for tensorComplianceMetaData
+                argsDict["ksb_increment"] = 1 if max(abs(data)) > 0.0 else 0
 
             if testGen.args.lazy_data_gen:
                 data = None

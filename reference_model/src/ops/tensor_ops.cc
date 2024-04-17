@@ -1032,7 +1032,6 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
     this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     // 2. direct convolution
-    AccEigenType acc(0.0);
     int d_idx, h_idx, w_idx;
 
     for (int ob = 0; ob < out_batch; ob++)
@@ -1045,8 +1044,7 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
                 {
                     for (int oc = 0; oc < out_channels; oc++)
                     {
-                        // Initialize accumulator with bias value
-                        acc = (AccEigenType)this->output->getTensor()(ob, od, oh, ow, oc);
+                        AccEigenType acc(0.0);
                         for (int fd = 0; fd < f_depth; fd++)
                         {
                             d_idx = od * stride_d + fd * dilation_d;
@@ -1064,7 +1062,9 @@ int OpConv3d<InDtype, WeightDtype, OutDtype>::eval()
                                 }
                             }
                         }
-                        this->output->getTensor()(ob, od, oh, ow, oc) = (OutEigenType)acc;
+                        // add bias to accumulated value
+                        OutEigenType bias                             = this->output->getTensor()(ob, od, oh, ow, oc);
+                        this->output->getTensor()(ob, od, oh, ow, oc) = bias + (OutEigenType)acc;
                     }
                 }
             }
@@ -1258,17 +1258,17 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, OutDtype>::eval()
                 {
                     for (int cm = 0; cm < f_multiplier; cm++)
                     {
+                        AccEigenType acc(0.0);
                         for (int fh = 0; fh < f_height; fh++)
                         {
                             for (int fw = 0; fw < f_width; fw++)
                             {
                                 // Perform multiplication in AccEigenType then cast to OutEigenType
-                                this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) +=
-                                    (OutEigenType)((AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh,
-                                                                                       ic) *
-                                                   (AccEigenType)weight_val(fh, fw, ic, cm));
+                                acc += (AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh, ic) *
+                                       (AccEigenType)weight_val(fh, fw, ic, cm);
                             }
                         }
+                        this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) += (OutEigenType)acc;
                     }
                 }
             }
@@ -2197,6 +2197,9 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
     int out_x_origin, out_y_origin;
     int out_x, out_y;
 
+    TAcc acc_tensor = this->output->getTensor().template cast<AccEigenType>();
+    acc_tensor.setZero();
+
     // reference implementation from: tensorflow/tensorflow/lite/kernels/internal/reference/reference_ops.h
     for (int ob = 0; ob < out_batch; ob++)
     {
@@ -2218,9 +2221,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
                             {
                                 if ((out_x >= 0 && out_x < out_width) && (out_y >= 0 && out_y < out_height))
                                 {
-                                    this->output->getTensor()(ob, out_y, out_x, oc) +=
-                                        (OutEigenType)((AccEigenType)input_val(ob, ih, iw, ic) *
-                                                       (AccEigenType)weight_val(oc, fh, fw, ic));
+                                    acc_tensor(ob, out_y, out_x, oc) += (AccEigenType)input_val(ob, ih, iw, ic) *
+                                                                        (AccEigenType)weight_val(oc, fh, fw, ic);
                                 }
                             }
                         }
@@ -2229,6 +2231,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, OutDtype>::eval()
             }
         }
     }
+
+    this->output->getTensor() += acc_tensor.template cast<OutEigenType>();
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
