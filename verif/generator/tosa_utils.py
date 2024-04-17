@@ -254,3 +254,18 @@ def get_float32_bitstring(f):
     """Return a big-endian string of bits representing a 32 bit float."""
     f32_bits_as_int = struct.unpack(">L", struct.pack(">f", f))[0]
     return f"{f32_bits_as_int:032b}"
+
+
+def normal_frac(dtype):
+    if dtype == DType.FP32:
+        return 23
+    elif dtype == DType.FP16:
+        return 10
+    elif dtype == DType.BF16:
+        return 7
+    elif dtype == DType.FP8E4M3:
+        return 3
+    elif dtype == DType.FP8E5M2:
+        return 2
+    else:
+        raise Exception(f"Unknown support dtype for normal_frac: {dtype}")

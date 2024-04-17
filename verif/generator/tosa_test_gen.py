@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
+import math
 import os
 from copy import deepcopy
 from datetime import datetime
@@ -257,12 +258,18 @@ class TosaTestGen:
 
         # Check what data generation we have done
         if argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
+            # compute ceiling(KS / exp2(normal_frac<acc_t>() - normal_frac<out_t>()))
+            out_dtype = outputTensor.dtype
+            acc_dtype = argsDict["acc_type"]
+            ksb = int(argsDict["ks"])
+            ksb = math.ceil(
+                ksb / (2.0 ** (gtu.normal_frac(acc_dtype) - gtu.normal_frac(out_dtype)))
+            )
+            ksb += argsDict.get("ksb_increment", 0)
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
                 "s": argsDict["s"],
-                "ks": (
-                    int(argsDict["ksb"]) if "ksb" in argsDict else int(argsDict["ks"])
-                ),
+                "ks": ksb,
             }
         elif "ulp" in op_compliance:
             mode = gtu.ComplianceMode.ULP

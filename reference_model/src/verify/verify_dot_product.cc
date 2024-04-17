@@ -27,13 +27,13 @@ namespace TosaReference
 namespace
 {
 // Generic element validation function
-template <typename AccType>
-std::optional<double> validateElement(size_t index, double ref, double bnd, AccType imp, size_t KS)
+template <typename OutType>
+std::optional<double> validateElement(size_t index, double ref, double bnd, OutType imp, size_t KS)
 {
     double err    = 0.0;
     bool is_valid = true;
 
-    if (std::isinf(static_cast<AccType>(bnd * (1 + exp2(-1 - AccPrecision<AccType>::normal_frac)))))
+    if (std::isinf(static_cast<OutType>(bnd * (1 + exp2(-1 - AccPrecision<OutType>::normal_frac)))))
     {
         // dot product can overflow and there is no accuracy limit
         is_valid = true;
@@ -53,7 +53,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, AccT
     {
         // 0.0 < bnd < infinity
         const double out_err_bnd =
-            std::max(bnd * exp2(-1 - AccPrecision<AccType>::normal_frac), AccPrecision<AccType>::normal_min);
+            std::max(bnd * exp2(-1 - AccPrecision<OutType>::normal_frac), AccPrecision<OutType>::normal_min);
         const double imp_fp64 = static_cast<double>(imp);
         err                   = (imp_fp64 - ref) / out_err_bnd;
         is_valid              = std::abs(err) <= KS;
@@ -67,10 +67,10 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, AccT
 }
 
 // Dot Product data validation function
-template <typename AccType>
+template <typename OutType>
 bool validateDataDP(const double* referenceData,
                     const double* boundsData,
-                    const AccType* implementationData,
+                    const OutType* implementationData,
                     const std::vector<int32_t>& shape,
                     const DotProductVerifyInfo& cfg)
 {
@@ -87,7 +87,7 @@ bool validateDataDP(const double* referenceData,
 
     for (size_t i = 0; i < T; ++i)
     {
-        auto out_err = validateElement<AccType>(i, referenceData[i], boundsData[i], implementationData[i], KS);
+        auto out_err = validateElement<OutType>(i, referenceData[i], boundsData[i], implementationData[i], KS);
         if (!out_err)
         {
             auto pos = indexToPosition(i, shape);
