@@ -278,16 +278,16 @@ def float32_to_bfloat16(f):
 def float32_to_fp8e4m3(f):
     """Turns fp32 value into fp8e4m3"""
     f32_bits = get_float32_bitstring(f)
-    fp8_bits = f32_bits[0] + f32_bits[1:5] + f32_bits[9:12] + "0" * 24
-    fp_bytes = int(fp8_bits, 2).to_bytes(4, byteorder=sys.byteorder)
+    # TODO: needs src/generate and src/verify code ready
+    fp_bytes = int(f32_bits, 2).to_bytes(4, byteorder=sys.byteorder)
     return struct.unpack("@f", fp_bytes)[0]  # native byteorder
 
 
 def float32_to_fp8e5m2(f):
     """Turns fp32 value into fp8e5m2"""
     f32_bits = get_float32_bitstring(f)
-    fp8_bits = f32_bits[0] + f32_bits[1:6] + f32_bits[9:11] + "0" * 24
-    fp_bytes = int(fp8_bits, 2).to_bytes(4, byteorder=sys.byteorder)
+    # TODO: needs src/generate and src/verify code ready
+    fp_bytes = int(f32_bits, 2).to_bytes(4, byteorder=sys.byteorder)
     return struct.unpack("@f", fp_bytes)[0]
 
 
