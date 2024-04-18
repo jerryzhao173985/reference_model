@@ -309,7 +309,8 @@ bool tosaCheckFloatBound(
 
         if (referenceMin < AccPrecision<OutType>::normal_min)
         {
-            referenceMin = 0.0;
+            // Large error bounds could mean referenceMin is negative
+            referenceMin = std::min(0.0, referenceMin);
         }
     }
 

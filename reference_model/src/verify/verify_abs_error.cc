@@ -32,7 +32,7 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     const auto cfg = reinterpret_cast<const AbsErrorVerifyInfo*>(cfgPtr);
 
     double errorBound = 0.0;
-    if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
+    if (std::isfinite(boundsValue) || std::abs(referenceValue) != 0.0)
     {
         double valBound = std::abs(referenceValue) * boundsValue;
         if (cfg->lowerBound > 0)
