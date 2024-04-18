@@ -1935,6 +1935,9 @@ class TosaArgGen:
                             shapeList
                         )
                     arg_str = f"{arg_str}_fs" if arg_str else "fs"
+                    gen_args_dict["tags"] = args_dict.get("tags", []) + [
+                        "non_finite_fp_data"
+                    ]
 
                 gen_args_dict["dg_type"] = dg_type
                 if num_test_sets > 0:
