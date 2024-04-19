@@ -15,7 +15,7 @@
 
 #include "type_conversion.h"
 #include "arith_util.h"
-#include "float_utils.h"
+#include "cfloat.h"
 #include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
@@ -25,11 +25,11 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-using fp16    = tosa::float_t<int16_t, 5, true, true, true>;
-using bf16    = tosa::float_t<int16_t, 8, true, true, true>;
-using fp32    = tosa::float_t<int32_t, 8, true, true, true>;
-using fp8e4m3 = tosa::float_t<int8_t, 4, true, true, false>;
-using fp8e5m2 = tosa::float_t<int8_t, 5, true, true, true>;
+using fp16    = ct::cfloat<int16_t, 5, true, true, true>;
+using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
+using fp32    = ct::cfloat<int32_t, 8, true, true, true>;
+using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
+using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
