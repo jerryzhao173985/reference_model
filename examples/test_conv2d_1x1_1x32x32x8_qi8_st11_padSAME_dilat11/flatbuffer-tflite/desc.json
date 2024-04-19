@@ -12,5 +12,7 @@
   "ofm_file": [
     "ref_model_output_0.npy"
   ],
+  "variable_name": [],
+  "variable_file": [],
   "expected_failure": false
 }
