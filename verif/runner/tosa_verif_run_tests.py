@@ -1,5 +1,5 @@
 """TOSA verification runner script."""
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import importlib
@@ -252,7 +252,7 @@ def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
                     print(
                         "".join(
                             traceback.format_exception(
-                                etype=type(e), value=e, tb=e.__traceback__
+                                None, value=e, tb=e.__traceback__
                             )
                         )
                     )
