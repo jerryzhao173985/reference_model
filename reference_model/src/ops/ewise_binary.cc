@@ -411,6 +411,22 @@ int OpMaximum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                if (isnan(a))
+                {
+                    return a;
+                }
+                else if (isnan(b))
+                {
+                    return b;
+                }
+                else
+                {
+                    return a > b ? a : b;
+                }
+            };
+            break;
+
         case TOSA_REF_TYPE_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b ? a : b; };
             break;
@@ -430,6 +446,21 @@ int OpMinimum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                if (isnan(a))
+                {
+                    return a;
+                }
+                else if (isnan(b))
+                {
+                    return b;
+                }
+                else
+                {
+                    return a < b ? a : b;
+                }
+            };
+            break;
         case TOSA_REF_TYPE_INT32:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a < b ? a : b; };
             break;

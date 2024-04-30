@@ -330,6 +330,11 @@ class TosaTestGen:
             # Data type is needed for all FP runs, as refmodel precise mode produces FP64
             "data_type": gtu.DTYPE_ATTRIBUTES[outputTensor.dtype]["json"],
         }
+
+        op_compliance = op.get("compliance", {})
+        mode = None
+
+        # Check what data generation we have done
         if argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
@@ -338,12 +343,10 @@ class TosaTestGen:
                 if "ksb" in argsDict
                 else int(argsDict["ks"]),
             }
-        elif argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
-            mode = gtu.ComplianceMode.FP_SPECIAL
-        elif "compliance" in op and "ulp" in op["compliance"]:
+        elif "ulp" in op_compliance:
             mode = gtu.ComplianceMode.ULP
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
-        elif "compliance" in op and "relative" in op["compliance"]:
+        elif "relative" in op_compliance:
             mode = gtu.ComplianceMode.RELATIVE
             compliance_tens["relative_info"] = {
                 "max": argsDict["max_abs_value"],
@@ -354,12 +357,21 @@ class TosaTestGen:
             compliance_tens["reduce_product_info"] = {"n": argsDict["n"]}
         elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
             mode = gtu.ComplianceMode.ABS_ERROR
-            if "compliance" in op and "abs_error_lower_bound" in op["compliance"]:
+            if "abs_error_lower_bound" in op_compliance:
                 compliance_tens["abs_error_info"] = {
                     "lower_bound": op["compliance"]["abs_error_lower_bound"]
                 }
-        else:
+        elif argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+            # Default to exact matching below unless...
+            if gtu.ComplianceMode.DOT_PRODUCT in op["data_gen"][inputType]:
+                # Use special mode that only checks for matching inf/nan/zeroes
+                # as normal values need statistical analysis
+                mode = gtu.ComplianceMode.FP_SPECIAL
+
+        # Default to exact mode
+        if mode is None:
             mode = gtu.ComplianceMode.EXACT
+
         compliance_tens["mode"] = gtu.ComplianceMode(mode).name
 
         return compliance_tens
