@@ -237,22 +237,10 @@ class TosaTestGen:
     def tensorComplianceMetaData(
         self, op, inputType, argsDict, outputTensor, errorName
     ):
-        # TODO - Dot product Ops with BF16 inputs that produce FP32 outputs are not supported yet
-        UNSUPPORTED_NON_FP32_INPUT_OPS = (
-            Op.MATMUL,
-            Op.CONV2D,
-            Op.FULLY_CONNECTED,
-            Op.DEPTHWISE_CONV2D,
-            Op.TRANSPOSE_CONV2D,
-            Op.CONV3D,
-        )
         if (
             errorName
             or not gtu.dtypeIsSupportedByCompliance(outputTensor.dtype)
-            or (
-                not gtu.dtypeIsSupportedByCompliance(inputType)
-                and op["op"] in UNSUPPORTED_NON_FP32_INPUT_OPS
-            )
+            or (not gtu.dtypeIsSupportedByCompliance(inputType))
         ):
             # No compliance for error tests or unsupported types currently
             return None
@@ -3352,18 +3340,26 @@ class TosaTestGen:
     PSEUDO_RANDOM_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM,),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM,),
     }
     DOT_PRODUCT_DATAGEN = {
         DType.FP16: (gtu.DataGenType.DOT_PRODUCT,),
         DType.FP32: (gtu.DataGenType.DOT_PRODUCT,),
+        DType.BF16: (gtu.DataGenType.DOT_PRODUCT,),
+        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT,),
+        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT,),
     }
     EW_UNARY_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
     }
 
     TOSA_OP_LIST = {

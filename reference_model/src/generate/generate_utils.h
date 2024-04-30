@@ -15,12 +15,17 @@
 #ifndef GENERATE_UTILS_H_
 #define GENERATE_UTILS_H_
 
+#include "cfloat.h"
 #include "dtype.h"
 
 #include <array>
 #include <cstdint>
 #include <optional>
 #include <vector>
+
+using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
+using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
+using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
 namespace TosaReference
 {

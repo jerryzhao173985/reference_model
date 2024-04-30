@@ -950,6 +950,8 @@ class TosaTensorValuesGen:
         DType.FP32: (TVG_FLOAT_HIGH_VALUE[DType.FP32] / 2),
         DType.FP16: (TVG_FLOAT_HIGH_VALUE[DType.FP16] / 2),
         DType.BF16: (TVG_FLOAT_HIGH_VALUE[DType.BF16] / 2),
+        DType.FP8E4M3: (TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3] / 2),
+        DType.FP8E5M2: (TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2] / 2),
     }
 
     @staticmethod
@@ -1234,6 +1236,8 @@ class TosaTensorValuesGen:
         DType.FP32: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
         DType.FP16: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
         DType.BF16: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2]),
     }
 
     @staticmethod
@@ -1560,6 +1564,8 @@ class TosaTensorValuesGen:
         DType.FP32: 10.0,
         DType.FP16: 10.0,
         DType.BF16: 10.0,
+        DType.FP8E4M3: 10.0,
+        DType.FP8E5M2: 10.0,
     }
     # POW highest base value (within a safe margin of error) that can be raised
     # to +ve exponent that doesn't become Infinity
@@ -1580,6 +1586,18 @@ class TosaTensorValuesGen:
             math.pow(
                 TVG_FLOAT_HIGH_VALUE[DType.BF16],
                 1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+            )
+        ),
+        DType.FP8E4M3: math.floor(
+            math.pow(
+                TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
+            )
+        ),
+        DType.FP8E5M2: math.floor(
+            math.pow(
+                TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
             )
         ),
     }
@@ -1606,6 +1624,22 @@ class TosaTensorValuesGen:
             math.pow(
                 1.0 / TVG_FLOAT_HIGH_VALUE[DType.BF16],
                 1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+            )
+            * 1000
+        )
+        / 1000,
+        DType.FP8E4M3: math.ceil(
+            math.pow(
+                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
+            )
+            * 1000
+        )
+        / 1000,
+        DType.FP8E5M2: math.ceil(
+            math.pow(
+                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2],
+                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
             )
             * 1000
         )
@@ -1697,11 +1731,15 @@ class TosaTensorValuesGen:
         DType.FP32: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
         DType.FP16: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
         DType.BF16: math.log(TVG_FLOAT_HIGH_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2]),
     }
     TVG_FLOAT_LOW_VALUE_EXP = {
         DType.FP32: math.log(TVG_FLOAT_LOW_VALUE[DType.FP32]),
         DType.FP16: math.log(TVG_FLOAT_LOW_VALUE[DType.FP16]),
         DType.BF16: math.log(TVG_FLOAT_LOW_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.log(TVG_FLOAT_LOW_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.log(TVG_FLOAT_LOW_VALUE[DType.FP8E5M2]),
     }
 
     @staticmethod

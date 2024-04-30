@@ -231,6 +231,24 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
             status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
+        case TOSA_REF_TYPE_BF16: {
+            auto typed_ptr     = reinterpret_cast<bf16*>(raw_ptr);
+            const int elements = size / sizeof(bf16);
+            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_FP8E4M3: {
+            auto typed_ptr     = reinterpret_cast<fp8e4m3*>(raw_ptr);
+            const int elements = size / sizeof(fp8e4m3);
+            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_FP8E5M2: {
+            auto typed_ptr     = reinterpret_cast<fp8e5m2*>(raw_ptr);
+            const int elements = size / sizeof(fp8e5m2);
+            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            break;
+        }
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.precise_mode)
             {
@@ -336,6 +354,24 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
         case TOSA_REF_TYPE_FP32: {
             auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
             const int elements = size / sizeof(float);
+            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_BF16: {
+            auto typed_ptr     = reinterpret_cast<bf16*>(raw_ptr);
+            const int elements = size / sizeof(bf16);
+            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_FP8E4M3: {
+            auto typed_ptr     = reinterpret_cast<fp8e4m3*>(raw_ptr);
+            const int elements = size / sizeof(fp8e4m3);
+            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            break;
+        }
+        case TOSA_REF_TYPE_FP8E5M2: {
+            auto typed_ptr     = reinterpret_cast<fp8e5m2*>(raw_ptr);
+            const int elements = size / sizeof(fp8e5m2);
             status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }

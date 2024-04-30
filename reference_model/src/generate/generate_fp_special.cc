@@ -179,6 +179,18 @@ bool generateFpSpecial(const GenerateConfig& cfg, void* data, size_t size)
             float* outData = reinterpret_cast<float*>(data);
             return generate(cfg, outData, size);
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            return generate(cfg, outData, size);
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            return generate(cfg, outData, size);
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            return generate(cfg, outData, size);
+        }
         default:
             WARNING("[Generator][FS] Unsupported type.");
             return false;

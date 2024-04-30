@@ -213,6 +213,8 @@ inline void truncateFloatToBFloat(float* src, int64_t size)
     ASSERT_MSG(size > 0, "Size of src (representing number of values in src) must be a positive integer.");
     for (; size != 0; src++, size--)
     {
+        // Rounding first in order to prevent unrepresentative BF16 number
+        *src = static_cast<float>(static_cast<bf16>(*src));
         float_trunc_bytes(src);
     }
 }

@@ -371,6 +371,23 @@ private:
     FcnType fcn;
 };
 
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP64>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP64>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
 template <TOSA_REF_TYPE OutDtype>
 class CastHelper<TOSA_REF_TYPE_FP8E5M2, OutDtype>
 {
@@ -430,6 +447,23 @@ class CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP32>
 public:
     using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
     using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP64>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP64>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();
     const FcnType& get_fcn() const
@@ -565,6 +599,40 @@ class CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP8E5M2>
 {
 public:
     using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP32>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E4M3>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP64>::type;
+    using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E4M3>::type;
+    using FcnType      = std::function<OutEigenType(InEigenType)>;
+    CastHelper();
+    const FcnType& get_fcn() const
+    {
+        return fcn;
+    }
+
+private:
+    FcnType fcn;
+};
+
+template <>
+class CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E5M2>
+{
+public:
+    using InEigenType  = typename GetEigenType<TOSA_REF_TYPE_FP64>::type;
     using OutEigenType = typename GetEigenType<TOSA_REF_TYPE_FP8E5M2>::type;
     using FcnType      = std::function<OutEigenType(InEigenType)>;
     CastHelper();

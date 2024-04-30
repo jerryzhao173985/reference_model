@@ -60,6 +60,27 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
                                      std::next(impData, elementCount), exact_fp<half_float::half>);
             return result;
         }
+        case tosa_datatype_bf16_t: {
+            const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+            auto result = std::equal(refData, std::next(refData, elementCount), impData,
+                                     std::next(impData, elementCount), exact_fp<bf16>);
+            return result;
+        }
+        case tosa_datatype_fp8e4m3_t: {
+            const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+            auto result = std::equal(refData, std::next(refData, elementCount), impData,
+                                     std::next(impData, elementCount), exact_fp<fp8e4m3>);
+            return result;
+        }
+        case tosa_datatype_fp8e5m2_t: {
+            const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+            auto result = std::equal(refData, std::next(refData, elementCount), impData,
+                                     std::next(impData, elementCount), exact_fp<fp8e5m2>);
+            return result;
+        }
         default:
             WARNING("[Verifier][E] Data-type not supported.");
             break;

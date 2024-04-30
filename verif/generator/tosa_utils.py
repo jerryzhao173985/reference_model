@@ -1,10 +1,8 @@
 # Copyright (c) 2021-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import struct
-import sys
 from enum import IntEnum
 
-import numpy as np
 from tosa.DType import DType
 
 # Maximum dimension size for output and inputs for RESIZE
@@ -76,7 +74,7 @@ def dtypeIsSupportedByCompliance(dtype):
     """Types supported by the new data generation and compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         dtype = dtype[0]
-    return dtype in (DType.FP32, DType.FP16)
+    return dtype in (DType.FP32, DType.FP16, DType.BF16, DType.FP8E4M3, DType.FP8E5M2)
 
 
 def getOpNameFromOpListName(opName):
@@ -256,49 +254,3 @@ def get_float32_bitstring(f):
     """Return a big-endian string of bits representing a 32 bit float."""
     f32_bits_as_int = struct.unpack(">L", struct.pack(">f", f))[0]
     return f"{f32_bits_as_int:032b}"
-
-
-def float32_to_bfloat16(f):
-    """Turns fp32 value into bfloat16 by flooring.
-
-    Floors the least significant 16 bits of the input
-    fp32 value and returns this valid bfloat16 representation as fp32.
-    For simplicity during bit-wrangling, ignores underlying system
-    endianness and interprets as big-endian.
-    Returns a bf16-valid float following system's native byte order.
-    """
-    f32_bits = get_float32_bitstring(f)
-    f32_floored_bits = f32_bits[:16] + "0" * 16
-
-    # Assume sys.byteorder matches system's underlying float byteorder
-    fp_bytes = int(f32_floored_bits, 2).to_bytes(4, byteorder=sys.byteorder)
-    return struct.unpack("@f", fp_bytes)[0]  # native byteorder
-
-
-def float32_to_fp8e4m3(f):
-    """Turns fp32 value into fp8e4m3"""
-    f32_bits = get_float32_bitstring(f)
-    # TODO: needs src/generate and src/verify code ready
-    fp_bytes = int(f32_bits, 2).to_bytes(4, byteorder=sys.byteorder)
-    return struct.unpack("@f", fp_bytes)[0]  # native byteorder
-
-
-def float32_to_fp8e5m2(f):
-    """Turns fp32 value into fp8e5m2"""
-    f32_bits = get_float32_bitstring(f)
-    # TODO: needs src/generate and src/verify code ready
-    fp_bytes = int(f32_bits, 2).to_bytes(4, byteorder=sys.byteorder)
-    return struct.unpack("@f", fp_bytes)[0]
-
-
-vect_f32_to_bf16 = np.vectorize(
-    float32_to_bfloat16, otypes=(np.float32,)
-)  # NumPy vectorize: applies function to vector faster than looping
-
-vect_f32_to_fp8e4m3 = np.vectorize(
-    float32_to_fp8e4m3, otypes=(np.float32,)
-)  # NumPy vectorize: applies function to vector faster than looping
-
-vect_f32_to_fp8e5m2 = np.vectorize(
-    float32_to_fp8e5m2, otypes=(np.float32,)
-)  # Numpy vectorize: applies function to vector faster than looping

@@ -211,9 +211,16 @@ int OpPad<Rank, Dtype>::eval()
             break;
         }
         case TOSA_REF_TYPE_BF16: {
-            std::vector<float> f32_data;
+            std::vector<bf16> bf16_data;
             TosaSerializationHandler::ConvertU8toBF16(attribute->pad_const(),
-                                                      /* size = */ 1, f32_data);
+                                                      /* size = */ 1, bf16_data);
+            // Some ops use Eigen APIs for float calculation, so convert bfloat16
+            // to float
+            std::vector<float> f32_data;
+            for (auto f : bf16_data)
+            {
+                f32_data.push_back(static_cast<float>(f));
+            }
             pad_value = (InEigenType)f32_data[0];
             break;
         }
@@ -225,17 +232,27 @@ int OpPad<Rank, Dtype>::eval()
             break;
         }
         case TOSA_REF_TYPE_FP8E4M3: {
-            std::vector<float> f32_data;
+            std::vector<fp8e4m3> f8_data;
             TosaSerializationHandler::ConvertU8toFP8E4M3(attribute->pad_const(),
-                                                         /* size = */ 1, f32_data);
+                                                         /* size = */ 1, f8_data);
+            std::vector<float> f32_data;
+            for (auto f : f8_data)
+            {
+                f32_data.push_back(static_cast<float>(f));
+            }
             pad_value = (InEigenType)f32_data[0];
             break;
         }
         case TOSA_REF_TYPE_FP8E5M2: {
-            std::vector<float> float_data;
+            std::vector<fp8e5m2> f8_data;
             TosaSerializationHandler::ConvertU8toFP8E5M2(attribute->pad_const(),
-                                                         /* size = */ 1, float_data);
-            pad_value = (InEigenType)float_data[0];
+                                                         /* size = */ 1, f8_data);
+            std::vector<float> f32_data;
+            for (auto f : f8_data)
+            {
+                f32_data.push_back(static_cast<float>(f));
+            }
+            pad_value = (InEigenType)f32_data[0];
             break;
         }
         default:

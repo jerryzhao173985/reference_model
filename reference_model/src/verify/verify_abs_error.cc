@@ -89,6 +89,21 @@ bool verifyAbsError(const CTensor* referenceTensor,
             return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo,
                                 &calcErrorBound<half_float::half>);
         }
+        case tosa_datatype_bf16_t: {
+            const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[AE] Missing data for implementation");
+            return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo, &calcErrorBound<bf16>);
+        }
+        case tosa_datatype_fp8e4m3_t: {
+            const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[AE] Missing data for implementation");
+            return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo, &calcErrorBound<fp8e4m3>);
+        }
+        case tosa_datatype_fp8e5m2_t: {
+            const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[AE] Missing data for implementation");
+            return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo, &calcErrorBound<fp8e5m2>);
+        }
         default:
             WARNING("[Verifier][AE] Data-type not supported.");
             break;

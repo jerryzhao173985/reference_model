@@ -12,6 +12,9 @@ import pytest
 from checker.tosa_result_checker import test_check as tosa_check
 from checker.tosa_result_checker import TestResult as TosaResult
 from generator.tosa_verif_build_tests import main as tosa_builder
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
+from ml_dtypes import float8_e5m2
 from runner.run_command import run_sh_command
 from runner.run_command import RunShCommandError
 
@@ -228,12 +231,25 @@ def test_refmodel_simple_op(tosaTest):
         # Check if the data is from FP special datagen which can give invalid results
         fp_special_data = test_dir.match("*_fs")
 
+        if tensors[0].dtype.name == "void16":
+            tensors[0] = tensors[0].view(bfloat16)
+        elif tensors[0].dtype.name == "void8":
+            tensors[0] = tensors[0].view(float8_e4m3fn)
+        elif tensors[0].dtype.name == "uint8":
+            tensors[0] = tensors[0].view(float8_e5m2)
+
         # Perform Numpy operation
         if op_name == "abs":
             assert len(tensors) == 1
             result = np.abs(tensors[0])
         elif op_name == "add":
             assert len(tensors) == 2
+            if tensors[1].dtype.name == "void16":
+                tensors[1] = tensors[1].view(bfloat16)
+            elif tensors[1].dtype.name == "void8":
+                tensors[1] = tensors[1].view(float8_e4m3fn)
+            elif tensors[0].dtype.name == "uint8":
+                tensors[1] = tensors[1].view(float8_e5m2)
             if fp_special_data:
                 with np.errstate(invalid="ignore"):
                     result = np.add(tensors[0], tensors[1])
@@ -241,6 +257,12 @@ def test_refmodel_simple_op(tosaTest):
                 result = np.add(tensors[0], tensors[1])
         elif op_name == "concat":
             assert len(consts) == 1
+            if consts[0].dtype.name == "void16":
+                consts[0] = consts[0].view(bfloat16)
+            elif consts[0].dtype.name == "void8":
+                consts[0] = consts[0].view(float8_e4m3fn)
+            elif consts[0].dtype.name == "uint8":
+                consts[0] = consts[0].view(float8_e5m2)
             # Get axis from test directory name
             match = re.search(r"axis([0-9]+)", test_dir.name)
             assert match is not None
@@ -256,10 +278,6 @@ def test_refmodel_simple_op(tosaTest):
         result_file = test_dir / OUTPUT_RESULT_FILE
         np.save(str(result_file), result)
         assert result_file.is_file()
-
-        # Ensure valid bf16
-        if tosaTest.ref_model_type == "bf16":
-            misc_checks.append("bf16")
 
         # Check Numpy result versus refmodel
         check_result, tolerance, msg = tosa_check(

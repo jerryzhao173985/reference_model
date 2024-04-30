@@ -307,9 +307,9 @@ float getBoundParameter(const DType& dataType, const DType& accType)
     if (dataType == DType::DType_FP16)
     {
         if (accType == DType::DType_FP16)
-            B = 255.875f;    // (1<<8) - (1/8);
+            B = 255.875f;    // (1<<8) - (1/8)
         else if (accType == DType::DType_FP32)
-            B = 65504.f;    // (1<<16) - (1<<5);
+            B = 65504.f;    // (1<<16) - (1<<5)
     }
     else if (dataType == DType::DType_BF16)
     {
@@ -320,6 +320,16 @@ float getBoundParameter(const DType& dataType, const DType& accType)
     {
         if (accType == DType::DType_FP32)
             B = 18446742974197923840.f;    // (1<<64) - (1<<40)
+    }
+    else if (dataType == DType::DType_FP8E4M3)
+    {
+        if (accType == DType::DType_FP16)
+            B = 240.f;    // (1<<8) - (1<<4)
+    }
+    else if (dataType == DType::DType_FP8E5M2)
+    {
+        if (accType == DType::DType_FP16)
+            B = 224.f;    // (1<<8) - (1<<5)
     }
     return B;
 }

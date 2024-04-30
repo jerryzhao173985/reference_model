@@ -16,6 +16,7 @@
 #ifndef VERIFY_UTILS_H_
 #define VERIFY_UTILS_H_
 
+#include "cfloat.h"
 #include "dtype.h"
 #include "half.hpp"
 #include "types.h"
@@ -31,6 +32,10 @@
         WARNING("[Verifier]" MESSAGE ".", ##__VA_ARGS__);                                                              \
         return false;                                                                                                  \
     }
+
+using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
+using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
+using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
 namespace TosaReference
 {
@@ -149,6 +154,10 @@ double exp2(int32_t n);
 /// \brief Return the base-2 exponent of V
 int32_t ilog2(double v);
 
+/// \brief Set resultWarning and resultDifference for NaN values
+///
+void setNaNWarning(double testValue, double referenceValue, double& resultDifference, std::string& resultWarning);
+
 /// \brief Accuracy precision information
 template <typename T>
 struct AccPrecision;
@@ -164,7 +173,28 @@ struct AccPrecision<half_float::half>
 {
     static constexpr double normal_min   = const_exp2(-14);
     static constexpr double normal_max   = const_exp2(16) - const_exp2(15 - 10);
+    static constexpr int32_t normal_frac = 10;
+};
+template <>
+struct AccPrecision<bf16>
+{
+    static constexpr double normal_min   = const_exp2(-126);
+    static constexpr double normal_max   = const_exp2(128) - const_exp2(127 - 7);
     static constexpr int32_t normal_frac = 7;
+};
+template <>
+struct AccPrecision<fp8e4m3>
+{
+    static constexpr double normal_min   = const_exp2(-6);
+    static constexpr double normal_max   = 448;
+    static constexpr int32_t normal_frac = 3;
+};
+template <>
+struct AccPrecision<fp8e5m2>
+{
+    static constexpr double normal_min   = const_exp2(-14);
+    static constexpr double normal_max   = 57344;
+    static constexpr int32_t normal_frac = 2;
 };
 
 /// \brief Single value error bounds check for ULP, ABS_ERROR and other compliance modes

@@ -17,6 +17,7 @@
 #define TOSA_REFERENCE_TENSOR_H
 
 #include "array_proxy.h"
+#include "cfloat.h"
 #include "dtype.h"
 #include "model_common.h"
 #include "ops/template_types.h"
@@ -24,6 +25,10 @@
 #include <Eigen/CXX11/Tensor>
 #include <list>
 #include <vector>
+
+using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
+using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
+using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
 using namespace tosa;
 
@@ -296,6 +301,9 @@ public:
     virtual int readfromVector(const ArrayProxy<int32_t> vals);
     virtual int readfromVector(const ArrayProxy<int64_t> vals);
     virtual int readfromVector(const ArrayProxy<unsigned char> vals);
+    virtual int readfromVector(const ArrayProxy<bf16> vals);
+    virtual int readfromVector(const ArrayProxy<fp8e4m3> vals);
+    virtual int readfromVector(const ArrayProxy<fp8e5m2> vals);
 
     virtual int writeToVector(ArrayProxy<double> vals);
     virtual int writeToVector(ArrayProxy<float> vals);
@@ -306,6 +314,9 @@ public:
     virtual int writeToVector(ArrayProxy<int32_t> vals);
     virtual int writeToVector(ArrayProxy<int64_t> vals);
     virtual int writeToVector(ArrayProxy<unsigned char> vals);
+    virtual int writeToVector(ArrayProxy<bf16> vals);
+    virtual int writeToVector(ArrayProxy<fp8e4m3> vals);
+    virtual int writeToVector(ArrayProxy<fp8e5m2> vals);
 
     const char* bool_to_str(bool in) const
     {

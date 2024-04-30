@@ -112,17 +112,39 @@ bool generateFP(const TosaReference::GenerateConfig& cfg, DataType* data, size_t
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
     const bool comparisonOp =
         (cfg.opType == Op::Op_EQUAL) || (cfg.opType == Op::Op_GREATER_EQUAL) || (cfg.opType == Op::Op_GREATER);
-    for (auto t = 0; t < T; ++t)
+
+    if (cfg.dataType == DType::DType_BF16 || cfg.dataType == DType::DType_FP8E4M3 ||
+        cfg.dataType == DType::DType_FP8E5M2)
     {
-        data[t] = static_cast<DataType>(generator->getRandomFloat());
-        if (comparisonOp && (t % 4 == 0))
+        for (auto t = 0; t < T; ++t)
         {
-            // Set every 4th value to 0 to enable better comparison testing
-            data[t] = static_cast<DataType>(0.f);
+            auto f = generator->getRandomFloat();
+            if (comparisonOp && (t % 4 == 0))
+            {
+                // Set every 4th value to 0 to enable better comparison testing
+                f = 0.f;
+            }
+            else if (roundMode)
+            {
+                f = std::roundf(f);
+            }
+            data[t] = static_cast<DataType>(f);
         }
-        else if (roundMode)
+    }
+    else
+    {
+        for (auto t = 0; t < T; ++t)
         {
-            data[t] = static_cast<DataType>(std::roundf(data[t]));
+            data[t] = static_cast<DataType>(generator->getRandomFloat());
+            if (comparisonOp && (t % 4 == 0))
+            {
+                // Set every 4th value to 0 to enable better comparison testing
+                data[t] = static_cast<DataType>(0.f);
+            }
+            else if (roundMode)
+            {
+                data[t] = static_cast<DataType>(std::roundf(data[t]));
+            }
         }
     }
     return true;
@@ -271,6 +293,18 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
         }
         case DType::DType_FP16: {
             half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            return generateFP(cfg, outData, size);
+        }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            return generateFP(cfg, outData, size);
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            return generateFP(cfg, outData, size);
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
             return generateFP(cfg, outData, size);
         }
         case DType::DType_INT32: {
