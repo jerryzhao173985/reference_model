@@ -82,8 +82,26 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
                                 : generateMatMulB(cfg, generator, outData, size);
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
+                                : generateMatMulB(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
+                                : generateMatMulB(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
+                                : generateMatMulB(cfg, generator, outData, size);
+            break;
+        }
         default:
-            WARNING("[Generator][DP][MatMul] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][MatMul] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 
@@ -218,8 +236,56 @@ bool generateConv2D(const TosaReference::GenerateConfig& cfg,
             }
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][Conv2D] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][Conv2D] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 }
@@ -277,8 +343,23 @@ bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
             generateReduceSumData(cfg, generator, outData, size);
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            generateReduceSumData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            generateReduceSumData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            generateReduceSumData(cfg, generator, outData, size);
+            break;
+        }
         default:
-            WARNING("[Generator][DP][ReduceSum] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][ReduceSum] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 
@@ -396,8 +477,56 @@ bool generateFullyConnected(const TosaReference::GenerateConfig& cfg,
             }
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFullyConnectedInput(cfg, generator, outData, size);
+                case 1:
+                    return generateFullyConnectedWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateFullyConnectedBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFullyConnectedInput(cfg, generator, outData, size);
+                case 1:
+                    return generateFullyConnectedWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateFullyConnectedBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateFullyConnectedInput(cfg, generator, outData, size);
+                case 1:
+                    return generateFullyConnectedWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateFullyConnectedBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][FullyConnected] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][FullyConnected] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][FullyConnected] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 }
@@ -462,8 +591,23 @@ bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
             generateAvgPool2DData(cfg, generator, outData, size);
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            generateAvgPool2DData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            generateAvgPool2DData(cfg, generator, outData, size);
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            generateAvgPool2DData(cfg, generator, outData, size);
+            break;
+        }
         default:
-            WARNING("[Generator][DP][AvgPool2D] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][AvgPool2D] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 
@@ -597,8 +741,56 @@ bool generateDepthwiseConv2D(const TosaReference::GenerateConfig& cfg,
             }
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateDepthwiseConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateDepthwiseConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateDepthwiseConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][DWConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateDepthwiseConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateDepthwiseConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateDepthwiseConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][DWConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateDepthwiseConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateDepthwiseConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateDepthwiseConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][DWConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][DWConv2D] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][DWConv2D] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 }
@@ -731,8 +923,56 @@ bool generateTransposeConv2D(const TosaReference::GenerateConfig& cfg,
             }
             break;
         }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateTransposeConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateTransposeConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateTransposeConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][TConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateTransposeConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateTransposeConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateTransposeConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][TConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateTransposeConv2DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateTransposeConv2DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateTransposeConv2DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][TConv2D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
         default:
-            WARNING("[Generator][DP][TConv2D] Only supports FP32 or FP16.");
+            WARNING("[Generator][DP][TConv2D] Only supports FP32, FP16, BF16, FP8E4M3, or FP8E5M2.");
             return false;
     }
 }
@@ -858,6 +1098,54 @@ bool generateConv3D(const TosaReference::GenerateConfig& cfg,
         }
         case DType::DType_FP16: {
             half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv3DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv3DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv3DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv3D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv3DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv3DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv3DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv3D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            switch (cfg.inputPos)
+            {
+                case 0:
+                    return generateConv3DInput(cfg, generator, outData, size);
+                case 1:
+                    return generateConv3DWeight(cfg, generator, outData, size);
+                case 2:
+                    return generateConv3DBias(cfg, generator, outData, size);
+                default:
+                    WARNING("[Generator][DP][Conv3D] Invalid input tensor slot position to operator.");
+                    return false;
+            }
+            break;
+        }
+        case DType::DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
             switch (cfg.inputPos)
             {
                 case 0:

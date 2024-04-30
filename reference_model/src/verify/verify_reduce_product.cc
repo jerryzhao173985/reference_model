@@ -62,6 +62,21 @@ bool verifyReduceProduct(const CTensor* referenceTensor,
             return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo,
                                 &calcErrorBound<half_float::half>);
         }
+        case tosa_datatype_bf16_t: {
+            const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
+            return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo, &calcErrorBound<bf16>);
+        }
+        case tosa_datatype_fp8e4m3_t: {
+            const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
+            return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo, &calcErrorBound<fp8e4m3>);
+        }
+        case tosa_datatype_fp8e5m2_t: {
+            const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
+            return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo, &calcErrorBound<fp8e5m2>);
+        }
         default:
             WARNING("[Verifier][RP] Data-type not supported.");
             break;

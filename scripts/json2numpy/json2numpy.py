@@ -7,6 +7,9 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
+from ml_dtypes import float8_e5m2
 
 
 class NumpyArrayEncoder(json.JSONEncoder):
@@ -20,6 +23,12 @@ class NumpyArrayEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.float16):
             return np.float16(obj)
+        elif isinstance(obj, bfloat16):
+            return bfloat16(obj)
+        elif isinstance(obj, float8_e4m3fn):
+            return float8_e4m3fn(obj)
+        elif isinstance(obj, np.uint8):
+            return np.uint8(obj).view(float8_e5m2)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         return super(NumpyArrayEncoder, self).default(obj)
@@ -43,6 +52,19 @@ def npy_to_json(n_path: Path, j_path: Optional[Path] = None):
         j_path = n_path.parent / (n_path.stem + ".json")
     with open(n_path, "rb") as fd:
         data = np.load(fd)
+    input_shape = data.shape
+
+    # Update `data` for Bfloat16/Float8 types
+    # ml_dtypes uses "void8" and "void16" for float8_e4m3fn and bfloat16.
+    # Note that ml_dtypes has a known issue of NumPy serialization for float8_e5m2, so
+    # the workaround is viewing float8_e5m2 data as uint8.
+    if data.dtype.name == "void8":
+        data = np.frombuffer(data, dtype=float8_e4m3fn).reshape(input_shape)
+    elif data.dtype.name == "uint8":
+        data = np.frombuffer(data, dtype=np.uint8).reshape(input_shape)
+    elif data.dtype.name == "void16":
+        data = np.frombuffer(data, dtype=bfloat16).reshape(input_shape)
+
     jdata = {
         "type": data.dtype.name,
         "data": data.tolist(),

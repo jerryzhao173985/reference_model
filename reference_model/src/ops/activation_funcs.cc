@@ -50,9 +50,18 @@ int OpClamp<Rank, Dtype>::register_fcn()
         }
         break;
         case TOSA_REF_TYPE_BF16: {
+            std::vector<bf16> bf16_min_float_data, bf16_max_float_data;
+            TosaSerializationHandler::ConvertU8toBF16(attribute->min_val(), /* size = */ 1, bf16_min_float_data);
+            TosaSerializationHandler::ConvertU8toBF16(attribute->max_val(), /* size = */ 1, bf16_max_float_data);
             std::vector<float> min_float_data, max_float_data;
-            TosaSerializationHandler::ConvertU8toBF16(attribute->min_val(), /* size = */ 1, min_float_data);
-            TosaSerializationHandler::ConvertU8toBF16(attribute->max_val(), /* size = */ 1, max_float_data);
+            for (auto f : bf16_min_float_data)
+            {
+                min_float_data.push_back(f);
+            }
+            for (auto f : bf16_max_float_data)
+            {
+                max_float_data.push_back(f);
+            }
             min = (InEigenType)min_float_data[0];
             max = (InEigenType)max_float_data[0];
         }

@@ -24,6 +24,12 @@ NUMPY_DATATYPE_TO_CLIENTTYPE = {
     np.dtype("float64"): {"type": 99, "size": 8},
     # tosa_datatype_bool_t
     np.dtype("bool"): {"type": 1, "size": 1},
+    # tosa_datatype_bf16_t
+    np.dtype("V2"): {"type": 0, "size": 2},
+    # tosa_datatype_fp8e4m3_t
+    np.dtype("V1"): {"type": 12, "size": 1},
+    # tosa_datatype_fp8e5m2_t
+    np.dtype("uint8"): {"type": 13, "size": 1},
 }
 
 

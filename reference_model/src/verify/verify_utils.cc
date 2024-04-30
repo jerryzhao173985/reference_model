@@ -245,6 +245,14 @@ int32_t ilog2(double v)
     return n;
 }
 
+void setNaNWarning(double testValue, double referenceValue, double& resultDifference, std::string& resultWarning)
+{
+    char buff[200];
+    snprintf(buff, 200, "Non-matching NaN values - ref (%g) versus test (%g).", referenceValue, testValue);
+    resultWarning.assign(buff);
+    resultDifference = std::numeric_limits<double>::quiet_NaN();
+}
+
 static_assert(std::numeric_limits<float>::is_iec559,
               "TOSA Reference Model has not been built with standard IEEE 754 32-bit float support; Bounds based "
               "verification is invalid");
@@ -257,18 +265,14 @@ bool tosaCheckFloatBound(
     OutType testValue, double referenceValue, double errorBound, double& resultDifference, std::string& resultWarning)
 {
     // Both must be NaNs to be correct
-    if (std::isnan(referenceValue) || std::isnan(testValue))
+    if (std::isnan(referenceValue) || (std::isnan(testValue) && !std::is_same<OutType, fp8e4m3>::value))
     {
         if (std::isnan(referenceValue) && std::isnan(testValue))
         {
             resultDifference = 0.0;
             return true;
         }
-        char buff[200];
-        snprintf(buff, 200, "Non-matching NaN values - ref (%g) versus test (%g).", referenceValue,
-                 static_cast<double>(testValue));
-        resultWarning.assign(buff);
-        resultDifference = std::numeric_limits<double>::quiet_NaN();
+        setNaNWarning(static_cast<double>(testValue), referenceValue, resultDifference, resultWarning);
         return false;
     }
 
@@ -311,12 +315,26 @@ bool tosaCheckFloatBound(
         // Handle the overflow cases.
         if (referenceMax > AccPrecision<OutType>::normal_max)
         {
-            referenceMax = std::numeric_limits<OutType>::infinity();
+            if (std::is_same<OutType, fp8e4m3>::value)
+            {
+                referenceMax = std::numeric_limits<OutType>::quiet_NaN();
+            }
+            else
+            {
+                referenceMax = std::numeric_limits<OutType>::infinity();
+            }
         }
 
         if (referenceMin > AccPrecision<OutType>::normal_max)
         {
-            referenceMin = std::numeric_limits<OutType>::infinity();
+            if (std::is_same<OutType, fp8e4m3>::value)
+            {
+                referenceMin = std::numeric_limits<OutType>::quiet_NaN();
+            }
+            else
+            {
+                referenceMin = std::numeric_limits<OutType>::infinity();
+            }
         }
 
         // And the underflow cases.
@@ -334,8 +352,37 @@ bool tosaCheckFloatBound(
 
     // And finally... Do the comparison.
     double testValue64 = static_cast<double>(testValue);
-    bool withinBound   = testValue64 >= referenceMin && testValue64 <= referenceMax;
-    resultDifference   = testValue64 - referenceValue;
+    bool withinBound   = false;
+    // referenceMax and/or referenceMin can be NaN for fp8e4m3
+    if (std::isnan(referenceMax) && std::isnan(referenceMin))
+    {
+        // this check should never really occur, just accept any value of fp8e4m3
+        withinBound = true;
+    }
+    else if (std::isnan(referenceMax))
+    {
+        withinBound = std::isnan(testValue64) || testValue64 >= referenceMin;
+    }
+    else if (std::isnan(referenceMin))
+    {
+        withinBound = std::isnan(testValue64) || testValue64 <= referenceMax;
+    }
+    else
+    {
+        withinBound = testValue64 >= referenceMin && testValue64 <= referenceMax;
+    }
+    // handle resultDifference and resultWarning for NaN cases for fp8e4m3
+    if (std::isnan(testValue64))
+    {
+        if (withinBound)
+        {
+            resultDifference = 0.0;
+            return true;
+        }
+        setNaNWarning(testValue64, referenceValue, resultDifference, resultWarning);
+        return false;
+    }
+    resultDifference = testValue64 - referenceValue;
     if (!withinBound)
     {
         char buff[300];
@@ -421,6 +468,27 @@ template bool validateData(const double* referenceData,
 template bool validateData(const double* referenceData,
                            const double* boundsData,
                            const half_float::half* implementationData,
+                           const std::vector<int32_t>& shape,
+                           const std::string& modeStr,
+                           const void* cfgPtr,
+                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool validateData(const double* referenceData,
+                           const double* boundsData,
+                           const bf16* implementationData,
+                           const std::vector<int32_t>& shape,
+                           const std::string& modeStr,
+                           const void* cfgPtr,
+                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool validateData(const double* referenceData,
+                           const double* boundsData,
+                           const fp8e4m3* implementationData,
+                           const std::vector<int32_t>& shape,
+                           const std::string& modeStr,
+                           const void* cfgPtr,
+                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool validateData(const double* referenceData,
+                           const double* boundsData,
+                           const fp8e5m2* implementationData,
                            const std::vector<int32_t>& shape,
                            const std::string& modeStr,
                            const void* cfgPtr,

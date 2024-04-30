@@ -3,8 +3,10 @@
 import hashlib
 import logging
 
-import generator.tosa_utils as gtu
 import numpy as np
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
+from ml_dtypes import float8_e5m2
 from tosa.DType import DType
 
 logging.basicConfig()
@@ -87,14 +89,11 @@ class TosaRandomGenerator(np.random.Generator):
         elif dtype == DType.FP16:
             return np.float16(self.uniform(low=low, high=high))
         elif dtype == DType.BF16:
-            rand_f32 = np.float32(self.uniform(low=low, high=high))
-            return gtu.vect_f32_to_bf16(rand_f32)
+            return bfloat16(self.uniform(low=low, high=high))
         elif dtype == DType.FP8E4M3:
-            rand_f32 = np.float32(self.uniform(low=low, high=high))
-            return gtu.vect_f32_to_fp8e4m3(rand_f32)
+            return float8_e4m3fn(self.uniform(low=low, high=high))
         elif dtype == DType.FP8E5M2:
-            rand_f32 = np.float32(self.uniform(low=low, high=high))
-            return gtu.vect_f32_to_fp8e5m2(rand_f32)
+            return float8_e5m2(self.uniform(low=low, high=high))
         elif dtype == DType.BOOL:
             return self.choice([False, True])
         elif dtype == DType.INT48 or dtype == DType.SHAPE:
@@ -134,17 +133,14 @@ class TosaRandomGenerator(np.random.Generator):
 
             if dtype == DType.FP16:
                 return np.float16(f_tensor)
+            elif dtype == DType.BF16:
+                return f_tensor.astype(bfloat16)
+            elif dtype == DType.FP8E4M3:
+                return f_tensor.astype(float8_e4m3fn)
+            elif dtype == DType.FP8E5M2:
+                return f_tensor.astype(float8_e5m2).view(np.uint8)
             else:
-                f32_tensor = np.float32(f_tensor)
-                if dtype == DType.BF16:
-                    # Floor the last 16 bits of each f32 value
-                    return np.float32(gtu.vect_f32_to_bf16(f32_tensor))
-                elif dtype == DType.FP8E4M3:
-                    return np.float32(gtu.vect_f32_to_fp8e4m3(f32_tensor))
-                elif dtype == DType.FP8E5M2:
-                    return np.float32(gtu.vect_f32_to_fp8e5m2(f32_tensor))
-                else:
-                    return f32_tensor
+                return np.float32(f_tensor)
         else:
             # All other integer types
             return np.int32(self.integers(low=low, high=high, size=shape))

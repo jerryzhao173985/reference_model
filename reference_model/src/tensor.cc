@@ -117,6 +117,9 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
     int32_t* i32databuf          = nullptr;
     int64_t* i64databuf          = nullptr;
     bool* bdatabuf               = nullptr;
+    bf16* bf16databuf            = nullptr;
+    fp8e4m3* f8e4m3databuf       = nullptr;
+    fp8e5m2* f8e5m2databuf       = nullptr;
     NumpyUtilities::NPError nperror;
     TOSA_REF_TYPE dtype       = getDtype();
     DType serialization_dtype = getSerializationDtype();
@@ -130,13 +133,28 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
     switch (serialization_dtype)
     {
         case DType_FP32:
-        case DType_BF16:
-        case DType_FP8E4M3:
-        case DType_FP8E5M2:
             f32databuf = (float*)calloc(sizeof(float), elements);
             ASSERT_MEM(f32databuf);
 
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, f32databuf);
+            break;
+        case DType_BF16:
+            bf16databuf = (bf16*)calloc(sizeof(bf16), elements);
+            ASSERT_MEM(bf16databuf);
+
+            nperror = NumpyUtilities::readFromNpyFile(filename, elements, bf16databuf);
+            break;
+        case DType_FP8E4M3:
+            f8e4m3databuf = (fp8e4m3*)calloc(sizeof(fp8e4m3), elements);
+            ASSERT_MEM(f8e4m3databuf);
+
+            nperror = NumpyUtilities::readFromNpyFile(filename, elements, f8e4m3databuf);
+            break;
+        case DType_FP8E5M2:
+            f8e5m2databuf = (fp8e5m2*)calloc(sizeof(fp8e5m2), elements);
+            ASSERT_MEM(f8e5m2databuf);
+
+            nperror = NumpyUtilities::readFromNpyFile(filename, elements, f8e5m2databuf);
             break;
         case DType_FP16:
             f16databuf = (half_float::half*)calloc(sizeof(half_float::half), elements);
@@ -210,20 +228,43 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             }
             break;
         case TOSA_REF_TYPE_BF16:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
             for (uint32_t i = 0; i < elements; i++)
             {
-                ASSERT_MSG(checkValidBFloat(f32databuf[i]), "Input float value not a valid bfloat16 value.");
+                f32databuf[i] = static_cast<float>(bf16databuf[i]);
             }
             if (setTensorValueFloat(elements, f32databuf))
             {
+                free(bf16databuf);
                 free(f32databuf);
                 return 1;
             }
             break;
         case TOSA_REF_TYPE_FP8E4M3:
-        case TOSA_REF_TYPE_FP8E5M2:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                f32databuf[i] = static_cast<float>(f8e4m3databuf[i]);
+            }
             if (setTensorValueFloat(elements, f32databuf))
             {
+                free(f8e4m3databuf);
+                free(f32databuf);
+                return 1;
+            }
+            break;
+        case TOSA_REF_TYPE_FP8E5M2:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                f32databuf[i] = static_cast<float>(f8e5m2databuf[i]);
+            }
+            if (setTensorValueFloat(elements, f32databuf))
+            {
+                free(f8e5m2databuf);
                 free(f32databuf);
                 return 1;
             }
@@ -286,27 +327,39 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
                     ASSERT_MEM(f64databuf);
                     for (uint32_t i = 0; i < elements; i++)
                     {
-                        ASSERT_MSG(checkValidBFloat(f32databuf[i]), "Input float value not a valid bfloat16 value.");
-                        f64databuf[i] = static_cast<double>(f32databuf[i]);
+                        f64databuf[i] = static_cast<double>(bf16databuf[i]);
                     }
                     if (setTensorValueDouble(elements, f64databuf))
                     {
-                        free(f32databuf);
+                        free(bf16databuf);
                         free(f64databuf);
                         return 1;
                     }
                     break;
                 case DType_FP8E4M3:
+                    f64databuf = (double*)calloc(sizeof(double), elements);
+                    ASSERT_MEM(f64databuf);
+                    for (uint32_t i = 0; i < elements; i++)
+                    {
+                        f64databuf[i] = static_cast<double>(f8e4m3databuf[i]);
+                    }
+                    if (setTensorValueDouble(elements, f64databuf))
+                    {
+                        free(f8e4m3databuf);
+                        free(f64databuf);
+                        return 1;
+                    }
+                    break;
                 case DType_FP8E5M2:
                     f64databuf = (double*)calloc(sizeof(double), elements);
                     ASSERT_MEM(f64databuf);
                     for (uint32_t i = 0; i < elements; i++)
                     {
-                        f64databuf[i] = static_cast<double>(f32databuf[i]);
+                        f64databuf[i] = static_cast<double>(f8e5m2databuf[i]);
                     }
                     if (setTensorValueDouble(elements, f64databuf))
                     {
-                        free(f32databuf);
+                        free(f8e5m2databuf);
                         free(f64databuf);
                         return 1;
                     }
@@ -349,7 +402,12 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
         free(i64databuf);
     if (bdatabuf)
         free(bdatabuf);
-
+    if (bf16databuf)
+        free(bf16databuf);
+    if (f8e4m3databuf)
+        free(f8e4m3databuf);
+    if (f8e5m2databuf)
+        free(f8e5m2databuf);
     return 0;
 }
 
@@ -365,6 +423,9 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
     int32_t* i32databuf             = nullptr;
     int64_t* i64databuf             = nullptr;
     bool* bdatabuf                  = nullptr;
+    bf16* bf16databuf               = nullptr;
+    fp8e4m3* f8e4m3databuf          = nullptr;
+    fp8e5m2* f8e5m2databuf          = nullptr;
     NumpyUtilities::NPError nperror = NumpyUtilities::NO_ERROR;
     uint32_t elements               = getElementCount();
     const TOSA_REF_TYPE dtype       = getDtype();
@@ -372,9 +433,6 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
     switch (dtype)
     {
         case TOSA_REF_TYPE_FP32:
-        case TOSA_REF_TYPE_BF16:
-        case TOSA_REF_TYPE_FP8E4M3:
-        case TOSA_REF_TYPE_FP8E5M2:
             f32databuf = (float*)calloc(sizeof(float), elements);
             ASSERT_MEM(f32databuf);
 
@@ -408,6 +466,72 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 
             free(f32databuf);
             free(f16databuf);
+            break;
+        case TOSA_REF_TYPE_BF16:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
+            bf16databuf = (bf16*)calloc(sizeof(bf16), elements);
+            ASSERT_MEM(bf16databuf);
+
+            if (getTensorValueFloat(elements, f32databuf))
+            {
+                free(f32databuf);
+                free(bf16databuf);
+                return 1;
+            }
+            // Convert fp32 to bf16 so that output file contains valid bf16 data
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                bf16databuf[i] = static_cast<bf16>(f32databuf[i]);
+            }
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, bf16databuf);
+
+            free(f32databuf);
+            free(bf16databuf);
+            break;
+        case TOSA_REF_TYPE_FP8E4M3:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
+            f8e4m3databuf = (fp8e4m3*)calloc(sizeof(fp8e4m3), elements);
+            ASSERT_MEM(f8e4m3databuf);
+
+            if (getTensorValueFloat(elements, f32databuf))
+            {
+                free(f32databuf);
+                free(f8e4m3databuf);
+                return 1;
+            }
+            // Convert fp32 to fp8e4m3 so that output file contains valid fp8e4m3 data
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                f8e4m3databuf[i] = static_cast<fp8e4m3>(f32databuf[i]);
+            }
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, f8e4m3databuf);
+
+            free(f32databuf);
+            free(f8e4m3databuf);
+            break;
+        case TOSA_REF_TYPE_FP8E5M2:
+            f32databuf = (float*)calloc(sizeof(float), elements);
+            ASSERT_MEM(f32databuf);
+            f8e5m2databuf = (fp8e5m2*)calloc(sizeof(fp8e5m2), elements);
+            ASSERT_MEM(f8e5m2databuf);
+
+            if (getTensorValueFloat(elements, f32databuf))
+            {
+                free(f32databuf);
+                free(f8e5m2databuf);
+                return 1;
+            }
+            // Convert fp32 to fp8e5m2 so that output file contains valid fp8e5m2 data
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                f8e5m2databuf[i] = static_cast<fp8e5m2>(f32databuf[i]);
+            }
+            nperror = NumpyUtilities::writeToNpyFile(filename, shape, f8e5m2databuf);
+
+            free(f32databuf);
+            free(f8e5m2databuf);
             break;
         case TOSA_REF_TYPE_INT32:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
@@ -683,28 +807,11 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_FP32:
-        case TOSA_REF_TYPE_FP8E4M3:
-        case TOSA_REF_TYPE_FP8E5M2:
             if (vals.size() != elements)
             {
                 WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
                         vals.size(), elements);
                 return -1;
-            }
-
-            setTensorValueFloat(elements, vals.data());
-            break;
-        case TOSA_REF_TYPE_BF16:
-            if (vals.size() != elements)
-            {
-                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
-                        vals.size(), elements);
-                return -1;
-            }
-
-            for (auto v : vals)
-            {
-                ASSERT_MSG(checkValidBFloat(v), "Input float value not a valid bfloat16 value.");
             }
 
             setTensorValueFloat(elements, vals.data());
@@ -747,6 +854,117 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
                 tensor[i] = half_float::half_cast<float, half_float::half>(vals[i]);
             }
 
+            setTensorValueFloat(elements, tensor.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const ArrayProxy<bf16> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP64:
+            if (!g_func_config.precise_mode)
+            {
+                WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                        EnumNameTOSAREFTYPE(getDtype()));
+                return -2;
+            }
+            // continue with setting float vals in the tensor
+        case TOSA_REF_TYPE_BF16:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                tensor[i] = static_cast<float>(vals[i]);
+            }
+            setTensorValueFloat(elements, tensor.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const ArrayProxy<fp8e4m3> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP64:
+            if (!g_func_config.precise_mode)
+            {
+                WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                        EnumNameTOSAREFTYPE(getDtype()));
+                return -2;
+            }
+            // continue with setting float vals in the tensor
+        case TOSA_REF_TYPE_FP8E4M3:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                tensor[i] = static_cast<float>(vals[i]);
+            }
+            setTensorValueFloat(elements, tensor.data());
+            break;
+        default:
+            WARNING("The input type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    setIsValid();
+    return 0;
+}
+
+int TosaReference::Tensor::readfromVector(const ArrayProxy<fp8e5m2> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP64:
+            if (!g_func_config.precise_mode)
+            {
+                WARNING("The input type (float) doesn't match the data type assigned to the tensor (%s).",
+                        EnumNameTOSAREFTYPE(getDtype()));
+                return -2;
+            }
+            // continue with setting float vals in the tensor
+        case TOSA_REF_TYPE_FP8E5M2:
+            if (vals.size() != elements)
+            {
+                WARNING("The input size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                tensor[i] = static_cast<float>(vals[i]);
+            }
             setTensorValueFloat(elements, tensor.data());
             break;
         default:
@@ -998,6 +1216,96 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
             for (uint32_t i = 0; i < elements; i++)
             {
                 vals[i] = half_float::half_cast<half_float::half, float>(tensor[i]);
+            }
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(ArrayProxy<bf16> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_BF16:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueFloat(elements, tensor.data());
+
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                vals[i] = static_cast<bf16>(tensor[i]);
+            }
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(ArrayProxy<fp8e4m3> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP8E4M3:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueFloat(elements, tensor.data());
+
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                vals[i] = static_cast<fp8e4m3>(tensor[i]);
+            }
+            break;
+        default:
+            WARNING("The output type doesn't match the data type assigned to the tensor (%s).",
+                    EnumNameTOSAREFTYPE(getDtype()));
+            return -2;
+    }
+    return 0;
+}
+
+int TosaReference::Tensor::writeToVector(ArrayProxy<fp8e5m2> vals)
+{
+    uint32_t elements = getElementCount();
+    std::vector<float> tensor(elements);
+
+    switch (getDtype())
+    {
+        case TOSA_REF_TYPE_FP8E5M2:
+            if (vals.size() != elements)
+            {
+                WARNING("The output size (%ld) doesn't match the number of elements (%d) assigned to the tensor.",
+                        vals.size(), elements);
+                return -1;
+            }
+
+            getTensorValueFloat(elements, tensor.data());
+
+            for (uint32_t i = 0; i < elements; i++)
+            {
+                vals[i] = static_cast<fp8e5m2>(tensor[i]);
             }
             break;
         default:

@@ -41,11 +41,11 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, AccT
     }
     else if (bnd == 0.0)
     {
-        is_valid = (ref == 0.0) && (imp == 0.0);
+        is_valid = (ref == 0.0) && (static_cast<double>(imp) == 0.0);
         if (!is_valid)
         {
             WARNING("[Verifier][DP] index %d: bound is zero, but ref (%.*g) or imp (%.*g) is not.", index, DBL_DIG, ref,
-                    FLT_DIG, imp);
+                    FLT_DIG, static_cast<double>(imp));
         }
         err = 0.0;
     }
@@ -139,6 +139,24 @@ bool verifyDotProduct(const CTensor* referenceTensor,
         }
         case tosa_datatype_fp16_t: {
             const half_float::half* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
+            return validateDataDP(refData, refBndData, impData, refShape, dpInfo);
+            break;
+        }
+        case tosa_datatype_bf16_t: {
+            const bf16* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
+            return validateDataDP(refData, refBndData, impData, refShape, dpInfo);
+            break;
+        }
+        case tosa_datatype_fp8e4m3_t: {
+            const fp8e4m3* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
+            return validateDataDP(refData, refBndData, impData, refShape, dpInfo);
+            break;
+        }
+        case tosa_datatype_fp8e5m2_t: {
+            const fp8e5m2* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
             return validateDataDP(refData, refBndData, impData, refShape, dpInfo);
             break;

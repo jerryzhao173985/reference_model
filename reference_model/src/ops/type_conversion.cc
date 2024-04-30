@@ -27,7 +27,6 @@ using namespace tosa;
 
 using fp16    = ct::cfloat<int16_t, 5, true, true, true>;
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
-using fp32    = ct::cfloat<int32_t, 8, true, true, true>;
 using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
 using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
@@ -657,6 +656,12 @@ CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP32>::CastHelper()
     fcn = [](InEigenType in) -> OutEigenType { return in; };
 }
 
+CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP64>::CastHelper()
+{
+    // fp8e4m3 data (stored as fp32) converted to fp64
+    fcn = [](float in) -> double { return static_cast<double>(in); };
+}
+
 template <TOSA_REF_TYPE OutDtype>
 CastHelper<TOSA_REF_TYPE_FP8E5M2, OutDtype>::CastHelper()
 {
@@ -694,12 +699,18 @@ CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP32>::CastHelper()
     fcn = [](InEigenType in) -> OutEigenType { return in; };
 }
 
+CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP64>::CastHelper()
+{
+    // fp8e5m2 data (stored as fp32) converted to fp64
+    fcn = [](float in) -> double { return static_cast<double>(in); };
+}
+
 template <TOSA_REF_TYPE InDtype>
 CastHelper<InDtype, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 {
     // Integer data converted to fp8e4m3 (stored as fp32)
     fcn = [](InEigenType in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e4m3>(float(in)));
+        auto f    = static_cast<fp8e4m3>(float(in));
         float out = static_cast<float>(f);
         return out;
     };
@@ -708,70 +719,60 @@ CastHelper<InDtype, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 {
     // fp16 data (stored as fp32) converted to fp8e4m3 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e4m3>(in));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e4m3>(in)); };
 }
 
 CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 {
     // bf16 data (stored as fp32) converted to fp8e4m3 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e4m3>(in));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e4m3>(in)); };
 }
 
 CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 {
     // fp32 data converted to fp8e4m3 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e4m3>(in));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e4m3>(in)); };
 }
 
 template <TOSA_REF_TYPE InDtype>
 CastHelper<InDtype, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
 {
     // Integer data converted to fp8e5m2 (stored as fp32)
-    fcn = [](InEigenType in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e5m2>(float(in)));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](InEigenType in) -> float { return static_cast<float>(static_cast<fp8e5m2>(in)); };
 }
 
 CastHelper<TOSA_REF_TYPE_FP16, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
 {
     // fp16 data (stored as fp32) converted to fp8e5m2 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e5m2>(in));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e5m2>(in)); };
 }
 
 CastHelper<TOSA_REF_TYPE_BF16, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
 {
     // bf16 data (stored as fp32) converted to fp8e5m2 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e5m2>(in));
-        float out = static_cast<float>(f);
-        return out;
-    };
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e5m2>(in)); };
 }
 
 CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
 {
     // fp32 data converted to fp8e5m2 (stored as fp32)
-    fcn = [](float in) -> float {
-        auto f    = static_cast<fp32>(static_cast<fp8e5m2>(in));
-        float out = static_cast<float>(f);
+    fcn = [](float in) -> float { return static_cast<float>(static_cast<fp8e5m2>(in)); };
+}
+
+CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
+{
+    // fp64 data converted to fp8e5m2 (stored as fp32)
+    fcn = [](double in) -> float {
+        float out = static_cast<float>(static_cast<fp8e4m3>(in));
+        return out;
+    };
+}
+
+CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
+{
+    // fp64 data converted to fp8e5m2 (stored as fp32)
+    fcn = [](double in) -> float {
+        float out = static_cast<float>(static_cast<fp8e5m2>(in));
         return out;
     };
 }
@@ -843,6 +844,8 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, INT8);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, INT16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, INT32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, FP8E4M3);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, FP8E5M2);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP64, FP64);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT8, FP64);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, INT16, FP64);
@@ -852,9 +855,11 @@ DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, BF16, FP8E5M2);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E4M3, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E4M3, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E4M3, FP32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E4M3, FP64);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E5M2, FP16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E5M2, BF16);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E5M2, FP32);
+DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP8E5M2, FP64);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, FP8E4M3);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP16, FP8E5M2);
 DEF_INSTANTIATE_RANK0_6_ONE_RANK_TWO_TYPE(OpCast, FP32, FP8E4M3);

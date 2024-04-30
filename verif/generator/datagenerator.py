@@ -1,4 +1,4 @@
-# Copyright (c) 2023, ARM Limited.
+# Copyright (c) 2023-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Calls the data generation library to create the test data."""
 import ctypes as ct
@@ -7,6 +7,9 @@ from pathlib import Path
 
 import numpy as np
 import schemavalidation.schemavalidation as sch
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
+from ml_dtypes import float8_e5m2
 
 
 class GenerateError(Exception):
@@ -78,9 +81,12 @@ class GenerateLibrary:
             # Create buffer and initialize to zero
             buffer = (ct.c_float * size)(0)
             size_bytes = size * 4
-        elif dtype == "FP16":
+        elif dtype == "FP16" or dtype == "BF16":
             size_bytes = size * 2
             # Create buffer of bytes and initialize to zero
+            buffer = (ct.c_ubyte * size_bytes)(0)
+        elif dtype == "FP8E4M3" or dtype == "FP8E5M2":
+            size_bytes = size
             buffer = (ct.c_ubyte * size_bytes)(0)
         elif dtype == "INT32" or dtype == "SHAPE":
             # Create buffer and initialize to zero
@@ -102,7 +108,15 @@ class GenerateLibrary:
         if dtype == "FP16":
             # Convert from bytes back to FP16
             arr = np.frombuffer(arr, np.float16)
-
+        elif dtype == "BF16":
+            # Convert from bytes back to BF16
+            arr = np.frombuffer(arr, bfloat16)
+        elif dtype == "FP8E4M3":
+            # Convert from bytes back to FP8E4M3
+            arr = np.frombuffer(arr, float8_e4m3fn)
+        elif dtype == "FP8E5M2":
+            # Convert from bytes back to FP8E5M2
+            arr = np.frombuffer(arr, float8_e5m2).view(np.uint8)
         arr = np.reshape(arr, shape)
 
         return arr

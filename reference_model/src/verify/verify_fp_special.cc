@@ -96,6 +96,24 @@ bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementati
 
             return verify(refData, refDataEnd, impData, elementCount, refShape);
         }
+        case tosa_datatype_bf16_t: {
+            const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
+
+            return verify(refData, refDataEnd, impData, elementCount, refShape);
+        }
+        case tosa_datatype_fp8e4m3_t: {
+            const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
+
+            return verify(refData, refDataEnd, impData, elementCount, refShape);
+        }
+        case tosa_datatype_fp8e5m2_t: {
+            const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
+
+            return verify(refData, refDataEnd, impData, elementCount, refShape);
+        }
         default:
             WARNING("[Verifier][FS] Data-type not supported.");
             break;

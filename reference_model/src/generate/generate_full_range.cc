@@ -47,7 +47,8 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
 
     switch (cfg.dataType)
     {
-        case DType::DType_FP16: {
+        case DType::DType_FP16:
+        case DType::DType_BF16: {
             uint16_t* outData = reinterpret_cast<uint16_t*>(data);
             return generate(cfg, outData, size);
         }

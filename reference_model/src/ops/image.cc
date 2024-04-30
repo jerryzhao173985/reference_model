@@ -179,7 +179,7 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         const float fy = static_cast<float>(y) / static_cast<float>(scale_y_n);
                         const float fx = static_cast<float>(x) / static_cast<float>(scale_x_n);
 
-                        if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(Eigen::bfloat16)) ||
+                        if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(bf16)) ||
                             (typeid(resize_t) == typeid(half_float::half)))
                         {
                             dy = (resize_t)(fy - iy);
@@ -212,8 +212,7 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                             acc += (OutEigenType)v10 * dy * (1.0 - dx);
                             acc += (OutEigenType)v11 * dy * dx;
                         }
-                        else if ((typeid(resize_t) == typeid(Eigen::bfloat16)) ||
-                                 (typeid(resize_t) == typeid(half_float::half)))
+                        else if ((typeid(resize_t) == typeid(bf16)) || (typeid(resize_t) == typeid(half_float::half)))
                         {
                             resize_t f16_acc;
                             f16_acc = (resize_t)v00 * (resize_t)(1.0 - dy) * (resize_t)(1.0 - dx);
@@ -246,11 +245,6 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         }
                         acc = in->getTensor()(b, iy, ix, c);
                     }
-                    if ((typeid(resize_t) == typeid(Eigen::bfloat16)))
-                    {
-                        ASSERT_MSG(checkValidBFloat(acc),
-                                   "Resize accumulator float value is not a valid bfloat16 value.");
-                    }
                     out->getTensor()(b, oy, ox, c) = acc;
                 }
 
@@ -263,6 +257,6 @@ DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, INT8, INT8, int16_t);
 DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, INT16, INT48, int16_t);
 DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, INT16, INT16, int16_t);
 DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, FP16, FP16, half_float::half);
-DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, BF16, BF16, Eigen::bfloat16);
+DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, BF16, BF16, bf16);
 DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, FP32, FP32, float);
 DEF_INSTANTIATE_THREE_TYPE_RESIZE(OpResize, FP64, FP64, double);

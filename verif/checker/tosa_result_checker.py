@@ -12,8 +12,9 @@ from checker.color_print import LogColors
 from checker.color_print import print_color
 from checker.verifier import VerifierError
 from checker.verifier import VerifierLibrary
-from generator.tosa_utils import float32_is_valid_bfloat16
-from generator.tosa_utils import float32_is_valid_float8
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
+from ml_dtypes import float8_e5m2
 from schemavalidation.schemavalidation import TestDescSchemaValidator
 
 
@@ -183,32 +184,6 @@ def test_check(
         )
         return (TestResult.MISMATCH, 0.0, msg)
 
-    # Perform miscellaneous checks
-    if "bf16" in misc_checks:
-        # Ensure floats are valid bfloat16 values
-        test_res_is_bf16 = all([float32_is_valid_bfloat16(f) for f in test_result.flat])
-        ref_res_is_bf16 = all(
-            [float32_is_valid_bfloat16(f) for f in reference_result.flat]
-        )
-        if not (test_res_is_bf16 and ref_res_is_bf16):
-            msg = (
-                "All output values must be valid bfloat16. "
-                "reference_result: {ref_res_is_bf16}; test_result: {test_res_is_bf16}"
-            )
-            return (TestResult.INCORRECT_FORMAT, 0.0, msg)
-    if "fp8e4m3" in misc_checks or "fp8e5m2" in misc_checks:
-        # Ensure floats are valid float8 values
-        test_res_is_fp8 = all([float32_is_valid_float8(f) for f in test_result.flat])
-        ref_res_is_fp8 = all(
-            [float32_is_valid_float8(f) for f in reference_result.flat]
-        )
-        if not (test_res_is_fp8 and ref_res_is_fp8):
-            msg = (
-                "All output values must be valid float8. "
-                "reference_result: {ref_res_is_float8}; test_result: {test_res_is_float8}"
-            )
-            return (TestResult.INCORRECT_FLOAT, 0.0, msg)
-
     # for quantized test, allow +-(quantize_tolerance) error
     if reference_result.dtype in (
         np.int8,
@@ -262,6 +237,27 @@ def test_check(
             return (TestResult.PASS, tolerance, "")
         msg = "Float result does not match within tolerance of {}".format(tolerance)
         difference = reference_result - test_result
+        # Fall-through to below to add failure values
+    elif reference_result.dtype.name in ["void16", "void8", "uint8"]:
+        if reference_result.dtype.name == "void16":  # bfloat16
+            ml_dtype = bfloat16
+        elif reference_result.dtype.name == "void8":  # float8_e4m3fn
+            ml_dtype = float8_e4m3fn
+        elif reference_result.dtype.name == "uint8":  # float8_e5m2
+            ml_dtype = float8_e5m2
+        tolerance = float_tolerance
+        reference_result_array = np.frombuffer(reference_result, dtype=ml_dtype)
+        test_result_array = np.frombuffer(test_result, dtype=ml_dtype)
+        if np.allclose(
+            reference_result_array.astype(np.float32),
+            test_result_array.astype(np.float32),
+            atol=tolerance,
+            equal_nan=True,
+        ):
+            _print_result(LogColors.GREEN, "Results PASS {}".format(test_name))
+            return (TestResult.PASS, tolerance, "")
+        msg = "Float result does not match within tolerance of {}".format(tolerance)
+        difference = reference_result_array - test_result_array
         # Fall-through to below to add failure values
     else:
         _print_result(LogColors.RED, "Results UNSUPPORTED TYPE {}".format(test_name))
