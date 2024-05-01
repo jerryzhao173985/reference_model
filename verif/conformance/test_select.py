@@ -555,21 +555,48 @@ class Conv2dOperator(Operator):
     """Test selector for the CONV2D operator."""
 
     name = "conv2d"
-    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
+    param_names = [
+        "kernel",
+        "shape",
+        "type",
+        "accum_type",
+        "stride",
+        "pad",
+        "dilation",
+        "local_bound",
+    ]
 
 
 class Conv3dOperator(Operator):
     """Test selector for the CONV3D operator."""
 
     name = "conv3d"
-    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
+    param_names = [
+        "kernel",
+        "shape",
+        "type",
+        "accum_type",
+        "stride",
+        "pad",
+        "dilation",
+        "local_bound",
+    ]
 
 
 class DepthwiseConv2dOperator(Operator):
     """Test selector for the DEPTHWISE_CONV2D operator."""
 
     name = "depthwise_conv2d"
-    param_names = ["kernel", "shape", "type", "accum_type", "stride", "pad", "dilation"]
+    param_names = [
+        "kernel",
+        "shape",
+        "type",
+        "accum_type",
+        "stride",
+        "pad",
+        "dilation",
+        "local_bound",
+    ]
 
 
 class DimOeprator(Operator):
@@ -953,6 +980,7 @@ class TransposeConv2dOperator(Operator):
         "stride",
         "pad",
         "out_shape",
+        "local_bound",
     ]
 
     def path_params(self, path):
