@@ -927,6 +927,7 @@ class TosaTestGen:
         strides = args_dict["stride"]
         padding = args_dict["pad"]
         dilations = args_dict["dilation"]
+        local_bound = args_dict["local_bound"]
 
         assert len(padding) == 4
         result_tensor = OutputShaper.conv2dOp(
@@ -982,9 +983,6 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
-
         attr = ts.TosaSerializerAttribute()
         attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
 
@@ -1012,6 +1010,7 @@ class TosaTestGen:
         strides = args_dict["stride"]
         padding = args_dict["pad"]
         dilations = args_dict["dilation"]
+        local_bound = args_dict["local_bound"]
 
         assert len(padding) == 6
         result_tensor = OutputShaper.conv3dOp(
@@ -1067,9 +1066,6 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
-
         attr = ts.TosaSerializerAttribute()
         attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
 
@@ -1097,6 +1093,7 @@ class TosaTestGen:
         strides = args_dict["stride"]
         out_pad = args_dict["pad"]
         output_shape = args_dict["out_shape"]
+        local_bound = args_dict["local_bound"]
 
         assert len(out_pad) == 4
         result_tensor = OutputShaper.transposeConv2DOp(
@@ -1143,9 +1140,6 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
-
         attr = ts.TosaSerializerAttribute()
         attr.TransposeConvAttribute(
             out_pad, strides, output_shape, qinfo[0], qinfo[1], local_bound
@@ -1175,6 +1169,7 @@ class TosaTestGen:
         strides = args_dict["stride"]
         padding = args_dict["pad"]
         dilations = args_dict["dilation"]
+        local_bound = args_dict["local_bound"]
 
         result_tensor = OutputShaper.depthwiseConv2dOp(
             self.ser,
@@ -1228,9 +1223,6 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
         ):
             return None
-
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
 
         attr = ts.TosaSerializerAttribute()
         attr.ConvAttribute(padding, strides, dilations, qinfo[0], qinfo[1], local_bound)
