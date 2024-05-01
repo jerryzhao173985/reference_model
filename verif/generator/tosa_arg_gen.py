@@ -2364,6 +2364,10 @@ class TosaArgGen:
                                     dots = gtu.product(
                                         (ifm_shape[0], *outputs, filter_shape[0])
                                     )
+                                if gtu.dtypeIsFloat(dtypes[0]):
+                                    local_bound = rng.choice((False, True))
+                                else:
+                                    local_bound = False
                                 args_dict = {
                                     "acc_type": a,
                                     "stride": s,
@@ -2373,17 +2377,19 @@ class TosaArgGen:
                                     "ks": k_size,
                                     "dot_products": dots,
                                     "shape": ifm_shape,
+                                    "local_bound": local_bound,
                                 }
 
                                 # Support for larger values than 9 needs different delimiter
                                 delim = "" if max(s + p + d) <= 9 else "x"
                                 arg_list.append(
                                     (
-                                        "acc{}_st{}_pad{}_dilat{}".format(
+                                        "acc{}_st{}_pad{}_dilat{}_lclbnd{}".format(
                                             testGen.typeStr(a),
                                             delim.join([str(x) for x in s]),
                                             delim.join([str(x) for x in p]),
                                             delim.join([str(x) for x in d]),
+                                            "1" if local_bound else "0",
                                         ),
                                         args_dict,
                                     )
@@ -2620,6 +2626,11 @@ class TosaArgGen:
                         ow = (ifm_shape[2] - 1) * s[1] + p[2] + p[3] + k_shape[1]
                         os = [ifm_shape[0], oh, ow, filter_shape[0]]
 
+                        if gtu.dtypeIsFloat(dtypes[0]):
+                            local_bound = rng.choice((False, True))
+                        else:
+                            local_bound = False
+
                         # N*OH*OW*OC
                         dots = gtu.product((ifm_shape[0], oh, ow, filter_shape[0]))
                         args_dict = {
@@ -2631,17 +2642,19 @@ class TosaArgGen:
                             "dot_products": dots,
                             "shape": ifm_shape,
                             "out_shape": os,
+                            "local_bound": local_bound,
                         }
 
                         # Support for larger values than 9 needs different delimiter
                         delim = "" if max(s + p) <= 9 else "x"
                         arg_list.append(
                             (
-                                "acc{}_st{}_pad{}_os{}".format(
+                                "acc{}_st{}_pad{}_os{}_lclbnd{}".format(
                                     testGen.typeStr(a),
                                     delim.join([str(x) for x in s]),
                                     delim.join([str(x) for x in p]),
                                     "x".join([str(x) for x in os]),
+                                    "1" if local_bound else "0",
                                 ),
                                 args_dict,
                             )

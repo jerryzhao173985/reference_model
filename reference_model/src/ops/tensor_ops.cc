@@ -744,17 +744,23 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(pad);
-
     TBias bias_val = this->bias->getTensor();
 
     if (g_func_config.abs_mode)
     {
         // in abs_mode: take abs values of conv operands
-        input_padded = input_padded.abs();
-        weight_val   = weight_val.abs();
-        bias_val     = bias_val.abs();
+        input_val  = input_val.abs();
+        weight_val = weight_val.abs();
+        bias_val   = bias_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = input_val.maximum();
+            input_val.setConstant(input_abs_max(0));
+        }
     }
+
+    ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
     // extract_image_patches() output [N, KH, KW, H * W, C]
     // need to transpose to [N, H * W, KH, KW, C]
@@ -938,17 +944,23 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
     }
 
-    ETensor5<InEigenType> input_padded = input_val.pad(pad);
-
     TBias bias_val = this->bias->getTensor();
 
     if (g_func_config.abs_mode)
     {
         // in abs_mode: take abs values of conv operands
-        input_padded = input_padded.abs();
-        weight_val   = weight_val.abs();
-        bias_val     = bias_val.abs();
+        input_val  = input_val.abs();
+        weight_val = weight_val.abs();
+        bias_val   = bias_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = input_val.maximum();
+            input_val.setConstant(input_abs_max(0));
+        }
     }
+
+    ETensor5<InEigenType> input_padded = input_val.pad(pad);
 
     // 1. initialize with bias
     Eigen::array<Eigen::Index, 5> reshape_dim;
@@ -1140,17 +1152,23 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(pad);
-
     TBias bias_val = this->bias->getTensor();
 
     if (g_func_config.abs_mode)
     {
         // in abs_mode: take abs values of conv operands
-        input_padded = input_padded.abs();
-        weight_val   = weight_val.abs();
-        bias_val     = bias_val.abs();
+        input_val  = input_val.abs();
+        weight_val = weight_val.abs();
+        bias_val   = bias_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = input_val.maximum();
+            input_val.setConstant(input_abs_max(0));
+        }
     }
+
+    ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
     // GEMM doesn't fit well with DepthwiseConv2d
     // 1. use extract_image_patches() to handle stride/dilation/pad
@@ -2078,6 +2096,12 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         input_val  = input_val.abs();
         weight_val = weight_val.abs();
         bias_val   = bias_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = input_val.maximum();
+            input_val.setConstant(input_abs_max(0));
+        }
     }
 
     Eigen::array<Eigen::Index, 4> reshape_dim;
