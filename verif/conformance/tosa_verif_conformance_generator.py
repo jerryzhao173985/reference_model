@@ -36,17 +36,9 @@ from serializer.tosa_serializer import TOSA_VERSION
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_conformance_generator")
 
-# Configuration for each TOSA profile
+# Configuration
 PROFILE_OPS_INFO = {
-    "tosa-bi": {
-        "operator_test_params": "tosa_base_profile_ops_info.json",
-        "framework_tests": "tosa_base_profile_framework_ops_info.json",
-    },
-    "tosa-mi": {
-        # Note: This is just the extra tests not in the base profile!
-        "operator_test_params": "tosa_main_profile_ops_info.json",
-        "framework_tests": "tosa_main_profile_framework_ops_info.json",
-    },
+    "operator_test_params": "tosa_ext_profile_ops_info.json",
 }
 PROFILES_EXTENSIONS_ALL = "all"
 
@@ -866,8 +858,6 @@ def main():
         with args.tests_list_file.open("w") as fd:
             fd.write("")
 
-    # TODO: For tosa-mi should really generate tosa-bi profile as well
-    # - for now leave it as subset instead of as superset (for testing)
     if PROFILES_EXTENSIONS_ALL in args.profile:
         profiles = TosaProfiles.profiles()
     else:
@@ -877,6 +867,7 @@ def main():
         extensions = TosaProfiles.extensions()
     else:
         extensions = args.extension
+
     profileExtList = profiles + extensions
     profileExtDone = []
 
@@ -890,15 +881,9 @@ def main():
             if args.unit_tests in ["operator", "both"]:
                 logger.debug("Creating OPERATOR unit tests")
                 if args.param_config is None:
-                    # Fall back to old method
-                    if profile_ext in PROFILE_OPS_INFO:
-                        config = PROFILE_OPS_INFO[profile_ext]["operator_test_params"]
-                        test_params_file = args.param_json_dir / config
-                    else:
-                        logger.error(
-                            "Extensions not supported in old conformance configs - skipping"
-                        )
-                        continue
+                    # Use default config
+                    config = PROFILE_OPS_INFO["operator_test_params"]
+                    test_params_file = args.param_json_dir / config
                 else:
                     test_params_file = args.param_config
 
