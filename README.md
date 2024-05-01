@@ -293,17 +293,19 @@ command `flatc` - please follow the section on the FlatBuffers compiler below.
 
 These are the main script options for controlling the types of tests produced:
 
-* `--profile` - controls the TOSA profile, `tosa-bi` - for base inference integer tests, `tosa-mi` - for the main inference floating point tests, or `all` - for both.
+* `--profile` - controls the TOSA profile, `tosa-bi` - for base inference integer tests (the default), `tosa-mi` - for the main inference floating point tests, or `all` - for both.
+* `--extension` - controls the TOSA extensions to create tests for, or `all` - for all extensions. See `--help` output for full list of extensions.
 * `--test-type` - selects `positive`, `negative` or `both` types of test.
 * `--output-type` - selects the output file type between `json`, `binary` or `both`.
 The default - `json` - converts NumPy data files and flatbuffer files into JSON for
 ease in viewing and comparison.
 
-An example to create the TOSA operator unit tests for ADD and SUB:
+An example to create all the possible TOSA operator unit tests for ADD and SUB:
 
 ```bash
 tosa_verif_conformance_generator \
-  --profile tosa-bi              \
+  --profile all                  \
+  --extension all                \
   --ref-model-path reference_model/build/reference_model/tosa_reference_model \
   --operators add sub
 ```
@@ -329,8 +331,7 @@ tosa_verif_conformance_generator \
   --operators abs
 ```
 
-This next example will create all the conformance tests, using different
-temporary build and output directories:
+This next example will create all the TOSA BI conformance tests with no extensions, using different temporary build and output directories:
 
 ```bash
 tosa_verif_conformance_generator \
