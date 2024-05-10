@@ -858,22 +858,24 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "generator_select"
         ],
         "gen_filter": "^depthwise_conv2d",
         "generation": {
-            "standard": {
+            "tosa-mi": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
+                        "--target-dtype",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,17,31,4",
+                        "--target-shape",
                         "1,37,11,5",
                         "--tensor-dim-range",
                         "1,32",
@@ -886,6 +888,7 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65531,2",
+                        "--target-shape",
                         "1,65540,1,3",
                         "--tensor-dim-range",
                         "1,16",
@@ -893,29 +896,51 @@
                         "1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
+                ],
+                "selector": "tosa-mi"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-mi",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,17,31,4",
+                        "--target-shape",
+                        "1,37,11,5",
+                        "--tensor-dim-range",
+                        "1,32",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {
-                    "shape": [],
-                    "type": [
-                        "f16xf16",
-                        "bf16xbf16",
-                        "f32xf32"
-                    ],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
-                },
+            "tosa-mi": {
                 "permutes": [
-                    "kernel",
                     "shape",
                     "type",
-                    "pad"
-                ]
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
