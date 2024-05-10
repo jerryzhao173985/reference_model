@@ -3619,23 +3619,26 @@
                 "all": "true"
             },
             "tosa-mi": {
-                "params": {
-                    "shape": [],
-                    "type": [
-                        "f16xf16",
-                        "f32xf32"
-                    ],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
-                },
+                "generator_select": "true",
                 "permutes": [
-                    "kernel",
                     "shape",
                     "type",
-                    "pad"
-                ]
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             },
             "tosa-ext-bf16": {
                 "params": {

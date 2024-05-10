@@ -2193,8 +2193,10 @@ class TosaArgGen:
                 assert min(outputs_no_stride) > 0, "Fix up did not work!"
             return p, remainders, outputs, outputs_no_stride
 
-        # Only fix up padding for conv2d and float types currently
-        fix_up_padding = gtu.dtypeIsFloat(dtypes[0]) and op["op"] == Op.CONV2D
+        # ERROR_IF and float conv2d tests are the most at risk of failing to generate any legal arguments
+        fix_up_padding = error_name is not None or (
+            gtu.dtypeIsFloat(dtypes[0]) and op["op"] == Op.CONV2D
+        )
         # Allow any size of output dimension
         max_dim_size = None
         # Include all tests by default
