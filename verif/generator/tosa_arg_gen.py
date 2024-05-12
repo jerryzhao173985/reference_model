@@ -1506,6 +1506,21 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
+    def tvgTable(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+        # Use supported type for table data on ERROR_IF
+        dtypeList[1] = (
+            dtypeList[0] if error_name != ErrorIf.WrongInputType else DType.INT8
+        )
+
+        table_values = argsDict["table"]
+        shapeList[1] = [len(table_values)]
+        argsDict["fixed_data"] = [None, table_values]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
     def tvgResize(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):

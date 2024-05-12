@@ -576,16 +576,13 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 1
+        assert len(inputs) == 2
         a = inputs[0]
-        table = args_dict["table"]
+        table = inputs[1]
         result_tensor = OutputShaper.tableOp(self.ser, rng, a, error_name)
 
-        attr = ts.TosaSerializerAttribute()
-        attr.TableAttribute(table)
-
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
+        input_list = [a.name, table.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -608,7 +605,7 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -4049,11 +4046,11 @@ class TosaTestGen:
             # Use the automatic generation functions to create the input array
             # but create the table tensor in the build function, as it may be
             # a different type from the input
-            "operands": (1, 0),
+            "operands": (2, 0),
             "build_fcn": (
                 build_table,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgTable,
                 TosaArgGen.agTable,
             ),
             "types": [DType.INT8, DType.INT16],

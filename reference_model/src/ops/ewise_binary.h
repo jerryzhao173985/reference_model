@@ -215,8 +215,7 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    TosaTableAttribute* attribute;
-    std::array<TableEigenType, TableNumEntries> table;
+    TosaReference::TensorTemplate<TTable>* table;
 };
 
 };    // namespace TosaReference
