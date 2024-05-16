@@ -2062,7 +2062,7 @@ class TosaTestGen:
 
         attr = ts.TosaSerializerAttribute()
         # write empty scale/offset/border into ResizeAttribute
-        attr.ResizeAttribute([], [], [], mode)
+        attr.ResizeAttribute(mode)
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
