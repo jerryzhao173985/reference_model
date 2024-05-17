@@ -86,8 +86,8 @@ class GeneratorS0 : public TosaReference::IDotProductGenerator
 public:
     GeneratorS0(uint32_t p)
         : _p(p)
-        , _set_data0(2 * 0)
-        , _set_data1(2 * 0 + 1)
+        , _set_data0(3 * 0)
+        , _set_data1(3 * 0 + 1)
     {}
     float operator()(uint32_t k) override
     {
@@ -157,7 +157,7 @@ public:
     GeneratorS2(uint32_t p, uint32_t KS)
         : _p(p)
         , _KS(KS)
-        , _set_data(2 * 2 + p)
+        , _set_data(3 * 2 + p)
     {}
     float operator()(uint32_t k) override
     {
@@ -188,7 +188,7 @@ class GeneratorS3 : public TosaReference::IDotProductGenerator
 public:
     GeneratorS3(uint32_t p)
         : _p(p)
-        , _set_data(2 * 3 + p)
+        , _set_data(3 * 3 + p)
     {}
     float operator()(uint32_t k) override
     {
@@ -225,8 +225,8 @@ public:
         : _p(p)
         , _KS(KS)
         , _B(B)
-        , _set_data0(2 * 4 + 0)
-        , _set_data1(2 * 4 + 1)
+        , _set_data0(3 * 4 + 0)
+        , _set_data1(3 * 4 + 1)
     {}
     float operator()(uint32_t k) override
     {
