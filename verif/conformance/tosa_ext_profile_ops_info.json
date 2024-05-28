@@ -72,7 +72,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "30,64",
+                        "31,66",
                         "--target-rank",
                         "0",
                         "--target-rank",
@@ -83,6 +83,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -122,6 +123,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -134,6 +136,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -242,6 +245,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -254,6 +258,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -1698,6 +1703,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -1712,6 +1718,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -1746,6 +1753,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -1848,6 +1856,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -1862,6 +1871,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1897,6 +1907,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -3293,7 +3304,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "15,64",
+                        "35,64",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -3302,6 +3313,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -3314,6 +3326,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3921,6 +3934,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3933,6 +3947,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -4005,6 +4020,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -4019,6 +4035,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4090,7 +4107,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "25,64",
+                        "35,65",
                         "--target-rank",
                         "0",
                         "--target-rank",
@@ -4101,6 +4118,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -4113,6 +4131,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4224,6 +4243,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -4238,6 +4258,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4272,6 +4293,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -4652,6 +4674,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4684,6 +4707,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -4790,6 +4814,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -4824,6 +4849,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -5155,6 +5181,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -5167,6 +5194,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -5913,6 +5941,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -5927,6 +5956,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -5962,6 +5992,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -6688,7 +6719,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "17,64",
+                        "37,64",
                         "--target-rank",
                         "0",
                         "--target-rank",
@@ -6699,6 +6730,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -6713,6 +6745,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -6748,6 +6781,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -7223,7 +7257,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "28,64",
+                        "38,62",
                         "--target-rank",
                         "0",
                         "--target-rank",
@@ -7234,6 +7268,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -7270,6 +7305,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -8904,7 +8940,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "29,64",
+                        "39,60",
                         "--target-rank",
                         "0",
                         "--target-rank",
@@ -8915,6 +8951,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -8949,6 +8986,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -9344,6 +9382,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -9358,6 +9397,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -9392,6 +9432,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -9424,6 +9465,7 @@
                 ],
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -9440,6 +9482,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -10095,6 +10138,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -10109,6 +10153,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -10143,6 +10188,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
