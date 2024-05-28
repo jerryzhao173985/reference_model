@@ -28,8 +28,8 @@ public:
         Zero,
         Inf,
         NaN,
-        Min,
-        Max,
+        Min,    // Smallest positive normal floating point value
+        Max,    // Largest positive floating point value
         One,
     };
 
@@ -112,8 +112,9 @@ TestValues addTestVals{ { SpecialValue(SpecialValue::Max), SpecialValue(SpecialV
 
 TestValues defaultTestVals{ { SpecialValue(SpecialValue::Zero) }, { -SpecialValue(SpecialValue::Zero) },
                             { SpecialValue(SpecialValue::Inf) },  { -SpecialValue(SpecialValue::Inf) },
-                            { SpecialValue(SpecialValue::NaN) },  { SpecialValue(SpecialValue::Min) },
-                            { SpecialValue(SpecialValue::Max) } };
+                            { SpecialValue(SpecialValue::Min) },  { -SpecialValue(SpecialValue::Min) },
+                            { SpecialValue(SpecialValue::Max) },  { -SpecialValue(SpecialValue::Max) },
+                            { SpecialValue(SpecialValue::NaN) } };
 
 std::map<Op, TestValues> testValues = { { Op::Op_EQUAL, equalOpsTestVals },
                                         { Op::Op_GREATER, equalOpsTestVals },
