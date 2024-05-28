@@ -1759,10 +1759,30 @@ class TosaArgGen:
             dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"].get(
                 dtype, (gtu.DataGenType.PSEUDO_RANDOM,)
             )
-
         else:
             # Error test or No data generator types listed - assume random
             dataGenTypesList = (gtu.DataGenType.PSEUDO_RANDOM,)
+
+        def check_min_size(opName, shape, min_size, reason):
+            # Check tensor size meets minimum requirements
+            tensor_size = gtu.product(shape)
+            if tensor_size < min_size:
+                shape_info = " ({})".format(shape)
+                logger.info(
+                    f"Skipping {opName}{shape_info} as tensor data size too small for {reason} values {tensor_size} < {min_size}"
+                )
+                return False
+            return True
+
+        def update_data_gen(testGen, opName, dtype, dgt_remove):
+            # Remove special data generator to limit number of tests
+            assert "data_gen" in testGen.TOSA_OP_LIST[opName]
+            assert dtype in testGen.TOSA_OP_LIST[opName]["data_gen"]
+            data_gen = testGen.TOSA_OP_LIST[opName]["data_gen"].copy()
+            dgt_list = list(data_gen[dtype])
+            dgt_list.remove(dgt_remove)
+            data_gen[dtype] = tuple(dgt_list)
+            testGen.TOSA_OP_LIST[opName]["data_gen"] = data_gen
 
         # Expand arg list with other data generator types
         new_arg_list = []
@@ -1796,20 +1816,33 @@ class TosaArgGen:
                     num_test_sets = testGen.TOSA_MI_DOT_PRODUCT_TEST_SETS
 
                 elif dg_type == gtu.DataGenType.FULL_RANGE:
-                    tensor_size = gtu.product(shapeList[0])
-                    if tensor_size < gtu.DTYPE_ATTRIBUTES[dtype]["fullset"]:
-                        shape_info = " ({})".format(shapeList[0])
-                        print(
-                            f"Skipping {opName}{shape_info} as tensor data size too small for full range of values {tensor_size} < {gtu.DTYPE_ATTRIBUTES[dtype]['fullset']}"
-                        )
+                    if testGen.args.no_special_tests:
+                        continue
+                    if not check_min_size(
+                        opName,
+                        shapeList[0],
+                        gtu.DTYPE_ATTRIBUTES[dtype]["fullset"],
+                        "full range of",
+                    ):
                         continue
                     # Large enough tensor data size for full range, add full test
                     arg_str = f"{arg_str}_full" if arg_str else "full"
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
+                    # Create one special test per data type
+                    update_data_gen(testGen, opName, dtype, dg_type)
 
                 elif dg_type == gtu.DataGenType.FP_SPECIAL:
+                    if testGen.args.no_special_tests:
+                        continue
+                    if not check_min_size(
+                        opName,
+                        shapeList[0],
+                        testGen.TOSA_MI_FP_SPECIAL_MIN_SIZE,
+                        "FP special",
+                    ):
+                        continue
                     shapes_set = {tuple(x) for x in shapeList}
                     if len(shapes_set) != 1:
                         logger.info(
@@ -1822,6 +1855,8 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
+                    # Create one special test per data type
+                    update_data_gen(testGen, opName, dtype, dg_type)
 
                 gen_args_dict["dg_type"] = dg_type
                 if num_test_sets > 0:

@@ -287,6 +287,13 @@ def parseArgs(argv):
         help="enables test selection, this is the selection criteria to use from the selection config",
     )
 
+    filter_group.add_argument(
+        "--no-special-tests",
+        dest="no_special_tests",
+        action="store_true",
+        help="Do not produce special 'full range' or 'FP special' tests",
+    )
+
     parser.add_argument(
         "--list-tests",
         dest="list_tests",

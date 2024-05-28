@@ -44,6 +44,9 @@ class TosaTestGen:
     TOSA_MI_DOT_PRODUCT_TEST_SETS = 6
     TOSA_MI_DOT_PRODUCT_MIN = 1000
 
+    # Minimum tensor size for the FP special tests
+    TOSA_MI_FP_SPECIAL_MIN_SIZE = 20
+
     def __init__(self, args):
         self.args = args
         self.basePath = args.output_dir
@@ -3351,6 +3354,7 @@ class TosaTestGen:
     }
     EW_UNARY_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
@@ -3637,7 +3641,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "sigmoid": {
             "op": Op.SIGMOID,
@@ -3655,7 +3659,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "tanh": {
             "op": Op.TANH,
@@ -3673,7 +3677,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
             "compliance": {
                 "abs_error_lower_bound": 0.5,
             },
@@ -3694,7 +3698,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
             "compliance": {"ulp": 5},
         },
         # Elementwise Binary Operators
