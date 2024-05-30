@@ -802,6 +802,7 @@ TF_OP_LIST = {
                 1,
             ),
         ],
+        "output_name": "Identity",
     },
     "batch_to_space": {
         "operands": (1, 0),
@@ -826,6 +827,7 @@ TF_OP_LIST = {
         "dynamic_shape_dim": [
             (0,),
         ],
+        "output_name": "Identity",
     },
     "space_to_depth": {
         "operands": (1, 0),
@@ -1607,6 +1609,11 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
         else:
             shape_list = shape_list.copy()
             shape_list.extend(custom_shapes["shape_list"])
+    except KeyError:
+        pass
+
+    try:
+        result_name = op["output_name"]
     except KeyError:
         pass
 
