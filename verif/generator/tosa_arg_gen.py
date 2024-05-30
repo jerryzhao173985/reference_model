@@ -748,7 +748,6 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
-        dg_type = argsDict["dg_type"]
         tens_data = {
             "version": "0.1",
             "tensors": {},
@@ -761,6 +760,8 @@ class TosaTensorValuesGen:
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}
+            dg_type = argsDict["dg_type"]
+
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
             tens_meta["shape"] = [int(i) for i in shape]
@@ -798,6 +799,7 @@ class TosaTensorValuesGen:
                     data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
                 info["range"] = [str(v) for v in data_range]
                 tens_meta["pseudo_random_info"] = info
+
             elif dg_type == gtu.DataGenType.DOT_PRODUCT:
                 info = {}
                 info["s"] = argsDict["s"]
@@ -812,14 +814,17 @@ class TosaTensorValuesGen:
                 if "axis" in argsDict:
                     info["axis"] = int(argsDict["axis"])
                 tens_meta["dot_product_info"] = info
+
             elif dg_type == gtu.DataGenType.FULL_RANGE:
                 info = {}
                 info["start_val"] = int(
                     rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
                 )
                 tens_meta["full_range_info"] = info
+
             elif dg_type == gtu.DataGenType.FP_SPECIAL:
                 tens_meta["fp_special_info"] = fp_special_info
+
             else:
                 # TODO - other data gen type
                 assert False, "TODO: support other data gen types"
@@ -1045,55 +1050,6 @@ class TosaTensorValuesGen:
             tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtypeList[idx], arr))
 
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-
-    @staticmethod
-    def tvgReshape(
-        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
-    ):
-        dtypeList[1] = DType.SHAPE
-        shapeList[1] = [len(argsDict["new_shape"])]
-        # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, argsDict["new_shape"]]
-
-        return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-        )
-
-    @staticmethod
-    def tvgPad(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
-        # argsDict["pad"] is 2D array, need to flatten it to get list of values
-        pad_values = argsDict["pad"].flatten()
-        dtypeList[1] = DType.SHAPE
-        shapeList[1] = [len(pad_values)]
-        # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, pad_values]
-
-        return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-        )
-
-    @staticmethod
-    def tvgSlice(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
-        dtypeList[1] = DType.SHAPE
-        shapeList[1] = [len(argsDict["start"])]
-        dtypeList[2] = DType.SHAPE
-        shapeList[2] = [len(argsDict["size"])]
-        # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, argsDict["start"], argsDict["size"]]
-
-        return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-        )
-
-    @staticmethod
-    def tvgTile(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
-        dtypeList[1] = DType.SHAPE
-        shapeList[1] = [len(argsDict["multiples"])]
-        argsDict["fixed_data"] = [None, argsDict["multiples"]]
-
-        return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-        )
 
     @staticmethod
     def tvgSelect(
@@ -1787,6 +1743,7 @@ class TosaArgGen:
         # Expand arg list with other data generator types
         new_arg_list = []
         for dg_type in dataGenTypesList:
+            only_one = False  # Check for only one dg type test
             for arg_str, args_dict in arg_list:
                 gen_args_dict = args_dict.copy()
                 # Only create one test by default - no sets of tests
@@ -1830,8 +1787,8 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create one special test per data type
-                    update_data_gen(testGen, opName, dtype, dg_type)
+                    # Create only one special test per data type
+                    only_one = True
 
                 elif dg_type == gtu.DataGenType.FP_SPECIAL:
                     if testGen.args.no_special_tests:
@@ -1855,8 +1812,8 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create one special test per data type
-                    update_data_gen(testGen, opName, dtype, dg_type)
+                    # Create only one special test per data type
+                    only_one = True
 
                 gen_args_dict["dg_type"] = dg_type
                 if num_test_sets > 0:
@@ -1868,6 +1825,11 @@ class TosaArgGen:
                 else:
                     # Default is a single test
                     new_arg_list.append((arg_str, gen_args_dict))
+
+                if only_one:
+                    # Skip all remaining tests and remove this data generator
+                    update_data_gen(testGen, opName, dtype, dg_type)
+                    break
 
         return new_arg_list
 
