@@ -95,7 +95,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -133,7 +135,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -1715,7 +1719,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -1763,7 +1769,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -3286,15 +3294,12 @@
     },
     "cos": {
         "group": "ew_unary",
-        "support_for": [
-            "lazy_data_gen"
-        ],
+        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
                     "tosa-mi"
                 ],
-                "selector": "tosa-mi",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -3315,6 +3320,8 @@
                     [
                         "--no-special-tests",
                         "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -3323,7 +3330,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -3342,7 +3351,6 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -3358,17 +3366,28 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,13",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
         },
         "selection": {
-            "tosa-mi": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
+            "default": {
+                "generator_select": "true"
             }
         }
     },
@@ -4120,6 +4139,8 @@
                     [
                         "--no-special-tests",
                         "--target-dtype",
+                        "fp32",
+                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4128,7 +4149,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -4164,6 +4187,21 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,13",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -4255,7 +4293,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -4299,11 +4339,13 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,16",
+                        "1,14",
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -5184,6 +5226,8 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
+                        "--target-dtype",
+                        "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -5191,7 +5235,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -5227,6 +5273,21 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,11",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -6738,11 +6799,13 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,22",
+                        "1,16",
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -6787,11 +6850,13 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,22",
+                        "1,15",
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -7271,6 +7336,8 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp16",
+                        "--target-dtype",
+                        "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -7278,7 +7345,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -7303,6 +7372,21 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,11",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -8954,6 +9038,23 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
+                        "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,13",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
@@ -8996,7 +9097,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -9455,9 +9558,7 @@
     },
     "sin": {
         "group": "ew_unary",
-        "support_for": [
-            "lazy_data_gen"
-        ],
+        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -9465,7 +9566,6 @@
                 ],
                 "generator_args": [
                     [
-                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--target-dtype",
@@ -9473,7 +9573,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "15,64",
+                        "35,60",
                         "--target-rank",
                         "1",
                         "--target-rank",
@@ -9485,6 +9585,8 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
+                        "--target-dtype",
+                        "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -9492,9 +9594,12 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp16",
                         "--fp-values-range",
@@ -9525,17 +9630,28 @@
                         "2",
                         "--target-rank",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "4",
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
         },
         "selection": {
             "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
+                "generator_select": "true"
             }
         }
     },
