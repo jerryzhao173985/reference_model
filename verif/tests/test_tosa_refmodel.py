@@ -90,6 +90,7 @@ class BuildTosaTest:
 
         # Generate tests without any zero-point
         build_args = [
+            "--no-special-tests",
             "--generate-lib-path",
             str(GENERATE_LIB_PATH),
             "--filter",
@@ -137,7 +138,7 @@ class BuildTosaTest:
 # FP Special datagen adds a second expected test to FP16 and FP32 tests for OPs it is added to
 TEST_PARAMS = [
     ("add", "int32", 1),
-    ("add", "fp32", 2),
+    ("add", "fp32", 1),
     ("abs", "int32", 1),
     ("abs", "fp32", 1),
     ("abs", "fp16", 1),
