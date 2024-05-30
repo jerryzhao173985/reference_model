@@ -732,6 +732,12 @@ class TosaTensorValuesGen:
 
         tens_ser_list = []
 
+        # Retrieve any fixed data tensors
+        fixed_data_tensors = argsDict.get("fixed_data", [None] * len(shapeList))
+        assert len(fixed_data_tensors) == len(
+            shapeList
+        ), "Fixed data list must match shapes list"
+
         if (
             error_name is not None
             or not gtu.dtypeIsSupportedByCompliance(dtypeList[0])
@@ -759,15 +765,15 @@ class TosaTensorValuesGen:
                     data_range = (data_range[0], data_range[1] + 1)
 
                 # Ignore lazy data gen option and create data array using any range limits
-                if "fixed_data" in argsDict and argsDict["fixed_data"][idx] is not None:
+                if fixed_data_tensors[idx] is not None:
                     if dtype == DType.SHAPE:
-                        arr = np.int64(argsDict["fixed_data"][idx])
+                        arr = np.int64(fixed_data_tensors[idx])
                     elif dtype == DType.INT8:
-                        arr = np.int8(argsDict["fixed_data"][idx])
+                        arr = np.int8(fixed_data_tensors[idx])
                     elif dtype == DType.INT16:
-                        arr = np.int16(argsDict["fixed_data"][idx])
+                        arr = np.int16(fixed_data_tensors[idx])
                     elif dtype == DType.INT32:
-                        arr = np.int32(argsDict["fixed_data"][idx])
+                        arr = np.int32(fixed_data_tensors[idx])
                     else:
                         assert False, "Unsupported fixed_data type"
                 else:
@@ -782,7 +788,6 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
-        dg_type = argsDict["dg_type"]
         tens_data = {
             "version": "0.1",
             "tensors": {},
@@ -795,13 +800,12 @@ class TosaTensorValuesGen:
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}
-            if "fixed_data" in argsDict and argsDict["fixed_data"][idx] is not None:
-                tens_meta["generator"] = gtu.DataGenType(
-                    gtu.DataGenType.FIXED_DATA
-                ).name
+            if fixed_data_tensors[idx] is not None:
+                dg_type = gtu.DataGenType.FIXED_DATA
             else:
-                tens_meta["generator"] = gtu.DataGenType(dg_type).name
+                dg_type = argsDict["dg_type"]
 
+            tens_meta["generator"] = gtu.DataGenType(dg_type).name
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
             tens_meta["shape"] = [int(i) for i in shape]
             tens_meta["input_pos"] = idx
@@ -822,29 +826,28 @@ class TosaTensorValuesGen:
             else:
                 tens_meta["input_type"] = "CONSTANT"
 
-            if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
+            if dg_type == gtu.DataGenType.FIXED_DATA:
                 info = {}
-                if (
-                    tens_meta["generator"]
-                    == gtu.DataGenType(gtu.DataGenType.FIXED_DATA).name
-                ):
-                    info["data"] = [int(i) for i in argsDict["fixed_data"][idx]]
-                    tens_meta["fixed_data_info"] = info
-                else:
-                    info["rng_seed"] = rng.seed
+                info["data"] = [int(i) for i in fixed_data_tensors[idx]]
+                tens_meta["fixed_data_info"] = info
 
-                    data_range = None
-                    if "data_range_list" in argsDict:
-                        data_range = argsDict["data_range_list"][idx]["range"]
-                        if "round" in argsDict["data_range_list"][idx]:
-                            info["round"] = argsDict["data_range_list"][idx]["round"]
-                    elif "data_range" in argsDict:
-                        data_range = argsDict["data_range"]
+            elif dg_type == gtu.DataGenType.PSEUDO_RANDOM:
+                info = {}
+                info["rng_seed"] = rng.seed
 
-                    if data_range is None:
-                        data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
-                    info["range"] = [str(v) for v in data_range]
-                    tens_meta["pseudo_random_info"] = info
+                data_range = None
+                if "data_range_list" in argsDict:
+                    data_range = argsDict["data_range_list"][idx]["range"]
+                    if "round" in argsDict["data_range_list"][idx]:
+                        info["round"] = argsDict["data_range_list"][idx]["round"]
+                elif "data_range" in argsDict:
+                    data_range = argsDict["data_range"]
+
+                if data_range is None:
+                    data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
+                info["range"] = [str(v) for v in data_range]
+                tens_meta["pseudo_random_info"] = info
+
             elif dg_type == gtu.DataGenType.DOT_PRODUCT:
                 info = {}
                 info["s"] = argsDict["s"]
@@ -859,14 +862,17 @@ class TosaTensorValuesGen:
                 if "axis" in argsDict:
                     info["axis"] = int(argsDict["axis"])
                 tens_meta["dot_product_info"] = info
+
             elif dg_type == gtu.DataGenType.FULL_RANGE:
                 info = {}
                 info["start_val"] = int(
                     rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
                 )
                 tens_meta["full_range_info"] = info
+
             elif dg_type == gtu.DataGenType.FP_SPECIAL:
                 tens_meta["fp_special_info"] = fp_special_info
+
             else:
                 # TODO - other data gen type
                 assert False, "TODO: support other data gen types"
@@ -1918,6 +1924,7 @@ class TosaArgGen:
         # Expand arg list with other data generator types
         new_arg_list = []
         for dg_type in dataGenTypesList:
+            only_one = False  # Check for only one dg type test
             for arg_str, args_dict in arg_list:
                 gen_args_dict = args_dict.copy()
                 # Only create one test by default - no sets of tests
@@ -1961,8 +1968,8 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create one special test per data type
-                    update_data_gen(testGen, opName, dtype, dg_type)
+                    # Create only one special test per data type
+                    only_one = True
 
                 elif dg_type == gtu.DataGenType.FP_SPECIAL:
                     if testGen.args.no_special_tests:
@@ -1986,8 +1993,8 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create one special test per data type
-                    update_data_gen(testGen, opName, dtype, dg_type)
+                    # Create only one special test per data type
+                    only_one = True
 
                 gen_args_dict["dg_type"] = dg_type
                 if num_test_sets > 0:
@@ -1999,6 +2006,11 @@ class TosaArgGen:
                 else:
                     # Default is a single test
                     new_arg_list.append((arg_str, gen_args_dict))
+
+                if only_one:
+                    # Skip all remaining tests and remove this data generator
+                    update_data_gen(testGen, opName, dtype, dg_type)
+                    break
 
         return new_arg_list
 
