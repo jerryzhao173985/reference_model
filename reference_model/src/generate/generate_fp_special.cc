@@ -31,6 +31,7 @@ public:
         Min,    // Smallest positive normal floating point value
         Max,    // Largest positive floating point value
         One,
+        MinDenorm,    // Smallest positive denormal floating point value
     };
 
     SpecialValue() = default;
@@ -78,6 +79,9 @@ public:
                 return negative ? -std::numeric_limits<DataType>::max() : std::numeric_limits<DataType>::max();
             case One:
                 return static_cast<DataType>(negative ? -1.0 : 1.0);
+            case MinDenorm:
+                return negative ? -std::numeric_limits<DataType>::denorm_min()
+                                : std::numeric_limits<DataType>::denorm_min();
             default:
                 WARNING("[Generator][FS] Uninitialised special value.");
                 return static_cast<DataType>(0.0);
@@ -110,10 +114,12 @@ TestValues equalOpsTestVals{ { SpecialValue(SpecialValue::Zero), -SpecialValue(S
 TestValues addTestVals{ { SpecialValue(SpecialValue::Max), SpecialValue(SpecialValue::One) },
                         { SpecialValue(SpecialValue::Inf), -SpecialValue(SpecialValue::Inf) } };
 
-TestValues defaultTestVals{ { SpecialValue(SpecialValue::Zero) }, { -SpecialValue(SpecialValue::Zero) },
-                            { SpecialValue(SpecialValue::Inf) },  { -SpecialValue(SpecialValue::Inf) },
-                            { SpecialValue(SpecialValue::Min) },  { -SpecialValue(SpecialValue::Min) },
-                            { SpecialValue(SpecialValue::Max) },  { -SpecialValue(SpecialValue::Max) },
+TestValues defaultTestVals{ { SpecialValue(SpecialValue::Zero) },      { -SpecialValue(SpecialValue::Zero) },
+                            { SpecialValue(SpecialValue::Inf) },       { -SpecialValue(SpecialValue::Inf) },
+                            { SpecialValue(SpecialValue::Min) },       { -SpecialValue(SpecialValue::Min) },
+                            { SpecialValue(SpecialValue::Max) },       { -SpecialValue(SpecialValue::Max) },
+                            { SpecialValue(SpecialValue::MinDenorm) }, { -SpecialValue(SpecialValue::MinDenorm) },
+                            { SpecialValue(SpecialValue::One) },       { -SpecialValue(SpecialValue::One) },
                             { SpecialValue(SpecialValue::NaN) } };
 
 std::map<Op, TestValues> testValues = { { Op::Op_EQUAL, equalOpsTestVals },

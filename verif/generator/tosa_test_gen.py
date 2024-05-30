@@ -3354,7 +3354,7 @@ class TosaTestGen:
     }
     EW_UNARY_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
