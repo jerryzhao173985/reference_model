@@ -4548,7 +4548,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "pad": {
             "op": Op.PAD,
@@ -4571,7 +4571,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "dim": {
             "op": Op.DIM,
@@ -4611,7 +4611,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "reverse": {
             "op": Op.REVERSE,
@@ -4631,7 +4631,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "slice": {
             "op": Op.SLICE,
@@ -4661,7 +4661,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "tile": {
             "op": Op.TILE,
@@ -4682,7 +4682,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "transpose": {
             "op": Op.TRANSPOSE,
@@ -4706,7 +4706,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evTensorSizeInputOutputMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         # Data nodes
         "const": {
