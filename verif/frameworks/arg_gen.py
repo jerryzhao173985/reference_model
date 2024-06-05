@@ -553,11 +553,14 @@ class ArgGen:
 
         return arg_list
 
-    # tf.stack axis can be [0, rank(input)]
+    # tf.stack axis can be [-rank(input)-1, rank(input)]
     def agStack(op, shapes, rng):
         axes = []
-        for i in range(len(shapes) + 1):
-            axes.append(["_axis{}".format(i), [i]])
+        for i in range(-len(shapes) - 1, len(shapes) + 1):
+            if i >= 0:
+                axes.append(["_axis_{}".format(i), [i]])
+            else:
+                axes.append(["_axis_m{}".format(-i), [i]])
         return axes
 
     def agMirrorPad(op, shapes, rng):
