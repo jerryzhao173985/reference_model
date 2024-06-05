@@ -125,6 +125,21 @@ static int64_t zero_extend(int16_t val)
     uint16_t* rval = reinterpret_cast<uint16_t*>(&val);
     return static_cast<int64_t>(*rval);
 }
+static int64_t zero_extend(int32_t val)
+{
+    uint32_t* rval = reinterpret_cast<uint32_t*>(&val);
+    return static_cast<int64_t>(*rval);
+}
+static int64_t sign_extend(uint8_t val)
+{
+    int8_t* rval = reinterpret_cast<int8_t*>(&val);
+    return static_cast<int64_t>(*rval);
+}
+static int64_t sign_extend(uint16_t val)
+{
+    int16_t* rval = reinterpret_cast<int16_t*>(&val);
+    return static_cast<int64_t>(*rval);
+}
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::eval()
@@ -158,6 +173,70 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
     ETensor2<OutEigenType> output_2d(shape_2d);
 
+    auto get_input_zp_shifted = [=](InEigenType in_val) -> int64_t {
+        int64_t input_zp_shifted;
+        if (input_unsigned)
+        {
+            int64_t in_val64;
+            int64_t in_zp64;
+            switch (GetNumBits<InDtype>::value)
+            {
+                case 8:
+                    in_val64 = zero_extend(static_cast<int8_t>(in_val));
+                    in_zp64  = zero_extend(static_cast<int8_t>(input_zp));
+                    break;
+                case 16:
+                    in_val64 = zero_extend(static_cast<int16_t>(in_val));
+                    in_zp64  = zero_extend(static_cast<int16_t>(input_zp));
+                    break;
+                case 32:
+                    in_val64 = zero_extend(static_cast<int32_t>(in_val));
+                    in_zp64  = zero_extend(static_cast<int32_t>(input_zp));
+                    break;
+                case 48:
+                    in_val64 = static_cast<int64_t>(in_val) & 0x0000FFFFFFFFFFFF;
+                    in_zp64  = static_cast<int64_t>(input_zp) & 0x0000FFFFFFFFFFFF;
+                    break;
+                default:
+                    in_val64 = static_cast<int64_t>(in_val);
+                    in_zp64  = static_cast<int64_t>(input_zp);
+                    break;
+            }
+            input_zp_shifted = in_val64 - in_zp64;
+        }
+        else
+        {
+            int64_t in_val64;
+            int64_t in_zp64 = static_cast<int64_t>(input_zp);
+            switch (GetNumBits<InDtype>::value)
+            {
+                case 8:
+                    in_val64 = sign_extend(static_cast<uint8_t>(in_val & 0xFF));
+                    break;
+                case 16:
+                    in_val64 = sign_extend(static_cast<uint16_t>(in_val & 0xFFFF));
+                    break;
+                case 32:
+                    in_val64 = static_cast<int64_t>(static_cast<int32_t>(in_val & 0xFFFFFFFF));
+                    break;
+                case 48:
+                    // sign extend i48 to i64
+                    in_val64 = static_cast<int64_t>(in_val);
+                    if (in_val64 & 0x800000000000)
+                    {
+                        // in_val contains negative i48, sign extend to i64
+                        in_val64 |= 0xFFFF000000000000;
+                    }
+                    break;
+                default:
+                    in_val64 = static_cast<int64_t>(in_val);
+                    break;
+            }
+            input_zp_shifted = in_val64 - in_zp64;
+        }
+        return input_zp_shifted;
+    };
+
     if (per_channel)
     {
         ETensor2<InEigenType> curr_channel_slice_prescaled;
@@ -175,32 +254,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 channel_shift                = shift[i];
                 curr_channel_slice_postscaled =
                     curr_channel_slice_prescaled.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                        int64_t input_zp_shifted;
-                        if (input_unsigned)
-                        {
-                            int64_t in_val64;
-                            int64_t in_zp64;
-                            switch (GetNumBits<InDtype>::value)
-                            {
-                                case 8:
-                                    in_val64 = zero_extend(static_cast<int8_t>(in_val));
-                                    in_zp64  = zero_extend(static_cast<int8_t>(input_zp));
-                                    break;
-                                case 16:
-                                    in_val64 = zero_extend(static_cast<int16_t>(in_val));
-                                    in_zp64  = zero_extend(static_cast<int16_t>(input_zp));
-                                    break;
-                                default:
-                                    in_val64 = static_cast<int64_t>(in_val);
-                                    in_zp64  = static_cast<int64_t>(input_zp);
-                                    break;
-                            }
-                            input_zp_shifted = in_val64 - in_zp64;
-                        }
-                        else
-                        {
-                            input_zp_shifted = in_val - input_zp;
-                        }
+                        int64_t input_zp_shifted = get_input_zp_shifted(in_val);
+
                         int32_t scaled;
                         if (scale32)
                             scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
@@ -268,32 +323,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         try
         {
             output_2d = input_reshaped.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                int64_t input_zp_shifted;
-                if (input_unsigned)
-                {
-                    int64_t in_val64;
-                    int64_t in_zp64;
-                    switch (GetNumBits<InDtype>::value)
-                    {
-                        case 8:
-                            in_val64 = zero_extend(static_cast<int8_t>(in_val));
-                            in_zp64  = zero_extend(static_cast<int8_t>(input_zp));
-                            break;
-                        case 16:
-                            in_val64 = zero_extend(static_cast<int16_t>(in_val));
-                            in_zp64  = zero_extend(static_cast<int16_t>(input_zp));
-                            break;
-                        default:
-                            in_val64 = static_cast<int64_t>(in_val);
-                            in_zp64  = static_cast<int64_t>(input_zp);
-                            break;
-                    }
-                    input_zp_shifted = in_val64 - in_zp64;
-                }
-                else
-                {
-                    input_zp_shifted = in_val - input_zp;
-                }
+                int64_t input_zp_shifted = get_input_zp_shifted(in_val);
+
                 int32_t scaled;
                 if (scale32)
                     scaled = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, tensor_multiplier, tensor_shift,
