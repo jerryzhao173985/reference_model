@@ -1,7 +1,11 @@
 {
     "abs": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi": {
                 "supports_all": [
@@ -16,9 +20,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -28,7 +30,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -36,7 +37,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -67,7 +67,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -75,18 +74,14 @@
                         "31,66",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -94,9 +89,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -117,11 +110,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -134,9 +124,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -147,7 +135,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65531,2,1",
-                        "--target-shape",
                         "65538,1,1,1"
                     ]
                 ]
@@ -168,7 +155,11 @@
     },
     "add": {
         "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi-mi": {
                 "supports_any": [
@@ -183,9 +174,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -195,7 +184,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -203,7 +191,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -233,7 +220,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -241,11 +227,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -258,7 +241,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -269,7 +251,6 @@
                         "-max,max",
                         "--target-shape",
                         "2,1,1,65532",
-                        "--target-shape",
                         "65542,2,1,1,1"
                     ]
                 ]
@@ -290,11 +271,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -360,9 +338,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -393,7 +369,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -408,15 +383,12 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -424,7 +396,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -442,7 +413,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,3,65535,1",
-                        "--target-shape",
                         "1,65537,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -464,9 +434,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -501,9 +469,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -526,9 +492,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -549,9 +513,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -582,7 +544,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -611,31 +572,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -643,7 +597,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -657,9 +610,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -697,7 +648,6 @@
                         "int8",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,3",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -706,7 +656,6 @@
                         "int8",
                         "--target-shape",
                         "1,65535,5,1",
-                        "--target-shape",
                         "1,3,65537,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -737,13 +686,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "4,11,7,39",
-                        "--target-shape",
                         "5,21,36,17",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -754,7 +701,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,2,65533,2",
-                        "--target-shape",
                         "1,65539,2,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -774,7 +720,6 @@
                         "-max,max",
                         "--target-shape",
                         "4,11,7,39",
-                        "--target-shape",
                         "5,21,36,17",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -832,7 +777,6 @@
                         "int16",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,3",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -899,17 +843,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -919,7 +859,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -927,7 +866,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -941,7 +879,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -972,17 +909,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "2,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -992,7 +925,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1000,7 +932,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65537,1",
-                        "--target-shape",
                         "1,65538,1,1,1"
                     ]
                 ]
@@ -1014,21 +945,17 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -1060,17 +987,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "3,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1080,7 +1003,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1088,7 +1010,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65538,1",
-                        "--target-shape",
                         "1,65537,1,1,1"
                     ]
                 ]
@@ -1102,7 +1023,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -1133,17 +1053,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1153,7 +1069,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1161,7 +1076,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65536,1,1,1"
                     ]
                 ]
@@ -1175,7 +1089,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -1210,35 +1123,26 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1246,7 +1150,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1,1",
-                        "--target-shape",
                         "1,65538,1,2"
                     ]
                 ]
@@ -1261,11 +1164,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
@@ -1284,13 +1184,9 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--fp-values-range",
                         "-max,max",
@@ -1298,21 +1194,15 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--fp-values-range",
                         "-max,max",
@@ -1320,7 +1210,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1330,7 +1219,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,1,65533,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -1346,13 +1234,9 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--fp-values-range",
                         "-max,max",
@@ -1360,21 +1244,15 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--fp-values-range",
                         "-max,max",
@@ -1382,7 +1260,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -1399,7 +1276,6 @@
                     [
                         "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "fp8e4m3",
                         "--fp-values-range",
                         "-max,max",
@@ -1407,15 +1283,12 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "fp8e4m3",
                         "--fp-values-range",
                         "-max,max",
@@ -1423,7 +1296,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -1440,7 +1312,6 @@
                     [
                         "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "fp8e5m2",
                         "--fp-values-range",
                         "-max,max",
@@ -1448,15 +1319,12 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "bf16",
-                        "--target-dtype",
                         "fp8e5m2",
                         "--fp-values-range",
                         "-max,max",
@@ -1464,7 +1332,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -1480,9 +1347,7 @@
                     [
                         "--target-dtype",
                         "fp8e4m3",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
@@ -1490,9 +1355,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -1510,9 +1373,7 @@
                     [
                         "--target-dtype",
                         "fp8e5m2",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
@@ -1520,9 +1381,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -1681,7 +1540,11 @@
     },
     "ceil": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -1691,7 +1554,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -1699,18 +1561,14 @@
                         "24,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -1718,9 +1576,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -1731,7 +1587,6 @@
                         "-max,max",
                         "--target-shape",
                         "2,1,65530,1",
-                        "--target-shape",
                         "1,1,65539,1"
                     ]
                 ]
@@ -1751,11 +1606,8 @@
                         "4,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1768,9 +1620,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -1784,7 +1634,11 @@
     },
     "clamp": {
         "group": "activation",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi": {
                 "supports_all": [
@@ -1798,9 +1652,7 @@
                         "20,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1810,7 +1662,6 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1818,7 +1669,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,1,65536",
-                        "--target-shape",
                         "1,3,65537,1,1"
                     ]
                 ]
@@ -1848,7 +1698,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -1856,18 +1705,14 @@
                         "20,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -1875,9 +1720,7 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -1888,7 +1731,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,2,1,65536",
-                        "--target-shape",
                         "1,3,65537,1,1"
                     ]
                 ]
@@ -1909,11 +1751,8 @@
                         "20,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1926,9 +1765,7 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -1946,9 +1783,7 @@
                         "20,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1958,7 +1793,6 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -2009,9 +1843,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2021,7 +1853,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2029,7 +1860,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -2082,9 +1912,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -2096,7 +1924,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
                         "--num-const-inputs-concat",
                         "1"
@@ -2111,15 +1938,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -2127,13 +1951,11 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
                         "--num-const-inputs-concat",
                         "1"
@@ -2143,7 +1965,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-const-inputs-concat",
                         "2"
@@ -2163,9 +1984,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -2177,7 +1996,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
                         "--num-const-inputs-concat",
                         "1"
@@ -2193,11 +2011,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
@@ -2218,7 +2033,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -2226,9 +2040,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -2237,7 +2049,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -2245,9 +2056,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-const-inputs-concat",
                         "1"
@@ -2260,9 +2069,7 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65534,1,1",
-                        "--target-shape",
                         "1,65537,1,2",
-                        "--target-shape",
                         "13,11,7",
                         "--num-const-inputs-concat",
                         "2"
@@ -2285,9 +2092,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -2302,9 +2107,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-const-inputs-concat",
                         "1"
@@ -2328,9 +2131,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "2"
@@ -2354,9 +2155,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "2"
@@ -2421,19 +2220,13 @@
                     [
                         "--target-dtype",
                         "bool",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -2471,33 +2264,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2505,7 +2289,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65537,1,1",
-                        "--target-shape",
                         "1,65530,1,2"
                     ]
                 ]
@@ -2519,25 +2302,19 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
@@ -2545,7 +2322,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2555,7 +2331,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65540,1,1,1",
-                        "--target-shape",
                         "1,2,1,65529"
                     ]
                 ]
@@ -2573,9 +2348,7 @@
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2587,7 +2360,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -2608,9 +2380,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -2633,9 +2403,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -2653,9 +2421,7 @@
                         "int48",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2665,7 +2431,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -2728,7 +2493,6 @@
                         "int8",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,13",
                         "--tensor-dim-range",
                         "1,16",
@@ -2739,7 +2503,6 @@
                         "int8",
                         "--target-shape",
                         "1,65535,3,1",
-                        "--target-shape",
                         "1,2,65536,1",
                         "--max-conv-dilation",
                         "1",
@@ -2761,7 +2524,6 @@
                         "int16",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,13",
                         "--tensor-dim-range",
                         "1,16",
@@ -2795,13 +2557,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,34,19,27",
-                        "--target-shape",
                         "1,16,51,7",
                         "--tensor-dim-range",
                         "1,16",
@@ -2814,7 +2574,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65537,1,3",
-                        "--target-shape",
                         "1,2,65530,2",
                         "--tensor-dim-range",
                         "1,16",
@@ -2825,19 +2584,15 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--conv-kernel",
                         "7,7",
-                        "--conv-kernel",
                         "9,9",
                         "--target-shape",
                         "1,127,127,1",
-                        "--target-shape",
                         "1,256,256,1",
-                        "--target-shape",
                         "1,1080,720,1",
                         "--tensor-dim-range",
                         "1,8"
@@ -2859,7 +2614,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,34,19,27",
-                        "--target-shape",
                         "1,16,51,7",
                         "--tensor-dim-range",
                         "1,16",
@@ -2872,13 +2626,10 @@
                         "-max,max",
                         "--conv-kernel",
                         "7,7",
-                        "--conv-kernel",
                         "9,9",
                         "--target-shape",
                         "1,127,127,1",
-                        "--target-shape",
                         "1,256,256,1",
-                        "--target-shape",
                         "1,1080,720,1",
                         "--tensor-dim-range",
                         "1,8"
@@ -3042,7 +2793,6 @@
                         "int8",
                         "--target-shape",
                         "1,9,21,14,1",
-                        "--target-shape",
                         "1,9,11,12,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3053,7 +2803,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,2,1",
-                        "--target-shape",
                         "1,1,2,65536,1",
                         "--max-conv-dilation",
                         "1",
@@ -3105,13 +2854,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,7,18,5,4",
-                        "--target-shape",
                         "1,6,12,17,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3124,7 +2871,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,2,65539,1,2",
-                        "--target-shape",
                         "1,65532,1,1,3",
                         "--tensor-dim-range",
                         "1,2",
@@ -3149,7 +2895,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,7,18,5,4",
-                        "--target-shape",
                         "1,6,12,17,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3172,7 +2917,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,7,18,5,4",
-                        "--target-shape",
                         "1,6,12,17,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3196,7 +2940,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,7,18,5,4",
-                        "--target-shape",
                         "1,6,12,17,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3217,7 +2960,6 @@
                         "int16",
                         "--target-shape",
                         "1,9,21,14,1",
-                        "--target-shape",
                         "1,9,11,12,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -3317,7 +3059,11 @@
     },
     "cos": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -3327,7 +3073,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -3335,16 +3080,13 @@
                         "35,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -3352,9 +3094,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -3365,7 +3105,6 @@
                         "-max,max",
                         "--target-shape",
                         "2,1,65537,1",
-                        "--target-shape",
                         "3,1,65539,2,1"
                     ]
                 ]
@@ -3385,9 +3124,7 @@
                         "15,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -3400,9 +3137,7 @@
                         "1,13",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -3432,7 +3167,6 @@
                         "int8",
                         "--target-shape",
                         "1,9,44,3",
-                        "--target-shape",
                         "1,11,33,4",
                         "--tensor-dim-range",
                         "1,16",
@@ -3443,7 +3177,6 @@
                         "int8",
                         "--target-shape",
                         "1,65532,2,1",
-                        "--target-shape",
                         "1,4,65537,1",
                         "--max-conv-dilation",
                         "1",
@@ -3463,7 +3196,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "2,5",
@@ -3481,13 +3213,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,17,31,4",
-                        "--target-shape",
                         "1,37,11,5",
                         "--tensor-dim-range",
                         "1,32",
@@ -3500,7 +3230,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65531,2",
-                        "--target-shape",
                         "1,65540,1,3",
                         "--tensor-dim-range",
                         "1,16",
@@ -3525,7 +3254,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,17,31,4",
-                        "--target-shape",
                         "1,37,11,5",
                         "--tensor-dim-range",
                         "1,32",
@@ -3585,7 +3313,6 @@
                         "int16",
                         "--target-shape",
                         "1,9,44,3",
-                        "--target-shape",
                         "1,11,33,4",
                         "--tensor-dim-range",
                         "1,16",
@@ -3713,9 +3440,7 @@
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -3729,17 +3454,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -3770,7 +3491,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-2.0,2.0",
@@ -3778,9 +3498,7 @@
                         "1,65",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -3801,9 +3519,7 @@
                         "1,65",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -3824,9 +3540,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -3849,9 +3563,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -3916,9 +3628,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -3928,7 +3638,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3936,7 +3645,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65501,1",
-                        "--target-shape",
                         "1,65541,1,1,1"
                     ]
                 ]
@@ -3965,7 +3673,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -3973,9 +3680,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -3988,7 +3693,6 @@
                         "1,18",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3999,7 +3703,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,2,65550",
-                        "--target-shape",
                         "1,4,65530,1,1"
                     ]
                 ]
@@ -4019,9 +3722,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -4039,7 +3740,11 @@
     },
     "erf": {
         "group": "activation",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -4049,7 +3754,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-4.0,4.0",
@@ -4057,18 +3761,14 @@
                         "18,60",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-4.0,4.0",
@@ -4076,9 +3776,7 @@
                         "1,24",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -4089,7 +3787,6 @@
                         "-4.0,4.0",
                         "--target-shape",
                         "1,65535,2,1,1",
-                        "--target-shape",
                         "1,65540,1,2"
                     ]
                 ]
@@ -4109,11 +3806,8 @@
                         "18,60",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4125,9 +3819,7 @@
                         "1,24",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -4141,7 +3833,11 @@
     },
     "exp": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -4151,7 +3847,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4159,18 +3854,14 @@
                         "35,65",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4178,9 +3869,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -4191,7 +3880,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65535,4",
-                        "--target-shape",
                         "2,65536,1,1,1"
                     ]
                 ]
@@ -4211,11 +3899,8 @@
                         "15,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4228,9 +3913,7 @@
                         "1,13",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -4266,7 +3949,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,256,64",
-                        "--target-shape",
                         "1,4,4096"
                     ]
                 ]
@@ -4285,7 +3967,11 @@
     },
     "floor": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -4295,7 +3981,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4303,18 +3988,14 @@
                         "34,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4322,9 +4003,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -4335,7 +4014,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65533,2",
-                        "--target-shape",
                         "1,65537,1,1"
                     ]
                 ]
@@ -4355,11 +4033,8 @@
                         "4,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4372,9 +4047,7 @@
                         "1,14",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -4406,7 +4079,6 @@
                         "int8",
                         "--target-shape",
                         "444,1",
-                        "--target-shape",
                         "3,65538",
                         "--tensor-dim-range",
                         "1,2"
@@ -4416,7 +4088,6 @@
                         "int8",
                         "--target-shape",
                         "3,16",
-                        "--target-shape",
                         "1,23",
                         "--tensor-dim-range",
                         "100,200"
@@ -4432,7 +4103,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4448,13 +4118,11 @@
                         "10,15",
                         "--target-shape",
                         "100,296",
-                        "--target-shape",
                         "65540,2"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4462,7 +4130,6 @@
                         "35,64",
                         "--target-shape",
                         "30,16",
-                        "--target-shape",
                         "100,23"
                     ]
                 ]
@@ -4491,7 +4158,6 @@
                         "35,64",
                         "--target-shape",
                         "30,16",
-                        "--target-shape",
                         "100,23"
                     ]
                 ]
@@ -4530,7 +4196,6 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
@@ -4544,9 +4209,7 @@
                         "5,20",
                         "--target-shape",
                         "2,65533,1",
-                        "--target-shape",
                         "1,2,65533",
-                        "--target-shape",
                         "5000,1,1"
                     ]
                 ]
@@ -4560,7 +4223,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4578,9 +4240,7 @@
                         "5,20",
                         "--target-shape",
                         "2,65536,1",
-                        "--target-shape",
                         "1,2,65535",
-                        "--target-shape",
                         "5000,1,1"
                     ]
                 ]
@@ -4620,9 +4280,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -4645,9 +4303,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -4683,9 +4339,7 @@
                         "10,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4695,7 +4349,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -4703,7 +4356,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65530,1",
-                        "--target-shape",
                         "1,65539,1,2,1"
                     ]
                 ]
@@ -4732,7 +4384,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4740,9 +4391,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4753,7 +4402,6 @@
                         "-max,max",
                         "--target-shape",
                         "3,65551,1,1",
-                        "--target-shape",
                         "1,1,3,65531,1"
                     ]
                 ]
@@ -4773,9 +4421,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4788,7 +4434,6 @@
                         "1,18",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -4823,9 +4468,7 @@
                         "20,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4835,7 +4478,6 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -4843,7 +4485,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,3,1"
                     ]
                 ]
@@ -4872,7 +4513,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -4880,9 +4520,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4895,7 +4533,6 @@
                         "1,18",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -4915,9 +4552,7 @@
                         "18,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -4928,7 +4563,6 @@
                         "-max,max",
                         "--target-shape",
                         "65552,1,1,4",
-                        "--target-shape",
                         "1,1,1,3,65532"
                     ]
                 ]
@@ -4959,39 +4593,28 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "int48",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,61",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "int48",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -4999,7 +4622,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65536,1,1",
-                        "--target-shape",
                         "1,65531,1,2"
                     ]
                 ]
@@ -5013,7 +4635,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -5021,15 +4642,12 @@
                         "1,67",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -5037,7 +4655,6 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5047,7 +4664,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65539,1,1",
-                        "--target-shape",
                         "1,1,2,65529"
                     ]
                 ]
@@ -5067,9 +4683,7 @@
                         "1,67",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5081,7 +4695,6 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -5099,9 +4712,7 @@
                         "1,61",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5111,7 +4722,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -5129,9 +4739,7 @@
                         "1,61",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5141,7 +4749,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -5173,9 +4780,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5185,7 +4790,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5193,7 +4797,6 @@
                         "int32",
                         "--target-shape",
                         "1,65533,1",
-                        "--target-shape",
                         "1,1,65539,1,1"
                     ]
                 ]
@@ -5227,7 +4830,11 @@
     },
     "log": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -5237,7 +4844,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -5245,18 +4851,14 @@
                         "35,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -5264,9 +4866,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -5277,7 +4877,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65530,1,2",
-                        "--target-shape",
                         "3,1,65540,1,1"
                     ]
                 ]
@@ -5297,11 +4896,8 @@
                         "15,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5314,9 +4910,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -5344,9 +4938,7 @@
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5356,7 +4948,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5364,7 +4955,6 @@
                         "bool",
                         "--target-shape",
                         "1,65538,1",
-                        "--target-shape",
                         "1,2,1,65536"
                     ]
                 ]
@@ -5408,31 +4998,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5440,7 +5023,6 @@
                         "int8",
                         "--target-shape",
                         "1,65532,1,1",
-                        "--target-shape",
                         "1,2,1,65538"
                     ]
                 ]
@@ -5454,9 +5036,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -5492,9 +5072,7 @@
                         "2,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5504,7 +5082,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5512,7 +5089,6 @@
                         "bool",
                         "--target-shape",
                         "1,65537,1",
-                        "--target-shape",
                         "1,2,1,65535"
                     ]
                 ]
@@ -5560,9 +5136,7 @@
                         "3,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5572,7 +5146,6 @@
                         "1,14",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5580,7 +5153,6 @@
                         "bool",
                         "--target-shape",
                         "1,65536,1",
-                        "--target-shape",
                         "1,2,1,65537"
                     ]
                 ]
@@ -5624,31 +5196,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "25,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,25",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5656,7 +5221,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65540,3",
-                        "--target-shape",
                         "2,1,65530,1,1"
                     ]
                 ]
@@ -5670,9 +5234,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -5708,9 +5270,7 @@
                         "4,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -5720,7 +5280,6 @@
                         "3,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -5728,7 +5287,6 @@
                         "bool",
                         "--target-shape",
                         "1,65539,1",
-                        "--target-shape",
                         "1,2,1,65534"
                     ]
                 ]
@@ -5789,9 +5347,7 @@
                         "int8",
                         "--target-shape",
                         "1,65532,1",
-                        "--target-shape",
                         "1,2,65538",
-                        "--target-shape",
                         "2000,1,1"
                     ]
                 ]
@@ -5806,7 +5362,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-2.0,2.0",
@@ -5816,7 +5371,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-2.0,2.0",
@@ -5830,7 +5384,6 @@
                         "-2.0,2.0",
                         "--target-shape",
                         "4,65530,1",
-                        "--target-shape",
                         "1,65538,3"
                     ]
                 ]
@@ -5878,9 +5431,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -5904,9 +5455,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -5950,167 +5499,6 @@
             }
         }
     },
-    "maximum": {
-        "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
-        "generation": {
-            "tosa-bi": {
-                "supports_all": [
-                    "tosa-bi"
-                ],
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "16,64",
-                        "--target-rank",
-                        "1",
-                        "--target-rank",
-                        "2",
-                        "--target-rank",
-                        "3"
-                    ],
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "1,16",
-                        "--target-rank",
-                        "4",
-                        "--target-rank",
-                        "5"
-                    ],
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--target-shape",
-                        "1,2,65533,1",
-                        "--target-shape",
-                        "1,65539,1,1,1"
-                    ]
-                ]
-            },
-            "8k_level": {
-                "supports_all": [
-                    "tosa-bi"
-                ],
-                "no_negative_tests": "true",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "1,10",
-                        "--target-rank",
-                        "6"
-                    ]
-                ]
-            },
-            "tosa-mi": {
-                "supports_all": [
-                    "tosa-mi"
-                ],
-                "selector": "tosa-mi",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "fp32",
-                        "--target-dtype",
-                        "fp16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--tensor-dim-range",
-                        "16,64",
-                        "--target-rank",
-                        "0",
-                        "--target-rank",
-                        "1",
-                        "--target-rank",
-                        "2",
-                        "--target-rank",
-                        "3"
-                    ],
-                    [
-                        "--no-special-tests",
-                        "--target-dtype",
-                        "fp32",
-                        "--target-dtype",
-                        "fp16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--tensor-dim-range",
-                        "1,16",
-                        "--target-rank",
-                        "4",
-                        "--target-rank",
-                        "5"
-                    ],
-                    [
-                        "--no-special-tests",
-                        "--target-dtype",
-                        "fp32",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--target-shape",
-                        "65531,1,2,1",
-                        "--target-shape",
-                        "1,1,65541,1"
-                    ]
-                ]
-            },
-            "tosa-ext-bf16": {
-                "supports_all": [
-                    "tosa-ext-bf16"
-                ],
-                "selector": "tosa-mi",
-                "no_negative_tests": "true",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "bf16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--tensor-dim-range",
-                        "16,64",
-                        "--target-rank",
-                        "0",
-                        "--target-rank",
-                        "1",
-                        "--target-rank",
-                        "2",
-                        "--target-rank",
-                        "3"
-                    ],
-                    [
-                        "--no-special-tests",
-                        "--target-dtype",
-                        "bf16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--tensor-dim-range",
-                        "1,16",
-                        "--target-rank",
-                        "4",
-                        "--target-rank",
-                        "5"
-                    ]
-                ]
-            }
-        },
-        "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            },
-            "tosa-mi": {
-                "generator_select": "true"
-            }
-        }
-    },
     "max_pool2d": {
         "group": "tensor",
         "support_for": [
@@ -6128,7 +5516,6 @@
                         "int8",
                         "--target-shape",
                         "1,4,75,3",
-                        "--target-shape",
                         "1,11,44,1",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -6137,9 +5524,7 @@
                         "int8",
                         "--target-shape",
                         "1,65535,5,1",
-                        "--target-shape",
                         "1,3,65537,1",
-                        "--target-shape",
                         "1,3,2,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -6170,13 +5555,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,47,37,25",
-                        "--target-shape",
                         "1,15,13,38",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -6187,7 +5570,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65534,4,1",
-                        "--target-shape",
                         "1,6,65536,1",
                         "--max-conv-dilation",
                         "1",
@@ -6209,7 +5591,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,47,37,25",
-                        "--target-shape",
                         "1,15,13,38",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -6267,7 +5648,6 @@
                         "int16",
                         "--target-shape",
                         "1,4,75,3",
-                        "--target-shape",
                         "1,11,44,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -6333,9 +5713,13 @@
             }
         }
     },
-    "minimum": {
+    "maximum": {
         "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi": {
                 "supports_all": [
@@ -6349,9 +5733,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6361,7 +5743,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -6369,7 +5750,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -6399,7 +5779,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -6407,17 +5786,14 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -6425,7 +5801,155 @@
                         "1,16",
                         "--target-rank",
                         "4",
+                        "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "65531,1,2,1",
+                        "1,1,65541,1"
+                    ]
+                ]
+            },
+            "tosa-ext-bf16": {
+                "supports_all": [
+                    "tosa-ext-bf16"
+                ],
+                "selector": "tosa-mi",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "16,64",
                         "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
+            }
+        }
+    },
+    "minimum": {
+        "group": "ew_binary",
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
+        "generation": {
+            "tosa-bi": {
+                "supports_all": [
+                    "tosa-bi"
+                ],
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--target-shape",
+                        "1,2,65533,1",
+                        "1,65539,1,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "supports_all": [
+                    "tosa-bi"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            },
+            "tosa-mi": {
+                "supports_all": [
+                    "tosa-mi"
+                ],
+                "selector": "tosa-mi",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
                         "5"
                     ],
                     [
@@ -6435,7 +5959,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65531,2,1",
-                        "--target-shape",
                         "1,1,1,65538"
                     ]
                 ]
@@ -6456,11 +5979,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6472,7 +5992,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -6493,7 +6012,11 @@
     },
     "mul": {
         "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi-mi": {
                 "supports_any": [
@@ -6510,9 +6033,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6522,7 +6043,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -6536,27 +6056,22 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -6564,7 +6079,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65500,1",
-                        "--target-shape",
                         "1,68539,1,1,1"
                     ]
                 ]
@@ -6579,7 +6093,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -6616,7 +6129,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -6624,11 +6136,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6640,7 +6149,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -6662,11 +6170,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6676,7 +6181,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,3,65534",
-                        "--target-shape",
                         "1,2,1,65541,1"
                     ]
                 ]
@@ -6728,7 +6232,11 @@
     },
     "negate": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi": {
                 "supports_all": [
@@ -6738,31 +6246,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,22",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -6770,7 +6271,6 @@
                         "int8",
                         "--target-shape",
                         "3,1,65540,1",
-                        "--target-shape",
                         "1,1,2,1,65531"
                     ]
                 ]
@@ -6784,9 +6284,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -6805,7 +6303,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -6813,18 +6310,14 @@
                         "37,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -6832,9 +6325,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -6845,7 +6336,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,65541,3,1",
-                        "--target-shape",
                         "1,2,1,65532,1"
                     ]
                 ]
@@ -6866,11 +6356,8 @@
                         "17,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6883,9 +6370,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -6926,9 +6411,7 @@
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -6951,25 +6434,19 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
@@ -7019,7 +6496,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7027,16 +6503,13 @@
                         "1,65",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7044,9 +6517,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7067,9 +6538,7 @@
                         "1,65",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -7082,9 +6551,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7106,9 +6573,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -7132,9 +6597,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -7152,7 +6615,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7163,17 +6625,13 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--oversize"
                     ]
@@ -7203,11 +6661,8 @@
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--oversize"
                     ]
@@ -7262,7 +6717,11 @@
     },
     "pow": {
         "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -7272,7 +6731,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7280,11 +6738,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -7296,7 +6751,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -7316,11 +6770,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -7330,7 +6781,6 @@
                         "-max,max",
                         "--target-shape",
                         "65534,3,1,1",
-                        "--target-shape",
                         "2,65541,1,1,1"
                     ]
                 ]
@@ -7344,7 +6794,11 @@
     },
     "reciprocal": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -7354,7 +6808,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7362,18 +6815,14 @@
                         "38,62",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
@@ -7381,9 +6830,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7403,11 +6850,8 @@
                         "15,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -7420,9 +6864,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -7433,7 +6875,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65536,4",
-                        "--target-shape",
                         "2,65535,1,1,1"
                     ]
                 ]
@@ -7461,11 +6902,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7473,7 +6911,6 @@
                         "bool",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -7492,7 +6929,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7525,11 +6961,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7537,7 +6970,6 @@
                         "bool",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -7556,7 +6988,6 @@
                         "1,9",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7587,19 +7018,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7607,7 +7033,6 @@
                         "int8",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -7622,15 +7047,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,11",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7644,7 +7066,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7652,11 +7073,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7666,7 +7084,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,1,65531",
-                        "--target-shape",
                         "1,1,65539,2"
                     ]
                 ]
@@ -7687,11 +7104,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ]
                 ]
@@ -7706,7 +7120,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7714,7 +7127,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7735,7 +7147,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7766,19 +7177,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,24",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7786,7 +7192,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65538,1",
-                        "--target-shape",
                         "2,65535,1,1"
                     ]
                 ]
@@ -7801,15 +7206,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "2,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7823,7 +7225,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7831,11 +7232,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7845,7 +7243,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65531,1",
-                        "--target-shape",
                         "1,65539,2,1"
                     ]
                 ]
@@ -7866,11 +7263,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ]
                 ]
@@ -7885,7 +7279,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7893,7 +7286,6 @@
                         "1,9",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7914,7 +7306,6 @@
                         "1,9",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -7945,7 +7336,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -7953,11 +7343,8 @@
                         "1,34",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -7967,7 +7354,6 @@
                         "-max,max",
                         "--target-shape",
                         "2,65527,3,1",
-                        "--target-shape",
                         "1,3,2,65541"
                     ]
                 ]
@@ -7987,11 +7373,8 @@
                         "1,34",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ]
                 ]
@@ -8006,9 +7389,7 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
-                        "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
@@ -8016,7 +7397,6 @@
                         "1,11",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8051,11 +7431,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -8063,7 +7440,6 @@
                         "int32",
                         "--target-shape",
                         "3,65532,1,1",
-                        "--target-shape",
                         "65536,1,1,2"
                     ]
                 ]
@@ -8082,7 +7458,6 @@
                         "1,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8095,23 +7470,18 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--tensor-dim-range",
                         "10,37",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -8121,7 +7491,6 @@
                         "-max,max",
                         "--target-shape",
                         "1001",
-                        "--target-shape",
                         "50,200"
                     ],
                     [
@@ -8131,7 +7500,6 @@
                         "-max,max",
                         "--target-shape",
                         "65529",
-                        "--target-shape",
                         "65537,2"
                     ]
                 ]
@@ -8149,17 +7517,13 @@
                         "-max,max",
                         "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--tensor-dim-range",
                         "10,37",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -8169,11 +7533,8 @@
                         "-max,max",
                         "--target-shape",
                         "16001",
-                        "--target-shape",
                         "16,1000",
-                        "--target-shape",
                         "1,3,65529,1",
-                        "--target-shape",
                         "1,65537,1,1"
                     ]
                 ]
@@ -8188,7 +7549,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -8196,7 +7556,6 @@
                         "5,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8217,7 +7576,6 @@
                         "5,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8245,39 +7603,28 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "16,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -8285,7 +7632,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1"
                     ]
                 ]
@@ -8299,13 +7645,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "1,10",
@@ -8327,9 +7669,7 @@
                         "16,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -8339,7 +7679,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -8417,11 +7756,8 @@
                         "bool",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -8436,19 +7772,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -8458,7 +7788,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -8474,15 +7803,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -8502,7 +7828,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -8518,15 +7843,12 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -8535,7 +7857,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -8543,9 +7864,7 @@
                         "1,10",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -8558,9 +7877,7 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65536,1",
-                        "--target-shape",
                         "1,65535,1,2",
-                        "--target-shape",
                         "7,13,11",
                         "--num-rand-permutations",
                         "2"
@@ -8581,9 +7898,7 @@
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -8598,9 +7913,7 @@
                         "1,10",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -8624,9 +7937,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -8650,9 +7961,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -8747,7 +8056,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max"
@@ -8847,11 +8155,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ]
                 ]
@@ -8864,19 +8169,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -8884,7 +8184,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535",
-                        "--target-shape",
                         "1,65540,1,2"
                     ]
                 ]
@@ -8898,15 +8197,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8925,7 +8221,6 @@
                         "1,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -8939,7 +8234,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -8947,16 +8241,13 @@
                         "1,48",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -8964,9 +8255,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -8977,7 +8266,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65537",
-                        "--target-shape",
                         "1,65535,1,2"
                     ]
                 ]
@@ -8998,9 +8286,7 @@
                         "1,48",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9013,9 +8299,7 @@
                         "1,11",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -9037,9 +8321,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -9061,9 +8343,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -9107,7 +8387,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,16,512",
-                        "--target-shape",
                         "1,8192,2"
                     ]
                 ]
@@ -9125,7 +8404,11 @@
     },
     "rsqrt": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -9135,7 +8418,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9143,18 +8425,14 @@
                         "39,60",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9162,9 +8440,7 @@
                         "1,13",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -9175,7 +8451,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,3,65541",
-                        "--target-shape",
                         "65532,1,3,1,1"
                     ]
                 ]
@@ -9195,11 +8470,8 @@
                         "15,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9212,9 +8484,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -9240,7 +8510,6 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
@@ -9252,9 +8521,7 @@
                         "int8",
                         "--target-shape",
                         "1,65540,1",
-                        "--target-shape",
                         "1,1,65533",
-                        "--target-shape",
                         "3000,7,1"
                     ]
                 ]
@@ -9268,7 +8535,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9284,9 +8550,7 @@
                         "-max,max",
                         "--target-shape",
                         "1,65541,1",
-                        "--target-shape",
                         "1,1,65531",
-                        "--target-shape",
                         "2989,6,1"
                     ]
                 ]
@@ -9378,9 +8642,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9390,7 +8652,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -9403,31 +8664,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -9435,7 +8689,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -9451,9 +8704,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -9487,7 +8738,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9495,15 +8745,12 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9511,7 +8758,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -9521,7 +8767,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,2,65534,2,1",
-                        "--target-shape",
                         "1,1,65539,2",
                         "--num-rand-permutations",
                         "2"
@@ -9543,9 +8788,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9557,7 +8800,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -9575,7 +8817,11 @@
     },
     "sigmoid": {
         "group": "activation",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -9585,7 +8831,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-16.0,16.0",
@@ -9593,18 +8838,14 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-16.0,16.0",
@@ -9612,9 +8853,7 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -9625,7 +8864,6 @@
                         "-16.0,16.0",
                         "--target-shape",
                         "1,2,65538,2,1",
-                        "--target-shape",
                         "1,3,1,65533"
                     ]
                 ]
@@ -9645,11 +8883,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9662,9 +8897,7 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -9678,7 +8911,11 @@
     },
     "sin": {
         "group": "ew_unary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -9688,7 +8925,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9696,16 +8932,13 @@
                         "35,60",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9713,9 +8946,7 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -9726,7 +8957,6 @@
                         "-max,max",
                         "--target-shape",
                         "3,1,65534,2",
-                        "--target-shape",
                         "65533,1,3,2,1"
                     ]
                 ]
@@ -9746,9 +8976,7 @@
                         "15,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -9761,9 +8989,7 @@
                         "1,10",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -9797,9 +9023,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -9830,7 +9054,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -9845,17 +9068,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -9863,9 +9082,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
@@ -9879,7 +9096,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -9895,15 +9111,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -9920,7 +9133,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9928,9 +9140,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -9939,7 +9149,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -9947,9 +9156,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -9972,9 +9179,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -9989,9 +9194,7 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -10004,7 +9207,6 @@
                         "-2.0,2.0",
                         "--target-shape",
                         "1,1,655341,1",
-                        "--target-shape",
                         "1,65539,1,1",
                         "--num-rand-permutations",
                         "2"
@@ -10028,9 +9230,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10054,9 +9254,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10080,7 +9278,11 @@
     },
     "sub": {
         "group": "ew_binary",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-bi-mi": {
                 "supports_any": [
@@ -10096,9 +9298,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10108,7 +9308,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -10116,7 +9315,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -10146,7 +9344,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -10154,11 +9351,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10168,7 +9362,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65533,3",
-                        "--target-shape",
                         "1,1,2,1,65545"
                     ]
                 ]
@@ -10189,11 +9382,8 @@
                         "16,64",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10205,7 +9395,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -10268,9 +9457,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10280,7 +9467,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -10288,7 +9474,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65537,1,1,3"
                     ]
                 ]
@@ -10338,9 +9523,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10350,7 +9533,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ]
                 ]
@@ -10368,7 +9550,11 @@
     },
     "tanh": {
         "group": "activation",
-        "support_for": [ "lazy_data_gen", "stable_random_gen", "random_const_inputs" ],
+        "support_for": [
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
+        ],
         "generation": {
             "tosa-mi": {
                 "supports_all": [
@@ -10378,7 +9564,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-8.0,8.0",
@@ -10386,18 +9571,14 @@
                         "18,60",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-8.0,8.0",
@@ -10405,9 +9586,7 @@
                         "1,24",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
@@ -10418,7 +9597,6 @@
                         "-8.0,8.0",
                         "--target-shape",
                         "1,65535,2,1,1",
-                        "--target-shape",
                         "1,65540,1,2"
                     ]
                 ]
@@ -10438,11 +9616,8 @@
                         "18,60",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -10455,9 +9630,7 @@
                         "1,24",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -10490,11 +9663,8 @@
                         "1,16",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ]
                 ]
@@ -10512,7 +9682,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -10526,17 +9695,13 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -10544,7 +9709,6 @@
                         "int8",
                         "--target-shape",
                         "65533",
-                        "--target-shape",
                         "1,2,65540,1"
                     ]
                 ]
@@ -10558,13 +9722,11 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -10579,7 +9741,6 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -10587,9 +9748,7 @@
                         "4,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10598,7 +9757,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -10606,9 +9764,7 @@
                         "1,13",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -10621,7 +9777,6 @@
                         "-max,max",
                         "--target-shape",
                         "65535",
-                        "--target-shape",
                         "1,65543,2,1",
                         "--num-rand-permutations",
                         "2"
@@ -10645,9 +9800,7 @@
                         "4,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10662,9 +9815,7 @@
                         "1,9",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -10688,9 +9839,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10714,9 +9863,7 @@
                         "32,60",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10756,7 +9903,6 @@
                         "bool",
                         "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -10773,7 +9919,6 @@
                         "int8",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
                         "--num-rand-permutations",
                         "2"
@@ -10781,13 +9926,10 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -10797,7 +9939,6 @@
                         "int8",
                         "--target-shape",
                         "1,65537,1,2",
-                        "--target-shape",
                         "65535,1,1,1",
                         "--num-rand-permutations",
                         "1"
@@ -10813,15 +9954,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -10837,15 +9975,12 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10854,7 +9989,6 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
@@ -10862,9 +9996,7 @@
                         "1,12",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -10877,7 +10009,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65539,2",
-                        "--target-shape",
                         "1,1,1,65535",
                         "--num-rand-permutations",
                         "1"
@@ -10898,9 +10029,7 @@
                         "-max,max",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10915,9 +10044,7 @@
                         "1,12",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "1"
@@ -10941,9 +10068,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -10967,9 +10092,7 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -11009,7 +10132,6 @@
                         "int8",
                         "--target-shape",
                         "1,49,33,1",
-                        "--target-shape",
                         "1,11,33,3",
                         "--tensor-dim-range",
                         "1,18",
@@ -11069,13 +10191,11 @@
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "10,24,9,13",
-                        "--target-shape",
                         "8,14,20,5",
                         "--tensor-dim-range",
                         "1,16",
@@ -11110,7 +10230,6 @@
                         "-max,max",
                         "--target-shape",
                         "10,24,9,13",
-                        "--target-shape",
                         "8,14,20,5",
                         "--tensor-dim-range",
                         "1,16",
@@ -11135,7 +10254,6 @@
                         "32,64",
                         "--target-shape",
                         "10,24,9,13",
-                        "--target-shape",
                         "8,14,20,5",
                         "--tensor-dim-range",
                         "1,16",
@@ -11161,7 +10279,6 @@
                         "32,64",
                         "--target-shape",
                         "10,24,9,13",
-                        "--target-shape",
                         "8,14,20,5",
                         "--tensor-dim-range",
                         "1,16",
@@ -11182,7 +10299,6 @@
                         "int16",
                         "--target-shape",
                         "1,49,33,1",
-                        "--target-shape",
                         "1,11,33,3",
                         "--tensor-dim-range",
                         "1,18",
@@ -11251,7 +10367,6 @@
                         "int32",
                         "--target-shape",
                         "3,22,17,1,2",
-                        "--target-shape",
                         "1,65537,2,1"
                     ]
                 ]
