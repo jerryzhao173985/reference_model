@@ -15,9 +15,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -27,7 +25,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -35,7 +32,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -80,9 +76,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -92,7 +86,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -100,7 +93,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -141,15 +133,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "32,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -157,7 +146,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,32",
@@ -171,7 +159,6 @@
                         "int8",
                         "--target-shape",
                         "1,3,1,65535",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -185,13 +172,11 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -221,31 +206,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -253,7 +231,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -264,9 +241,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -299,11 +274,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,3",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -312,7 +285,6 @@
                         "int8",
                         "--target-shape",
                         "1,65535,5,1",
-                        "--target-shape",
                         "1,3,65537,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -325,11 +297,11 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "3,10",
-                        "--level-8k-sizes"                    ]
+                        "--level-8k-sizes"
+                    ]
                 ]
             }
         },
@@ -368,17 +340,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -388,7 +356,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -396,7 +363,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -407,7 +373,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -439,17 +404,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "2,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -459,7 +420,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -467,7 +427,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65537,1",
-                        "--target-shape",
                         "1,65538,1,1,1"
                     ]
                 ]
@@ -478,21 +437,17 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -524,17 +479,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "3,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -544,7 +495,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -552,7 +502,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65538,1",
-                        "--target-shape",
                         "1,65537,1,1,1"
                     ]
                 ]
@@ -563,7 +512,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -595,17 +543,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -615,7 +559,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -623,7 +566,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65536,1,1,1"
                     ]
                 ]
@@ -634,7 +576,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -666,35 +607,26 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -702,7 +634,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1,1",
-                        "--target-shape",
                         "1,65538,1,2"
                     ]
                 ]
@@ -713,11 +644,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
@@ -759,27 +687,22 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "20,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -787,7 +710,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,1,65536",
-                        "--target-shape",
                         "1,3,65537,1,1"
                     ]
                 ]
@@ -798,7 +720,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -834,9 +755,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -846,7 +765,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -854,7 +772,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -895,19 +812,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-const-inputs-concat",
                         "3"
@@ -915,17 +827,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
                         "--num-const-inputs-concat",
                         "1"
@@ -935,7 +843,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-const-inputs-concat",
                         "2"
@@ -948,11 +855,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
@@ -987,19 +891,13 @@
                     [
                         "--target-dtype",
                         "bool",
-                        "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -1035,37 +933,26 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
-                        "--target-dtype",
                         "int48",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
-                        "--target-dtype",
                         "int48",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1073,7 +960,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65537,1,1",
-                        "--target-shape",
                         "1,65530,1,2"
                     ]
                 ]
@@ -1102,11 +988,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,49,42,28",
-                        "--target-shape",
                         "1,11,44,13",
                         "--tensor-dim-range",
                         "1,16",
@@ -1117,7 +1001,6 @@
                         "int8",
                         "--target-shape",
                         "1,65535,3,1",
-                        "--target-shape",
                         "1,2,65536,1",
                         "--max-conv-dilation",
                         "1",
@@ -1134,7 +1017,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "2,5",
@@ -1182,11 +1064,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,9,21,14,1",
-                        "--target-shape",
                         "1,9,11,12,3",
                         "--tensor-dim-range",
                         "1,4",
@@ -1197,7 +1077,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,2,1",
-                        "--target-shape",
                         "1,1,2,65536,1",
                         "--max-conv-dilation",
                         "1",
@@ -1214,7 +1093,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "2,5",
@@ -1263,11 +1141,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,9,44,3",
-                        "--target-shape",
                         "1,11,33,4",
                         "--tensor-dim-range",
                         "1,16",
@@ -1278,7 +1154,6 @@
                         "int8",
                         "--target-shape",
                         "1,65532,2,1",
-                        "--target-shape",
                         "1,4,65537,1",
                         "--max-conv-dilation",
                         "1",
@@ -1295,7 +1170,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "2,5",
@@ -1343,19 +1217,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ]
                 ]
@@ -1402,9 +1271,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1414,7 +1281,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1422,7 +1288,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65501,1",
-                        "--target-shape",
                         "1,65541,1,1,1"
                     ]
                 ]
@@ -1463,7 +1328,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16"
                     ],
                     [
@@ -1471,7 +1335,6 @@
                         "int8",
                         "--target-shape",
                         "444,1",
-                        "--target-shape",
                         "3,65538",
                         "--tensor-dim-range",
                         "1,2"
@@ -1481,7 +1344,6 @@
                         "int8",
                         "--target-shape",
                         "3,16",
-                        "--target-shape",
                         "1,23",
                         "--tensor-dim-range",
                         "100,200"
@@ -1511,7 +1373,6 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
@@ -1525,9 +1386,7 @@
                         "5,20",
                         "--target-shape",
                         "2,65533,1",
-                        "--target-shape",
                         "1,2,65533",
-                        "--target-shape",
                         "5000,1,1"
                     ]
                 ]
@@ -1559,9 +1418,7 @@
                         "10,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1571,7 +1428,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1579,7 +1435,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65530,1",
-                        "--target-shape",
                         "1,65539,1,2,1"
                     ]
                 ]
@@ -1624,9 +1479,7 @@
                         "20,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1636,7 +1489,6 @@
                         "1,20",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1644,7 +1496,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,3,1"
                     ]
                 ]
@@ -1686,35 +1537,26 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,61",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1722,7 +1564,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65536,1,1",
-                        "--target-shape",
                         "1,65531,1,2"
                     ]
                 ]
@@ -1754,9 +1595,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1766,7 +1605,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1774,7 +1612,6 @@
                         "int32",
                         "--target-shape",
                         "1,65533,1",
-                        "--target-shape",
                         "1,1,65539,1,1"
                     ]
                 ]
@@ -1819,9 +1656,7 @@
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1831,7 +1666,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1839,7 +1673,6 @@
                         "bool",
                         "--target-shape",
                         "1,65538,1",
-                        "--target-shape",
                         "1,2,1,65536"
                     ]
                 ]
@@ -1880,31 +1713,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1912,7 +1738,6 @@
                         "int8",
                         "--target-shape",
                         "1,65532,1,1",
-                        "--target-shape",
                         "1,2,1,65538"
                     ]
                 ]
@@ -1923,9 +1748,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -1961,9 +1784,7 @@
                         "2,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -1973,7 +1794,6 @@
                         "1,15",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -1981,7 +1801,6 @@
                         "bool",
                         "--target-shape",
                         "1,65537,1",
-                        "--target-shape",
                         "1,2,1,65535"
                     ]
                 ]
@@ -2026,9 +1845,7 @@
                         "3,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2038,7 +1855,6 @@
                         "1,14",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2046,7 +1862,6 @@
                         "bool",
                         "--target-shape",
                         "1,65536,1",
-                        "--target-shape",
                         "1,2,1,65537"
                     ]
                 ]
@@ -2087,31 +1902,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "25,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,25",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2119,7 +1927,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65540,3",
-                        "--target-shape",
                         "2,1,65530,1,1"
                     ]
                 ]
@@ -2130,9 +1937,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -2168,9 +1973,7 @@
                         "4,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2180,7 +1983,6 @@
                         "3,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2188,7 +1990,6 @@
                         "bool",
                         "--target-shape",
                         "1,65539,1",
-                        "--target-shape",
                         "1,2,1,65534"
                     ]
                 ]
@@ -2229,7 +2030,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "16,64"
@@ -2237,7 +2037,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,16"
@@ -2247,75 +2046,8 @@
                         "int8",
                         "--target-shape",
                         "1,65532,1",
-                        "--target-shape",
                         "1,2,65538",
-                        "--target-shape",
                         "2000,1,1"
-                    ]
-                ]
-            }
-        },
-        "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
-        }
-    },
-    "maximum": {
-        "group": "ew_binary",
-        "profile": [
-            "tosa-bi",
-            "tosa-mi"
-        ],
-        "generation": {
-            "standard": {
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "16,64",
-                        "--target-rank",
-                        "1",
-                        "--target-rank",
-                        "2",
-                        "--target-rank",
-                        "3"
-                    ],
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "1,16",
-                        "--target-rank",
-                        "4",
-                        "--target-rank",
-                        "5"
-                    ],
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--target-shape",
-                        "1,2,65533,1",
-                        "--target-shape",
-                        "1,65539,1,1,1"
-                    ]
-                ]
-            },
-            "8k_level": {
-                "no_negative_tests": "true",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "int32",
-                        "--tensor-dim-range",
-                        "1,10",
-                        "--target-rank",
-                        "6"
                     ]
                 ]
             }
@@ -2342,11 +2074,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,4,75,3",
-                        "--target-shape",
                         "1,11,44,1",
                         "--allow-pooling-and-conv-oversizes"
                     ],
@@ -2355,9 +2085,7 @@
                         "int8",
                         "--target-shape",
                         "1,65535,5,1",
-                        "--target-shape",
                         "1,3,65537,1",
-                        "--target-shape",
                         "1,3,2,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
@@ -2370,7 +2098,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "3,10",
@@ -2402,6 +2129,67 @@
             }
         }
     },
+    "maximum": {
+        "group": "ew_binary",
+        "profile": [
+            "tosa-bi",
+            "tosa-mi"
+        ],
+        "generation": {
+            "standard": {
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--target-shape",
+                        "1,2,65533,1",
+                        "1,65539,1,1,1"
+                    ]
+                ]
+            },
+            "8k_level": {
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            }
+        },
+        "selection": {
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
+        }
+    },
     "minimum": {
         "group": "ew_binary",
         "profile": [
@@ -2418,9 +2206,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -2430,7 +2216,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2438,7 +2223,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -2479,31 +2263,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2511,7 +2288,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65500,1",
-                        "--target-shape",
                         "1,68539,1,1,1"
                     ]
                 ]
@@ -2522,9 +2298,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -2558,31 +2332,24 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "22,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,22",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -2590,7 +2357,6 @@
                         "int8",
                         "--target-shape",
                         "3,1,65540,1",
-                        "--target-shape",
                         "1,1,2,1,65531"
                     ]
                 ]
@@ -2601,9 +2367,7 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,10",
@@ -2635,29 +2399,21 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
@@ -2739,11 +2495,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -2751,7 +2504,6 @@
                         "bool",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -2767,7 +2519,6 @@
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -2800,11 +2551,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -2812,7 +2560,6 @@
                         "bool",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -2828,7 +2575,6 @@
                         "1,9",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -2857,19 +2603,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -2877,7 +2618,6 @@
                         "int8",
                         "--target-shape",
                         "65530,1,1,1",
-                        "--target-shape",
                         "2,65538,1,1"
                     ]
                 ]
@@ -2889,15 +2629,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,11",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -2926,19 +2663,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "1,24",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -2946,7 +2678,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65538,1",
-                        "--target-shape",
                         "2,65535,1,1"
                     ]
                 ]
@@ -2958,15 +2689,12 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "2,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -2999,11 +2727,8 @@
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -3011,7 +2736,6 @@
                         "int32",
                         "--target-shape",
                         "3,65532,1,1",
-                        "--target-shape",
                         "65536,1,1,2"
                     ]
                 ]
@@ -3027,7 +2751,6 @@
                         "1,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -3056,43 +2779,30 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "int48",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "16,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "int48",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3100,7 +2810,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1"
                     ]
                 ]
@@ -3111,15 +2820,10 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "int48",
-                        "--target-dtype",
                         "uint8",
-                        "--target-dtype",
                         "uint16",
                         "--tensor-dim-range",
                         "1,10",
@@ -3178,19 +2882,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -3200,7 +2898,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -3213,17 +2910,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -3255,7 +2948,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16"
                     ],
                     [
@@ -3274,7 +2966,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--level-8k-sizes",
                         "--tensor-dim-range",
@@ -3307,21 +2998,15 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -3329,7 +3014,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535",
-                        "--target-shape",
                         "1,65540,1,2"
                     ]
                 ]
@@ -3340,17 +3024,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,12",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -3378,7 +3058,6 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,64",
@@ -3390,9 +3069,7 @@
                         "int8",
                         "--target-shape",
                         "1,65540,1",
-                        "--target-shape",
                         "1,1,65533",
-                        "--target-shape",
                         "3000,7,1"
                     ]
                 ]
@@ -3420,35 +3097,26 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3456,7 +3124,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -3469,11 +3136,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
@@ -3505,19 +3169,14 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
                         "--num-rand-permutations",
                         "2"
@@ -3525,11 +3184,8 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,16",
@@ -3543,7 +3199,6 @@
                         "int8",
                         "--target-shape",
                         "1,1,65535,1",
-                        "--target-shape",
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
@@ -3556,17 +3211,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -3601,9 +3252,7 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
@@ -3613,7 +3262,6 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3621,7 +3269,6 @@
                         "int32",
                         "--target-shape",
                         "1,2,65533,1",
-                        "--target-shape",
                         "1,65539,1,1,1"
                     ]
                 ]
@@ -3662,27 +3309,22 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3"
                     ],
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5"
                     ],
                     [
@@ -3690,7 +3332,6 @@
                         "int8",
                         "--target-shape",
                         "1,2,65536,1",
-                        "--target-shape",
                         "1,65537,1,1,3"
                     ]
                 ]
@@ -3701,7 +3342,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "1,10",
@@ -3733,17 +3373,13 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
                         "4,32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -3753,11 +3389,8 @@
                         "1,16",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -3765,7 +3398,6 @@
                         "int8",
                         "--target-shape",
                         "65533",
-                        "--target-shape",
                         "1,2,65540,1"
                     ]
                 ]
@@ -3776,15 +3408,12 @@
                     [
                         "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
@@ -3814,7 +3443,6 @@
                         "int8",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
                         "--num-rand-permutations",
                         "2"
@@ -3822,15 +3450,11 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--target-rank",
                         "3",
-                        "--target-rank",
                         "4",
                         "--num-rand-permutations",
                         "2"
@@ -3840,7 +3464,6 @@
                         "int8",
                         "--target-shape",
                         "1,65537,1,2",
-                        "--target-shape",
                         "65535,1,1,1",
                         "--num-rand-permutations",
                         "1"
@@ -3853,17 +3476,13 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
-                        "--target-dtype",
                         "int32",
-                        "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
                         "5",
-                        "--target-rank",
                         "6",
                         "--num-rand-permutations",
                         "2"
@@ -3895,11 +3514,9 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--target-shape",
                         "1,49,33,1",
-                        "--target-shape",
                         "1,11,33,3",
                         "--tensor-dim-range",
                         "1,18",
@@ -3924,7 +3541,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
                         "2,5",
@@ -3973,11 +3589,8 @@
                         "int32",
                         "--target-rank",
                         "1",
-                        "--target-rank",
                         "2",
-                        "--target-rank",
                         "3",
-                        "--target-rank",
                         "4"
                     ],
                     [
@@ -3985,7 +3598,6 @@
                         "int32",
                         "--target-shape",
                         "3,22,17,1,2",
-                        "--target-shape",
                         "1,65537,2,1"
                     ]
                 ]

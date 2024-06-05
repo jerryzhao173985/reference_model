@@ -178,17 +178,21 @@ def build_op_tests(
             idx = 0
             while idx < len(arglist):
                 if arglist[idx] == "--target-dtype":
-                    if arglist[idx + 1] not in target_dtypes_args:
-                        target_dtypes_args.extend(arglist[idx : idx + 2])
-                    idx += 1  # skip over option (and then argument below)
-                idx += 1
+                    idx += 1
+                    # Support single or multiple args after --target-dtype
+                    while idx < len(arglist) and (not arglist[idx].startswith("--")):
+                        if arglist[idx] not in target_dtypes_args:
+                            target_dtypes_args.append(arglist[idx])
+                        idx += 1
+                else:
+                    idx += 1
         build_cmd_neg_test = build_cmd_base.copy()
         build_cmd_neg_test.extend(["--test-type", "negative"])
         # Limit sizes of negative tests
         dim_range = gen_neg_dim_range if gen_neg_dim_range is not None else "1,16"
-
         build_cmd_neg_test.extend(["--tensor-dim-range", dim_range])
-        build_cmd_neg_test.extend(target_dtypes_args)
+        for arg in target_dtypes_args:
+            build_cmd_neg_test.extend(["--target-dtype", arg])
         build_cmds_list.append(build_cmd_neg_test)
 
     logger.info(f"Creating {operator} tests in {len(build_cmds_list)} batch(es)")
