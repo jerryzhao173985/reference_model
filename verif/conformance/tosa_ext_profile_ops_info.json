@@ -1876,7 +1876,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -1925,7 +1927,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -4051,7 +4055,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -4098,7 +4104,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -9497,7 +9505,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -9545,7 +9555,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -10266,7 +10278,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--no-special-tests",
@@ -10314,7 +10328,9 @@
                         "--target-rank",
                         "4",
                         "--target-rank",
-                        "5"
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
