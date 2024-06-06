@@ -1613,7 +1613,7 @@ void fp_special_test_FP32(const std::string tosaName,
                           const std::string templateJsonCfg,
                           const std::string opStr,
                           const std::string startIndexStr,
-                          const std::vector<uint32_t> expected)
+                          const std::vector<std::pair<float, float>> expected)
 {
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_OP_", opStr);
@@ -1621,7 +1621,23 @@ void fp_special_test_FP32(const std::string tosaName,
 
     std::vector<float> buffer(tosaElements);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
-    check_output<float>(buffer, expected);
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        std::stringstream msg;
+        msg << "index: " << idx << " expected between: " << expected[idx].first << " and: " << expected[idx].second
+            << ", but got: " << buffer[idx];
+        if (std::isnan(expected[idx].first) || std::isnan(expected[idx].second))
+        {
+            REQUIRE_MESSAGE((std::isnan(expected[idx].first) && std::isnan(expected[idx].second)),
+                            "Incorrect test - cannot have range that includes NaN, both values must be NaN");
+            REQUIRE_MESSAGE(std::isnan(buffer[idx]), msg.str());
+        }
+        else
+        {
+            bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
+            REQUIRE_MESSAGE(withinRange, msg.str());
+        }
+    }
 }
 
 TEST_CASE("positive - FP32 FP Special")
@@ -1656,51 +1672,55 @@ TEST_CASE("positive - FP32 FP Special")
     const std::string tosaName0 = "input0";
     const std::string tosaName1 = "input1";
     const size_t tosaElements   = 5 * 6 * 7;
+    const float inf             = std::numeric_limits<float>::infinity();
+    const float max             = std::numeric_limits<float>::max();
+    const float ulpmax          = 3.777893186295716e+22;    // max - nextafter(max, 0.0)
+    const float mindenorm       = std::numeric_limits<float>::denorm_min();
 
     SUBCASE("equal, input 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x7F800000, 0x0 };
+        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { 0.0, 0.0 } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("equal, input 1")
     {
-        std::vector<uint32_t> expected = { 0x80000000, 0xFF800000, 0x80000000 };
+        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -0.0, -0.0 } };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater, input 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x7F800000, 0x0 };
+        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { 0.0, 0.0 } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "GREATER", "0", expected);
     }
     SUBCASE("greater, input 1")
     {
-        std::vector<uint32_t> expected = { 0x80000000, 0xFF800000, 0x80000000 };
+        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -0.0, -0.0 } };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "GREATER", "0", expected);
     }
     SUBCASE("add, input 0")
     {
-        std::vector<uint32_t> expected = { 0x7F7FFFFF, 0x7F800000, 0x7F7FFFFF };
+        std::vector<std::pair<float, float>> expected = { { ulpmax, max }, { -max, -max }, { inf, inf } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("add, input 1")
     {
-        std::vector<uint32_t> expected = { 0x3F800000, 0xFF800000, 0x3F800000 };
+        std::vector<std::pair<float, float>> expected = { { max, max }, { -max, -ulpmax }, { -inf, -inf } };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("maximum, input 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x80000000, 0x7F800000 };
+        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { -0.0, -0.0 }, { inf, inf } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, input 1")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x80000000, 0x7F800000 };
+        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { -0.0, -0.0 }, { inf, inf } };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, startIndex 100")
     {
         // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 13) 100 % 13 = 9
-        std::vector<uint32_t> expected = { 0x80000001, 0x3F800000, 0xBF800000 };
+        std::vector<std::pair<float, float>> expected = { { -mindenorm, -mindenorm }, { 1.0, 1.0 }, { -1.0, -1.0 } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "100", expected);
     }
 }

@@ -79,6 +79,7 @@ struct FpSpecialInfo
     FpSpecialInfo() = default;
 
     uint8_t startIndex;
+    int64_t rngSeed;
 };
 
 /// \brief Generator configuration

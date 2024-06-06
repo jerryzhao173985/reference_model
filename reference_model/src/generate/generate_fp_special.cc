@@ -16,9 +16,130 @@
 #include "half.hpp"
 
 #include <map>
+#include <random>
 
 namespace
 {
+template <typename DataType>
+class RandomGen
+{
+public:
+    RandomGen(uint64_t seed)
+        : _gen(seed)
+    {}
+
+    DataType getFloat(DataType min, DataType max)
+    {
+        if (!_rangeOk(min, max))
+            return static_cast<DataType>(1.5);
+
+        auto dis     = std::uniform_real_distribution<double>(static_cast<double>(min), static_cast<double>(max));
+        DataType rnd = static_cast<DataType>(dis(_gen));
+        return rnd;
+    }
+
+    DataType getInteger(DataType min, DataType max)
+    {
+        return _getTnteger(min, max, Any);
+    }
+
+    DataType getEvenInteger(DataType min, DataType max)
+    {
+        return _getTnteger(min, max, Even);
+    }
+
+    DataType getOddInteger(DataType min, DataType max)
+    {
+        return _getTnteger(min, max, Odd);
+    }
+
+private:
+    enum _integerTypeEnum
+    {
+        Any,
+        Even,
+        Odd
+    };
+
+    bool _rangeOk(DataType min, DataType max)
+    {
+        if (min > max || min == max)
+        {
+            WARNING("[Generator][FS] Bad random range - min:%g max:%g", static_cast<double>(min),
+                    static_cast<double>(max));
+            return false;
+        }
+        return true;
+    }
+
+    bool _checkEven(DataType val)
+    {
+        if ((val != static_cast<DataType>(round(val))) || (val / 2.0 != round(val / 2.0)))
+        {
+            WARNING("[Generator][FS] Bad even integer generated - %g", static_cast<double>(val));
+            return false;
+        }
+        return true;
+    }
+
+    bool _checkOdd(DataType val)
+    {
+        if ((val != static_cast<DataType>(round(val))) || (val / 2.0 == round(val / 2.0)))
+        {
+            WARNING("[Generator][FS] Bad odd integer generated - %g", static_cast<double>(val));
+            return false;
+        }
+        return true;
+    }
+
+    DataType _getTnteger(DataType min, DataType max, _integerTypeEnum type)
+    {
+        // Set min/max to integers
+        min = ceil(min);
+        max = floor(max);
+
+        if (!_rangeOk(min, max))
+        {
+            switch (type)
+            {
+                case Any:
+                    return static_cast<DataType>(1.0);
+                case Odd:
+                    return static_cast<DataType>(3.0);
+                case Even:
+                    return static_cast<DataType>(2.0);
+                default:
+                    WARNING("[Generator][FS] Unsupported integer type.");
+                    return static_cast<DataType>(0.0);
+            }
+        }
+
+        switch (type)
+        {
+            case Any:
+                return round(getFloat(min, max));
+            case Odd: {
+                DataType val =
+                    static_cast<DataType>(round(round(getFloat(min, max - static_cast<DataType>(1.0))) / 2) * 2 + 1);
+                // For large values of floating point (such as with FP8) there
+                // may not be enough range to express an odd number - so check
+                return _checkOdd(val) ? val : static_cast<DataType>(3.0);
+            }
+            case Even: {
+                DataType val =
+                    static_cast<DataType>(round(round(getFloat(min + static_cast<DataType>(1.0), max)) / 2) * 2);
+                // For large values of floating point (such as with FP8) there
+                // may not be enough range to express an even number - so check
+                return _checkEven(val) ? val : static_cast<DataType>(2.0);
+            }
+            default:
+                WARNING("[Generator][FS] Unsupported integer type.");
+                return static_cast<DataType>(0.0);
+        }
+    }
+
+    std::mt19937 _gen;
+};
 
 class SpecialValue
 {
@@ -32,65 +153,127 @@ public:
         Max,    // Largest positive floating point value
         One,
         MinDenorm,    // Smallest positive denormal floating point value
+        ULPMax,       // To force overflows to infinity when added/subtracted
+        RndFloat,
+        RndInteger,
+        RndEvenInteger,
+        RndOddInteger
     };
 
     SpecialValue() = default;
     SpecialValue(SpecialValsEnum v)
-        : value(v)
+        : _value(v)
+    {}
+    SpecialValue(SpecialValsEnum v, SpecialValsEnum rangeMin, SpecialValsEnum rangeMax)
+        : _value(v)
+        , _rangeMin(rangeMin)
+        , _rangeMax(rangeMax)
     {}
     operator SpecialValsEnum() const
     {
-        return value;
+        return _value;
     }
     SpecialValue& operator=(SpecialValsEnum v)
     {
-        value = v;
+        _value = v;
         return *this;
     }
     bool operator==(const SpecialValsEnum v) const
     {
-        return value == v;
+        return _value == v;
     }
     bool operator!=(const SpecialValsEnum v) const
     {
-        return value != v;
+        return _value != v;
     }
     SpecialValue operator-()
     {
-        negative = !negative;
+        _negative = !_negative;
         return *this;
     }
 
     template <typename DataType>
-    DataType evaluate()
+    DataType evaluate(RandomGen<DataType> rng)
     {
-        switch (value)
+        // Work out the simple values
+        switch (_value)
         {
             case Zero:
-                return static_cast<DataType>(negative ? -0.0 : 0.0);
             case Inf:
-                return negative ? -std::numeric_limits<DataType>::infinity()
-                                : std::numeric_limits<DataType>::infinity();
+            case NaN:
+            case Min:
+            case Max:
+            case One:
+            case MinDenorm:
+            case ULPMax:
+                return _static_evaluate<DataType>(_value, _negative);
+            default:
+                // Handle the Random and unsupported cases below
+                break;
+        }
+        // Must be random value, work out positive range
+        auto min = _static_evaluate<DataType>(_rangeMin, false);
+        auto max = _static_evaluate<DataType>(_rangeMax, false);
+
+        DataType rnd;
+        switch (_value)
+        {
+            case RndFloat:
+                rnd = rng.getFloat(min, max);
+                break;
+            case RndInteger:
+                rnd = rng.getInteger(min, max);
+                break;
+            case RndEvenInteger:
+                rnd = rng.getEvenInteger(min, max);
+                break;
+            case RndOddInteger:
+                rnd = rng.getOddInteger(min, max);
+                break;
+            default:
+                WARNING("[Generator][FS] Unsupported special value type.");
+                return static_cast<DataType>(0.0);
+        }
+        return _negative ? -rnd : rnd;
+    }
+
+private:
+    template <typename DataType>
+    DataType _static_evaluate(SpecialValsEnum v, bool negate)
+    {
+        // Work out the static value
+        switch (v)
+        {
+            case Zero:
+                return static_cast<DataType>(negate ? -0.0 : 0.0);
+            case Inf:
+                return negate ? -std::numeric_limits<DataType>::infinity() : std::numeric_limits<DataType>::infinity();
             case NaN:
                 return std::numeric_limits<DataType>::quiet_NaN();
             case Min:
-                return negative ? -std::numeric_limits<DataType>::min() : std::numeric_limits<DataType>::min();
+                return negate ? -std::numeric_limits<DataType>::min() : std::numeric_limits<DataType>::min();
             case Max:
-                return negative ? -std::numeric_limits<DataType>::max() : std::numeric_limits<DataType>::max();
+                return negate ? -std::numeric_limits<DataType>::max() : std::numeric_limits<DataType>::max();
             case One:
-                return static_cast<DataType>(negative ? -1.0 : 1.0);
+                return static_cast<DataType>(negate ? -1.0 : 1.0);
             case MinDenorm:
-                return negative ? -std::numeric_limits<DataType>::denorm_min()
-                                : std::numeric_limits<DataType>::denorm_min();
+                return negate ? -std::numeric_limits<DataType>::denorm_min()
+                              : std::numeric_limits<DataType>::denorm_min();
+            case ULPMax: {
+                DataType max = std::numeric_limits<DataType>::max();
+                DataType ulp = max - nextafter(max, static_cast<DataType>(0.0));
+                return negate ? -ulp : ulp;
+            }
             default:
-                WARNING("[Generator][FS] Uninitialised special value.");
+                // Assumption that we only get called with a valid enum
                 return static_cast<DataType>(0.0);
         }
     }
 
-private:
-    SpecialValsEnum value;
-    bool negative = false;
+    SpecialValsEnum _value;
+    SpecialValsEnum _rangeMin = SpecialValsEnum::One;
+    SpecialValsEnum _rangeMax = SpecialValsEnum::Max;
+    bool _negative            = false;
 };
 
 /*
@@ -107,27 +290,33 @@ vector of test inputs: {
 }
 */
 using TestValues = std::vector<std::vector<SpecialValue>>;
+using SValue     = SpecialValue;
+using SVE        = SpecialValue::SpecialValsEnum;
 
-TestValues equalOpsTestVals{ { SpecialValue(SpecialValue::Zero), -SpecialValue(SpecialValue::Zero) },
-                             { SpecialValue(SpecialValue::Inf), -SpecialValue(SpecialValue::Inf) } };
+TestValues equalOpsTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) }, { SValue(SVE::Inf), -SValue(SVE::Inf) } };
 
-TestValues addTestVals{ { SpecialValue(SpecialValue::Max), SpecialValue(SpecialValue::One) },
-                        { SpecialValue(SpecialValue::Inf), -SpecialValue(SpecialValue::Inf) } };
+TestValues addTestVals{ { SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max), SValue(SVE::Max) },
+                        { -SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
+                        { SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { SValue(SVE::Inf), SValue(SVE::Inf) },
+                        { -SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { SValue(SVE::Inf), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), -SValue(SVE::Inf) },
+                        { SValue(SVE::NaN), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
 
-TestValues defaultTestVals{ { SpecialValue(SpecialValue::Zero) },      { -SpecialValue(SpecialValue::Zero) },
-                            { SpecialValue(SpecialValue::Inf) },       { -SpecialValue(SpecialValue::Inf) },
-                            { SpecialValue(SpecialValue::Min) },       { -SpecialValue(SpecialValue::Min) },
-                            { SpecialValue(SpecialValue::Max) },       { -SpecialValue(SpecialValue::Max) },
-                            { SpecialValue(SpecialValue::MinDenorm) }, { -SpecialValue(SpecialValue::MinDenorm) },
-                            { SpecialValue(SpecialValue::One) },       { -SpecialValue(SpecialValue::One) },
-                            { SpecialValue(SpecialValue::NaN) } };
+TestValues defaultTestVals{ { SValue(SVE::Zero) },       { -SValue(SVE::Zero) }, { SValue(SVE::Inf) },
+                            { -SValue(SVE::Inf) },       { SValue(SVE::Min) },   { -SValue(SVE::Min) },
+                            { SValue(SVE::Max) },        { -SValue(SVE::Max) },  { SValue(SVE::MinDenorm) },
+                            { -SValue(SVE::MinDenorm) }, { SValue(SVE::One) },   { -SValue(SVE::One) },
+                            { SValue(SVE::NaN) } };
 
 TestValues dotProductTestVals{
-    { SpecialValue(SpecialValue::Zero), -SpecialValue(SpecialValue::Zero), SpecialValue(SpecialValue::Zero) },
-    { SpecialValue(SpecialValue::Inf), -SpecialValue(SpecialValue::Inf), SpecialValue(SpecialValue::One) },
-    { SpecialValue(SpecialValue::NaN), SpecialValue(SpecialValue::One), SpecialValue(SpecialValue::One) },
-    { SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Zero) },
-    { SpecialValue(SpecialValue::One), SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Min) },
+    { SValue(SVE::Zero), -SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Inf), -SValue(SVE::Inf), SValue(SVE::One) },
+    { SValue(SVE::NaN), SValue(SVE::One), SValue(SVE::One) },
+    { SValue(SVE::Min), SValue(SVE::Min), SValue(SVE::Zero) },
+    { SValue(SVE::One), SValue(SVE::Min), SValue(SVE::Min) },
 };
 
 std::map<Op, TestValues> testValues = {
@@ -163,9 +352,12 @@ bool generate(const TosaReference::GenerateConfig& cfg, DataType* data, size_t s
         inputIndex = cfg.inputPos;
     }
 
+    auto rng = RandomGen<DataType>(fsinfo.rngSeed);
     for (std::vector<SpecialValue> inputs : opTestVals)
     {
-        values.push_back(inputs[inputIndex].evaluate<DataType>());
+        DataType val;
+        val = inputs[inputIndex].evaluate<DataType>(rng);
+        values.push_back(val);
     }
 
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
