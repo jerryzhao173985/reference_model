@@ -802,6 +802,7 @@ class TosaTensorValuesGen:
 
         fp_special_info = {}
         fp_special_info["start_idx"] = int(rng.randInt())
+        fp_special_info["rng_seed"] = rng.seed
 
         if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
             broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
