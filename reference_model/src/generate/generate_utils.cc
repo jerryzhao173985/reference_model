@@ -165,6 +165,10 @@ void from_json(const nlohmann::json& j, FpSpecialInfo& fpSpecialInfo)
     {
         j.at("start_idx").get_to(fpSpecialInfo.startIndex);
     }
+    if (j.contains("rng_seed"))
+    {
+        j.at("rng_seed").get_to(fpSpecialInfo.rngSeed);
+    }
 }
 
 void from_json(const nlohmann::json& j, GenerateConfig& cfg)
@@ -212,6 +216,7 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
 
     //Set up defaults for fpSpecialInfo
     cfg.fpSpecialInfo.startIndex = 0;
+    cfg.fpSpecialInfo.rngSeed    = 0;
     if (j.contains("fp_special_info"))
     {
         j.at("fp_special_info").get_to(cfg.fpSpecialInfo);

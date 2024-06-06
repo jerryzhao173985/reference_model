@@ -143,6 +143,10 @@
                                     "description": "starting index for the test data",
                                     "type": "integer",
                                     "minimum": 0
+                                },
+                                "rng_seed": {
+                                    "description": "random number generator seed",
+                                    "type": "integer"
                                 }
                             },
                             "additionalProperties": false,
