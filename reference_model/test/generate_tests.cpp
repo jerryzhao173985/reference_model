@@ -257,7 +257,7 @@ TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
     }
     SUBCASE("matmul, set 2, param 0")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0x3e66ed53, 0x3f800000 };
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3f14567c, 0x3f800000 };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
     }
     SUBCASE("matmul, set 2, param 1")
@@ -267,23 +267,22 @@ TEST_CASE("positive - FP32 matmul dot product (first 3 values)")
     }
     SUBCASE("matmul, set 3, param 0")
     {
-        // NOTE: Python test script produced 0xbf256686 - so off by 1
-        std::vector<uint32_t> expected = { 0xc1800000, 0xbf256685, 0xc1800000 };
+        std::vector<uint32_t> expected = { 0x41800000, 0x3fee6533, 0x41800000 };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
     }
     SUBCASE("matmul, set 3, param 1")
     {
-        std::vector<uint32_t> expected = { 0x41800000, 0x41800000, 0xc1800000 };
+        std::vector<uint32_t> expected = { 0xc1800000, 0x41800000, 0xc1800000 };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
     }
     SUBCASE("matmul, set 4, param 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x5f14e80c };
+        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x0 };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("matmul, set 4, param 1")
     {
-        std::vector<uint32_t> expected = { 0x5d5d0db2, 0xdf2c82a8, 0x0 };
+        std::vector<uint32_t> expected = { 0x5dee53e9, 0xdf0cfb23, 0x5f06cb46 };
         matmul_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
     }
     SUBCASE("matmul, set 5, param 0")
@@ -399,12 +398,12 @@ TEST_CASE("positive - FP32 conv2d dot product (last 3 values)")
     }
     SUBCASE("conv2d, set 2, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0x3e7da8e9, 0x3df76a57, 0xbe338212 };
+        std::vector<uint32_t> lastExpected = { 0xbc23026a, 0xbe674c38, 0x3d3d9f96 };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 0, lastExpected);
     }
     SUBCASE("conv2d, set 2, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0x3daabbc5, 0xbe2f8909, 0xbdb806ec };
+        std::vector<uint32_t> lastExpected = { 0x3d1beb31, 0xbdc7501e, 0x3cc9f5fe };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 1, lastExpected);
     }
     SUBCASE("conv2d, set 2, param 2")
@@ -414,13 +413,13 @@ TEST_CASE("positive - FP32 conv2d dot product (last 3 values)")
     }
     SUBCASE("conv2d, set 3, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0xbee77fe5, 0x402141c5, 0xbda1b2ed };
+        std::vector<uint32_t> lastExpected = { 0xbe00da48, 0x3fb5b808, 0x3e22a8bd };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 0, lastExpected);
     }
     SUBCASE("conv2d, set 3, param 1")
     {
-        // NOTE: Python test script produced 0xbe9947ac - so off by 1
-        std::vector<uint32_t> lastExpected = { 0x3f91e619, 0x3e9ac66b, 0xbe9947ad };
+        // NOTE: Python test script produced 0xbfb8b240 - so off by 1
+        std::vector<uint32_t> lastExpected = { 0xbd725091, 0xbfeaaf15, 0xbfb8b23f };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 1, lastExpected);
     }
     SUBCASE("conv2d, set 3, param 2")
@@ -430,12 +429,12 @@ TEST_CASE("positive - FP32 conv2d dot product (last 3 values)")
     }
     SUBCASE("conv2d, set 4, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0xdd7e8575, 0x0, 0xde569ff3 };
+        std::vector<uint32_t> lastExpected = { 0xddcab121, 0x5d1b5485, 0xdda4bb36 };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, lastExpected);
     }
     SUBCASE("conv2d, set 4, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0x5e2d6921, 0x5e13a014, 0x0 };
+        std::vector<uint32_t> lastExpected = { 0xdde07221, 0xde696320, 0x0 };
         conv2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 1, lastExpected);
     }
     SUBCASE("conv2d, set 4, param 2")
@@ -573,17 +572,17 @@ TEST_CASE("positive - FP32 reduce_sum dot product (values 6,7 & 8)")
     }
     SUBCASE("reduce_sum, set 2, param 0")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0x3e73f143, 0x3f12cef8 };
+        std::vector<uint32_t> expected = { 0x3f800000, 0xbe3fddf1, 0x3ef94a01 };
         reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", expected);
     }
     SUBCASE("reduce_sum, set 3, param 0")
     {
-        std::vector<uint32_t> expected = { 0xc1800000, 0xbe9f659e, 0xbfaca78c };
+        std::vector<uint32_t> expected = { 0x41800000, 0xc0e21e89, 0x3e77bfd7 };
         reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", expected);
     }
     SUBCASE("reduce_sum, set 4, param 0")
     {
-        std::vector<uint32_t> expected = { 0x5e1e6f12, 0x3f000000, 0xbf000000 };
+        std::vector<uint32_t> expected = { 0xdf0029aa, 0x3f000000, 0x3f000000 };
         reduce_sum_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", expected);
     }
     SUBCASE("reduce_sum, set 5, param 0")
@@ -702,12 +701,12 @@ TEST_CASE("positive - FP32 fully_connected dot product (values -8, -7 & -6 from 
     }
     SUBCASE("fully_connected, set 2, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0xbcc1e987, 0xbe68efd7, 0x3db90130 };
+        std::vector<uint32_t> lastExpected = { 0xba57522b, 0x3e8604b5, 0xbe861803 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 0, lastExpected);
     }
     SUBCASE("fully_connected, set 2, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0x3e069935, 0x3de3a507, 0xbe6a0c0c };
+        std::vector<uint32_t> lastExpected = { 0x3ea90193, 0x3d4fe441, 0xbe04e014 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", 1, lastExpected);
     }
     SUBCASE("fully_connected, set 2, param 2")
@@ -717,12 +716,13 @@ TEST_CASE("positive - FP32 fully_connected dot product (values -8, -7 & -6 from 
     }
     SUBCASE("fully_connected, set 3, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0x3e57454e, 0x3b48e294, 0x3e889ece };
+        // NOTE: Python test script produced 0xbfe7b489 - so off by 1
+        std::vector<uint32_t> lastExpected = { 0xbe947430, 0xbfe7b48a, 0xbf0a941d };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 0, lastExpected);
     }
     SUBCASE("fully_connected, set 3, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0xbd20e608, 0x3f91e619, 0x3e9ac66b };
+        std::vector<uint32_t> lastExpected = { 0xbe988d6d, 0xbd725091, 0xbfeaaf15 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", 1, lastExpected);
     }
     SUBCASE("fully_connected, set 3, param 2")
@@ -732,12 +732,12 @@ TEST_CASE("positive - FP32 fully_connected dot product (values -8, -7 & -6 from 
     }
     SUBCASE("fully_connected, set 4, param 0")
     {
-        std::vector<uint32_t> lastExpected = { 0x0, 0x5e29ad6d, 0x5e959eac };
+        std::vector<uint32_t> lastExpected = { 0xdce8a2e0, 0x5e327feb, 0x5ea4baf1 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 0, lastExpected);
     }
     SUBCASE("fully_connected, set 4, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0x0, 0x5e6736d7, 0x5e44d571 };
+        std::vector<uint32_t> lastExpected = { 0x0, 0xde15a16b, 0xde9b976b };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", 1, lastExpected);
     }
     SUBCASE("fully_connected, set 4, param 2")
@@ -814,18 +814,17 @@ TEST_CASE("positive - FP32 avg_pool2d dot product (first 3 values)")
     }
     SUBCASE("avg_pool2d, set 2, param 0")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0x3e3c8d18, 0xbe813879 };
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3ef23c13, 0x3e702703 };
         avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "2", expected);
     }
     SUBCASE("avg_pool2d, set 3, param 0")
     {
-        // NOTE: Python test script produced 0xbf256686,0x3e1e8d3b - so off by 1
-        std::vector<uint32_t> expected = { 0xc1800000, 0xbf256685, 0x3e1e8d3b };
+        std::vector<uint32_t> expected = { 0x41800000, 0x3fee6533, 0x3f4734a9 };
         avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "3", expected);
     }
     SUBCASE("avg_pool2d, set 4, param 0")
     {
-        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x5ef329c7 };
+        std::vector<uint32_t> expected = { 0x0, 0xbf000000, 0x0 };
         avg_pool2d_test_FP32(tosaName, tosaElements, templateJsonCfg, "4", expected);
     }
     SUBCASE("avg_pool2d, set 5, param 0")
@@ -1020,12 +1019,12 @@ TEST_CASE("positive - FP16 depthwise_conv2d dot product (first 3 values)")
     }
     SUBCASE("depthwise_conv2d, set 3, param 0")
     {
-        std::vector<uint16_t> expected = { 0xcc00, 0x4c00, 0xcc00 };
+        std::vector<uint16_t> expected = { 0x4c00, 0x4c00, 0x4c00 };
         depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
     }
     SUBCASE("depthwise_conv2d, set 3, param 1")
     {
-        std::vector<uint16_t> expected = { 0x4c00, 0x4c00, 0xcc00 };
+        std::vector<uint16_t> expected = { 0xcc00, 0x4c00, 0xcc00 };
         depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
     }
     SUBCASE("depthwise_conv2d, set 3, param 2")
@@ -1035,12 +1034,12 @@ TEST_CASE("positive - FP16 depthwise_conv2d dot product (first 3 values)")
     }
     SUBCASE("depthwise_conv2d, set 4, param 0")
     {
-        std::vector<uint16_t> expected = { 0x0, 0x0, 0x5798 };
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
         depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("depthwise_conv2d, set 4, param 1")
     {
-        std::vector<uint16_t> expected = { 0x49a3, 0xd866, 0x0 };
+        std::vector<uint16_t> expected = { 0x4e14, 0xd731, 0x56e0 };
         depthwise_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
     }
     SUBCASE("depthwise_conv2d, set 4, param 2")
@@ -1164,12 +1163,12 @@ TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
     }
     SUBCASE("transpose_conv2d, set 2, param 0")
     {
-        std::vector<uint16_t> expected = { 0xb05d, 0xaf37, 0xa424 };
+        std::vector<uint16_t> expected = { 0x2777, 0xafec, 0x31a5 };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
     }
     SUBCASE("transpose_conv2d, set 2, param 1")
     {
-        std::vector<uint16_t> expected = { 0x3182, 0xacff, 0xaf9a };
+        std::vector<uint16_t> expected = { 0x2faa, 0xac8f, 0x30b6 };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
     }
     SUBCASE("transpose_conv2d, set 2, param 2")
@@ -1179,12 +1178,12 @@ TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
     }
     SUBCASE("transpose_conv2d, set 3, param 0")
     {
-        std::vector<uint16_t> expected = { 0xbc41, 0x1cbe, 0x3009 };
+        std::vector<uint16_t> expected = { 0xb507, 0x4432, 0xc015 };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
     }
     SUBCASE("transpose_conv2d, set 3, param 1")
     {
-        std::vector<uint16_t> expected = { 0x35ac, 0x3b2a, 0x2db4 };
+        std::vector<uint16_t> expected = { 0xb888, 0xc182, 0x26cc };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
     }
     SUBCASE("transpose_conv2d, set 3, param 2")
@@ -1194,12 +1193,12 @@ TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
     }
     SUBCASE("transpose_conv2d, set 4, param 0")
     {
-        std::vector<uint16_t> expected = { 0x0, 0x0, 0x4953 };
+        std::vector<uint16_t> expected = { 0x0, 0xcc7a, 0x0 };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("transpose_conv2d, set 4, param 1")
     {
-        std::vector<uint16_t> expected = { 0x4e62, 0xcd17, 0x0 };
+        std::vector<uint16_t> expected = { 0xcf04, 0x0, 0x5129 };
         transpose_conv2d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
     }
     SUBCASE("transpose_conv2d, set 4, param 2")
@@ -1322,12 +1321,12 @@ TEST_CASE("positive - FP16 conv3d dot product (first 3 values)")
     }
     SUBCASE("conv3d, set 2, param 0")
     {
-        std::vector<uint16_t> expected = { 0x3c00, 0x2bdb, 0xad62 };
+        std::vector<uint16_t> expected = { 0x3c00, 0x310c, 0x2d01 };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 0, expected);
     }
     SUBCASE("conv3d, set 2, param 1")
     {
-        std::vector<uint16_t> expected = { 0x3c00, 0x1814, 0x31be };
+        std::vector<uint16_t> expected = { 0x3c00, 0x3099, 0x2aaf };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "2", 1, expected);
     }
     SUBCASE("conv3d, set 2, param 2")
@@ -1337,12 +1336,12 @@ TEST_CASE("positive - FP16 conv3d dot product (first 3 values)")
     }
     SUBCASE("conv3d, set 3, param 0")
     {
-        std::vector<uint16_t> expected = { 0xcc00, 0xb92b, 0x30f4 };
+        std::vector<uint16_t> expected = { 0x4c00, 0x3f73, 0x3a3a };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 0, expected);
     }
     SUBCASE("conv3d, set 3, param 1")
     {
-        std::vector<uint16_t> expected = { 0x4c00, 0x3a2e, 0x3bf5 };
+        std::vector<uint16_t> expected = { 0xcc00, 0xb95a, 0xb717 };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "3", 1, expected);
     }
     SUBCASE("conv3d, set 3, param 2")
@@ -1352,12 +1351,12 @@ TEST_CASE("positive - FP16 conv3d dot product (first 3 values)")
     }
     SUBCASE("conv3d, set 4, param 0")
     {
-        std::vector<uint16_t> expected = { 0x0, 0x0, 0x5110 };
+        std::vector<uint16_t> expected = { 0x0, 0x0, 0x0 };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 0, expected);
     }
     SUBCASE("conv3d, set 4, param 1")
     {
-        std::vector<uint16_t> expected = { 0x4384, 0xd1de, 0x0 };
+        std::vector<uint16_t> expected = { 0x480d, 0xd0cb, 0x5095 };
         conv3d_test_FP16(tosaName, tosaElements, templateJsonCfg, "4", 1, expected);
     }
     SUBCASE("conv3d, set 4, param 2")
@@ -1459,33 +1458,32 @@ TEST_CASE("positive - FP32 fft2d dot product (values -8, -7 & -6 from the end)")
     }
     SUBCASE("fft2d, set 2, real")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0x3d704bae, 0x3e4443a6 };
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3e45cfbe, 0xbdd9e3f5 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "2", expected);
     }
     SUBCASE("fft2d, set 2, imag")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0x3dacbd02, 0xbe26be6a };
+        std::vector<uint32_t> expected = { 0x3f800000, 0xbe40f9f7, 0x3dc63154 };
         fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "2", expected);
     }
     SUBCASE("fft2d, set 3, real")
     {
-        // NOTE: Python test script produced 0x3de257cf, 0x3f144b53 - so off by 1
-        std::vector<uint32_t> expected = { 0x41800000, 0x3de257ce, 0x3f144b54 };
+        std::vector<uint32_t> expected = { 0xc1800000, 0x3e143e55, 0xbfa541ab };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "3", expected);
     }
     SUBCASE("fft2d, set 3, imag")
     {
-        std::vector<uint32_t> expected = { 0x41800000, 0x3f86492c, 0xbf5bd4b3 };
+        std::vector<uint32_t> expected = { 0xc1800000, 0x3edd3d0d, 0x3f204cb9 };
         fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "3", expected);
     }
     SUBCASE("fft2d, set 4, real")
     {
-        std::vector<uint32_t> expected = { 0x0, 0x5d8c6475, 0x0 };
+        std::vector<uint32_t> expected = { 0x0, 0x5d42dcdd, 0x0 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "4", expected);
     }
     SUBCASE("fft2d, set 4, imag")
     {
-        std::vector<uint32_t> expected = { 0xdca65b4f, 0x5c98b5d2, 0xdd14ddd8 };
+        std::vector<uint32_t> expected = { 0x0, 0xde0ac4fe, 0x0 };
         fft2d_test_FP32(tosaNameImag, tosaElements, templateJsonCfg, "4", expected);
     }
     SUBCASE("fft2d, set 5, real")
@@ -1523,33 +1521,34 @@ TEST_CASE("positive - FP32 rfft2d dot product (values -8, -7 & -6 from the end)"
     const std::string tosaNameReal = "real";
     const size_t tosaElements      = 4 * 2 * 4;
 
-    SUBCASE("fft2d, set 0, real")
+    SUBCASE("rfft2d, set 0, real")
     {
         std::vector<uint32_t> expected = { 0xbe14f2f5, 0xbdb6fe4d, 0x3f30b473 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "0", expected);
     }
-    SUBCASE("fft2d, set 1, real")
+    SUBCASE("rfft2d, set 1, real")
     {
         // NOTE: Python test script produced 0x5e7219eb - so off by 1
         std::vector<uint32_t> expected = { 0x5e490017, 0x5e57dd30, 0x5e992496 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "1", expected);
     }
-    SUBCASE("fft2d, set 2, real")
+    SUBCASE("rfft2d, set 2, real")
     {
-        std::vector<uint32_t> expected = { 0x3f800000, 0xbe7f1cd4, 0xbdfc67ff };
+        std::vector<uint32_t> expected = { 0x3f800000, 0x3e9d487a, 0xbe396b1f };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "2", expected);
     }
-    SUBCASE("fft2d, set 3, real")
+    SUBCASE("rfft2d, set 3, real")
     {
-        std::vector<uint32_t> expected = { 0xc1800000, 0xbf6d219b, 0x3f2bd153 };
+        // NOTE: Python test script produced 0xbf5a96b5 - so off by 1
+        std::vector<uint32_t> expected = { 0x41800000, 0xc06617b5, 0xbf5a96b6 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "3", expected);
     }
-    SUBCASE("fft2d, set 4, real")
+    SUBCASE("rfft2d, set 4, real")
     {
         std::vector<uint32_t> expected = { 0x0, 0x0, 0x0 };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "4", expected);
     }
-    SUBCASE("fft2d, set 5, real")
+    SUBCASE("rfft2d, set 5, real")
     {
         std::vector<uint32_t> expected = { 0xdd3f6b86, 0xde49ecfd, 0x5e0be03d };
         fft2d_test_FP32(tosaNameReal, tosaElements, templateJsonCfg, "5", expected);
@@ -1700,8 +1699,8 @@ TEST_CASE("positive - FP32 FP Special")
     }
     SUBCASE("maximum, startIndex 100")
     {
-        // A startIndex of 100 creates an offset of 2 in the MAXIMUM op's test data (size: 7) 100 % 7 = 2
-        std::vector<uint32_t> expected = { 0x7F800000, 0xFF800000, 0x7FC00000 };
+        // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 13) 100 % 13 = 9
+        std::vector<uint32_t> expected = { 0x80000001, 0x3F800000, 0xBF800000 };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "100", expected);
     }
 }
