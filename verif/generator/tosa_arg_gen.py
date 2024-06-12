@@ -3534,7 +3534,13 @@ class TosaArgGen:
             start, size = TosaErrorIfArgGen.eiSliceErrorIf(
                 rng, error_name, ifm_shape, start, size
             )
-            arg_list.append(("perm{}".format(p), {"start": start, "size": size}))
+            append = True
+            for _, d in arg_list:
+                if d["start"] == start and d["size"] == size:
+                    # Already have a test for this
+                    append = False
+            if append:
+                arg_list.append(("perm{}".format(p), {"start": start, "size": size}))
 
         # Now add data generator types
         arg_list = TosaArgGen._add_data_generators(
