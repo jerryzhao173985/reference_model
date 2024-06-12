@@ -4701,7 +4701,7 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT48],
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "identity": {
             "op": Op.IDENTITY,
@@ -4713,7 +4713,7 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB,
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         # Scatter/Gather
         "gather": {
