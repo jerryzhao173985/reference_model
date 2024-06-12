@@ -2252,7 +2252,8 @@
     "const": {
         "group": "data_nodes",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-bi": {
@@ -2297,6 +2298,7 @@
                 "supports_all": [
                     "tosa-mi"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -2306,6 +2308,8 @@
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "2",
@@ -2322,7 +2326,10 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "5"
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--target-dtype",
@@ -2339,6 +2346,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -2346,6 +2354,8 @@
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "2",
@@ -2360,7 +2370,10 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "5"
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -2368,6 +2381,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2391,6 +2405,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2443,6 +2458,9 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
             }
         }
     },
@@ -4697,6 +4715,7 @@
                     "tosa-ext-bf16"
                 ],
                 "no_negative_tests": "true",
+                "selector": "tosa-mi",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -4730,13 +4749,18 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
             }
         }
     },
     "identity": {
         "group": "data_nodes",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-bi": {
@@ -4785,6 +4809,7 @@
                 "supports_all": [
                     "tosa-mi"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -4795,6 +4820,8 @@
                         "-max,max",
                         "--tensor-dim-range",
                         "1,67",
+                        "--target-rank",
+                        "0",
                         "--target-rank",
                         "1",
                         "2",
@@ -4810,7 +4837,10 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "5"
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ],
                     [
                         "--target-dtype",
@@ -4837,6 +4867,8 @@
                         "--tensor-dim-range",
                         "1,67",
                         "--target-rank",
+                        "0",
+                        "--target-rank",
                         "1",
                         "2",
                         "3"
@@ -4850,7 +4882,10 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "5"
+                        "--target-rank",
+                        "5",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
