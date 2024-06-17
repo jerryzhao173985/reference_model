@@ -2603,7 +2603,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-bf16",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -2640,7 +2640,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e4m3",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2660,7 +2660,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e5m2",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2766,6 +2766,78 @@
                 "specifics": {
                     "pad": [
                         "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-bf16": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e4m3": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e4m3xf8e4m3"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e5m2": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e5m2xf8e5m2"
                     ]
                 },
                 "groups": [
@@ -2884,7 +2956,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-bf16",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -2906,7 +2978,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e4m3",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2929,7 +3001,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e5m2",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -3039,21 +3111,95 @@
                 "all": "true"
             },
             "tosa-mi": {
-                "params": {
-                    "shape": [],
-                    "type": [],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
-                },
+                "generator_select": "true",
                 "permutes": [
-                    "kernel",
                     "shape",
                     "type",
-                    "pad",
-                    "stride"
-                ]
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-bf16": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e4m3": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e4m3xf8e4m3"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e5m2": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e5m2xf8e5m2"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -3368,58 +3514,67 @@
                 "maximum": 3
             },
             "tosa-ext-bf16": {
-                "params": {
-                    "shape": [],
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
                     "type": [
                         "bf16xbf16"
-                    ],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
+                    ]
                 },
-                "permutes": [
-                    "kernel",
-                    "shape",
-                    "type",
-                    "pad"
-                ]
+                "maximum": 3
             },
             "tosa-ext-fp8e4m3": {
-                "params": {
-                    "shape": [],
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
                     "type": [
                         "f8e4m3xf8e4m3"
-                    ],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
+                    ]
                 },
-                "permutes": [
-                    "kernel",
-                    "shape",
-                    "type",
-                    "pad"
-                ]
+                "maximum": 3
             },
             "tosa-ext-fp8e5m2": {
-                "params": {
-                    "shape": [],
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
                     "type": [
                         "f8e5m2xf8e5m2"
-                    ],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
+                    ]
                 },
-                "permutes": [
-                    "kernel",
-                    "shape",
-                    "type",
-                    "pad"
-                ]
+                "maximum": 3
             }
         }
     },
@@ -10219,7 +10374,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-bf16",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -10241,7 +10396,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e4m3",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -10266,7 +10421,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-ext-fp8e5m2",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -10332,20 +10487,98 @@
                 "all": "true"
             },
             "tosa-mi": {
-                "params": {
-                    "shape": [],
-                    "type": [],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "out_shape": []
-                },
+                "generator_select": "true",
                 "permutes": [
                     "shape",
                     "type",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
                     "stride",
-                    "pad"
-                ]
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-bf16": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e4m3": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e4m3xf8e4m3"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-ext-fp8e5m2": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "f8e5m2xf8e5m2"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
