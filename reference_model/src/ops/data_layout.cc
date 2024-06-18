@@ -54,6 +54,8 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
     }
 
     int32_t num_inputs = inputs.size();
+    LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
+                "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
     // output and input must be the same types and rank
     for (int32_t i = 0; i < num_inputs; i++)
