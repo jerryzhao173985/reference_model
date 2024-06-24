@@ -301,16 +301,28 @@ class Operator:
         """Expand a path to find all the test sets."""
         s = 0
         paths = []
+
+        found_s0 = False
+        found_sN = False
+
         # Have a bound for the maximum test sets
         while s < 100:
             set_path = path.with_name(f"{path.name}_s{s}")
             if set_path.exists():
                 paths.append(set_path)
-            else:
                 if s == 0:
-                    logger.warning(f"Could not find test set 0 - {str(set_path)}")
+                    found_s0 = True
+                elif not found_sN:
+                    found_sN = s
+            else:
                 break
             s += 1
+
+        if found_sN and not found_s0:
+            logger.warning(
+                f"Could not find test set 0 but there is another test set s{found_sN} - {str(path.name)}"
+            )
+
         return paths
 
     @staticmethod
