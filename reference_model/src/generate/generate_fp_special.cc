@@ -122,10 +122,29 @@ TestValues defaultTestVals{ { SpecialValue(SpecialValue::Zero) },      { -Specia
                             { SpecialValue(SpecialValue::One) },       { -SpecialValue(SpecialValue::One) },
                             { SpecialValue(SpecialValue::NaN) } };
 
-std::map<Op, TestValues> testValues = { { Op::Op_EQUAL, equalOpsTestVals },
-                                        { Op::Op_GREATER, equalOpsTestVals },
-                                        { Op::Op_GREATER_EQUAL, equalOpsTestVals },
-                                        { Op::Op_ADD, addTestVals } };
+TestValues dotProductTestVals{
+    { SpecialValue(SpecialValue::Zero), -SpecialValue(SpecialValue::Zero), SpecialValue(SpecialValue::Zero) },
+    { SpecialValue(SpecialValue::Inf), -SpecialValue(SpecialValue::Inf), SpecialValue(SpecialValue::One) },
+    { SpecialValue(SpecialValue::NaN), SpecialValue(SpecialValue::One), SpecialValue(SpecialValue::One) },
+    { SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Zero) },
+    { SpecialValue(SpecialValue::One), SpecialValue(SpecialValue::Min), SpecialValue(SpecialValue::Min) },
+};
+
+std::map<Op, TestValues> testValues = {
+    { Op::Op_EQUAL, equalOpsTestVals },
+    { Op::Op_GREATER, equalOpsTestVals },
+    { Op::Op_GREATER_EQUAL, equalOpsTestVals },
+    { Op::Op_ADD, addTestVals },
+    { Op::Op_CONV2D, dotProductTestVals },
+    { Op::Op_CONV3D, dotProductTestVals },
+    { Op::Op_DEPTHWISE_CONV2D, dotProductTestVals },
+    { Op::Op_TRANSPOSE_CONV2D, dotProductTestVals },
+    { Op::Op_AVG_POOL2D, dotProductTestVals },
+    { Op::Op_FULLY_CONNECTED, dotProductTestVals },
+    { Op::Op_MATMUL, dotProductTestVals },
+    { Op::Op_REDUCE_SUM, dotProductTestVals },
+    { Op::Op_REDUCE_PRODUCT, dotProductTestVals },
+};
 
 template <typename DataType>
 bool generate(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
