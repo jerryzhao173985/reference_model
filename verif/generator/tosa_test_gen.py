@@ -1531,7 +1531,7 @@ class TosaTestGen:
     ):
         axis = args_dict["axis"]
         if error_name != ErrorIf.WrongInputType:
-            assert type(axis) == int
+            assert type(axis) is int
 
         result_tensor = OutputShaper.concatOp(
             self.ser, rng, axis, inputs, error_name=error_name
@@ -3352,6 +3352,11 @@ class TosaTestGen:
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
     }
+    DP_FS_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
+        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
+        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
+    }
 
     KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
     KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
@@ -3380,7 +3385,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "avg_pool2d": {
             "op": Op.AVG_POOL2D,
@@ -3411,7 +3416,7 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
@@ -3441,7 +3446,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
             "broadcastable_bias": True,
             "filter": KERNELS_2D,
             "template": True,
@@ -3474,7 +3479,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_3D,
             "template": True,
         },
@@ -3506,7 +3511,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_2D,
             "template": True,
         },
@@ -3531,7 +3536,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
         },
         "matmul": {
             "op": Op.MATMUL,
@@ -3553,7 +3558,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
         },
         "max_pool2d": {
             "op": Op.MAX_POOL2D,
@@ -3580,7 +3585,7 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeMismatch,
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
@@ -3611,7 +3616,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongRank,
                 TosaErrorValidator.evConvOutputShapeMismatch,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_2D,
             "template": True,
         },
@@ -4915,7 +4920,7 @@ class TosaTestGen:
                 TosaErrorValidator.evFFTInputShapeMismatch,
                 TosaErrorValidator.evFFTOutputShapeMismatch,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
         },
         "rfft2d": {
             "op": Op.RFFT2D,
@@ -4938,7 +4943,7 @@ class TosaTestGen:
                 TosaErrorValidator.evKernelNotPowerOfTwo,
                 TosaErrorValidator.evFFTOutputShapeMismatch,
             ),
-            "data_gen": DOT_PRODUCT_DATAGEN,
+            "data_gen": DP_FS_DATAGEN,
         },
     }
 

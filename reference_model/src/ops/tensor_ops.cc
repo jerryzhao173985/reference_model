@@ -14,6 +14,7 @@
 //    limitations under the License.
 
 #include "tensor_ops.h"
+#include "dtype_limits.h"
 #include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
@@ -398,9 +399,68 @@ int OpArgMax<Rank, Dtype>::eval()
     auto tosa_level = g_func_config.tosa_level;
     LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
 
-    Eigen::Tensor<DenseIndex, Rank - 1> index = this->input->getTensor().argmax(attribute->axis());
+    Eigen::Tensor<InEigenType, Rank> input = this->input->getTensor();
 
-    this->output->getTensor() = index.unaryExpr([](DenseIndex in) -> OutEigenType { return (OutEigenType)in; });
+    Eigen::array<DenseIndex, Rank> shuffle_indices;
+    shuffle_indices[0] = attribute->axis();
+
+    for (int i = 1; i < Rank; i++)
+    {
+        shuffle_indices[i] = (i <= attribute->axis()) ? i - 1 : i;
+    }
+
+    auto dimensions = input.dimensions();
+
+    Eigen::array<long, 2> matrix_dimensions;
+    matrix_dimensions[0] = dimensions[attribute->axis()];
+    matrix_dimensions[1] = 1;
+    for (int i = 0; i < Rank; i++)
+    {
+        if (i == attribute->axis())
+            continue;
+        matrix_dimensions[1] *= dimensions[i];
+    }
+
+    // Put the reduction axis as the first dimension and reshape to a matrix where each value in the second
+    // dimension represents a position in the output tensor
+    Eigen::Tensor<InEigenType, 2> shuffled_input = input.shuffle(shuffle_indices).reshape(matrix_dimensions);
+
+    Eigen::Tensor<OutEigenType, 1> argmaxes(matrix_dimensions[1]);
+
+    // Find the maximum of a row in the matrix. If there are NaNs, return the last NaN position.
+    for (DenseIndex j = 0; j < matrix_dimensions[1]; j++)
+    {
+        InEigenType max_value = DtypeLimits<Dtype>::low_extreme;
+        OutEigenType max_idx  = 0;
+
+        for (OutEigenType i = 0; i < matrix_dimensions[0]; i++)
+        {
+            InEigenType val = shuffled_input(i, j);
+            if (std::isnan(val) || val > max_value)
+            {
+                max_value = val;
+                max_idx   = i;
+            }
+        }
+
+        argmaxes(j) = max_idx;
+    }
+
+    Eigen::array<long, Rank - 1> output_shape;
+    DenseIndex in_idx  = 0;
+    DenseIndex out_idx = 0;
+    while (in_idx < Rank)
+    {
+        if (in_idx != attribute->axis())
+        {
+            output_shape[out_idx] = dimensions[in_idx];
+            out_idx++;
+        }
+        in_idx++;
+    }
+
+    // Reshape to the original dimensions without the reduction axis.
+    this->output->getTensor() = argmaxes.reshape(output_shape);
 
     return GraphNode::eval();
 }
@@ -1586,32 +1646,39 @@ int OpMaxPool2d<Dtype>::eval()
     pad[2] = std::make_pair(pad_left, pad_right);
     pad[3] = std::make_pair(0, 0);
 
-    ETensor4<InEigenType> input_padded = this->in->getTensor().pad(pad, std::numeric_limits<InEigenType>::lowest());
+    // Set the padding value to be the lowest value that can be represented
+    // by the datatype to ensure that any padding values will be equal
+    // to or smaller than the actual maximum in the KH x KW patch.
+    InEigenType padding_value = DtypeLimits<Dtype>::low_extreme;
+
+    ETensor4<InEigenType> input_padded = this->in->getTensor().pad(pad, padding_value);
 
     // extract_image_patches() output [N, KH, KW, H * W, C]
     // transpose to [KH, KW, N, H * W, C]
     // reshape to [KH * KW, N * H * W * C]
-    //
-    // Set the padding value to be the most negative value that can be
-    // represented by the datatype to ensure that any padding values will be equal
-    // to or smaller than the actual maximum in the KH x KW patch.
     ETensor2<InEigenType> input_extract_patches =
         input_padded
-            .extract_image_patches(kernel_y, kernel_x, stride_y, stride_x, 1, 1, Eigen::PADDING_VALID,
-                                   std::numeric_limits<InEigenType>::lowest())
+            .extract_image_patches(kernel_y, kernel_x, stride_y, stride_x, 1, 1, Eigen::PADDING_VALID, padding_value)
             .shuffle(Eigen::array<Eigen::Index, 5>{ 1, 2, 0, 3, 4 })
             .reshape(im2col_input_dims);
-
-    // Get the maximum of the KHxHW patches along axis 0
-    Eigen::Tensor<DenseIndex, 1> tensor_argmax = input_extract_patches.argmax(0);
 
     // 1D result with [N * H * W * C]
     ETensor1<OutEigenType> out_1d(this->out->getElementCount());
 
-    // index input_patches with argmax array should give the result
-    for (size_t i = 0; i < this->out->getElementCount(); i++)
+    // Get the maximum of the KHxHW patches along axis 0
+    // Eigen's argmax behaves incorrectly on some cases with -inf and -max
+    // so do it by hand.
+    for (int j = 0; j < im2col_input_dims[1]; j++)
     {
-        out_1d(i) = (OutEigenType)input_extract_patches(tensor_argmax(i), i);
+        OutEigenType max = padding_value;
+        for (int i = 0; i < im2col_input_dims[0]; i++)
+        {
+            OutEigenType val = input_extract_patches(i, j);
+            if (std::isnan(val) || val > max)
+                max = val;
+        }
+
+        out_1d(j) = max;
     }
 
     // reshape result to [N, H, W, C]

@@ -12,6 +12,8 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+#include <cfloat>
+
 #include "half.hpp"
 #include "verifiers.h"
 
@@ -20,8 +22,11 @@ namespace
 template <typename Datatype>
 bool compliant(const double& referenceValue, const Datatype& implementationValue)
 {
-    // Compliant when values are both nans OR when values are both finite/infinite and have the same sign
-    return (std::isnan(referenceValue) && std::isnan(implementationValue)) ||
+    // Compliant when values are zero (maybe different sign)
+    // OR both NaNs
+    // OR have the same finiteness AND the same sign
+    return (referenceValue == 0.0 && static_cast<double>(implementationValue) == 0.0) ||
+           (std::isnan(referenceValue) && std::isnan(implementationValue)) ||
            (std::isnan(referenceValue) == std::isnan(implementationValue) &&
             std::isfinite(referenceValue) == std::isfinite(implementationValue) &&
             std::signbit(referenceValue) == std::signbit(implementationValue));
@@ -30,8 +35,11 @@ bool compliant(const double& referenceValue, const Datatype& implementationValue
 template <>
 bool compliant(const double& referenceValue, const half_float::half& implementationValue)
 {
-    // Compliant when values are both nans OR when values are both finite/infinite and have the same sign
-    return (std::isnan(referenceValue) && half_float::isnan(implementationValue)) ||
+    // Compliant when values are zero (maybe different sign)
+    // OR both NaNs
+    // OR have the same finiteness AND the same sign
+    return (referenceValue == 0.0 && implementationValue == 0.0) ||
+           (std::isnan(referenceValue) && half_float::isnan(implementationValue)) ||
            (std::isnan(referenceValue) == half_float::isnan(implementationValue) &&
             std::isfinite(referenceValue) == half_float::isfinite(implementationValue) &&
             std::signbit(referenceValue) == half_float::signbit(implementationValue));
