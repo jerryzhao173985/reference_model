@@ -324,7 +324,7 @@ def compile_dynamic_model(
         def convert_shape_tuple_to_string(tup):
             string = ""
             for dim in tup:
-                string = string + str(dim) + ","
+                string = string + str(dim) + "x"
             # skip the last `,` character.
             return string[0:-1]
 
@@ -332,7 +332,7 @@ def compile_dynamic_model(
         if not isinstance(shape, tuple):
             raise Exception("Only single input is supported currently")
 
-        arg0_argument = '"arg0=' + convert_shape_tuple_to_string(shape) + '"'
+        arg0_argument = '"args=arg0:' + convert_shape_tuple_to_string(shape) + '"'
 
         compile_and_shape_infer_cmd = compiler_cmd.copy()
         compile_and_shape_infer_cmd.extend(
