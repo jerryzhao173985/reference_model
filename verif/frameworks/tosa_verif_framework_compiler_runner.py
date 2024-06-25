@@ -725,6 +725,11 @@ def run_test(args, test_path, framework):
     ref_model_result_files = list((test_path / flatbuffer_dir).glob("ref_model_*.npy"))
     ref_model_result = np.load(ref_model_result_files[0])
 
+    if np.issubdtype(tf_result.dtype, np.unsignedinteger) and (
+        tf_result.dtype != ref_model_result.dtype
+    ):
+        ref_model_result = ref_model_result.astype(tf_result.dtype)
+
     assert (
         tf_result.dtype == ref_model_result.dtype
     ), f"Numpy type mismatch {tf_result.dtype} != {ref_model_result.dtype} when comparing result"
