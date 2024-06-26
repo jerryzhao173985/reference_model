@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.4)
 
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -58,6 +58,10 @@ endif()
 
 if(NOT JSON_DIR)
   set(JSON_DIR "../thirdparty/json")
+endif()
+
+if(NOT PYBIND11_DIR)
+  set(PYBIND11_DIR "../thirdparty/pybind11")
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -247,3 +251,30 @@ install(EXPORT TosaReferenceModelLibTargets
   NAMESPACE TosaReference::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/tosa_reference_model_lib"
 )
+
+if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+
+  python_add_library(py_tosa_reference_model MODULE python_bindings/python_bindings.cpp WITH_SOABI)
+
+  set_target_properties(py_tosa_reference_model PROPERTIES OUTPUT_NAME tosa_reference_model)
+
+  target_include_directories(py_tosa_reference_model
+  PUBLIC
+    $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${FLATBUFFERS_DIR}/include
+    ${EIGEN_DIR}
+    ${EIGEN_DIR}/unsupported/
+    ${SERIALIZATION_DIR}/include
+    ${HALF_DIR}/include
+    ${PYBIND11_DIR}/include
+  )
+  target_link_libraries(py_tosa_reference_model PRIVATE tosa_reference_model_lib)
+
+  target_compile_definitions(py_tosa_reference_model PRIVATE VERSION_INFO=${PROJECT_VERSION})
+
+  install(TARGETS py_tosa_reference_model DESTINATION src)
+endif()

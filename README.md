@@ -514,9 +514,11 @@ cd thirdparty/serialization_lib/third_party/flatbuffers
 make
 ```
 
+### Python bindings for the ModelRunner API
+As another alternative to the `tosa_reference_model` executable, Python bindings are provided which can be used to invoke the TOSA Reference Model easily within Python. Example usage can be found in `reference_model/python_bindings/example.py`. The Python bindings can be built by running `pip install .` from the repository's root directory, which automatically runs CMake and then installs a Python package `tosa_reference_model`. See the docstring in `reference_model/python_bindings/python_bindings.cpp` or use Python's built-in `help()` for more information.
 
 ## License
 
 The *TOSA Reference Model* and TOSA Unit Tests are licensed under Apache-2.0.
 
-Copyright (c) 2020-2023 Arm Limited.
+Copyright (c) 2020-2024 Arm Limited.

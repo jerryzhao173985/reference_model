@@ -13,3 +13,6 @@
 [submodule "thirdparty/specification"]
 	path = thirdparty/specification
 	url = https://review.mlplatform.org/tosa/specification
+[submodule "thirdparty/pybind11"]
+	path = thirdparty/pybind11
+	url = https://github.com/pybind/pybind11.git

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2022 Arm Limited.
+# Copyright (c) 2021-2024 Arm Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 __pycache__/
@@ -11,3 +11,4 @@ verif/tests/_pytest_vtest_*
 result.xml
 vtest/
 examples/*/*/out.npy
+py_package/*.so
