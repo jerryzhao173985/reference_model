@@ -4358,6 +4358,11 @@
     },
     "gather": {
         "group": "scatter_gather",
+        "support_for": [
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
+        ],
         "generation": {
             "tosa-bi": {
                 "supports_all": [
@@ -4389,6 +4394,7 @@
                 "supports_all": [
                     "tosa-mi"
                 ],
+                "selector": "tosa-mi",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -4403,6 +4409,7 @@
                         "72"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4420,6 +4427,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -4439,6 +4447,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -4462,6 +4471,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -4489,6 +4499,9 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
             }
         }
     },
@@ -8690,7 +8703,9 @@
     "scatter": {
         "group": "scatter_gather",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-bi": {
@@ -8708,6 +8723,7 @@
                         "64"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -8721,6 +8737,7 @@
                 "supports_all": [
                     "tosa-mi"
                 ],
+                "selector": "tosa-mi",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -8750,6 +8767,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -8769,6 +8787,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -8788,6 +8807,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
+                "selector": "tosa-mi",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -8811,6 +8831,9 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
             }
         }
     },
