@@ -4776,7 +4776,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         "scatter": {
             "op": Op.SCATTER,
@@ -4796,7 +4796,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
         },
         # Image operations
         "resize": {
