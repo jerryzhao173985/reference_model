@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Arm Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+# When building the reference model as a package for Pypi, we want third-party
+# libraries to be packaged in as well so they can be compiled on install.
+graft thirdparty/
+
+# However, flatbuffers is massive and most of its source code is irrelevant here,
+# so we are careful here about what we include as package data.
+prune thirdparty/serialization_lib/third_party/flatbuffers/
+graft thirdparty/serialization_lib/third_party/flatbuffers/include/
+graft thirdparty/serialization_lib/third_party/flatbuffers/src/
+graft thirdparty/serialization_lib/third_party/flatbuffers/grpc/
+graft thirdparty/serialization_lib/third_party/flatbuffers/CMake/
+include thirdparty/serialization_lib/third_party/flatbuffers/CMakeLists.txt

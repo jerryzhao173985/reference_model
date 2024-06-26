@@ -60,6 +60,10 @@ if(NOT JSON_DIR)
   set(JSON_DIR "../thirdparty/json")
 endif()
 
+if(NOT PYBIND11_DIR)
+  set(PYBIND11_DIR "../thirdparty/pybind11")
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Common sources required for TOSA Reference Model library, executable and unit tests
@@ -117,6 +121,7 @@ set(PRIVATE_INCLUDE_DIRS
     ${SERIALIZATION_DIR}/include
     ${HALF_DIR}/include
     ${JSON_DIR}/single_include
+    ${PYBIND11_DIR}/include
 )
 
 # Build TOSA Reference Model library
@@ -294,3 +299,24 @@ install(EXPORT TosaReferenceModelLibTargets
   NAMESPACE TosaReference::
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/tosa_reference_model_lib"
 )
+
+if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+
+  python_add_library(py_tosa_reference_model MODULE python_bindings/python_bindings.cpp WITH_SOABI)
+
+  set_target_properties(py_tosa_reference_model PROPERTIES OUTPUT_NAME tosa_reference_model)
+
+  target_include_directories(py_tosa_reference_model
+    PUBLIC
+      ${PUBLIC_INCLUDE_DIRS}
+    PRIVATE
+      ${PRIVATE_INCLUDE_DIRS}
+  )
+
+  target_link_libraries(py_tosa_reference_model PRIVATE tosa_reference_model_lib)
+
+  target_compile_definitions(py_tosa_reference_model PRIVATE VERSION_INFO=${PROJECT_VERSION})
+
+  install(TARGETS py_tosa_reference_model DESTINATION src)
+endif()
