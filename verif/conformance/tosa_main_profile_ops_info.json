@@ -1462,17 +1462,19 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-mi": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -1481,6 +1483,7 @@
                         "72"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1492,17 +1495,29 @@
                         "1,2,65535",
                         "5000,1,1"
                     ]
+                ],
+                "selector": "tosa-mi"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-mi",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "5,72",
+                        "--max-batch-size",
+                        "72"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "greater": {
@@ -3237,17 +3252,19 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-mi": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -3256,6 +3273,7 @@
                         "56"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3265,17 +3283,29 @@
                         "1,1,65531",
                         "2989,6,1"
                     ]
+                ],
+                "selector": "tosa-mi"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-mi",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "5,56",
+                        "--max-batch-size",
+                        "56"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "select": {

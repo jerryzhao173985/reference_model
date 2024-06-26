@@ -772,10 +772,24 @@ class TosaTensorValuesGen:
                 shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
                 assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
 
+        if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+            broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
+                "broadcastable_inputs", 0
+            )
+            if broadcastable_inputs > 0:
+                shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
+                assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
+
+        op = testGen.TOSA_OP_LIST[opName]["op"]
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}
-            dg_type = argsDict["dg_type"]
+
+            # GATHER and SCATTER require indices as second arg
+            if (op == Op.GATHER or op == Op.SCATTER) and idx == 1:
+                dg_type = gtu.DataGenType.PSEUDO_RANDOM
+            else:
+                dg_type = argsDict["dg_type"]
 
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
@@ -855,6 +869,7 @@ class TosaTensorValuesGen:
                 # Give this tensor a temporary name until we get one from the serializer
                 temp_name = f"placeholder_{idx}"
                 dg_tens_meta[temp_name] = tens_meta
+
                 # Create data now using the temporary name to access meta details
                 data = testGen.dgl.get_tensor_data(temp_name, tens_data)
                 # Remove the item as we will give it the correct name later
