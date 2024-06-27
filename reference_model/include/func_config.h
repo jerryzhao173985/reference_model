@@ -51,7 +51,6 @@ struct func_config_t
     uint32_t eval                                  = 1;
     uint32_t validate_only                         = 0;
     uint32_t output_tensors                        = 1;
-    uint32_t tosa_profile                          = 1;
     uint32_t dump_intermediates                    = 0;
     uint32_t initialize_variable_tensor_from_numpy = 0;
     std::string fp_format                          = "0.5";

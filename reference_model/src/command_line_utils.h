@@ -58,8 +58,6 @@ int func_model_parse_cmd_line(
         ("validate_only", "Validate the network, but do not read inputs or evaluate (0/1)",
             cxxopts::value<uint32_t>(func_config.validate_only))
         ("output_tensors", "Output tensors to a file (0/1)", cxxopts::value<uint32_t>(func_config.output_tensors))
-        ("tosa_profile", "Set TOSA profile (0 = Base Inference, 1 = Main Inference, 2 = Main Training)",
-            cxxopts::value<uint32_t>(func_config.tosa_profile))
         ("tosa_level", "Set TOSA level (NONE, EIGHTK)",
             cxxopts::value<tosa_level_t>(func_config.tosa_level))
         ("dump_intermediates", "Dump intermediate tensors (0/1)", cxxopts::value<uint32_t>(func_config.dump_intermediates))

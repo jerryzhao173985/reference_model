@@ -3,8 +3,8 @@
 
 
 class TosaProfiles:
-    TosaBI = "tosa-bi"
-    TosaMI = "tosa-mi"
+    TosaProINT = "tosa-pro-int"
+    TosaProFP = "tosa-pro-fp"
     TosaExtInt16 = "tosa-ext-int16"
     TosaExtInt4 = "tosa-ext-int4"
     TosaExtBF16 = "tosa-ext-bf16"
@@ -16,7 +16,7 @@ class TosaProfiles:
 
     @staticmethod
     def profiles():
-        return [TosaProfiles.TosaBI, TosaProfiles.TosaMI]
+        return [TosaProfiles.TosaProINT, TosaProfiles.TosaProFP]
 
     @staticmethod
     def extensions():
