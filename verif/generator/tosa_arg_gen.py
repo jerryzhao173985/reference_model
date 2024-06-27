@@ -304,8 +304,14 @@ class TosaTensorGen:
 
     @staticmethod
     def tgBroadcastFuzz(testGen, rng, op, rank, error_name=None):
+        assert (
+            op.get("broadcastable_inputs", 0) > 0
+        ), "No broadcastable inputs supported"
         pl, const = op["operands"]
         num_shapes = pl + const
+        assert (
+            op.get("broadcastable_inputs", 0) == num_shapes
+        ), "Mismatch between inputs and expected broadcastable shapes"
         return TosaTensorGen._get_broadcast_shapes(
             testGen, rng, num_shapes, rank, error_name
         )
@@ -796,6 +802,14 @@ class TosaTensorValuesGen:
 
         fp_special_info = {}
         fp_special_info["start_idx"] = int(rng.randInt())
+
+        if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+            broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
+                "broadcastable_inputs", 0
+            )
+            if broadcastable_inputs > 0:
+                shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
+                assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
 
         for idx, shape in enumerate(shapeList):
 
@@ -2019,14 +2033,24 @@ class TosaArgGen:
                         "FP special",
                     ):
                         continue
-                    shapes_set = {tuple(x) for x in shapeList}
-                    if len(shapes_set) != 1:
-                        logger.info(
-                            f"Changing {opName} input shapes {shapes_set} - broadcasting incompatable with special test"
-                        )
-                        shapeList = [np.int32(np.broadcast_shapes(*shapeList))] * len(
-                            shapeList
-                        )
+                    broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
+                        "broadcastable_inputs", 0
+                    )
+                    if broadcastable_inputs > 0:
+                        shapes_set = {
+                            tuple(x) for x in shapeList[:broadcastable_inputs]
+                        }
+                        if len(shapes_set) != 1:
+                            logger.info(
+                                f"Changing {opName} input shapes {shapes_set} - broadcasting incompatable with FP special test"
+                            )
+                            broadcasted_shape = np.int32(
+                                np.broadcast_shapes(*shapeList[:broadcastable_inputs])
+                            )
+                            # Change shape list in place to propagate changes
+                            for idx in range(broadcastable_inputs):
+                                shapeList[idx] = broadcasted_shape
+
                     arg_str = f"{arg_str}_fs" if arg_str else "fs"
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
