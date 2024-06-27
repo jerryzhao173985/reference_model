@@ -3714,6 +3714,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
         "arithmetic_right_shift": {
@@ -3735,6 +3736,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "bitwise_and": {
             "op": Op.BITWISE_AND,
@@ -3755,6 +3757,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "bitwise_or": {
             "op": Op.BITWISE_OR,
@@ -3775,6 +3778,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "bitwise_xor": {
             "op": Op.BITWISE_XOR,
@@ -3795,6 +3799,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "intdiv": {
             "op": Op.INTDIV,
@@ -3815,6 +3820,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "logical_and": {
             "op": Op.LOGICAL_AND,
@@ -3835,6 +3841,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "logical_left_shift": {
             "op": Op.LOGICAL_LEFT_SHIFT,
@@ -3855,6 +3862,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "logical_right_shift": {
             "op": Op.LOGICAL_RIGHT_SHIFT,
@@ -3875,6 +3883,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "logical_or": {
             "op": Op.LOGICAL_OR,
@@ -3895,6 +3904,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "logical_xor": {
             "op": Op.LOGICAL_XOR,
@@ -3915,6 +3925,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "broadcastable_inputs": 2,
         },
         "maximum": {
             "op": Op.MAXIMUM,
@@ -3936,6 +3947,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         "minimum": {
             "op": Op.MINIMUM,
@@ -3957,6 +3969,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         "mul": {
             "op": Op.MUL,
@@ -3978,6 +3991,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
         "pow": {
@@ -4000,6 +4014,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         "sub": {
             "op": Op.SUB,
@@ -4021,6 +4036,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
         "table": {
@@ -4268,6 +4284,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "broadcastable_inputs": 3,
         },
         # Comparison operators
         "equal": {
@@ -4290,6 +4307,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         "greater_equal": {
             "op": Op.GREATER_EQUAL,
@@ -4311,6 +4329,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         "greater": {
             "op": Op.GREATER,
@@ -4332,6 +4351,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "broadcastable_inputs": 2,
         },
         # Reduction operators
         "reduce_all": {
