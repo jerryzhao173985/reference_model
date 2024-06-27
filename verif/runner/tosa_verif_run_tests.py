@@ -13,6 +13,7 @@ from pathlib import Path
 
 import conformance.model_files as cmf
 import runner.tosa_test_presets as ttp
+from conformance.tosa_profiles import TosaProfiles
 from generator.datagenerator import GenerateError
 from runner.tosa_test_runner import TosaTestInvalid
 from runner.tosa_test_runner import TosaTestRunner
@@ -158,7 +159,7 @@ def parseArgs(argv):
         "--profile",
         dest="profile",
         type=str,
-        choices=["tosa-bi", "tosa-mi"],
+        choices=TosaProfiles.profiles(),
         help="Filter tests based on profile",
     )
     parser.add_argument(

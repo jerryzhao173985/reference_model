@@ -1027,30 +1027,6 @@ int SubgraphTraverser::validateGraph()
                 return 1;
             }
         }
-
-        if (g_func_config.tosa_profile == 0)
-        {
-            TOSA_REF_TYPE dtype = currTensor->getDtype();
-
-            // Float-point disallowed
-            if (dtype == TOSA_REF_TYPE_FP32 || dtype == TOSA_REF_TYPE_FP16)
-            {
-                WARNING("SubgraphTraverser::validateGraph(): TOSA Base Inference profile selected: All floating point "
-                        "disabled, but %s tensor %s found\n",
-                        EnumNameTOSAREFTYPE(dtype), currTensor->getName().c_str());
-                return 1;
-            }
-        }
-        else if (g_func_config.tosa_profile == 1 || g_func_config.tosa_profile == 2)
-        {
-            // Do nothing. All FP types allowed
-            // Currently no implementation difference between Main Inference and Main Training modes
-        }
-        else
-        {
-            FATAL_ERROR("SubgraphTraverser::validateGraph(): TOSA profile not recognized: %d",
-                        g_func_config.tosa_profile);
-        }
     }
 
     for (GraphNode* currNode : nodes)

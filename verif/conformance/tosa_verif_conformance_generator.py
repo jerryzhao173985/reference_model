@@ -91,9 +91,9 @@ def _run_sh_command(args, cwd, full_cmd):
 
 def _supports_for_enabled(profile_ext):
     # The "supports_for" part of the config only works for MI and related extensions
-    # TODO - Update with TosaBI etc in future
+    # TODO - Update with TosaProINT etc in future
     return profile_ext in (
-        TosaProfiles.TosaMI,
+        TosaProfiles.TosaProFP,
         TosaProfiles.TosaExtFP8E4M3,
         TosaProfiles.TosaExtFP8E5M2,
         TosaProfiles.TosaExtBF16,
@@ -351,8 +351,8 @@ def convert_tests(
     c2c_args_base.extend(["--schema-path", str(args.schema_path)])
     c2c_args_base.extend(["--flatc-path", str(args.flatc_path)])
     c2c_args_base.extend(["--output-type", args.output_type])
-    # This op maybe in more than one profile - e.g. tosa_bi and tosa_mi
-    # even if we are only producing tests for tosa_mi
+    # This op maybe in more than one profile - e.g. tosa_pro_int and tosa_pro_fp
+    # even if we are only producing tests for tosa_pro_fp
     for op_profile in op_profiles_extensions_list:
         c2c_args_base.extend(["--profile", op_profile])
     if tags is not None:
@@ -540,10 +540,10 @@ def parse_args(argv=None):
         "--profile",
         dest="profile",
         choices=profiles,
-        default=[TosaProfiles.TosaBI],
+        default=[TosaProfiles.TosaProINT],
         type=str,
         nargs="*",
-        help=f"TOSA profile (default is {TosaProfiles.TosaBI})",
+        help=f"TOSA profile (default is {TosaProfiles.TosaProINT})",
     )
     parser.add_argument(
         "--operators",
@@ -585,7 +585,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--lazy-data-generation",
         action="store_true",
-        help="Enable lazy data generation (only for tosa-mi)",
+        help=f"Enable lazy data generation (only for {TosaProfiles.TosaProFP})",
     )
     rm_group = parser.add_mutually_exclusive_group(required=True)
     rm_group.add_argument(
