@@ -2305,7 +2305,6 @@
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
@@ -2319,7 +2318,6 @@
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -4951,6 +4949,9 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-mi": {
+                "generator_select": "true"
             }
         }
     },
