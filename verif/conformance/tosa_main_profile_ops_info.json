@@ -174,15 +174,64 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "1",
+                        "2",
+                        "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,3,65535,1",
+                        "1,65537,1,2",
+                        "--num-rand-permutations",
+                        "2"
+                    ]
+                ],
+                "selector": "tosa-mi"
+            },
+            "tosa-ext-bf16": {
+                "no_negative_tests": "true",
+                "selector": "tosa-mi",
+                "generator_args": [
+                    [
+                        "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
@@ -196,9 +245,8 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
-                        "fp32",
-                        "fp16",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
@@ -208,29 +256,12 @@
                         "4",
                         "--num-rand-permutations",
                         "2"
-                    ],
-                    [
-                        "--target-dtype",
-                        "fp32",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--target-shape",
-                        "1,3,65535,1",
-                        "1,65537,1,2",
-                        "--num-rand-permutations",
-                        "2"
                     ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "avg_pool2d": {
@@ -769,24 +800,24 @@
         ],
         "support_for": [
             "lazy_data_gen",
-            "generator_select",
-            "stable_random_gen"
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "gen_filter": "^conv2d",
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
-                        "2,34,19,27",
-                        "3,16,51,7",
+                        "1,34,19,27",
+                        "1,16,51,7",
                         "--tensor-dim-range",
                         "1,16",
                         "--allow-pooling-and-conv-oversizes"
@@ -811,6 +842,41 @@
                         "--target-dtype",
                         "fp32",
                         "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--conv-kernel",
+                        "7,7",
+                        "9,9",
+                        "--target-shape",
+                        "1,127,127,1",
+                        "1,256,256,1",
+                        "1,1080,720,1",
+                        "--tensor-dim-range",
+                        "1,8"
+                    ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-ext-bf16",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,34,19,27",
+                        "1,16,51,7",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
                         "bf16",
                         "--fp-values-range",
                         "-max,max",
@@ -828,10 +894,33 @@
             }
         },
         "selection": {
-            "default": {
+            "tosa-ext-bf16": {
                 "permutes": [
-                    "rank",
-                    "dtype",
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-pro-fp": {
+                "permutes": [
+                    "shape",
+                    "type",
                     "kernel",
                     "acc_type"
                 ],
@@ -857,18 +946,20 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "gen_filter": "^conv3d",
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
@@ -893,26 +984,72 @@
                         "1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-ext-bf16",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,7,18,5,4",
+                        "1,6,12,17,3",
+                        "--tensor-dim-range",
+                        "1,4",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {
-                    "shape": [],
-                    "type": [],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "dilation": []
-                },
+            "tosa-ext-bf16": {
                 "permutes": [
-                    "kernel",
+                    "shape",
+                    "kernel"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-pro-fp": {
+                "permutes": [
                     "shape",
                     "type",
-                    "pad",
-                    "stride"
-                ]
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -923,23 +1060,42 @@
         ],
         "support_for": [
             "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
             "generator_select"
         ],
         "gen_filter": "^depthwise_conv2d",
         "generation": {
-            "tosa-mi": {
+            "tosa-ext-bf16": {
+                "selector": "tosa-ext-bf16",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,17,31,4",
+                        "1,37,11,5",
+                        "--tensor-dim-range",
+                        "1,32",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
+                ]
+            },
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
-                        "--target-dtype",
                         "fp16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "1,17,31,4",
-                        "--target-shape",
                         "1,37,11,5",
                         "--tensor-dim-range",
                         "1,32",
@@ -953,7 +1109,6 @@
                         "-max,max",
                         "--target-shape",
                         "1,1,65531,2",
-                        "--target-shape",
                         "1,65540,1,3",
                         "--tensor-dim-range",
                         "1,16",
@@ -962,31 +1117,31 @@
                         "--allow-pooling-and-conv-oversizes"
                     ]
                 ],
-                "selector": "tosa-mi"
-            },
-            "tosa-ext-bf16": {
-                "selector": "tosa-mi",
-                "no_negative_tests": "true",
-                "negative_dim_range": "1,10",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "bf16",
-                        "--fp-values-range",
-                        "-max,max",
-                        "--target-shape",
-                        "1,17,31,4",
-                        "--target-shape",
-                        "1,37,11,5",
-                        "--tensor-dim-range",
-                        "1,32",
-                        "--allow-pooling-and-conv-oversizes"
-                    ]
-                ]
+                "selector": "tosa-pro-fp"
             }
         },
         "selection": {
-            "tosa-mi": {
+            "tosa-ext-bf16": {
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "dilation"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
+                },
+                "maximum": 3
+            },
+            "tosa-pro-fp": {
                 "permutes": [
                     "shape",
                     "type",
@@ -1333,23 +1488,30 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-ext-fft": {
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-max,max"
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "10,31"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
+                        "1,32,32",
                         "1,256,64",
                         "1,4,4096"
                     ]
@@ -1357,14 +1519,7 @@
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type",
-                    "inverse"
-                ]
-            }
+            "default": {}
         }
     },
     "floor": {
@@ -1986,17 +2141,19 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-2.0,2.0",
                         "--tensor-dim-range",
@@ -2006,7 +2163,6 @@
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-2.0,2.0",
                         "--tensor-dim-range",
@@ -2021,13 +2177,35 @@
                         "4,65530,1",
                         "1,65538,3"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-pro-fp",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--tensor-dim-range",
+                        "13,70"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-2.0,2.0",
+                        "--tensor-dim-range",
+                        "10,19"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "all": "true"
-            }
+            "tosa-pro-fp": {}
         }
     },
     "max_pool2d": {
@@ -3486,7 +3664,10 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "generation": {
             "standard": {
@@ -3495,14 +3676,18 @@
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
-                        "-max,max"
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,31"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
+                        "1,32,32",
                         "1,16,512",
                         "1,8192,2"
                     ]
@@ -3510,13 +3695,7 @@
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "default": {}
         }
     },
     "rsqrt": {
@@ -4327,18 +4506,20 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "stable_random_gen",
+            "random_const_inputs",
+            "generator_select"
         ],
         "gen_filter": "^transpose_conv2d",
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
@@ -4361,25 +4542,73 @@
                         "--max-conv-dilation",
                         "1"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-ext-bf16",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "10,24,9,13",
+                        "8,14,20,5",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {
-                    "shape": [],
-                    "type": [],
-                    "kernel": [],
-                    "stride": [],
-                    "pad": [],
-                    "out_shape": []
+            "tosa-ext-bf16": {
+                "permutes": [
+                    "shape",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride",
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ],
+                    "type": [
+                        "bf16xbf16"
+                    ]
                 },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
+            },
+            "tosa-pro-fp": {
                 "permutes": [
                     "shape",
                     "type",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
                     "stride",
-                    "pad"
-                ]
+                    "out_shape"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     }
