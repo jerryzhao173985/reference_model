@@ -3266,6 +3266,8 @@ class TosaTestGen:
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
         DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
     }
     DP_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
