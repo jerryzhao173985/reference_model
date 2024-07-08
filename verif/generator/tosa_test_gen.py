@@ -257,7 +257,9 @@ class TosaTestGen:
         mode = None
 
         # Check what data generation we have done
-        if argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
+        if not gtu.dtypeIsFloat(outputTensor.dtype):
+            mode = gtu.ComplianceMode.EXACT
+        elif argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
             # compute ceiling(KS / exp2(normal_frac<acc_t>() - normal_frac<out_t>()))
             out_dtype = outputTensor.dtype
             acc_dtype = argsDict["acc_type"]
