@@ -746,7 +746,7 @@ class TosaTensorValuesGen:
 
         if (
             error_name is not None
-            or not gtu.dtypeIsSupportedByCompliance(dtypeList[0])
+            or not gtu.dtypeIsSupportedByDataGen(dtypeList[0])
             or "data_gen" not in testGen.TOSA_OP_LIST[opName]
         ):
             # Fall back to internal data gen when dealing with unsupported types or ops
@@ -1443,7 +1443,7 @@ class TosaTensorValuesGen:
 
     @staticmethod
     def tvgEqual(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
-        if error_name is None and not gtu.dtypeIsSupportedByCompliance(dtypeList[0]):
+        if error_name is None and not gtu.dtypeIsSupportedByDataGen(dtypeList[0]):
             # Integer
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
@@ -1851,7 +1851,7 @@ class TosaTensorValuesGen:
         dtypeList[1] = DType.INT32
 
         dtype = dtypeList[0]
-        if not gtu.dtypeIsSupportedByCompliance(dtype):
+        if not gtu.dtypeIsSupportedByDataGen(dtype):
             # Test unsupported by data generator
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
@@ -1904,7 +1904,7 @@ class TosaTensorValuesGen:
         dtypeList[1] = DType.INT32
 
         dtype = dtypeList[0]
-        if not gtu.dtypeIsSupportedByCompliance(dtype):
+        if not gtu.dtypeIsSupportedByDataGen(dtype):
             # Test unsupported by data generator
             op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
@@ -1967,7 +1967,7 @@ class TosaArgGen:
         if (
             error_name is None
             and "data_gen" in testGen.TOSA_OP_LIST[opName]
-            and gtu.dtypeIsSupportedByCompliance(dtype)
+            and gtu.dtypeIsSupportedByDataGen(dtype)
         ):
             dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"].get(
                 dtype, (gtu.DataGenType.PSEUDO_RANDOM,)

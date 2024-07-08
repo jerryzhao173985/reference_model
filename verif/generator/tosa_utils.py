@@ -71,10 +71,30 @@ def dtypeIsFloat(dtype):
 
 
 def dtypeIsSupportedByCompliance(dtype):
-    """Types supported by the new data generation and compliance flow."""
+    """Types supported by the new compliance flow."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         dtype = dtype[0]
-    return dtype in (DType.FP32, DType.FP16, DType.BF16, DType.FP8E4M3, DType.FP8E5M2)
+    return dtype in (
+        DType.INT32,
+        DType.FP32,
+        DType.FP16,
+        DType.BF16,
+        DType.FP8E4M3,
+        DType.FP8E5M2,
+    )
+
+
+def dtypeIsSupportedByDataGen(dtype):
+    """Types supported by the new data generation"""
+    if isinstance(dtype, list) or isinstance(dtype, tuple):
+        dtype = dtype[0]
+    return dtype in (
+        DType.FP32,
+        DType.FP16,
+        DType.BF16,
+        DType.FP8E4M3,
+        DType.FP8E5M2,
+    )
 
 
 def getOpNameFromOpListName(opName):

@@ -101,20 +101,32 @@ extern "C"
             WARNING("[Verifier] Tensors have different shapes.");
             return false;
         }
-
         // Validate data-type
-        if (ref->data_type == tosa_datatype_fp64_t)
+
+        tosa_datatype_t imp_type = imp->data_type;
+
+        if (cfg->dataType != TosaReference::mapToDType(imp_type))
         {
-            if (cfg->dataType != TosaReference::mapToDType(imp->data_type))
+            WARNING("[Verifier] Incorrect implementation tensor data type.");
+            return false;
+        }
+        if (((imp_type == tosa_datatype_fp16_t) || (imp_type == tosa_datatype_fp32_t) ||
+             (imp_type == tosa_datatype_fp64_t) || (imp_type == tosa_datatype_fp8e4m3_t) ||
+             (imp_type == tosa_datatype_fp8e5m2_t) || (imp_type == tosa_datatype_bf16_t)))
+        {
+            if ((ref->data_type != tosa_datatype_fp64_t))
             {
-                WARNING("[Verifier] Incorrect implementation tensor data type.");
+                WARNING("[Verifier] Reference tensor data type is not FP64, please use ref-model --precise_mode.");
                 return false;
             }
         }
         else
         {
-            WARNING("[Verifier] Reference tensor data type is not FP64, please use ref-model --precise_mode.");
-            return false;
+            if ((ref->data_type != imp_type))
+            {
+                WARNING("[Verifier] Reference and implementation data types do not match");
+                return false;
+            }
         }
 
         // Run verification
