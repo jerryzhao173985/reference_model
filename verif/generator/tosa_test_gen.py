@@ -4348,7 +4348,12 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
+            "data_gen_override": {
+                # The first input i.e. "Input selector tensor" can't cope with
+                # gtu.DataGenType.FP_SPECIAL
+                "operand0": gtu.DataGenType.PSEUDO_RANDOM,
+            },
             "broadcastable_inputs": 3,
         },
         # Comparison operators
@@ -4784,6 +4789,11 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongRank,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "data_gen_override": {
+                # The second input i.e. "2D index tensor" can't cope with
+                # gtu.DataGenType.FP_SPECIAL
+                "operand1": gtu.DataGenType.PSEUDO_RANDOM,
+            },
         },
         "scatter": {
             "op": Op.SCATTER,
@@ -4804,6 +4814,11 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongRank,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "data_gen_override": {
+                # The second input i.e. "2D index tensor" can't cope with
+                # gtu.DataGenType.FP_SPECIAL
+                "operand1": gtu.DataGenType.PSEUDO_RANDOM,
+            },
         },
         # Image operations
         "resize": {

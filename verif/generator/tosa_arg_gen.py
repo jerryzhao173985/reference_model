@@ -812,7 +812,6 @@ class TosaTensorValuesGen:
                 shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
                 assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
 
-        op = testGen.TOSA_OP_LIST[opName]["op"]
         for idx, shape in enumerate(shapeList):
 
             tens_meta = {}
@@ -820,11 +819,11 @@ class TosaTensorValuesGen:
             if fixed_data_tensors[idx] is not None:
                 dg_type = gtu.DataGenType.FIXED_DATA
             else:
-                # GATHER and SCATTER require indices as second arg
-                if (op == Op.GATHER or op == Op.SCATTER) and idx == 1:
-                    dg_type = gtu.DataGenType.PSEUDO_RANDOM
-                else:
-                    dg_type = argsDict["dg_type"]
+                dg_type = argsDict["dg_type"]
+
+            operand_idx_str = "operand" + str(idx)
+            dg_override = testGen.TOSA_OP_LIST[opName].get("data_gen_override", {})
+            dg_type = dg_override.get(operand_idx_str, dg_type)
 
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
@@ -2084,6 +2083,7 @@ class TosaArgGen:
                     only_one = True
 
                 gen_args_dict["dg_type"] = dg_type
+
                 if num_test_sets > 0:
                     for s in range(0, num_test_sets):
                         set_arg_str = f"{arg_str}_s{s}" if arg_str else f"s{s}"
