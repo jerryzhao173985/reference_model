@@ -1485,8 +1485,9 @@ class TosaTensorValuesGen:
                 testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
         dtype = dtypeList[0]
-        # Different ranges for POW
-        test_set = argsDict["s"]
+        # Different value ranges for each test set for POW
+        # Default to test set 0 for FP Special tests as the ranges will be ignored
+        test_set = argsDict.get("s", 0)
         if test_set == 0:
             # Positive base with fractional exponent
             base_range = TosaTensorValuesGen._get_data_range(

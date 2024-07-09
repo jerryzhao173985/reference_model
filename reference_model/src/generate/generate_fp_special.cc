@@ -152,8 +152,12 @@ public:
         Min,    // Smallest positive normal floating point value
         Max,    // Largest positive floating point value
         One,
-        MinDenorm,    // Smallest positive denormal floating point value
-        ULPMax,       // To force overflows to infinity when added/subtracted
+        Two,
+        Ten,
+        Euler,         // Floating point number
+        Pythagorus,    // Floating point number
+        MinDenorm,     // Smallest positive denormal floating point value
+        ULPMax,        // To force overflows to infinity when added/subtracted
         RndFloat,
         RndInteger,
         RndEvenInteger,
@@ -204,6 +208,10 @@ public:
             case Min:
             case Max:
             case One:
+            case Two:
+            case Ten:
+            case Euler:
+            case Pythagorus:
             case MinDenorm:
             case ULPMax:
                 return _static_evaluate<DataType>(_value, _negative);
@@ -256,6 +264,14 @@ private:
                 return negate ? -std::numeric_limits<DataType>::max() : std::numeric_limits<DataType>::max();
             case One:
                 return static_cast<DataType>(negate ? -1.0 : 1.0);
+            case Two:
+                return static_cast<DataType>(negate ? -2.0 : 2.0);
+            case Ten:
+                return static_cast<DataType>(negate ? -10.0 : 10.0);
+            case Euler:
+                return static_cast<DataType>(negate ? -2.71828 : 2.71828);
+            case Pythagorus:
+                return static_cast<DataType>(negate ? -1.41421 : 1.41421);
             case MinDenorm:
                 return negate ? -std::numeric_limits<DataType>::denorm_min()
                               : std::numeric_limits<DataType>::denorm_min();
@@ -305,6 +321,55 @@ TestValues addTestVals{ { SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max), SValue(S
                         { SValue(SVE::NaN), SValue(SVE::RndFloat) },
                         { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
 
+TestValues subTestVals{ { SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
+                        { -SValue(SVE::Max), SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
+                        { SValue(SVE::Inf), SValue(SVE::Inf) },
+                        { -SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { -SValue(SVE::Inf), SValue(SVE::Inf) },
+                        { SValue(SVE::Inf), SValue(SVE::RndFloat) },
+                        { -SValue(SVE::Inf), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), SValue(SVE::Inf) },
+                        { SValue(SVE::RndFloat), -SValue(SVE::Inf) },
+                        { SValue(SVE::NaN), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
+
+TestValues mulTestVals{ { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE::Max) },
+                        { -SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::Two, SVE::Max) },
+                        { -SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE::Ten) },
+                        { SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::Two, SVE::Ten) },
+                        { SValue(SVE::Inf), SValue(SVE::Zero) },
+                        { -SValue(SVE::Inf), SValue(SVE::Zero) },
+                        { SValue(SVE::Inf), -SValue(SVE::Zero) },
+                        { -SValue(SVE::Inf), -SValue(SVE::Zero) },
+                        { SValue(SVE::Inf), SValue(SVE::Inf) },
+                        { -SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { SValue(SVE::Inf), -SValue(SVE::Inf) },
+                        { -SValue(SVE::Inf), SValue(SVE::Inf) },
+                        { SValue(SVE::NaN), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
+
+TestValues powTestVals{ { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Euler) },
+                        { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Pythagorus) },
+                        { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE::Max) },
+                        { -SValue(SVE::Max), SValue(SVE::RndOddInteger, SVE::One, SVE::Ten) },
+                        { -SValue(SVE::Max), SValue(SVE::RndEvenInteger, SVE::One, SVE::Ten) },
+                        { SValue(SVE::Zero), SValue(SVE::One) },
+                        { -SValue(SVE::Zero), SValue(SVE::One) },
+                        { SValue(SVE::Zero), SValue(SVE::Two) },
+                        { -SValue(SVE::Zero), SValue(SVE::Two) },
+                        /* TODO: Missing infinity tests - need spec clarification */
+                        { SValue(SVE::NaN), SValue(SVE::RndFloat) },
+                        { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
+
+TestValues minMaxTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) },
+                           { SValue(SVE::Inf), -SValue(SVE::Inf) },
+                           { SValue(SVE::Min), -SValue(SVE::Min) },
+                           { SValue(SVE::Max), -SValue(SVE::Max) },
+                           /* TODO: Add denorm numbers - need spec clarification */
+                           { SValue(SVE::RndFloat), SValue(SVE::NaN) },
+                           { SValue(SVE::NaN), -SValue(SVE::RndFloat) } };
+
 TestValues defaultTestVals{ { SValue(SVE::Zero) },       { -SValue(SVE::Zero) }, { SValue(SVE::Inf) },
                             { -SValue(SVE::Inf) },       { SValue(SVE::Min) },   { -SValue(SVE::Min) },
                             { SValue(SVE::Max) },        { -SValue(SVE::Max) },  { SValue(SVE::MinDenorm) },
@@ -324,6 +389,11 @@ std::map<Op, TestValues> testValues = {
     { Op::Op_GREATER, equalOpsTestVals },
     { Op::Op_GREATER_EQUAL, equalOpsTestVals },
     { Op::Op_ADD, addTestVals },
+    { Op::Op_MAXIMUM, minMaxTestVals },
+    { Op::Op_MINIMUM, minMaxTestVals },
+    { Op::Op_MUL, mulTestVals },
+    { Op::Op_POW, powTestVals },
+    { Op::Op_SUB, subTestVals },
     { Op::Op_CONV2D, dotProductTestVals },
     { Op::Op_CONV3D, dotProductTestVals },
     { Op::Op_DEPTHWISE_CONV2D, dotProductTestVals },

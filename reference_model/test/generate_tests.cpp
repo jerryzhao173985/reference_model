@@ -1673,9 +1673,9 @@ TEST_CASE("positive - FP32 FP Special")
     const std::string tosaName1 = "input1";
     const size_t tosaElements   = 5 * 6 * 7;
     const float inf             = std::numeric_limits<float>::infinity();
+    const float min             = std::numeric_limits<float>::min();
     const float max             = std::numeric_limits<float>::max();
     const float ulpmax          = 3.777893186295716e+22;    // max - nextafter(max, 0.0)
-    const float mindenorm       = std::numeric_limits<float>::denorm_min();
 
     SUBCASE("equal, input 0")
     {
@@ -1709,19 +1709,138 @@ TEST_CASE("positive - FP32 FP Special")
     }
     SUBCASE("maximum, input 0")
     {
-        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { -0.0, -0.0 }, { inf, inf } };
+        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { min, min } };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, input 1")
     {
-        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { -0.0, -0.0 }, { inf, inf } };
+        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -min, -min } };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, startIndex 100")
     {
-        // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 13) 100 % 13 = 9
-        std::vector<std::pair<float, float>> expected = { { -mindenorm, -mindenorm }, { 1.0, 1.0 }, { -1.0, -1.0 } };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "100", expected);
+        // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 6) 98 % 6 = 2
+        std::vector<std::pair<float, float>> expected = { { min, min }, { max, max }, { 1.0, max } };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "98", expected);
+    }
+}
+
+enum valueType
+{
+    Float,
+    Integer,
+    OddInteger,
+    EvenInteger
+};
+
+void fp_special_test_FP16(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string templateJsonCfg,
+                          const std::string opStr,
+                          const std::string startIndexStr,
+                          const std::vector<std::pair<half_float::half, half_float::half>> expected,
+                          const std::vector<valueType> expectedValueType)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_OP_", opStr);
+    update_json_template(jsonCfg, "_START_", startIndexStr);
+
+    std::vector<half_float::half> buffer(tosaElements);
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        std::stringstream msg;
+        msg << "index: " << idx << " expected between: " << expected[idx].first << " and: " << expected[idx].second
+            << ", but got: " << buffer[idx];
+        if (std::isnan(expected[idx].first) || std::isnan(expected[idx].second))
+        {
+            REQUIRE_MESSAGE((std::isnan(expected[idx].first) && std::isnan(expected[idx].second)),
+                            "Incorrect test - cannot have range that includes NaN, both values must be NaN");
+            REQUIRE_MESSAGE(std::isnan(buffer[idx]), msg.str());
+        }
+        else
+        {
+            bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
+            REQUIRE_MESSAGE(withinRange, msg.str());
+
+            if (expectedValueType[idx] != Float)
+            {
+                std::stringstream imsg;
+                imsg << "index: " << idx << " got: " << buffer[idx] << " but expected an integer";
+                bool isInteger = buffer[idx] == round(buffer[idx]);
+                REQUIRE_MESSAGE(isInteger, imsg.str());
+
+                if (expectedValueType[idx] == OddInteger)
+                {
+                    half_float::half halfValue = buffer[idx] / half_float::half(2.0);
+                    bool isOdd                 = halfValue != round(halfValue);
+                    imsg << " that is odd";
+                    REQUIRE_MESSAGE(isOdd, imsg.str());
+                }
+                if (expectedValueType[idx] == EvenInteger)
+                {
+                    half_float::half halfValue = buffer[idx] / half_float::half(2.0);
+                    bool isEven                = halfValue == round(halfValue);
+                    imsg << " that is even";
+                    REQUIRE_MESSAGE(isEven, imsg.str());
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("positive - FP16 FP Special")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "FP_SPECIAL",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 6, 4 ],
+                "input_pos": 0,
+                "op" : "_OP_",
+                "fp_special_info": {
+                    "start_idx": _START_
+                }
+            },
+            "input1" : {
+                "generator": "FP_SPECIAL",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 6, 4 ],
+                "input_pos": 1,
+                "op" : "_OP_",
+                "fp_special_info": {
+                    "start_idx": _START_
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName0 = "input0";
+    const std::string tosaName1 = "input1";
+    const size_t tosaElements   = 3 * 6 * 4;
+    const half_float::half max  = std::numeric_limits<half_float::half>::max();
+    const half_float::half one  = half_float::half(1.0);
+    const half_float::half two  = half_float::half(2.0);
+    const half_float::half ten  = half_float::half(10.0);
+
+    SUBCASE("pow, input 0")
+    {
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { max, max },
+                                                                                { -max, -max },
+                                                                                { -max, -max } };
+        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        fp_special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+    }
+    SUBCASE("pow, input 1")
+    {
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { two, max },
+                                                                                { one, ten },
+                                                                                { one, ten } };
+        std::vector<valueType> expectedValueType                            = { Float, OddInteger, EvenInteger };
+        fp_special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
 }
 
