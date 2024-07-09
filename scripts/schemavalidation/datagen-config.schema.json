@@ -57,8 +57,11 @@
                             "properties":
                             {
                                 "rng_seed": {
-                                    "description": "random number generator seed",
-                                    "type": "integer"
+                                    "description": "random number generator seed - uint64",
+                                    "type": "number",
+                                    "multipleOf": 1,
+                                    "minimum": 0,
+                                    "maximum": 18446744073709551615
                                 },
                                 "range": {
                                     "type": "array",

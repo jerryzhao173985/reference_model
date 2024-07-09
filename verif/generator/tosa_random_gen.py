@@ -35,6 +35,20 @@ class TosaRandomGenerator(np.random.Generator):
     def hexSeed(self):
         return hex(self._seed)
 
+    def getDataGenSeed(self, tensorIdx):
+        """Create a 64-bit seed for a specific tensor
+
+        This seed will be used in the C++ code for generating inputs. The
+        returned seed will be deterministic based on the tensorIdx and
+        the underlying random generator seed.
+
+        tensorIdx: int
+        """
+        # Have a different seed for each tensor, so that we don't
+        # generate the same data for all of them. Then truncate it
+        # to 8 bytes because C++ cannot handle larger seeds.
+        return (self._seed + tensorIdx) & 0xFFFFFFFFFFFFFFFF
+
     def dTypeRange(self, dtype, high_inclusive=False):
         """Returns range tuple for given dtype.
 
@@ -163,8 +177,9 @@ class TosaHashRandomGenerator(TosaRandomGenerator):
         # Create a single string and create hash
         self._seed_string = "__".join(seed_strings_list)
         self._hash = hashlib.md5(bytes(self._seed_string, "utf-8"))
-        # Add the hash value to the given seed
-        seed += int(self._hash.hexdigest(), 16)
+        # Get seed by combining the original seed and a hash of the seed_string
+        hexdigest = self._hash.hexdigest()
+        seed += int(hexdigest, 16)
 
         logger.debug(f"Seed={seed} Seed string={self._seed_string}")
         super().__init__(seed, restrict_range_by_type)

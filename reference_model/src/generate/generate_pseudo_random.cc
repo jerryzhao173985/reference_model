@@ -66,25 +66,20 @@ private:
         _unidis = std::uniform_real_distribution<FP>(min, max);
 
         // Piecewise Constant distribution for larger ranges
-        double range = std::abs(max - min);
-        double mid;
-        if (max == -min)
-            mid = 0.f;
-        else
-            mid = (range / 2) + min;
-        double segment = std::min<double>(1000.0, range / 5);
+        // The code below needs to be careful with overflows.
+        double mid = (max / 2) + (min / 2);
 
-        const std::array<double, 7> intervals{
-            min, min + segment, mid - segment, mid, mid + segment, max - segment, max
-        };
-        const std::array<double, 7> weights{ 1.0, 0.1, 1.0, 2.0, 1.0, 0.1, 1.0 };
+        const std::array<double, 5> intervals{ min, (min / 2) + (mid / 2), mid, (mid / 2) + (max / 2), max };
+        // One weight for each interval in-between values in the intervals array
+        const std::array<double, 4> weights{ 1.0, 1.0, 1.0, 1.0 };
+
         _pwcdis = std::piecewise_constant_distribution<FP>(intervals.begin(), intervals.end(), weights.begin());
 
         // Uniform distribution works well on smaller ranges
-        _useUniform = (range < 2000.0);
+        _useUniform = (std::abs(max - min) < 2000.0);
     }
 
-    std::mt19937 _gen;
+    std::mt19937_64 _gen;
     std::uniform_real_distribution<FP> _unidis;
     std::piecewise_constant_distribution<FP> _pwcdis;
     bool _useUniform;
@@ -187,7 +182,7 @@ private:
         _unidis = std::uniform_int_distribution<INT>(min, max);
     }
 
-    std::mt19937 _gen;
+    std::mt19937_64 _gen;
     std::uniform_int_distribution<INT> _unidis;
 };
 
