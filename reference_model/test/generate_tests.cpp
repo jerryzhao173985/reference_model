@@ -1676,26 +1676,65 @@ TEST_CASE("positive - FP32 FP Special")
     const float min             = std::numeric_limits<float>::min();
     const float max             = std::numeric_limits<float>::max();
     const float ulpmax          = 3.777893186295716e+22;    // max - nextafter(max, 0.0)
+    const float mindenorm       = std::numeric_limits<float>::denorm_min();
+    const float nanFloat        = std::nanf("1");
 
     SUBCASE("equal, input 0")
     {
-        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { 0.0, 0.0 } };
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
+            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
+            { nanFloat, nanFloat }
+        };
         fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("equal, input 1")
     {
-        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -0.0, -0.0 } };
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
+            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+        };
         fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater, input 0")
     {
-        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { 0.0, 0.0 } };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "GREATER", "0", expected);
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
+            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
+            { nanFloat, nanFloat }
+        };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater, input 1")
     {
-        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -0.0, -0.0 } };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "GREATER", "0", expected);
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
+            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+        };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+    }
+    SUBCASE("greater_equal, input 0")
+    {
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
+            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
+            { nanFloat, nanFloat }
+        };
+        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+    }
+    SUBCASE("greater_equal, input 1")
+    {
+        std::vector<std::pair<float, float>> expected = {
+            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
+            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+        };
+        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("add, input 0")
     {
