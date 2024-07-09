@@ -309,7 +309,15 @@ using TestValues = std::vector<std::vector<SpecialValue>>;
 using SValue     = SpecialValue;
 using SVE        = SpecialValue::SpecialValsEnum;
 
-TestValues equalOpsTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) }, { SValue(SVE::Inf), -SValue(SVE::Inf) } };
+TestValues conditionalOpsTestVals{
+    { SValue(SVE::Inf), SValue(SVE::Inf) },      { -SValue(SVE::Inf), -SValue(SVE::Inf) },
+    { SValue(SVE::Inf), -SValue(SVE::Inf) },     { -SValue(SVE::Inf), SValue(SVE::Inf) },
+    { -SValue(SVE::Zero), SValue(SVE::Zero) },   { SValue(SVE::Zero), -SValue(SVE::Zero) },
+    { SValue(SVE::NaN), SValue(SVE::RndFloat) }, { SValue(SVE::RndFloat), SValue(SVE::NaN) },
+    { SValue(SVE::NaN), SValue(SVE::Inf) },      { SValue(SVE::Inf), SValue(SVE::NaN) },
+    { SValue(SVE::NaN), -SValue(SVE::Inf) },     { -SValue(SVE::Inf), SValue(SVE::NaN) },
+    { SValue(SVE::NaN), SValue(SVE::NaN) },
+};
 
 TestValues addTestVals{ { SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max), SValue(SVE::Max) },
                         { -SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
@@ -385,9 +393,9 @@ TestValues dotProductTestVals{
 };
 
 std::map<Op, TestValues> testValues = {
-    { Op::Op_EQUAL, equalOpsTestVals },
-    { Op::Op_GREATER, equalOpsTestVals },
-    { Op::Op_GREATER_EQUAL, equalOpsTestVals },
+    { Op::Op_EQUAL, conditionalOpsTestVals },
+    { Op::Op_GREATER, conditionalOpsTestVals },
+    { Op::Op_GREATER_EQUAL, conditionalOpsTestVals },
     { Op::Op_ADD, addTestVals },
     { Op::Op_MAXIMUM, minMaxTestVals },
     { Op::Op_MINIMUM, minMaxTestVals },

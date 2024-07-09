@@ -1018,7 +1018,10 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
             "tosa-mi": {
@@ -1058,7 +1061,8 @@
                         "1,1,2,65550",
                         "1,4,65530,1,1"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             },
             "tosa-ext-bf16": {
                 "no_negative_tests": "true",
@@ -1075,17 +1079,12 @@
                         "2",
                         "3"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "erf": {
@@ -1483,7 +1482,6 @@
                         "72"
                     ],
                     [
-                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1517,7 +1515,14 @@
             }
         },
         "selection": {
-            "tosa-mi": {}
+            "tosa-mi": {},
+            "default": {
+                "params": {},
+                "permutes": [
+                    "shape",
+                    "type"
+                ]
+            }
         }
     },
     "greater": {
@@ -1526,7 +1531,10 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
             "tosa-mi": {
@@ -1554,7 +1562,8 @@
                         "3,65551,1,1",
                         "1,1,3,65531,1"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             },
             "tosa-ext-bf16": {
                 "no_negative_tests": "true",
@@ -1583,17 +1592,12 @@
                         "4",
                         "5"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "greater_equal": {
@@ -1602,7 +1606,10 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
             "tosa-mi": {
@@ -1632,7 +1639,8 @@
                         "4",
                         "5"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             },
             "tosa-ext-bf16": {
                 "no_negative_tests": "true",
@@ -1659,17 +1667,12 @@
                         "65552,1,1,4",
                         "1,1,1,3,65532"
                     ]
-                ]
+                ],
+                "selector": "tosa-mi"
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            }
+            "tosa-mi": {}
         }
     },
     "identity": {
