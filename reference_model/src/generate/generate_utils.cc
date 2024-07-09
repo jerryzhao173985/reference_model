@@ -181,7 +181,7 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     }
 
     // Set up defaults for pseudoRandomInfo
-    cfg.pseudoRandomInfo.rngSeed = -1;
+    cfg.pseudoRandomInfo.rngSeed = 0;
     cfg.pseudoRandomInfo.range   = std::vector<std::string>();
     cfg.pseudoRandomInfo.round   = false;
     if (j.contains("pseudo_random_info"))

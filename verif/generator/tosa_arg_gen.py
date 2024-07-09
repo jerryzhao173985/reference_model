@@ -762,7 +762,6 @@ class TosaTensorValuesGen:
 
         fp_special_info = {}
         fp_special_info["start_idx"] = int(rng.randInt())
-        fp_special_info["rng_seed"] = rng.seed
 
         if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
             broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
@@ -813,7 +812,7 @@ class TosaTensorValuesGen:
 
             if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
                 info = {}
-                info["rng_seed"] = rng.seed
+                info["rng_seed"] = rng.getDataGenSeed(idx)
 
                 data_range = None
                 if "data_range_list" in argsDict:
@@ -851,7 +850,10 @@ class TosaTensorValuesGen:
                 tens_meta["full_range_info"] = info
 
             elif dg_type == gtu.DataGenType.FP_SPECIAL:
-                tens_meta["fp_special_info"] = fp_special_info
+                # Each tensor has its own seed
+                fp_special_info_tensor = fp_special_info.copy()
+                fp_special_info_tensor["rng_seed"] = rng.getDataGenSeed(idx)
+                tens_meta["fp_special_info"] = fp_special_info_tensor
 
             else:
                 # TODO - other data gen type

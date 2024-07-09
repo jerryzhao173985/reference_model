@@ -60,7 +60,7 @@ struct PseudoRandomInfo
 {
     PseudoRandomInfo() = default;
 
-    int64_t rngSeed;
+    uint64_t rngSeed;
     std::vector<std::string> range;
     bool round;
 };
