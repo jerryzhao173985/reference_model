@@ -2297,7 +2297,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -2343,7 +2343,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -2378,7 +2378,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2402,7 +2402,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -2456,7 +2456,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
@@ -3786,7 +3786,9 @@
     "equal": {
         "group": "comparison",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -3842,6 +3844,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
+                "selector": "tosa-pro-fp",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -3884,6 +3887,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -3908,6 +3912,9 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-pro-fp": {
+                "generator_select": "true"
             }
         }
     },
@@ -4396,7 +4403,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -4429,7 +4436,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -4449,7 +4456,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -4473,7 +4480,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -4502,7 +4509,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
@@ -4510,7 +4517,9 @@
     "greater": {
         "group": "comparison",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -4566,6 +4575,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
+                "selector": "tosa-pro-fp",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -4596,6 +4606,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -4632,13 +4643,18 @@
                     "shape",
                     "type"
                 ]
+            },
+            "tosa-pro-fp": {
+                "generator_select": "true"
             }
         }
     },
     "greater_equal": {
         "group": "comparison",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -4695,6 +4711,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
+                "selector": "tosa-pro-fp",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -4727,8 +4744,8 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
-                "selector": "tosa-mi",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -4763,7 +4780,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
@@ -4822,7 +4839,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -4965,7 +4982,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
@@ -8745,7 +8762,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -8760,6 +8777,7 @@
                         "56"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -8775,7 +8793,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "negative_dim_range": "1,10",
                 "generator_args": [
@@ -8795,7 +8813,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e4m3"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -8815,7 +8833,7 @@
                 "supports_all": [
                     "tosa-ext-fp8e5m2"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
                 "generator_args": [
@@ -8840,7 +8858,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
@@ -8958,7 +8976,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -9006,7 +9024,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-mi",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -9046,7 +9064,7 @@
                     "type"
                 ]
             },
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_select": "true"
             }
         }
