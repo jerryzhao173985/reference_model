@@ -177,7 +177,11 @@ def parse_args():
         type=Path,
         help="Path to prepend to paths in test.json",
     )
-
+    parser.add_argument(
+        "--ignored-failures",
+        dest="ignored_failures",
+        help="Filename of JSON file listing ignored failures",
+    )
     parser.add_argument(
         "-o", "--output", dest="output_file", help="Redirect script output to a file"
     )
@@ -207,6 +211,8 @@ class TestResult(IntEnum):
     INVALID_MLIR = 7
     INTERNAL_ERROR = 8
     SKIPPED = 9
+    UNEXPECTED_PASS = 10
+    IGNORED_FAILURE = 11
 
 
 TestResultErrorStr = [
@@ -220,7 +226,18 @@ TestResultErrorStr = [
     "Invalid MLIR",
     "Internal error",
     "",
+    "Unexpected test pass",
+    "Ignored Failure",
 ]
+
+
+# Get an appropriate return code when considering expected failures
+def get_rc_ignored_failures(rc, ignored_fail):
+    if ignored_fail != "":
+        if rc == TestResult.PASS:
+            return TestResult.UNEXPECTED_PASS
+        return TestResult.IGNORED_FAILURE
+    return rc
 
 
 def parse_compiler_output(compiler_stdout, compiler_stderr):
@@ -261,7 +278,7 @@ def write_reference_runner_json(
     ofm_file,
     variable_name,
     variable_file,
-    expected_failure=False,
+    ignored_failure=False,
 ):
     """Write a json test file so that it is fairly easy to pick up the test
     and generate commands for third party tool"""
@@ -274,7 +291,7 @@ def write_reference_runner_json(
     test_desc["ofm_file"] = ofm_file
     test_desc["variable_name"] = variable_name
     test_desc["variable_file"] = variable_file
-    test_desc["expected_failure"] = expected_failure
+    test_desc["ignored_failure"] = ignored_failure
 
     with open(filename, "w") as f:
         json.dump(test_desc, f, indent="  ")
@@ -388,6 +405,16 @@ def run_test(args, test_path, framework):
     if not test_name:
         raise Exception(f"Could not parse test_name from {test_path}")
 
+    ignored_fail = ""
+    unexpected_pass = ""
+    fail_logcolor = LogColors.RED
+    pass_logcolor = LogColors.GREEN
+    if test_name in args.ignored_fails:
+        ignored_fail = "Ignored Failure"
+        fail_logcolor = LogColors.GREEN
+        unexpected_pass = "Unexpected Pass"
+        pass_logcolor = LogColors.RED
+
     print_color(LogColors.GREEN, f"## Running {framework} test {test_name}")
 
     try:
@@ -439,7 +466,7 @@ def run_test(args, test_path, framework):
                 pre_opt_filename,
             ]
     else:
-        raise Exception(f"Unknown framwork: {framework}")
+        raise Exception(f"Unknown framework: {framework}")
 
     # Any additional inputs to the translator?
     input_tensor_prefix = "TosaInput_"
@@ -545,8 +572,15 @@ def run_test(args, test_path, framework):
             if tf_opt_cmd:
                 run_sh_command(tf_opt_cmd, args.verbose, True)
         except Exception as e:
-            print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
-            return (TestResult.INVALID_MLIR, 0.0, e, test_name)
+            print_color(
+                fail_logcolor, f"Results {ignored_fail} INVALID_MLIR {test_name}: {e}"
+            )
+            return (
+                get_rc_ignored_failures(TestResult.INVALID_MLIR, ignored_fail),
+                0.0,
+                e,
+                test_name,
+            )
 
         if "ifm_dynamic" in test_desc and test_desc["ifm_dynamic"] == 1:
             compile_dynamic_model(
@@ -569,22 +603,43 @@ def run_test(args, test_path, framework):
                 compiler_rc = parse_compiler_output(compiler_stdout, compiler_stderr)
                 if compiler_rc == TestResult.NOT_LOWERED:
                     print_color(
-                        LogColors.RED,
-                        f"Results NOT_LOWERED {test_name}, framework {framework}",
+                        fail_logcolor,
+                        f"Results {ignored_fail} NOT_LOWERED {test_name}, framework {framework}",
                     )
-                    return (TestResult.NOT_LOWERED, 0.0, "", test_name)
+                    return (
+                        get_rc_ignored_failures(TestResult.NOT_LOWERED, ignored_fail),
+                        0.0,
+                        "",
+                        test_name,
+                    )
 
                 pass
 
             except Exception as e:
                 if "same scale constraint" in str(e):
-                    print_color(LogColors.RED, f"Results INVALID_MLIR {test_name}: {e}")
-                    return (TestResult.INVALID_MLIR, 0.0, e, test_name)
+                    print_color(
+                        fail_logcolor,
+                        f"Results {ignored_fail} INVALID_MLIR {test_name}: {e}",
+                    )
+                    return (
+                        get_rc_ignored_failures(TestResult.INVALID_MLIR, ignored_fail),
+                        0.0,
+                        e,
+                        test_name,
+                    )
                 else:
                     print_color(
-                        LogColors.RED, f"Results COMPILER_ERROR {test_name}: {e}"
+                        fail_logcolor,
+                        f"Results {ignored_fail} COMPILER_ERROR {test_name}: {e}",
                     )
-                    return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
+                    return (
+                        get_rc_ignored_failures(
+                            TestResult.COMPILER_ERROR, ignored_fail
+                        ),
+                        0.0,
+                        e,
+                        test_name,
+                    )
 
     if framework == "tf":
         try:
@@ -697,12 +752,20 @@ def run_test(args, test_path, framework):
         ref_model_rc = parse_reference_model_output("", str(e))
         if ref_model_rc != TestResult.PASS:
             print_color(
-                LogColors.RED,
-                f"Results {TestResultErrorStr[ref_model_rc]} {test_name}: {e}",
+                fail_logcolor,
+                f"Results {ignored_fail} {TestResultErrorStr[ref_model_rc]} {test_name}: {e}",
             )
-            return (ref_model_rc, 0.0, "")
-        print_color(LogColors.RED, f"Results REF_MODEL_RUNTIME_ERROR {test_name}: {e}")
-        return (TestResult.REF_MODEL_RUNTIME_ERROR, 0.0, e, test_name)
+            return (get_rc_ignored_failures(ref_model_rc, ignored_fail), 0.0, "")
+        print_color(
+            fail_logcolor,
+            f"Results {ignored_fail} REF_MODEL_RUNTIME_ERROR {test_name}: {e}",
+        )
+        return (
+            get_rc_ignored_failures(TestResult.REF_MODEL_RUNTIME_ERROR, ignored_fail),
+            0.0,
+            e,
+            test_name,
+        )
 
     if args.precise_mode == 1 and (
         tf_result.dtype == np.float16 or tf_result.dtype == np.float32
@@ -741,19 +804,24 @@ def run_test(args, test_path, framework):
     ref_model_result = np.squeeze(ref_model_result)
 
     if np.shape(tf_result) != np.shape(ref_model_result):
-        print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
+        print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
         msg = f"Shapes mismatch: Reference {np.shape(tf_result)} vs {np.shape(ref_model_result)}"
         print(msg)
-        return (TestResult.MISMATCH, 0.0, msg, test_name)
+        return (
+            get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+            0.0,
+            msg,
+            test_name,
+        )
 
     # for quantized test, allow +-(args.quantize_tolerance) error
     if ref_model_result.dtype == np.int32:
         assert tf_result.dtype == np.int32
 
         if np.all(np.absolute(ref_model_result - tf_result) <= args.quantize_tolerance):
-            print_color(LogColors.GREEN, f"Results PASS {test_name}")
+            print_color(pass_logcolor, f"Results {unexpected_pass} {test_name}")
         else:
-            print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
+            print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
 
             tolerance = args.quantize_tolerance + 1
             while not np.all(
@@ -772,14 +840,19 @@ def run_test(args, test_path, framework):
             print(f"ref_model_result: {ref_model_result.shape}\n")
             print(ref_model_result)
             # print(tf_result - ref_model_result)
-            return (TestResult.MISMATCH, tolerance, msg, test_name)
+            return (
+                get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+                tolerance,
+                msg,
+                test_name,
+            )
     else:
         if np.allclose(
             ref_model_result, tf_result, atol=args.tolerance, equal_nan=True
         ):
-            print_color(LogColors.GREEN, f"Results PASS {test_name}")
+            print_color(pass_logcolor, f"Results {unexpected_pass} PASS {test_name}")
         else:
-            print_color(LogColors.RED, f"Results MISCOMPARE {test_name}")
+            print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
 
             # Many of these tests would match with a reasonable looser tolerence.
             # Determine what would have worked.
@@ -801,9 +874,19 @@ def run_test(args, test_path, framework):
             print(f"ref_model_result: {ref_model_result.shape}\n")
             print(ref_model_result)
             # print(tf_result - ref_model_result)
-            return (TestResult.MISMATCH, tolerance, msg, test_name)
+            return (
+                get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+                tolerance,
+                msg,
+                test_name,
+            )
 
-    return (TestResult.PASS, args.tolerance, msg, test_name)
+    return (
+        get_rc_ignored_failures(TestResult.PASS, ignored_fail),
+        args.tolerance,
+        msg,
+        test_name,
+    )
 
 
 def worker_thread(task_queue, args, result_queue):
@@ -860,6 +943,10 @@ def main():
         set_print_in_color(False)
         sys.stdout = open(args.output_file, "w")
 
+    args.ignored_fails = []
+    if args.ignored_failures:
+        with open(args.ignored_failures) as xf:
+            args.ignored_fails = json.load(xf)
     # Disable TF info messages
     os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -930,12 +1017,22 @@ def main():
         if err_msg:
             msg = f"{msg} {err_msg}"
 
-        if rc == TestResult.PASS:
-            pass
-        elif rc == TestResult.SKIPPED:
-            xt.skipped()
+        if test_name in args.ignored_fails:
+            if rc == TestResult.PASS or rc == TestResult.UNEXPECTED_PASS:
+                # An ignored failure passing is a failure
+                xt.failed("Ignored Failure test is now passing")
+            elif rc == TestResult.SKIPPED:
+                xt.skipped()
+            else:
+                # Count ignored failures as skipped
+                xt.skipped()
         else:
-            xt.failed(msg)
+            if rc == TestResult.PASS:
+                pass
+            elif rc == TestResult.SKIPPED:
+                xt.skipped()
+            else:
+                xt.failed(msg)
 
         xunit_suite.tests.append(xt)
 
