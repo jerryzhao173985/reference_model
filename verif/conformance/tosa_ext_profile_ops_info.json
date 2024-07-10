@@ -294,10 +294,9 @@
     "add_shape": {
         "group": "shape",
         "generation": {
-            "tosa-bi-mi": {
-                "supports_any": [
-                    "tosa-bi",
-                    "tosa-mi"
+            "tosa-ext-shape": {
+                "supports_all": [
+                    "tosa-ext-shape"
                 ],
                 "generator_args": [
                     [
@@ -2180,10 +2179,9 @@
     "concat_shape": {
         "group": "shape",
         "generation": {
-            "tosa-bi-mi": {
-                "supports_any": [
-                    "tosa-bi",
-                    "tosa-mi"
+            "tosa-ext-shape": {
+                "supports_all": [
+                    "tosa-ext-shape"
                 ],
                 "no_negative_tests": "true",
                 "generator_args": [
@@ -3599,10 +3597,8 @@
         "group": "data_layout",
         "generation": {
             "tosa-bi-mi": {
-                "supports_any": [
-                    "tosa-bi",
-                    "tosa-mi"
-                ],
+                "supports_all": [ "tosa-ext-shape" ],
+                "supports_any": [ "tosa-mi", "tosa-bi" ],
                 "from_version": "v0.80.0",
                 "generator_args": [
                     [
@@ -3619,7 +3615,8 @@
             },
             "tosa-bi": {
                 "supports_all": [
-                    "tosa-bi"
+                    "tosa-bi",
+                    "tosa-ext-shape"
                 ],
                 "from_version": "v0.80.0",
                 "generator_args": [
@@ -3639,7 +3636,8 @@
             },
             "8k_level": {
                 "supports_all": [
-                    "tosa-bi"
+                    "tosa-bi",
+                    "tosa-ext-shape"
                 ],
                 "from_version": "v0.80.0",
                 "no_negative_tests": "true",
@@ -3656,7 +3654,8 @@
             },
             "tosa-mi": {
                 "supports_all": [
-                    "tosa-mi"
+                    "tosa-mi",
+                    "tosa-ext-shape"
                 ],
                 "from_version": "v0.80.0",
                 "generator_args": [
@@ -3677,7 +3676,8 @@
             },
             "tosa-ext-bf16": {
                 "supports_all": [
-                    "tosa-ext-bf16"
+                    "tosa-ext-bf16",
+                    "tosa-ext-shape"
                 ],
                 "no_negative_tests": "true",
                 "from_version": "v0.80.0",
@@ -3698,7 +3698,8 @@
             },
             "tosa-ext-fp8e4m3": {
                 "supports_all": [
-                    "tosa-ext-fp8e4m3"
+                    "tosa-ext-fp8e4m3",
+                    "tosa-ext-shape"
                 ],
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
@@ -3721,7 +3722,8 @@
             },
             "tosa-ext-fp8e5m2": {
                 "supports_all": [
-                    "tosa-ext-fp8e5m2"
+                    "tosa-ext-fp8e5m2",
+                    "tosa-ext-shape"
                 ],
                 "no_negative_tests": "true",
                 "from_version": "v0.100.0",
@@ -3756,10 +3758,9 @@
     "div_shape": {
         "group": "shape",
         "generation": {
-            "tosa-bi-mi": {
+            "tosa-ext-shape": {
                 "supports_all": [
-                    "tosa-bi",
-                    "tosa-mi"
+                    "tosa-ext-shape"
                 ],
                 "generator_args": [
                     [
@@ -6414,10 +6415,9 @@
     "mul_shape": {
         "group": "shape",
         "generation": {
-            "standard": {
-                "supports_any": [
-                    "tosa-bi",
-                    "tosa-mi"
+            "tosa-ext-shape": {
+                "supports_all": [
+                    "tosa-ext-shape"
                 ],
                 "generator_args": [
                     [
@@ -9640,10 +9640,9 @@
     "sub_shape": {
         "group": "shape",
         "generation": {
-            "standard": {
-                "supports_any": [
-                    "tosa-bi",
-                    "tosa-mi"
+            "tosa-ext-shape": {
+                "supports_all": [
+                    "tosa-ext-shape"
                 ],
                 "generator_args": [
                     [
