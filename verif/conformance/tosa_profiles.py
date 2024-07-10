@@ -12,6 +12,7 @@ class TosaProfiles:
     TosaExtFP8E5M2 = "tosa-ext-fp8e5m2"
     TosaExtFFT = "tosa-ext-fft"
     TosaExtVariable = "tosa-ext-variable"
+    TosaExtShape = "tosa-ext-shape"
 
     @staticmethod
     def profiles():
@@ -27,6 +28,7 @@ class TosaProfiles:
             TosaProfiles.TosaExtFP8E5M2,
             TosaProfiles.TosaExtFFT,
             TosaProfiles.TosaExtVariable,
+            TosaProfiles.TosaExtShape,
         ]
 
     @staticmethod
