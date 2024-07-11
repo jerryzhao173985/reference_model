@@ -12,6 +12,10 @@ import schemavalidation.schemavalidation as sch
 # "type" matches enum - see include/types.h
 # "size" is size in bytes per value of this datatype
 NUMPY_DATATYPE_TO_CLIENTTYPE = {
+    # tosa_datatype_int8_t
+    np.dtype("int8"): {"type": 8, "size": 1},
+    # tosa_datatype_int16_t
+    np.dtype("int16"): {"type": 4, "size": 2},
     # tosa_datatype_int32_t (all integer types are this!)
     np.dtype("int32"): {"type": 5, "size": 4},
     # tosa_datatype_int48_t (or SHAPE)

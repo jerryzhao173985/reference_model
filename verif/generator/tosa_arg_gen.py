@@ -743,7 +743,6 @@ class TosaTensorValuesGen:
         assert len(fixed_data_tensors) == len(
             shapeList
         ), "Fixed data list must match shapes list"
-
         if (
             error_name is not None
             or not gtu.dtypeIsSupportedByDataGen(dtypeList[0])
