@@ -102,6 +102,32 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
             return std::equal(refData_int, std::next(refData_int, elementCount), impData,
                               std::next(impData, elementCount), exact_int<int32_t>);
         }
+
+        case tosa_datatype_int16_t: {
+
+            const auto* refData_int = reinterpret_cast<const int16_t*>(referenceTensor->data);
+
+            TOSA_REF_REQUIRE(refData_int != nullptr, "[E] Missing data for reference");
+
+            const auto* impData = reinterpret_cast<const int16_t*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+
+            return std::equal(refData_int, std::next(refData_int, elementCount), impData,
+                              std::next(impData, elementCount), exact_int<int16_t>);
+        }
+
+        case tosa_datatype_int8_t: {
+
+            const auto* refData_int = reinterpret_cast<const int8_t*>(referenceTensor->data);
+
+            TOSA_REF_REQUIRE(refData_int != nullptr, "[E] Missing data for reference");
+
+            const auto* impData = reinterpret_cast<const int8_t*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+
+            return std::equal(refData_int, std::next(refData_int, elementCount), impData,
+                              std::next(impData, elementCount), exact_int<int8_t>);
+        }
         default:
             WARNING("[Verifier][E] Data-type not supported.");
             break;
