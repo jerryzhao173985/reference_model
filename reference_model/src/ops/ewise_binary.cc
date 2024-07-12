@@ -313,14 +313,14 @@ int OpLogicalLeftShift<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_INT8:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                REQUIRE(b >= 0 && b <= 31, "OpLogicalLeftShift: shift value %d is out of valid range [0, 31]",
+                REQUIRE(b >= 0 && b <= 7, "OpLogicalLeftShift: shift value %d is out of valid range [0, 7]",
                         (int32_t)b);
                 return static_cast<OutEigenType>(static_cast<int8_t>(a << b));
             };
             break;
         case TOSA_REF_TYPE_INT16:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                REQUIRE(b >= 0 && b <= 31, "OpLogicalLeftShift: shift value %d is out of valid range [0, 31]",
+                REQUIRE(b >= 0 && b <= 15, "OpLogicalLeftShift: shift value %d is out of valid range [0, 15]",
                         (int32_t)b);
                 return static_cast<OutEigenType>(static_cast<int16_t>(a << b));
             };
@@ -346,14 +346,14 @@ int OpLogicalRightShift<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_INT8:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
+                REQUIRE(b >= 0 && b <= 7, "OpLogicalRightShift: shift value %d is out of valid range [0, 7]",
                         (int32_t)b);
                 return static_cast<OutEigenType>(static_cast<int8_t>(static_cast<uint8_t>(a) >> b));
             };
             break;
         case TOSA_REF_TYPE_INT16:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                REQUIRE(b >= 0 && b <= 31, "OpLogicalRightShift: shift value %d is out of valid range [0, 31]",
+                REQUIRE(b >= 0 && b <= 15, "OpLogicalRightShift: shift value %d is out of valid range [0, 15]",
                         (int32_t)b);
                 return static_cast<OutEigenType>(static_cast<int16_t>(static_cast<uint16_t>(a) >> b));
             };
