@@ -239,16 +239,18 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
@@ -257,6 +259,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -266,19 +269,46 @@
                         "1,65539,2,1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-pro-fp",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "4,11,7,39",
+                        "5,21,36,17",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {},
+            "tosa-pro-fp": {
                 "permutes": [
                     "shape",
-                    "type"
+                    "type",
+                    "kernel",
+                    "acc_type"
                 ],
-                "sparsity": {
-                    "pad": 17
-                }
+                "full_params": [
+                    "stride"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -759,6 +789,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -773,6 +804,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -844,6 +876,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -910,6 +943,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1999,16 +2033,18 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
@@ -2017,6 +2053,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -2028,29 +2065,37 @@
                         "1",
                         "--allow-pooling-and-conv-oversizes"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-pro-fp",
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1,47,37,25",
+                        "1,15,13,38",
+                        "--allow-pooling-and-conv-oversizes"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {
-                    "shape": [],
-                    "type": [
-                        "f32",
-                        "f16",
-                        "bf16"
-                    ],
-                    "stride": [],
-                    "pad": []
-                },
+            "tosa-pro-fp": {
                 "permutes": [
                     "shape",
                     "type",
-                    "pad"
+                    "kernel"
                 ],
-                "sparsity": {
-                    "pad": 11
-                }
+                "full_params": [
+                    "stride"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -4301,6 +4346,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
