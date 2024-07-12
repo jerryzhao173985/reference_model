@@ -3,6 +3,8 @@
 import copy
 import logging
 
+import generator.tosa_utils as gtu
+
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_build_tests")
 
@@ -274,6 +276,11 @@ class TestOpList:
                         if t.getMark():
                             test.setMark()
                         append = True
+
+            # Check for FP special tests
+            if not append:
+                if test.argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+                    append = True
 
             if append:
                 self.testsPerPermute[permute].append(test)

@@ -587,7 +587,9 @@
     "avg_pool2d": {
         "group": "tensor",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -648,6 +650,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -770,18 +773,29 @@
                     "pad"
                 ]
             },
-            "tosa-pro-fp": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ],
-                "sparsity": {
-                    "pad": 17
-                }
-            },
             "8k_level": {
                 "all": "true"
+            },
+            "tosa-pro-fp": {
+                "generator_select": "true",
+                "permutes": [
+                    "shape",
+                    "type",
+                    "kernel",
+                    "acc_type"
+                ],
+                "full_params": [
+                    "stride"
+                ],
+                "specifics": {
+                    "pad": [
+                        "(0, 0, 0, 0)"
+                    ]
+                },
+                "groups": [
+                    "s"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -2493,6 +2507,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -2507,6 +2522,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -2545,6 +2561,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -2862,6 +2879,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3297,6 +3315,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -5373,7 +5392,9 @@
     "max_pool2d": {
         "group": "tensor",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -5435,6 +5456,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -5563,24 +5585,16 @@
                 "all": "true"
             },
             "tosa-pro-fp": {
-                "params": {
-                    "shape": [],
-                    "type": [
-                        "f32",
-                        "f16",
-                        "bf16"
-                    ],
-                    "stride": [],
-                    "pad": []
-                },
+                "generator_select": "true",
                 "permutes": [
                     "shape",
                     "type",
-                    "pad"
+                    "kernel"
                 ],
-                "sparsity": {
-                    "pad": 11
-                }
+                "full_params": [
+                    "stride"
+                ],
+                "maximum": 3
             }
         }
     },
@@ -9948,6 +9962,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
