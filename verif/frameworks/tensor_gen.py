@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import enum
 
@@ -51,6 +51,14 @@ class TGen:
         if dtype == tf.float16:
             return np.float16(
                 (rng.random(size=shape) - RAND_SHIFT_FACTOR) * RAND_SCALE_FACTOR
+            )
+        if dtype == tf.int8:
+            return np.int8(
+                rng.integers(low=RAND_INT_MIN, high=RAND_INT_MAX, size=shape)
+            )
+        if dtype == tf.int16:
+            return np.int16(
+                rng.integers(low=RAND_INT_MIN, high=RAND_INT_MAX, size=shape)
             )
         if dtype == tf.int32:
             return np.int32(

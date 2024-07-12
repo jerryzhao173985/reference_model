@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2022, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 from enum import IntEnum
 from enum import unique
@@ -19,6 +19,10 @@ def get_shape_str(shape, dtype):
         shape_name = shape_name + "_f32"
     elif dtype == tf.float16:
         shape_name = shape_name + "_f16"
+    elif dtype == tf.int8:
+        shape_name = shape_name + "_i8"
+    elif dtype == tf.int16:
+        shape_name = shape_name + "_i16"
     elif dtype == tf.int32:
         shape_name = shape_name + "_i32"
     elif dtype == tf.uint32:

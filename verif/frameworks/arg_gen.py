@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import math
 
@@ -892,10 +892,17 @@ class ArgGen:
 
         return args
 
-    def agShift(op, shapes, rng):
+    def agShift(op, shapes, rng, dtype):
         args = []
 
-        for shift in rng.integers(0, 32, size=8):
+        if dtype == np.int32:
+            shift_max = 32
+        elif dtype == np.int16:
+            shift_max = 16
+        elif dtype == np.int8:
+            shift_max = 8
+
+        for shift in rng.integers(0, shift_max, size=shift_max // 4):
             args.append(["_shift{}".format(shift), [shift]])
 
         return args
