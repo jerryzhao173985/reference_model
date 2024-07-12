@@ -906,16 +906,12 @@ TF_OP_LIST = {
     "left_shift": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.LeftShift, TGen.tgBasic, ArgGen.agShift),
-        "types": {"tf": [tf.int32]},
+        "types": {"tf": [tf.int32, tf.int16, tf.int8]},
     },
     "right_shift": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.RightShift, TGen.tgBasic, ArgGen.agShift),
-        "types": {
-            "tf": [
-                tf.int32,
-            ]
-        },
+        "types": {"tf": [tf.int32, tf.int16, tf.int8]},
     },
     "while": {
         "operands": (1, 0),
@@ -1520,7 +1516,11 @@ def build_const_net(
     if len(curr_shape) not in range(rank_lo, rank_hi + 1):
         return
 
-    addl_args_tuple = arg_gen_fcn(op, curr_shape, rng)
+    if op_name == "left_shift" or op_name == "right_shift":
+        addl_args_tuple = arg_gen_fcn(op, curr_shape, rng, dtype)
+    else:
+        addl_args_tuple = arg_gen_fcn(op, curr_shape, rng)
+
     for desc, addl_args in addl_args_tuple:
         # Only filter on the full test_name, not the output directory
         _, test_name = os.path.split(test_dir + desc)
