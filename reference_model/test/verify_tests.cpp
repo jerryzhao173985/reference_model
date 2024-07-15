@@ -459,16 +459,26 @@ TEST_CASE("positive - abs error")
     // Set up simple bounds of the input to 2.0
     std::vector<double> bounds_fp64(elementCount);
     std::for_each(std::begin(bounds_fp64), std::end(bounds_fp64), [](auto& value) { value = 2.0; });
-    constexpr float insideErrBound  = 1.0e-7 * 2;    // v.approx exp2(-23) * bounds[]
-    constexpr float outsideErrBound = 1.0e-7 * 3;
+
+    // Lower than exp2(-23) * (bounds[] - 0.5)
+    // The 0.5 accounts for error when casting the result back to fp32
+    // Error in the fp64 operations is too small to be relevant
+    constexpr double insideErrBound = 1.7e-7;
+    // Greater than exp2(-23) * (bounds[] + 0.5)
+    constexpr double outsideErrBound = 3.0e-7;
 
     SUBCASE("inside")
     {
         // Generate some data that meets the ABS_ERROR requirements of the result.
         auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [insideErrBound](auto& value) {
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
             if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
-                value += value * insideErrBound;
+            {
+                // If we used 32-bit precision here, we would add more error.
+                double value64 = static_cast<double>(value);
+                value64 += value64 * insideErrBound;
+                value = static_cast<float>(value64);
+            }
         });
         const auto referenceTensor =
             TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
@@ -484,9 +494,14 @@ TEST_CASE("positive - abs error")
     {
         // Generate some data that exceeds a requirements for each value in the tensor.
         auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [outsideErrBound](auto& value) {
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
             if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
-                value += value * outsideErrBound;
+            {
+                // If we used 32-bit precision here, we would add more error.
+                double value64 = static_cast<double>(value);
+                value64 += value64 * outsideErrBound;
+                value = static_cast<float>(value64);
+            }
         });
 
         const auto referenceTensor =
