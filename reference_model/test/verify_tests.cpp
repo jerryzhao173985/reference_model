@@ -299,6 +299,73 @@ TEST_CASE("positive - exact")
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
+
+    SUBCASE("denorm to zero")
+    {
+        // Denormal / subnormal test
+        auto denormData_fp64     = std::vector<double>(elementCount);
+        auto denormZeroData_fp32 = std::vector<float>(elementCount);
+        float min                = std::numeric_limits<float>::min();
+        float denorm             = min;    // Start at minimum and get smaller
+        for (auto idx = 0; idx < elementCount; idx++)
+        {
+            if (idx % 2)
+            {
+                denorm                   = std::nextafter(denorm, std::numeric_limits<float>::denorm_min());
+                denormData_fp64[idx]     = static_cast<double>(denorm);
+                denormZeroData_fp32[idx] = 0.f;
+            }
+            else
+            {
+                denormData_fp64[idx]     = static_cast<double>(min);
+                denormZeroData_fp32[idx] = min;
+                min                      = std::nextafter(min, std::numeric_limits<float>::max());
+            }
+            if (data_fp32[idx] < 0.f)
+            {
+                denormData_fp64[idx]     = -denormData_fp64[idx];
+                denormZeroData_fp32[idx] = -denormZeroData_fp32[idx];
+            }
+        }
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(denormData_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(denormZeroData_fp32.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
+    }
+
+    SUBCASE("norm to zero not allowed")
+    {
+        // Check minimum normal is not allowed flushed to zero
+        auto normData_fp64     = std::vector<double>(elementCount);
+        auto normZeroData_fp32 = std::vector<float>(elementCount);
+        float min              = std::numeric_limits<float>::min();
+        for (auto idx = 0; idx < elementCount; idx++)
+        {
+            normData_fp64[idx] = static_cast<double>(min);
+            if (idx % 2)
+            {
+                normZeroData_fp32[idx] = 0.f;
+            }
+            else
+            {
+                normZeroData_fp32[idx] = min;
+            }
+            if (data_fp32[idx] < 0.f)
+            {
+                normData_fp64[idx]     = -normData_fp64[idx];
+                normZeroData_fp32[idx] = -normZeroData_fp32[idx];
+            }
+        }
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(normData_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(normZeroData_fp32.data()));
+        REQUIRE_FALSE(
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
+    }
 }
 
 TEST_CASE("positive - reduce product")
