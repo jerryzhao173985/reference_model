@@ -19,6 +19,11 @@
 
 namespace
 {
+double calcErrorBound(double referenceValue, double boundsValue, const void* cfgPtr)
+{
+    return 0.0;
+}
+
 template <typename OutDtype>
 bool exact_fp(const double& referenceValue, const OutDtype& implementationValue)
 {
@@ -43,37 +48,32 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
     TOSA_REF_REQUIRE(implementationTensor != nullptr, "[E] Implementation tensor is missing");
 
     // Get number of elements
-
-    const auto elementCount =
-        numElements(std::vector<int32_t>(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims));
+    const std::vector<int32_t> refShape(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims);
+    const auto elementCount = numElements(refShape);
     TOSA_REF_REQUIRE(elementCount > 0, "[E] Invalid shape for reference tensor");
 
     const auto* refData_dbl = reinterpret_cast<const double*>(referenceTensor->data);
 
     TOSA_REF_REQUIRE(refData_dbl != nullptr, "[E] Missing data for reference");
 
+    const std::string modeStr = "E";
+
     switch (implementationTensor->data_type)
     {
         case tosa_datatype_fp32_t: {
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            auto result = std::equal(refData_dbl, std::next(refData_dbl, elementCount), impData,
-                                     std::next(impData, elementCount), exact_fp<float>);
-            return result;
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
         }
         case tosa_datatype_fp16_t: {
             const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            auto result = std::equal(refData_dbl, std::next(refData_dbl, elementCount), impData,
-                                     std::next(impData, elementCount), exact_fp<half_float::half>);
-            return result;
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            auto result = std::equal(refData_dbl, std::next(refData_dbl, elementCount), impData,
-                                     std::next(impData, elementCount), exact_fp<bf16>);
-            return result;
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
         }
         case tosa_datatype_fp8e4m3_t: {
             const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
