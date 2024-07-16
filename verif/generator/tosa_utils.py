@@ -77,6 +77,7 @@ def dtypeIsSupportedByCompliance(dtype):
     return dtype in (
         DType.INT32,
         DType.INT16,
+        DType.BOOL,
         DType.INT8,
         DType.FP32,
         DType.FP16,
