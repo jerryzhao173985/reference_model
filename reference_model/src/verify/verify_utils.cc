@@ -338,7 +338,10 @@ bool validateData(const double* referenceData,
     TOSA_REF_REQUIRE(referenceData != nullptr, "Missing data for reference tensor");
     TOSA_REF_REQUIRE(implementationData != nullptr, "Missing data for implementation tensor");
     // NOTE: Bounds data tensor is allowed to be null as it may not be needed
-    TOSA_REF_REQUIRE(cfgPtr != nullptr, "Missing config for validation");
+    if (modeStr != "E")
+    {
+        TOSA_REF_REQUIRE(cfgPtr != nullptr, "Missing config for validation");
+    }
     TOSA_REF_REQUIRE(calcErrorBound != nullptr, "Missing error bound function validation");
 
     std::string warning, worstWarning;
