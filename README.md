@@ -26,7 +26,7 @@ created and then used to validate an implementation of TOSA.
 The *TOSA Reference Model* and testing suite requires the following
 tools:
 
-* CMake version 3.4 or later
+* CMake version 3.16 or later
 * GNU Make 4.1 or later
 * GCC (tested with 9.4.0) or Clang C++ compiler (tested with clang-10)
   with C++17 support
