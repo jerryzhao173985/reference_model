@@ -8,6 +8,9 @@ repos:
     rev: v3.0.1
     hooks:
     -   id: reorder-python-imports
+      # The reorder python imports can get confused if directories exist.
+      # Use a dummy application directory to avoid problems.
+        args: [ "--application-directories=NotARealDirectoryName" ]
 
 -   repo: https://github.com/psf/black
     rev: 22.3.0
