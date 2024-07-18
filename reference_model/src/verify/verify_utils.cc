@@ -277,15 +277,8 @@ bool tosaCheckFloatBound(
         referenceMin = std::numeric_limits<OutType>::infinity();
         referenceMax = std::numeric_limits<OutType>::infinity();
     }
-    else if (referenceValue == 0)
-    {
-        // For zero we require that the results match exactly with the correct sign.
-        referenceMin = 0;
-        referenceMax = 0;
-    }
     else
     {
-
         // Scale by the number of ULPs requested by the user.
         referenceMax = referenceValue + errorBound;
         referenceMin = referenceValue - errorBound;
