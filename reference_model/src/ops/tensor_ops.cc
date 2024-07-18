@@ -1289,8 +1289,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     return GraphNode::eval();
 }
 
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
+OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_,
+                                                       TosaAttributeBase* attribute_,
+                                                       uint64_t id_)
     : GraphNode(sgt_, Op_MATMUL, id_)
 {
     setRequiredOperands(2, 1);
@@ -1299,15 +1301,15 @@ OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* 
     INIT_ATTRIBUTE(MatMul);
 }
 
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-OpMatMul<Dtype, OutDtype>::~OpMatMul()
+template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
+OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::~OpMatMul()
 {
     if (attribute)
         delete attribute;
 }
 
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
+template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
+int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::checkTensorAttributes()
 {
     if (validateRequiredOperands())
         return 1;
@@ -1320,8 +1322,8 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
              "OpMatMul: Output data type not supported for this configuration of operator");
 
-    a      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    b      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[1]);
+    a      = dynamic_cast<TosaReference::TensorTemplate<TInput1>*>(inputs[0]);
+    b      = dynamic_cast<TosaReference::TensorTemplate<TInput2>*>(inputs[1]);
     output = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(a && b && output);
@@ -1362,26 +1364,29 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     }
     W = b->getShape()[2];
 
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->a_zp() != 0,
+    ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && attribute->a_zp() != 0,
              "OpMatMul: A zeropoint must be zero for non int8_t data");
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->b_zp() != 0,
+    ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && attribute->b_zp() != 0,
              "OpMatMul: B zeropoint must be zero for non int8_t data");
 
     return 0;
 }
 
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-int OpMatMul<Dtype, OutDtype>::eval()
+template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
+int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::eval()
 {
     typedef Eigen::Tensor<int, 1>::DimensionPair DimPair;
     Eigen::array<DimPair, 1> dims{ { DimPair(1, 0) } };
 
-    TIn a_val = this->a->getTensor();
-    TIn b_val = this->b->getTensor();
-    if (Dtype == TOSA_REF_TYPE_INT8)
+    TInput1 a_val = this->a->getTensor();
+    TInput2 b_val = this->b->getTensor();
+    if (Input1Dtype == TOSA_REF_TYPE_INT8)
     {
-        a_val = a_val - (InEigenType)attribute->a_zp();
-        b_val = b_val - (InEigenType)attribute->b_zp();
+        a_val = a_val - (Input1EigenType)attribute->a_zp();
+    }
+    if (Input2Dtype == TOSA_REF_TYPE_INT8)
+    {
+        b_val = b_val - (Input2EigenType)attribute->b_zp();
     }
 
     if (g_func_config.abs_mode)
@@ -1407,8 +1412,8 @@ int OpMatMul<Dtype, OutDtype>::eval()
         a_begin_array[0] = i;
         b_begin_array[0] = i;
 
-        TInRank2 a_rank2_val = a_val.slice(a_begin_array, a_size_array).reshape(a_rank2_shape);
-        TInRank2 b_rank2_val = b_val.slice(b_begin_array, b_size_array).reshape(b_rank2_shape);
+        TInput1Rank2 a_rank2_val = a_val.slice(a_begin_array, a_size_array).reshape(a_rank2_shape);
+        TInput2Rank2 b_rank2_val = b_val.slice(b_begin_array, b_size_array).reshape(b_rank2_shape);
         TAccRank2 output_rank2_val =
             a_rank2_val.template cast<AccEigenType>().contract(b_rank2_val.template cast<AccEigenType>(), dims);
         TOut output_rank3_val = output_rank2_val.reshape(output_rank3_shape).template cast<OutEigenType>();
@@ -2178,15 +2183,21 @@ DEF_INSTANTIATE_FOUR_TYPE(OpDepthwiseConv2d, FP8E5M2, FP8E5M2, FP16, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpFFT2d, FP32);
 DEF_INSTANTIATE_ONE_TYPE(OpFFT2d, FP64);
 
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, INT8, INT32);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, INT16, INT48);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP16, FP16);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP16, FP32);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, BF16, FP32);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP32, FP32);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP64, FP64);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP8E4M3, FP16);
-DEF_INSTANTIATE_TWO_TYPE(OpMatMul, FP8E5M2, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, INT8, INT8, INT32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, INT16, INT16, INT48);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP16, FP16, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP16, FP16, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, BF16, BF16, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP32, FP32, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP64, FP64, FP64);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E4M3, FP8E4M3, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E5M2, FP8E5M2, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E4M3, FP8E4M3, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E5M2, FP8E5M2, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E4M3, FP8E5M2, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E5M2, FP8E4M3, FP16);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E4M3, FP8E5M2, FP32);
+DEF_INSTANTIATE_THREE_TYPE(OpMatMul, FP8E5M2, FP8E4M3, FP32);
 
 DEF_INSTANTIATE_ONE_TYPE(OpMaxPool2d, FP16);
 DEF_INSTANTIATE_ONE_TYPE(OpMaxPool2d, BF16);

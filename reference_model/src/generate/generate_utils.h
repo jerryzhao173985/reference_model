@@ -66,6 +66,7 @@ struct DotProductInfo
     DType accType;
     int32_t axis;
     std::vector<int32_t> kernel;
+    DType otherInputType;
 };
 
 /// \brief Pseudo random generator meta-data

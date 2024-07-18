@@ -138,6 +138,10 @@ void from_json(const nlohmann::json& j, DotProductInfo& dotProductInfo)
     {
         j.at("axis").get_to(dotProductInfo.axis);
     }
+    if (j.contains("otherInputType"))
+    {
+        j.at("otherInputType").get_to(dotProductInfo.otherInputType);
+    }
 }
 
 void from_json(const nlohmann::json& j, PseudoRandomInfo& pseudoRandomInfo)
@@ -198,11 +202,12 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     j.at("generator").get_to(cfg.generatorType);
 
     // Set up defaults for dotProductInfo
-    cfg.dotProductInfo.s       = -1;
-    cfg.dotProductInfo.ks      = -1;
-    cfg.dotProductInfo.accType = DType_UNKNOWN;
-    cfg.dotProductInfo.kernel  = std::vector<int32_t>();
-    cfg.dotProductInfo.axis    = -1;
+    cfg.dotProductInfo.s              = -1;
+    cfg.dotProductInfo.ks             = -1;
+    cfg.dotProductInfo.accType        = DType_UNKNOWN;
+    cfg.dotProductInfo.kernel         = std::vector<int32_t>();
+    cfg.dotProductInfo.axis           = -1;
+    cfg.dotProductInfo.otherInputType = DType_UNKNOWN;
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);

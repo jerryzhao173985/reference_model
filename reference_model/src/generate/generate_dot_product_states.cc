@@ -301,10 +301,11 @@ private:
     PrimitiveGenerator _set_data;
 };
 
-float getBoundParameter(const DType& dataType, const DType& accType)
+float getBoundParameter(const DType& dataType, const DType& accType, const DType& otherInputType = DType::DType_UNKNOWN)
 {
     // Work out the bounds parameter value B for the given data and accumulator types
     // Returns value > 0.f on success
+    // Note that otherInputType is DType::UNKNOWN for non-MATMUL ops.
     float B = 0.f;
     if (dataType == DType::DType_FP16)
     {
@@ -325,13 +326,39 @@ float getBoundParameter(const DType& dataType, const DType& accType)
     }
     else if (dataType == DType::DType_FP8E4M3)
     {
-        if (accType == DType::DType_FP16)
-            B = 240.f;    // (1<<8) - (1<<4)
+        if (otherInputType == DType::DType_FP8E4M3 || otherInputType == DType::DType_UNKNOWN)
+        {
+            if (accType == DType::DType_FP16)
+                B = 240.f;    // (1<<8) - (1<<4)
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
+        else if (otherInputType == DType::DType_FP8E5M2)
+        {
+            // mixed types
+            if (accType == DType::DType_FP16)
+                B = 224.f;
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
     }
     else if (dataType == DType::DType_FP8E5M2)
     {
-        if (accType == DType::DType_FP16)
-            B = 224.f;    // (1<<8) - (1<<5)
+        if (otherInputType == DType::DType_FP8E5M2 || otherInputType == DType::DType_UNKNOWN)
+        {
+            if (accType == DType::DType_FP16)
+                B = 224.f;    // (1<<8) - (1<<5)
+            else if (accType == DType::DType_FP32)
+                B = 57344.f;
+        }
+        else if (otherInputType == DType::DType_FP8E4M3)
+        {
+            // mixed types
+            if (accType == DType::DType_FP16)
+                B = 224.f;
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
     }
     return B;
 }
@@ -349,7 +376,15 @@ std::unique_ptr<IDotProductGenerator> pickDotProductGenerator(const GenerateConf
 
     const DotProductInfo& dpinfo = cfg.dotProductInfo;
 
-    float B = getBoundParameter(cfg.dataType, dpinfo.accType);
+    float B;
+    if (cfg.opType == Op_MATMUL)
+    {
+        B = getBoundParameter(cfg.dataType, dpinfo.accType, static_cast<DType>(dpinfo.otherInputType));
+    }
+    else
+    {
+        B = getBoundParameter(cfg.dataType, dpinfo.accType);
+    }
     if (B > 0.f)
     {
         auto param = cfg.inputPos;

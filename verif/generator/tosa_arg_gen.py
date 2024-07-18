@@ -907,6 +907,10 @@ class TosaTensorValuesGen:
                     info["kernel"] = [int(k) for k in argsDict["kernel"]]
                 if "axis" in argsDict:
                     info["axis"] = int(argsDict["axis"])
+                if "otherInputType" in argsDict:
+                    info["otherInputType"] = gtu.DTYPE_ATTRIBUTES[
+                        argsDict["otherInputType"]
+                    ]["json"]
                 tens_meta["dot_product_info"] = info
 
             elif dg_type == gtu.DataGenType.FULL_RANGE:
@@ -2577,7 +2581,12 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMatMul(testGen, rng, opName, shapeList, dtype, error_name=None):
+    def agMatMul(testGen, rng, opName, shapeList, dtypes, error_name=None):
+        if isinstance(dtypes, (list, tuple)):
+            dtype = dtypes[0]
+        else:
+            dtype = dtypes
+
         # Get valid accumulate type(s)
         if dtype == DType.INT8:
             accum_dtypes = [DType.INT32]
@@ -2590,7 +2599,7 @@ class TosaArgGen:
         elif dtype == DType.FP32:
             accum_dtypes = [DType.FP32]
         elif dtype == DType.FP8E4M3 or dtype == DType.FP8E5M2:
-            accum_dtypes = [DType.FP16]
+            accum_dtypes = [DType.FP16, DType.FP32]
         elif error_name is None:
             assert False, f"Invalid I/O DType for MatMul: {DTypeNames[dtype]}"
 
@@ -2600,6 +2609,48 @@ class TosaArgGen:
         elif error_name == ErrorIf.WrongInputType:
             # Pick some potentially correct output dtype if input type is incorrect
             accum_dtypes = [DType.INT32]
+
+        # Get valid data type list based on supported profile/extension
+        supported = testGen.args.profile + testGen.args.extension
+        dtypeList = []
+
+        if dtype == DType.INT8:
+            if TosaProfiles.TosaProINT in supported:
+                dtypeList.append([DType.INT8, DType.INT8])
+        elif dtype == DType.INT16:
+            if TosaProfiles.TosaExtInt16 in supported:
+                dtypeList.append([DType.INT16, DType.INT16])
+        elif dtype == DType.FP16:
+            if TosaProfiles.TosaProFP in supported:
+                dtypeList.append([DType.FP16, DType.FP16])
+        elif dtype == DType.BF16:
+            if TosaProfiles.TosaExtBF16 in supported:
+                dtypeList.append([DType.BF16, DType.BF16])
+        elif dtype == DType.FP32:
+            if TosaProfiles.TosaProFP in supported:
+                dtypeList.append([DType.FP32, DType.FP32])
+        elif dtype == DType.FP8E4M3:
+            if TosaProfiles.TosaExtFP8E4M3 in supported:
+                if dtypes[1] == DType.FP8E4M3:
+                    dtypeList.append([DType.FP8E4M3, DType.FP8E4M3])
+                elif (
+                    dtypes[1] == DType.FP8E5M2
+                    and TosaProfiles.TosaExtFP8E5M2 in supported
+                ):
+                    dtypeList.append([DType.FP8E4M3, DType.FP8E5M2])
+        elif dtype == DType.FP8E5M2:
+            if TosaProfiles.TosaExtFP8E5M2 in supported:
+                if dtypes[1] == DType.FP8E5M2:
+                    dtypeList.append([DType.FP8E5M2, DType.FP8E5M2])
+                elif (
+                    dtypes[1] == DType.FP8E4M3
+                    and TosaProfiles.TosaExtFP8E4M3 in supported
+                ):
+                    dtypeList.append([DType.FP8E5M2, DType.FP8E4M3])
+        elif error_name == ErrorIf.WrongInputType:
+            dtypeList.append([DType.BOOL, DType.BOOL])
+        elif error_name is None:
+            assert False, f"Invalid I/O DType for MatMul: {DTypeNames[dtype]}"
 
         # Set up compliance info
         args_dict = {
@@ -2613,10 +2664,12 @@ class TosaArgGen:
 
         # Create arg tuple of string and dict
         arg_list = []
-        for a in accum_dtypes:
-            d = args_dict.copy()
-            d["acc_type"] = a
-            arg_list.append((f"acc{testGen.typeStr(a)}", d))
+        for dt in dtypeList:
+            for a in accum_dtypes:
+                d = args_dict.copy()
+                d["acc_type"] = a
+                d["otherInputType"] = int(dt[1])
+                arg_list.append((f"acc{testGen.typeStr(a)}", d))
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,

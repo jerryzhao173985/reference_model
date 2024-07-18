@@ -3524,7 +3524,17 @@ class TosaTestGen:
                 TosaArgGen.agMatMul,
             ),
             "qgen": TosaQuantGen.qgMatmul,
-            "types": TYPE_NARROW_INT_FP + [DType.FP8E4M3, DType.FP8E5M2],
+            "types": [
+                [DType.INT8, DType.INT8],
+                [DType.FP16, DType.FP16],
+                [DType.FP32, DType.FP32],
+                [DType.BF16, DType.BF16],
+                [DType.FP8E4M3, DType.FP8E4M3],
+                [DType.FP8E5M2, DType.FP8E5M2],
+                [DType.FP8E4M3, DType.FP8E5M2],
+                [DType.FP8E5M2, DType.FP8E4M3],
+                [DType.INT16, DType.INT16],
+            ],
             "error_if_validators": (
                 TosaErrorValidator.evInputZeroPointNotZero,
                 TosaErrorValidator.evWrongRank,

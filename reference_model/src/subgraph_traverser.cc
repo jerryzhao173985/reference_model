@@ -215,6 +215,7 @@ int SubgraphTraverser::initializeGraph()
             case Op_CONV3D:
             case Op_DEPTHWISE_CONV2D:
             case Op_TRANSPOSE_CONV2D:
+            case Op_MATMUL:
                 input_index  = 0;
                 weight_index = 1;
                 break;

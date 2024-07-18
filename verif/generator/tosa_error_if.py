@@ -495,8 +495,14 @@ class TosaErrorValidator:
                     )
                     or (input_dtype == DType.BF16 and output_dtype != DType.FP32)
                     or (input_dtype == DType.FP32 and output_dtype != DType.FP32)
-                    or (input_dtype == DType.FP8E4M3 and output_dtype != DType.FP16)
-                    or (input_dtype == DType.FP8E5M2 and output_dtype != DType.FP16)
+                    or (
+                        input_dtype == DType.FP8E4M3
+                        and output_dtype not in [DType.FP16, DType.FP32]
+                    )
+                    or (
+                        input_dtype == DType.FP8E5M2
+                        and output_dtype not in [DType.FP16, DType.FP32]
+                    )
                 ):
                     error_result = True
 

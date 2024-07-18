@@ -4905,7 +4905,8 @@
         "support_for": [
             "lazy_data_gen",
             "stable_random_gen",
-            "random_const_inputs"
+            "random_const_inputs",
+            "generator_profile_filter"
         ],
         "generation": {
             "tosa-pro-int": {
