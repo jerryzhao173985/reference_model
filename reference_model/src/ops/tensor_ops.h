@@ -165,7 +165,7 @@ protected:
     tosa::TosaConvAttribute* attribute;
 };
 
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
+template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
 class OpMatMul : public GraphNode
 {
 public:
@@ -175,19 +175,22 @@ public:
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using InEigenType                = typename GetEigenType<Dtype>::type;
+    using Input1EigenType            = typename GetEigenType<Input1Dtype>::type;
+    using Input2EigenType            = typename GetEigenType<Input2Dtype>::type;
     using AccEigenType               = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType               = typename GetEigenType<OutDtype>::type;
-    using TIn                        = Eigen::Tensor<InEigenType, 3>;
+    using TInput1                    = Eigen::Tensor<Input1EigenType, 3>;
+    using TInput2                    = Eigen::Tensor<Input2EigenType, 3>;
     using TOut                       = Eigen::Tensor<OutEigenType, 3>;
-    using TInRank2                   = Eigen::Tensor<InEigenType, 2>;
+    using TInput1Rank2               = Eigen::Tensor<Input1EigenType, 2>;
+    using TInput2Rank2               = Eigen::Tensor<Input2EigenType, 2>;
     using TAccRank2                  = Eigen::Tensor<AccEigenType, 2>;
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;
 
 protected:
-    TosaReference::TensorTemplate<TIn>* a;
-    TosaReference::TensorTemplate<TIn>* b;
+    TosaReference::TensorTemplate<TInput1>* a;
+    TosaReference::TensorTemplate<TInput2>* b;
     TosaReference::TensorTemplate<TOut>* output;
     int64_t N;
     int64_t H;
