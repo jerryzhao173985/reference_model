@@ -4,7 +4,6 @@ import os
 
 import numpy as np
 import tensorflow as tf
-from frameworks.tensor_gen import TGen
 
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
 
@@ -1004,51 +1003,16 @@ class TBuilder:
             return tf.gather_nd(a, self.indices, name=self.result_name)
 
     class ScatterNd:
-        def __init__(self, shape, indices_shape, N, rng, name):
+        def __init__(self, shape, indices, name):
             self.shape = shape
-            self.indices_shape = indices_shape
-            self.N = N
-            self.rng = rng
+            self.indices = indices
             self.result_name = name
 
         def eval(self, a):
-
-            # This operator is special.  The indices and updates tensors really need
-            # to be created together, but in the current structure of this tool there
-            # is no way to do that before now.  The number of updates is determined by
-            # the indices, so we can really only create that after indices; but we
-            # don't know the type at that time.
-            #
-            # Shapes are guaranteed deterministic, but we'll use our rng
-            # copied from the arggen stage.  It's possible that index and
-            # update *values* will be non-deterministic.
-            #
-            # We take the tensor_tensor simply to get the dtype.
-
-            shape_const = tf.constant(self.shape, tf.int32)
-
-            updates_shape = list(self.indices_shape[:-1])
-            updates_shape.extend(self.shape[self.indices_shape[-1] :])
-
-            updates_const = tf.constant(TGen.getRand(updates_shape, a.dtype, self.rng))
-
-            indices = np.zeros(self.indices_shape, dtype=np.int32)
-
-            # We need to generate the random indices tensor based on the
-            # limits of 'shape' for each dimension.  Surely, there is a faster
-            # vectorized way to do this, but the tensors are fairly small so we
-            # will do this one element at a time.  Each element needs to be sized based
-            # on the size of the last dimension.
-            for idx in np.ndindex(indices.shape):
-                indices[idx] = self.rng.integers(0, self.shape[idx[-1]], size=1)[0]
-                # print('{} {}'.format(idx, indices[idx]))
-
-            indices_const = tf.constant(indices, dtype=tf.int32)
-
             return tf.scatter_nd(
-                indices=indices_const,
-                updates=updates_const,
-                shape=shape_const,
+                indices=self.indices,
+                updates=a,
+                shape=self.shape,
                 name=self.result_name,
             )
 

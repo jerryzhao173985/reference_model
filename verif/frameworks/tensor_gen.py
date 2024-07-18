@@ -372,3 +372,47 @@ class TGen:
         tf_consts.append(("shape", tuple(s_shape_list)))
 
         return tf_placeholders, tf_consts
+
+    @staticmethod
+    def tgScatterND(op, shape, dtype, rng):
+        pl, const = op["operands"]
+
+        assert pl == 1
+        assert const == 2
+
+        tf_placeholders = []
+        tf_consts = []
+
+        if len(shape) < 2:
+            return [], []
+
+        indices_shape = []
+        indices_rank = rng.integers(2, 4, size=1)[0]
+
+        for i in range(indices_rank - 1):
+            indices_shape.append(rng.integers(1, shape[i] + 1, size=1)[0])
+        indices_shape.append(len(shape) - 1)
+
+        updates_shape = list(indices_shape[:-1])
+        updates_shape.extend(shape[indices_shape[-1] :])
+
+        # We need to generate the random indices tensor based on the
+        # limits of 'shape' for each dimension. In addition, indices
+        # are required to be unique. 'choice' is used to generate unique
+        # integer values that correspond to a flat version of an index,
+        # then 'unravel_index' is used to reconstruct the shaped index.
+        max_unique_indices = np.prod(shape[:-1])
+        num_indices = np.prod(indices_shape[:-1])
+        flat_indices = rng.choice(max_unique_indices, num_indices, replace=False)
+        indices_components = np.unravel_index(flat_indices, shape[:-1])
+        indices = (
+            np.column_stack(indices_components).reshape(indices_shape).astype(np.int32)
+        )
+
+        tf_consts.append(("shape", tuple(shape)))
+        tf_consts.append(("indices", indices))
+        tf_placeholders.append(
+            ("placeholder_0", TGen.getRand(updates_shape, dtype, rng))
+        )
+
+        return tf_placeholders, tf_consts
