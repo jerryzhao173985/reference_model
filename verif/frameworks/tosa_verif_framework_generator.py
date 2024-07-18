@@ -775,8 +775,8 @@ TF_OP_LIST = {
         "types": TYPE_FI,
     },
     "scatter_nd": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ScatterNd, TGen.tgBasic, ArgGen.agScatterND),
+        "operands": (1, 2),
+        "build_fcn": (TBuilder.ScatterNd, TGen.tgScatterND, ArgGen.agNone),
         "types": TYPE_FI,
     },
     "space_to_batch": {

@@ -774,31 +774,6 @@ class ArgGen:
 
         return args
 
-    def agScatterND(op, shapes, rng):
-        args = []
-
-        # ScatterND has to generate a constant shapes tensor, indices
-        # tensor, and a tensor of updates.  Unforunately, the updates
-        # need to be a size that's based on the N generated in this
-        # function and the dtype known only in the TensorGen function,
-        # but not in ArgGen.
-        #
-        # There are many bad ways to solve this and we'll choose the
-        # least of the evils which still gives reasonable coverage of
-        # the possible operand shapes.
-        for N in range(1, len(shapes)):
-            # Rank includes the N dimension
-            indices_rank = rng.integers(2, 4, size=1)[0]
-            indices_shape = []
-
-            indices_shape = rng.integers(1, 8, size=indices_rank)
-            indices_shape[-1] = N
-
-            # Store the Shapes, and the indicies value tensor as arguments.
-            args.append(["_n{}".format(N), [shapes, indices_shape, N, rng]])
-
-        return args
-
     def agSpaceToBatch(op, shapes, rng):
         batch_rank = 1
         channel_rank = 1
