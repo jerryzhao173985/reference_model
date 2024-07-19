@@ -26,20 +26,20 @@ namespace tosa
 {
 
 NLOHMANN_JSON_SERIALIZE_ENUM(DType,
-                             {
-                                 { DType::DType_UNKNOWN, "UNKNOWN" },
-                                 { DType::DType_BOOL, "BOOL" },
-                                 { DType::DType_INT4, "INT4" },
-                                 { DType::DType_INT8, "INT8" },
-                                 { DType::DType_INT16, "INT16" },
-                                 { DType::DType_INT32, "INT32" },
-                                 { DType::DType_INT48, "INT48" },
-                                 { DType::DType_FP16, "FP16" },
-                                 { DType::DType_BF16, "BF16" },
-                                 { DType::DType_FP32, "FP32" },
-                                 { DType::DType_FP8E4M3, "FP8E4M3" },
-                                 { DType::DType_FP8E5M2, "FP8E5M2" },
-                             })
+                             { { DType::DType_UNKNOWN, "UNKNOWN" },
+                               { DType::DType_BOOL, "BOOL" },
+                               { DType::DType_INT4, "INT4" },
+                               { DType::DType_INT8, "INT8" },
+                               { DType::DType_INT16, "INT16" },
+                               { DType::DType_INT32, "INT32" },
+                               { DType::DType_INT48, "INT48" },
+                               { DType::DType_FP16, "FP16" },
+                               { DType::DType_BF16, "BF16" },
+                               { DType::DType_FP32, "FP32" },
+                               { DType::DType_FP8E4M3, "FP8E4M3" },
+                               { DType::DType_FP8E5M2, "FP8E5M2" },
+                               { DType::DType_UINT16, "UINT16" },
+                               { DType::DType_UINT8, "UINT8" } })
 
 }    // namespace tosa
 
@@ -206,7 +206,7 @@ DType mapToDType(tosa_datatype_t dataType)
         { tosa_datatype_int48_t, DType_INT48 },     { tosa_datatype_fp16_t, DType_FP16 },
         { tosa_datatype_bf16_t, DType_BF16 },       { tosa_datatype_fp32_t, DType_FP32 },
         { tosa_datatype_shape_t, DType_SHAPE },     { tosa_datatype_fp8e4m3_t, DType_FP8E4M3 },
-        { tosa_datatype_fp8e5m2_t, DType_FP8E5M2 },
+        { tosa_datatype_fp8e5m2_t, DType_FP8E5M2 }, { tosa_datatype_uint8_t, DType_UINT8 },
     };
 
     if (typeMap.count(dataType))

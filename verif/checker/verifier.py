@@ -12,7 +12,7 @@ import schemavalidation.schemavalidation as sch
 # "type" matches enum - see include/types.h
 # "size" is size in bytes per value of this datatype
 NUMPY_DATATYPE_TO_CLIENTTYPE = {
-    # tosa_datatype_int8_t
+    # tosa_datatype_int8_t, used for int4 too
     np.dtype("int8"): {"type": 8, "size": 1},
     # tosa_datatype_int16_t
     np.dtype("int16"): {"type": 4, "size": 2},
@@ -32,8 +32,10 @@ NUMPY_DATATYPE_TO_CLIENTTYPE = {
     np.dtype("V2"): {"type": 0, "size": 2},
     # tosa_datatype_fp8e4m3_t
     np.dtype("V1"): {"type": 12, "size": 1},
-    # tosa_datatype_fp8e5m2_t
-    np.dtype("uint8"): {"type": 13, "size": 1},
+    # tosa_datatype_uint16_t
+    np.dtype("uint16"): {"type": 9, "size": 2},
+    # tosa_datatype_uint8_t, used for fp8e5m2 aswell
+    np.dtype("uint8"): {"type": 10, "size": 1},
 }
 
 
@@ -72,16 +74,23 @@ class VerifierLibrary:
         ]
         self.tvf_verify_data.restype = ct.c_bool
 
-    def _get_tensor_data(self, name, array):
+    def _get_tensor_data(self, name, array, cfg_type=None):
         """Set up tosa_tensor_t using the given a numpy array."""
         shape = (ct.c_int32 * len(array.shape))(*array.shape)
+        # Set the correct client type for FP8E5M2 as it shares the same numpy type as uint8
+        clientType = (
+            # "type" matches enum - see include/types.h
+            13
+            if cfg_type == "FP8E5M2"
+            else NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["type"]
+        )
         size_in_bytes = array.size * NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["size"]
 
         tensor = TosaTensor(
             ct.c_char_p(bytes(name, "utf8")),
             ct.cast(shape, ct.POINTER(ct.c_int32)),
             ct.c_int32(len(array.shape)),
-            ct.c_int(NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["type"]),
+            ct.c_int(clientType),
             array.ctypes.data_as(ct.POINTER(ct.c_uint8)),
             ct.c_size_t(size_in_bytes),
         )
@@ -101,7 +110,10 @@ class VerifierLibrary:
         )
         jsb = bytes(json.dumps(compliance_json_config), "utf8")
 
-        imp = self._get_tensor_data(output_name, imp_result_array)
+        # name of map that contains the type info could differ
+        data_type = compliance_json_config["tensors"][output_name]["data_type"]
+
+        imp = self._get_tensor_data(output_name, imp_result_array, data_type)
         ref = self._get_tensor_data(output_name, ref_result_array)
         if bnd_result_array is not None:
             ref_bnd = self._get_tensor_data(output_name, bnd_result_array)

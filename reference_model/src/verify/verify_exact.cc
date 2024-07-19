@@ -128,6 +128,45 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
             return std::equal(refData_int, std::next(refData_int, elementCount), impData,
                               std::next(impData, elementCount), exact_int<int8_t>);
         }
+
+        case tosa_datatype_int48_t: {
+
+            const auto* refData_int = reinterpret_cast<const int64_t*>(referenceTensor->data);
+
+            TOSA_REF_REQUIRE(refData_int != nullptr, "[E] Missing data for reference");
+
+            const auto* impData = reinterpret_cast<const int64_t*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+
+            return std::equal(refData_int, std::next(refData_int, elementCount), impData,
+                              std::next(impData, elementCount), exact_int<int64_t>);
+        }
+
+        case tosa_datatype_uint16_t: {
+
+            const auto* refData_int = reinterpret_cast<const uint16_t*>(referenceTensor->data);
+
+            TOSA_REF_REQUIRE(refData_int != nullptr, "[E] Missing data for reference");
+
+            const auto* impData = reinterpret_cast<const uint16_t*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+
+            return std::equal(refData_int, std::next(refData_int, elementCount), impData,
+                              std::next(impData, elementCount), exact_int<uint16_t>);
+        }
+
+        case tosa_datatype_uint8_t: {
+
+            const auto* refData_int = reinterpret_cast<const uint8_t*>(referenceTensor->data);
+
+            TOSA_REF_REQUIRE(refData_int != nullptr, "[E] Missing data for reference");
+
+            const auto* impData = reinterpret_cast<const uint8_t*>(implementationTensor->data);
+            TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
+
+            return std::equal(refData_int, std::next(refData_int, elementCount), impData,
+                              std::next(impData, elementCount), exact_int<uint8_t>);
+        }
         case tosa_datatype_bool_t: {
 
             const auto* refData_bool = reinterpret_cast<const bool*>(referenceTensor->data);
