@@ -3597,8 +3597,13 @@
         "group": "data_layout",
         "generation": {
             "tosa-pro-int-pro-fp": {
-                "supports_all": [ "tosa-ext-shape" ],
-                "supports_any": [ "tosa-pro-fp", "tosa-pro-int" ],
+                "supports_all": [
+                    "tosa-ext-shape"
+                ],
+                "supports_any": [
+                    "tosa-pro-fp",
+                    "tosa-pro-int"
+                ],
                 "from_version": "v0.80.0",
                 "generator_args": [
                     [
@@ -4744,8 +4749,8 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
+                "selector": "tosa-pro-fp",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -7236,7 +7241,9 @@
     "reduce_max": {
         "group": "reduction",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7290,6 +7297,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
+                "selector": "tosa-pro-fp",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -7307,6 +7315,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -7347,6 +7356,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -7368,6 +7378,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -7389,13 +7400,18 @@
                     "type",
                     "axis"
                 ]
+            },
+            "tosa-pro-fp": {
+                "generator_select": "true"
             }
         }
     },
     "reduce_min": {
         "group": "reduction",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7449,6 +7465,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
+                "selector":"tosa-pro-fp",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -7466,6 +7483,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -7506,6 +7524,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -7527,6 +7546,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -7548,6 +7568,9 @@
                     "type",
                     "axis"
                 ]
+            },
+            "tosa-pro-fp": {
+                "generator_select": "true"
             }
         }
     },
