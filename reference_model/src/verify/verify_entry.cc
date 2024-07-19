@@ -104,8 +104,16 @@ extern "C"
         // Validate data-type
 
         tosa_datatype_t imp_type = imp->data_type;
+        //checks if all datatypes are supported, check verif_utils.cc to add a datatype
+        if (cfg->dataType == DType::DType_UNKNOWN)
+        {
+            WARNING("Unsupported data type in compliance configuration");
+            return false;
+        }
 
-        if (cfg->dataType != TosaReference::mapToDType(imp_type))
+        //INT4 Tensor Datatype is supported by using int8 implementation type
+        if (cfg->dataType != TosaReference::mapToDType(imp_type) &&
+            !(cfg->dataType == DType_INT4 && imp_type == tosa_datatype_int8_t))
         {
             WARNING("[Verifier] Incorrect implementation tensor data type.");
             return false;
