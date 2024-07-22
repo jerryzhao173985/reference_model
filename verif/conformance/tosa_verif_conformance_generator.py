@@ -559,7 +559,7 @@ def parse_args(argv=None):
         default=[],
         type=str,
         nargs="*",
-        help="TOSA extension(s) to create tests for, if not supplied all tests will be created",
+        help="TOSA extension(s) to create tests for, if not supplied, no extension tests will be created",
     )
     parser.add_argument(
         "--unit-tests",
