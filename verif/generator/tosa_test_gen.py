@@ -4709,7 +4709,7 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeMismatch,
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
             "compliance": {"relative": 0.006},
         },
         # Type conversion
