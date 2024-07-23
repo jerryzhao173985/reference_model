@@ -3306,21 +3306,24 @@
             "tosa-mi"
         ],
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen",
+            "generator_select"
         ],
         "generation": {
-            "standard": {
+            "tosa-pro-fp": {
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
                         "--target-dtype",
                         "fp32",
                         "fp16",
-                        "bf16",
                         "--fp-values-range",
                         "-max,max"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3330,32 +3333,25 @@
                         "--max-resize-output-dim",
                         "9100"
                     ]
+                ],
+                "selector": "tosa-pro-fp"
+            },
+            "tosa-ext-bf16": {
+                "selector": "tosa-pro-fp",
+                "no_negative_tests": "true",
+                "negative_dim_range": "1,10",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max"
+                    ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {
-                    "offset": [],
-                    "shape": [],
-                    "type": [],
-                    "mode": [],
-                    "output_type": [],
-                    "scale": [
-                        "sc2x1x3x1"
-                    ],
-                    "border": [
-                        "bor0x1"
-                    ]
-                },
-                "permutes": [
-                    "shape",
-                    "type"
-                ],
-                "exclude_patterns": [
-                    ".*_ERRORIF_MaxDimExceeded_1x16584x5x1_.*"
-                ]
-            }
+            "tosa-pro-fp": {}
         }
     },
     "reverse": {
