@@ -287,67 +287,45 @@ bool tosaCheckFloatBound(
         testValue      = -testValue;
     }
 
-    // At this point we are ready to calculate the ULP bounds for the reference value.
-    double referenceMin, referenceMax;
+    // Scale by the number of ULPs requested by the user.
+    double referenceMax = referenceValue + errorBound;
+    double referenceMin = referenceValue - errorBound;
 
-    // If the reference is infinity e.g. the result of an overflow the test value must
-    // be infinity of an appropriate sign.
-    if (std::isinf(referenceValue))
+    // Handle the overflow cases.
+    if (referenceMax > AccPrecision<OutType>::normal_max)
     {
-        // We already canonicalized the input such that the reference value is positive
-        // so no need to check again here.
-        referenceMin = std::numeric_limits<OutType>::infinity();
-        referenceMax = std::numeric_limits<OutType>::infinity();
+        if (std::is_same<OutType, fp8e4m3>::value)
+        {
+            referenceMax = std::numeric_limits<OutType>::quiet_NaN();
+        }
+        else
+        {
+            referenceMax = std::numeric_limits<OutType>::infinity();
+        }
     }
-    else if (referenceValue == 0)
+
+    if (referenceMin > AccPrecision<OutType>::normal_max)
     {
-        // For zero we require that the results match exactly with the correct sign.
-        referenceMin = 0;
-        referenceMax = 0;
+        if (std::is_same<OutType, fp8e4m3>::value)
+        {
+            referenceMin = std::numeric_limits<OutType>::quiet_NaN();
+        }
+        else
+        {
+            referenceMin = std::numeric_limits<OutType>::infinity();
+        }
     }
-    else
+
+    // And the underflow cases.
+    if (referenceMax < AccPrecision<OutType>::normal_min)
     {
+        referenceMax = AccPrecision<OutType>::normal_min;
+    }
 
-        // Scale by the number of ULPs requested by the user.
-        referenceMax = referenceValue + errorBound;
-        referenceMin = referenceValue - errorBound;
-
-        // Handle the overflow cases.
-        if (referenceMax > AccPrecision<OutType>::normal_max)
-        {
-            if (std::is_same<OutType, fp8e4m3>::value)
-            {
-                referenceMax = std::numeric_limits<OutType>::quiet_NaN();
-            }
-            else
-            {
-                referenceMax = std::numeric_limits<OutType>::infinity();
-            }
-        }
-
-        if (referenceMin > AccPrecision<OutType>::normal_max)
-        {
-            if (std::is_same<OutType, fp8e4m3>::value)
-            {
-                referenceMin = std::numeric_limits<OutType>::quiet_NaN();
-            }
-            else
-            {
-                referenceMin = std::numeric_limits<OutType>::infinity();
-            }
-        }
-
-        // And the underflow cases.
-        if (referenceMax < AccPrecision<OutType>::normal_min)
-        {
-            referenceMax = AccPrecision<OutType>::normal_min;
-        }
-
-        if (referenceMin < AccPrecision<OutType>::normal_min)
-        {
-            // Large error bounds could mean referenceMin is negative
-            referenceMin = std::min(0.0, referenceMin);
-        }
+    if (referenceMin < AccPrecision<OutType>::normal_min)
+    {
+        // Large error bounds could mean referenceMin is negative
+        referenceMin = std::min(0.0, referenceMin);
     }
 
     // And finally... Do the comparison.
