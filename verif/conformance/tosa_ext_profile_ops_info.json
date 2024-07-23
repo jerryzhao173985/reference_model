@@ -7983,7 +7983,9 @@
     "resize": {
         "group": "image",
         "support_for": [
-            "lazy_data_gen"
+            "lazy_data_gen",
+            "random_const_inputs",
+            "stable_random_gen"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -8057,6 +8059,7 @@
                         "-max,max"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -8107,26 +8110,7 @@
                 ]
             },
             "tosa-pro-fp": {
-                "params": {
-                    "offset": [],
-                    "shape": [],
-                    "type": [],
-                    "mode": [],
-                    "output_type": [],
-                    "scale": [
-                        "sc2x1x3x1"
-                    ],
-                    "border": [
-                        "bor0x1"
-                    ]
-                },
-                "permutes": [
-                    "shape",
-                    "type"
-                ],
-                "exclude_patterns": [
-                    ".*_ERRORIF_MaxDimExceeded_1x16584x5x1_.*"
-                ]
+                "generator_select": "true"
             }
         }
     },
