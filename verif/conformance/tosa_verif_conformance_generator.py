@@ -145,12 +145,13 @@ def build_op_tests(
     if _supports_for_enabled(profile_ext):
         if "lazy_data_gen" in supports and args.lazy_data_generation:
             build_cmd_base.append("--lazy-data-generation")
+
+    if "generator_select" in supports:
+        # When using the new generator select we can also enable the following
         if "stable_random_gen" in supports and not args.global_random_generation:
             build_cmd_base.append("--stable-random-generation")
         if "random_const_inputs" in supports:
             build_cmd_base.append("--random-const-inputs")
-
-    if "generator_select" in supports:
         if selector_info is None:
             logger.error(
                 "build_op_tests error: generator_select mode without selector information"

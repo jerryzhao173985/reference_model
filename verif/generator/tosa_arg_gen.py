@@ -702,6 +702,19 @@ class TosaTensorValuesGen:
     def tvgLazyGenDefault(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
+        def tensor_is_variable(pCount, idx):
+            # Determine if the tensor is constant or variable (a placeholder)
+            if testGen.args.random_const_inputs:
+                # Choose type of tensor biased by defaults
+                percentage = rng.randInt(0, 100)
+                variable = (idx < pCount and percentage < 70) or (
+                    idx >= pCount and percentage >= 70
+                )
+            else:
+                # Use default set up of constants versus inputs for the op
+                variable = idx < pCount
+            return variable
+
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
         if "p_count" in argsDict:
@@ -719,6 +732,7 @@ class TosaTensorValuesGen:
         assert len(fixed_data_tensors) == len(
             shapeList
         ), "Fixed data list must match shapes list"
+
         if (
             error_name is not None
             or not gtu.dtypeIsSupportedByDataGen(dtypeList[0])
@@ -761,7 +775,8 @@ class TosaTensorValuesGen:
                     arr = rng.randTensor(shape, dtype, data_range)
                 if roundMode:
                     arr = np.round(arr)
-                if idx < pCount:
+
+                if tensor_is_variable(pCount, idx):
                     tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
                 else:
                     tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
@@ -805,15 +820,7 @@ class TosaTensorValuesGen:
             tens_meta["input_pos"] = idx
             tens_meta["op"] = gtu.getOpNameFromOpListName(opName).upper()
 
-            if testGen.args.random_const_inputs:
-                # Choose type of tensor biased by defaults
-                percentage = rng.randInt(0, 100)
-                variable = (idx < pCount and percentage < 70) or (
-                    idx >= pCount and percentage >= 70
-                )
-            else:
-                # Use default set up of constants versus inputs for the op
-                variable = idx < pCount
+            variable = tensor_is_variable(pCount, idx)
 
             if variable:
                 tens_meta["input_type"] = "VARIABLE"
@@ -3320,6 +3327,9 @@ class TosaArgGen:
             if (val % i) == 0:
                 factors.append(i)
 
+        # Valid factor is the number its self
+        factors.append(val)
+
         return factors
 
     @staticmethod
@@ -3335,8 +3345,6 @@ class TosaArgGen:
         for p in range(testGen.args.num_rand_permutations):
             # Rank from 1 to MAX_TENSOR_RANK
             newRank = rng.randInt(1, (gtu.MAX_TENSOR_RANK + 1))
-            if len(factors) < newRank:
-                continue
 
             # escape_counter limits the generation of new shapes to a reasonable time
             for escape_counter in range(100):
