@@ -653,7 +653,7 @@
             "generator_select"
         ],
         "generation": {
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -664,12 +664,12 @@
                         "-max,max",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
                         "2",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -679,12 +679,11 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -693,8 +692,7 @@
                         "1,65540,1,1,1",
                         "1,2,1,65529"
                     ]
-                ],
-                "selector": "tosa-mi"
+                ]
             },
             "tosa-ext-bf16": {
                 "selector": "tosa-mi",
@@ -707,12 +705,12 @@
                         "-max,max",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
                         "2",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -721,16 +719,14 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
             }
         },
         "selection": {
-            "tosa-mi": {}
+            "default": {}
         }
     },
     "conv2d": {
@@ -1126,7 +1122,7 @@
             "generator_select"
         ],
         "generation": {
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -1185,6 +1181,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -1777,7 +1774,7 @@
             "generator_select"
         ],
         "generation": {
-            "tosa-mi": {
+            "tosa-pro-fp": {
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -1790,12 +1787,12 @@
                         "1,67",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
                         "2",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -1805,12 +1802,11 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -1819,8 +1815,7 @@
                         "1,1,65539,1,1",
                         "1,1,2,65529"
                     ]
-                ],
-                "selector": "tosa-mi"
+                ]
             },
             "tosa-ext-bf16": {
                 "no_negative_tests": "true",
@@ -1834,12 +1829,12 @@
                         "1,67",
                         "--target-rank",
                         "0",
-                        "--target-rank",
                         "1",
                         "2",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -1848,23 +1843,14 @@
                         "1,19",
                         "--target-rank",
                         "4",
-                        "--target-rank",
                         "5",
-                        "--target-rank",
                         "6"
                     ]
                 ]
             }
         },
         "selection": {
-            "default": {
-                "params": {},
-                "permutes": [
-                    "shape",
-                    "type"
-                ]
-            },
-            "tosa-mi": {}
+            "default": {}
         }
     },
     "log": {
@@ -3680,6 +3666,7 @@
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -3691,7 +3678,6 @@
                         "2"
                     ]
                 ],
-                "selector": "tosa-mi",
                 "no_negative_tests": "true"
             },
             "tosa-ext-bf16": {
@@ -3728,7 +3714,7 @@
             }
         },
         "selection": {
-            "tosa-mi": {}
+            "default": {}
         }
     },
     "sigmoid": {
