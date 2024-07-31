@@ -2223,6 +2223,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -2236,6 +2237,7 @@
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -2264,6 +2266,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -3727,6 +3730,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -4500,6 +4504,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -4513,6 +4518,7 @@
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
@@ -4543,6 +4549,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -8552,6 +8559,7 @@
                         "6"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "--fp-values-range",
