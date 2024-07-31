@@ -3645,6 +3645,19 @@
                         "--target-shape",
                         "1,1,2,65550",
                         "1,4,65530,1,1"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,9",
+                        "--target-rank",
+                        "0",
+                        "6"
                     ]
                 ]
             },
@@ -3666,6 +3679,20 @@
                         "1",
                         "2",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,8",
+                        "--target-rank",
+                        "0",
+                        "4",
+                        "5",
+                        "6"
                     ]
                 ]
             }
@@ -4232,12 +4259,37 @@
                     [
                         "--no-special-tests",
                         "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--target-shape",
                         "3,65551,1,1",
                         "1,1,3,65531,1"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "0",
+                        "6"
                     ]
                 ]
             },
@@ -4271,6 +4323,18 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,7",
+                        "--target-rank",
+                        "0",
+                        "6"
                     ]
                 ]
             }
@@ -4300,7 +4364,7 @@
                 "supports_all": [
                     "tosa-pro-int"
                 ],
-                "selector": "true",
+                "selector": "tosa-pro-fp",
                 "generator_args": [
                     [
                         "--target-dtype",
@@ -4369,6 +4433,7 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp16",
+                        "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
@@ -4376,6 +4441,19 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,9",
+                        "--target-rank",
+                        "0",
+                        "6"
                     ]
                 ]
             },
@@ -4407,6 +4485,18 @@
                         "--target-shape",
                         "65552,1,1,4",
                         "1,1,1,3,65532"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "0",
+                        "6"
                     ]
                 ]
             }
