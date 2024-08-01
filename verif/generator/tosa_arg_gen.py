@@ -536,30 +536,6 @@ class TosaTensorGen:
         return [ifm_shape]
 
     @staticmethod
-    def tgFullyConnected(testGen, rng, op, rank, error_name=None):
-        pl, const = op["operands"]
-
-        if error_name != ErrorIf.WrongRank:
-            assert rank == 2
-
-        input_shape = testGen.makeShape(rng, rank)
-
-        # Constrict the overall size of the shape when creating ERROR_IF tests
-        if error_name:
-            input_shape = TosaErrorIfArgGen.eiRestrictDimensions(input_shape)
-
-        filter_oc = rng.integers(
-            low=testGen.args.tensor_shape_range[0],
-            high=testGen.args.tensor_shape_range[1],
-            size=1,
-        )[0]
-        filter_shape = np.asarray([filter_oc, input_shape[1]])
-
-        bias_shape = np.asarray([filter_oc])
-
-        return [input_shape, filter_shape, bias_shape]
-
-    @staticmethod
     def tgMatmul(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
@@ -1797,31 +1773,6 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
-    def tvgFullyConnected(
-        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
-    ):
-        dtype = dtypeList[0]
-        if (
-            error_name is None
-            and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT
-            and dtype in (DType.BF16,)
-        ):
-            # TODO - Remove once BF16 enabled for DOT_PRODUCT compliance
-            # Limit ranges for (non error & non compliance) FP tests by using
-            # values that can be multiplied on any axis to not hit infinity/NaN
-            IC = shapeList[0][1]
-            highval_lookup = {
-                dtype: math.pow(TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype], 1 / IC)
-            }
-            data_range = TosaTensorValuesGen._get_data_range(rng, dtype, highval_lookup)
-            assert data_range is not None
-            argsDict["data_range"] = data_range
-
-        return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-        )
-
-    @staticmethod
     def tvgCast(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         in_dtype = dtypeList[0]
         out_dtype = argsDict["out_type"]
@@ -2498,41 +2449,6 @@ class TosaArgGen:
             opName,
             shapeList,
             dtypes[0],
-            arg_list,
-            error_name,
-        )
-        # Return list of tuples: (arg_str, args_dict)
-        return arg_list
-
-    @staticmethod
-    def agFullyConnected(testGen, rng, opName, shapeList, dtypes, error_name=None):
-
-        assert isinstance(dtypes, (list, tuple)), f"{dtypes} unexpected"
-        input_dtype = dtypes[0]
-
-        if error_name == ErrorIf.WrongOutputType:
-            accum_dtype = gtu.get_wrong_output_type(opName, rng, input_dtype)
-        elif error_name == ErrorIf.WrongInputType:
-            # Pick some potentially correct output dtype if input type is incorrect
-            accum_dtype = DType.INT32
-        else:
-            accum_dtype = dtypes[-1]  # use output dtype as accum_dtype
-
-        # Set up compliance info
-        args_dict = {
-            "acc_type": accum_dtype,
-            "ks": int(shapeList[0][1]),  # Set KS = IC, from input A (N,IC)
-            "dot_products": gtu.product((shapeList[0][0], shapeList[1][0])),
-            "shape": shapeList[0],
-        }
-
-        arg_list = [(f"acc{testGen.typeStr(accum_dtype)}", args_dict)]
-
-        arg_list = TosaArgGen._add_data_generators(
-            testGen,
-            opName,
-            shapeList,
-            input_dtype,
             arg_list,
             error_name,
         )

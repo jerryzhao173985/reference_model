@@ -419,7 +419,6 @@ class TosaErrorValidator:
 
         # Turn the wrong dtypes into required list of types
         if op["op"] in [
-            Op.FULLY_CONNECTED,
             Op.CONV2D,
             Op.CONV3D,
             Op.DEPTHWISE_CONV2D,
@@ -486,7 +485,7 @@ class TosaErrorValidator:
                     input_dtype, output_dtype
                 )
 
-            elif op["op"] in [Op.FULLY_CONNECTED, Op.MATMUL]:
+            elif op["op"] == Op.MATMUL:
                 if (
                     (input_dtype == DType.INT8 and output_dtype != DType.INT32)
                     or (input_dtype == DType.INT16 and output_dtype != DType.INT48)
@@ -710,8 +709,6 @@ class TosaErrorValidator:
                 op["op"] in [Op.RESIZE, Op.AVG_POOL2D, Op.MAX_POOL2D]
                 and len(input_shape) != 4
             ):
-                error_result = True
-            elif op["op"] == Op.FULLY_CONNECTED and len(input_shape) != 2:
                 error_result = True
             elif op["op"] == Op.MATMUL and len(input_shape) != 3:
                 error_result = True

@@ -1174,63 +1174,6 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_fully_connected(
-        self,
-        rng,
-        op,
-        inputs,
-        args_dict,
-        validator_fcns=None,
-        error_name=None,
-        qinfo=None,
-    ):
-        assert len(inputs) == 3
-        ifm, filter, bias = inputs
-        accum_dtype = args_dict["acc_type"]
-
-        result_tensor = OutputShaper.fullyConnectedOp(
-            self.ser, rng, ifm, filter, accum_dtype, error_name
-        )
-
-        # Invalidate Input/Output list for error if checks.
-        input_list = [ifm.name, filter.name, bias.name]
-        output_list = [result_tensor.name]
-        pCount, cCount = op["operands"]
-        num_operands = pCount + cCount
-        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            rng, error_name, input_list, output_list
-        )
-
-        if not TosaErrorValidator.evValidateErrorIfs(
-            self.ser,
-            validator_fcns,
-            error_name,
-            op=op,
-            input_shape=ifm.shape,
-            input_dtype=ifm.dtype,
-            weight_dtype=filter.dtype,
-            output_shape=result_tensor.shape,
-            output_dtype=result_tensor.dtype,
-            qinfo=qinfo,
-            result_tensors=[result_tensor],
-            input_list=input_list,
-            output_list=output_list,
-            num_operands=num_operands,
-            accum_dtype=accum_dtype,
-        ):
-            return None
-
-        attr = ts.TosaSerializerAttribute()
-        attr.FullyConnectedAttribute(qinfo[0], qinfo[1])
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
-
-        compliance = self.tensorComplianceMetaData(
-            op, ifm.dtype, args_dict, result_tensor, error_name
-        )
-
-        return TosaTestGen.BuildInfo(result_tensor, compliance)
-
     def build_matmul(
         self,
         rng,
@@ -3535,29 +3478,6 @@ class TosaTestGen:
             "filter": KERNELS_2D,
             "template": True,
         },
-        "fully_connected": {
-            "op": Op.FULLY_CONNECTED,
-            "operands": (1, 2),
-            "rank": (2, 2),
-            "build_fcn": (
-                build_fully_connected,
-                TosaTensorGen.tgFullyConnected,
-                TosaTensorValuesGen.tvgFullyConnected,
-                TosaArgGen.agFullyConnected,
-            ),
-            "qgen": TosaQuantGen.qgConv,
-            "types": TYPE_CONV,
-            "error_if_validators": (
-                TosaErrorValidator.evInputZeroPointNotZero,
-                TosaErrorValidator.evWeightZeroPointNotZero,
-                TosaErrorValidator.evWrongRank,
-                TosaErrorValidator.evWrongInputType,
-                TosaErrorValidator.evWrongOutputType,
-                TosaErrorValidator.evWrongInputList,
-                TosaErrorValidator.evWrongOutputList,
-            ),
-            "data_gen": DP_FS_DATAGEN,
-        },
         "matmul": {
             "op": Op.MATMUL,
             "operands": (2, 0),
@@ -5538,19 +5458,6 @@ class OutputShaper:
             outputDType = ifm.dtype
 
         return ser.addOutput(ofm_shape, outputDType)
-
-    @staticmethod
-    def fullyConnectedOp(ser, rng, input, filter, accum_dtype, error_name=None):
-        # input: N, IC
-        # filter: OC, IC
-        # output: N, OC
-
-        output_shape = [input.shape[0], filter.shape[0]]
-
-        # Validated in arg_gen (also invalidated for ErrorIf)
-        out_dtype = accum_dtype
-
-        return ser.addOutput(output_shape, out_dtype)
 
     @staticmethod
     def matmulOp(ser, rng, a, b, accum_dtype, error_name=None):

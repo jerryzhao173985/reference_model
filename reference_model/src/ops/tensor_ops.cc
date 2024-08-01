@@ -1288,119 +1288,6 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     return GraphNode::eval();
 }
 
-template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-OpFullyConnected<InDtype, WeightDtype, OutDtype>::OpFullyConnected(SubgraphTraverser* sgt_,
-                                                                   TosaAttributeBase* attribute_,
-                                                                   uint64_t id_)
-    : GraphNode(sgt_, Op_FULLY_CONNECTED, id_)
-{
-    setRequiredOperands(3, 1);
-    setRequiredRank(2, 2);
-
-    INIT_ATTRIBUTE(FullyConnected);
-}
-
-template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-OpFullyConnected<InDtype, WeightDtype, OutDtype>::~OpFullyConnected()
-{
-    if (attribute)
-        delete attribute;
-}
-
-template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-int OpFullyConnected<InDtype, WeightDtype, OutDtype>::checkTensorAttributes()
-{
-    if (validateRequiredOperands())
-        return 1;
-
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
-    {
-        return 1;
-    }
-
-    input  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    weight = dynamic_cast<TosaReference::TensorTemplate<TWeight>*>(inputs[1]);
-    bias   = dynamic_cast<TosaReference::TensorTemplate<TBias>*>(inputs[2]);
-
-    if (input->getShape()[1] != weight->getShape()[1])
-    {
-        printNodeValidationError("OpFullyConnected operator input.shape[1] should match weight.shape[1]");
-        return 1;
-    }
-
-    if (weight->getShape()[0] != bias->getShape()[0] && bias->getShape()[0] != 1)
-    {
-        printNodeValidationError(
-            "OpFullyConnected operator bias.shape[0] should match weight.shape[0] or be equal to 1");
-        return 1;
-    }
-
-    ERROR_IF(outputs[0]->getDtype() != OutDtype,
-             "OpFullyConnected: Output data type not supported for this configuration of operator");
-
-    output = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-
-    ERROR_IF(InDtype != TOSA_REF_TYPE_INT8 && attribute->input_zp() != 0,
-             "OpFullyConnected: Input zeropoint must be zero for non int8_t data");
-    ERROR_IF(WeightDtype != TOSA_REF_TYPE_INT8 && attribute->weight_zp() != 0,
-             "OpFullyConnected: Weight zeropoint must be zero for non int8_t data");
-
-    return 0;
-}
-
-template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-int OpFullyConnected<InDtype, WeightDtype, OutDtype>::eval()
-{
-    typedef Eigen::Tensor<int, 1>::DimensionPair DimPair;
-    Eigen::array<DimPair, 1> dims{ { DimPair(1, 0) } };
-
-    Eigen::array<Eigen::Index, 2> weight_shuffle{ 1, 0 };
-
-    int b_out_channels = this->bias->getShape()[0];
-    int out_channels   = this->output->getShape()[1];
-
-    ERROR_IF(b_out_channels != out_channels && b_out_channels != 1, "OpFullyConnected: bias channels mismatch %d != %d",
-             b_out_channels, out_channels);
-
-    Eigen::array<Eigen::Index, 2> bias_reshape;
-    bias_reshape[0] = 1;
-    bias_reshape[1] = b_out_channels;
-
-    Eigen::array<Eigen::Index, 2> bias_bcast;
-    bias_bcast[0] = this->input->getShape()[0];
-    bias_bcast[1] = (b_out_channels == 1) ? out_channels : 1;
-
-    TIn input_val      = this->input->getTensor();
-    TWeight weight_val = this->weight->getTensor().shuffle(weight_shuffle);
-    if (InDtype == TOSA_REF_TYPE_INT8 || WeightDtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val  = input_val - (InEigenType)attribute->input_zp();
-        weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
-    }
-
-    TBias bias_val = this->bias->getTensor();
-
-    if (g_func_config.abs_mode)
-    {
-        // in abs_mode: take abs values of conv operands
-        input_val  = input_val.abs();
-        weight_val = weight_val.abs();
-        bias_val   = bias_val.abs();
-    }
-
-    this->output->getTensor() = input_val.template cast<AccEigenType>()
-                                    .contract(weight_val.template cast<AccEigenType>(), dims)
-                                    .template cast<OutEigenType>() +
-                                bias_val.reshape(bias_reshape).broadcast(bias_bcast);
-
-    if (OutDtype == TOSA_REF_TYPE_INT48)
-    {
-        this->output->getTensor() = this->output->getTensor().cwiseMax((OutEigenType)AccQMin);
-        this->output->getTensor() = this->output->getTensor().cwiseMin((OutEigenType)AccQMax);
-    }
-    return GraphNode::eval();
-}
-
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_MATMUL, id_)
@@ -2289,17 +2176,6 @@ DEF_INSTANTIATE_FOUR_TYPE(OpDepthwiseConv2d, FP8E5M2, FP8E5M2, FP16, FP16);
 
 DEF_INSTANTIATE_ONE_TYPE(OpFFT2d, FP32);
 DEF_INSTANTIATE_ONE_TYPE(OpFFT2d, FP64);
-
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP16, FP16, FP16);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP16, FP16, FP32);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, BF16, BF16, FP32);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP32, FP32, FP32);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, INT8, INT4, INT32);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, INT8, INT8, INT32);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, INT16, INT8, INT48);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP64, FP64, FP64);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP8E4M3, FP8E4M3, FP16);
-DEF_INSTANTIATE_THREE_TYPE(OpFullyConnected, FP8E5M2, FP8E5M2, FP16);
 
 DEF_INSTANTIATE_TWO_TYPE(OpMatMul, INT8, INT32);
 DEF_INSTANTIATE_TWO_TYPE(OpMatMul, INT16, INT48);

@@ -203,7 +203,7 @@ def get_accum_dtypes_from_tgTypes(dtypes):
 
 
 def get_wrong_output_type(op_name, rng, input_dtype):
-    if op_name == "fully_connected" or op_name == "matmul":
+    if op_name == "matmul":
         if input_dtype == DType.INT8:
             incorrect_types = (
                 DType.INT4,
