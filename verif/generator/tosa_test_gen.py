@@ -1581,7 +1581,12 @@ class TosaTestGen:
         attr.AxisAttribute(axis)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return TosaTestGen.BuildInfo(result_tensor, None)
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_reshape(
         self,
@@ -1677,7 +1682,12 @@ class TosaTestGen:
         attr.AxisAttribute(axis)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
-        return TosaTestGen.BuildInfo(result_tensor, None)
+
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
 
     def build_transpose(
         self,
