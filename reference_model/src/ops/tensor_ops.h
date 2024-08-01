@@ -165,37 +165,6 @@ protected:
     tosa::TosaConvAttribute* attribute;
 };
 
-template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE OutDtype>
-class OpFullyConnected : public GraphNode
-{
-public:
-    OpFullyConnected(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
-    virtual ~OpFullyConnected();
-
-    virtual int checkTensorAttributes() final;
-    virtual int eval() final;
-
-    using InEigenType     = typename GetEigenType<InDtype>::type;
-    using WeightEigenType = typename GetEigenType<WeightDtype>::type;
-    using AccEigenType    = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
-    using OutEigenType    = typename GetEigenType<OutDtype>::type;
-    using TIn             = Eigen::Tensor<InEigenType, 2>;
-    using TWeight         = Eigen::Tensor<WeightEigenType, 2>;
-    using TBias           = Eigen::Tensor<OutEigenType, 1>;
-    using TOut            = Eigen::Tensor<OutEigenType, 2>;
-
-    static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
-    static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;
-
-protected:
-    TosaReference::TensorTemplate<TIn>* input;
-    TosaReference::TensorTemplate<TWeight>* weight;
-    TosaReference::TensorTemplate<TBias>* bias;
-    TosaReference::TensorTemplate<TOut>* output;
-
-    tosa::TosaFullyConnectedAttribute* attribute;
-};
-
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 class OpMatMul : public GraphNode
 {

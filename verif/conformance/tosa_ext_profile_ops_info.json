@@ -7073,7 +7073,7 @@
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
-                "selector":"tosa-pro-fp",
+                "selector": "tosa-pro-fp",
                 "negative_dim_range": "1,10",
                 "generator_args": [
                     [
@@ -7106,7 +7106,7 @@
                 "supports_all": [
                     "tosa-ext-bf16"
                 ],
-                "selector":"tosa-pro-fp",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -7129,7 +7129,7 @@
                     "tosa-pro-fp"
                 ],
                 "from_version": "v0.80.0",
-                "selector":"tosa-pro-fp",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
@@ -7152,7 +7152,7 @@
                     "tosa-ext-bf16"
                 ],
                 "from_version": "v0.80.0",
-                "selector":"tosa-pro-fp",
+                "selector": "tosa-pro-fp",
                 "no_negative_tests": "true",
                 "generator_args": [
                     [

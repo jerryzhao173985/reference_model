@@ -407,7 +407,6 @@ std::map<Op, TestValues> testValues = {
     { Op::Op_DEPTHWISE_CONV2D, dotProductTestVals },
     { Op::Op_TRANSPOSE_CONV2D, dotProductTestVals },
     { Op::Op_AVG_POOL2D, dotProductTestVals },
-    { Op::Op_FULLY_CONNECTED, dotProductTestVals },
     { Op::Op_MATMUL, dotProductTestVals },
     { Op::Op_REDUCE_SUM, dotProductTestVals },
     { Op::Op_REDUCE_PRODUCT, dotProductTestVals },

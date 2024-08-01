@@ -655,13 +655,6 @@ class FloorOperator(Operator):
     name = "floor"
 
 
-class FullyConnectedOperator(Operator):
-    """Test selector for the FULLY_CONNECTED operator."""
-
-    name = "fully_connected"
-    param_names = ["shape", "type", "accum_type"]
-
-
 class GatherOperator(Operator):
     """Test selector for the GATHER operator."""
 

@@ -1345,14 +1345,6 @@ class TBuilder:
         def eval(self, a):
             return self.rnn(a)
 
-    class FullyConnected:
-        def __init__(self, name):
-            self.result_name = name
-            self.dense = tf.keras.layers.Dense(2)
-
-        def eval(self, a):
-            return self.dense(a)
-
     class RFFT2d:
         def __init__(self, fft_length, name):
             self.fft_length = fft_length
