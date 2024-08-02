@@ -1412,10 +1412,7 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        if op["op"] == Op.CONCAT_SHAPE:
-            axis = 0
-        else:
-            axis = args_dict["axis"]
+        axis = args_dict["axis"]
         if error_name != ErrorIf.WrongInputType:
             assert type(axis) is int
 
@@ -1458,7 +1455,6 @@ class TosaTestGen:
             attr = ts.TosaSerializerAttribute()
             attr.AxisAttribute(axis)
         else:
-            assert op["op"] == Op.CONCAT_SHAPE
             attr = None
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -2731,59 +2727,6 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(results, compliance)
 
-    def build_shape_op(
-        self,
-        rng,
-        op,
-        inputs,
-        args_dict,
-        validator_fcns=None,
-        error_name=None,
-        qinfo=None,
-    ):
-        assert len(inputs) == 2
-        a, b = inputs
-
-        result_tensor = OutputShaper.addShapeOp(self.ser, rng, a, b, error_name)
-
-        # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, b.name]
-        output_list = [result_tensor.name]
-        pCount, cCount = op["operands"]
-        num_operands = pCount + cCount
-        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            self, error_name, input_list, output_list
-        )
-
-        if not TosaErrorValidator.evValidateErrorIfs(
-            self.ser,
-            validator_fcns,
-            error_name,
-            op=op,
-            input1=a,
-            input2=b,
-            input_shape=a.shape,
-            input_dtype=a.dtype,
-            output_shape=result_tensor.shape,
-            output_dtype=result_tensor.dtype,
-            result_tensors=[result_tensor],
-            input_list=input_list,
-            output_list=output_list,
-            num_operands=num_operands,
-        ):
-            return None
-
-        self.ser.addOperator(
-            op["op"],
-            input_list,
-            output_list,
-        )
-        compliance = self.tensorComplianceMetaData(
-            op, a.dtype, args_dict, result_tensor, error_name
-        )
-
-        return TosaTestGen.BuildInfo(result_tensor, compliance)
-
     def create_filter_lists(
         self, op, shapeFilter, rankFilter, dtypeFilter, testType, validator=None
     ):
@@ -3051,12 +2994,12 @@ class TosaTestGen:
 
         if isinstance(dtype_or_dtypeList, list):
             dtypeList = dtype_or_dtypeList
-        elif op["op"] in (Op.CONCAT, Op.CONCAT_SHAPE):
+        elif op["op"] == Op.CONCAT:
             dtypeList = [dtype_or_dtypeList] * len(shapeList)
         else:
             dtypeList = [dtype_or_dtypeList] * (num_operands)
 
-        if op["op"] not in (Op.CONCAT, Op.CONCAT_SHAPE):
+        if op["op"] != Op.CONCAT:
             assert (
                 len(shapeList) == num_operands
             ), "shapeList length {} must match number of operands {}".format(
@@ -4522,26 +4465,6 @@ class TosaTestGen:
             ),
             "data_gen": PR_FS_DATAGEN,
         },
-        "dim": {
-            "op": Op.DIM,
-            "operands": (1, 0),
-            "rank": (1, gtu.MAX_TENSOR_RANK),
-            "build_fcn": (
-                build_dim,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
-                TosaArgGen.agAxis,
-            ),
-            "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
-            "error_if_validators": (
-                TosaErrorValidator.evAxisLargerRank,
-                TosaErrorValidator.evAxisSmallerZero,
-                TosaErrorValidator.evWrongInputType,
-                TosaErrorValidator.evWrongInputList,
-                TosaErrorValidator.evWrongOutputList,
-                TosaErrorValidator.evWrongRank,
-            ),
-        },
         "reshape": {
             "op": Op.RESHAPE,
             "operands": (2, 0),
@@ -4949,71 +4872,6 @@ class TosaTestGen:
             "data_gen": DP_FS_DATAGEN,
         },
         # Shape
-        "add_shape": {
-            "op": Op.ADD_SHAPE,
-            "operands": (2, 0),
-            "rank": (1, 1),
-            "build_fcn": (
-                build_shape_op,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgAddSub,
-                TosaArgGen.agNone,
-            ),
-            "types": [DType.SHAPE],
-            "error_if_validators": (TosaErrorValidator.evDimensionMismatch,),
-        },
-        "sub_shape": {
-            "op": Op.SUB_SHAPE,
-            "operands": (2, 0),
-            "rank": (1, 1),
-            "build_fcn": (
-                build_shape_op,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgAddSub,
-                TosaArgGen.agNone,
-            ),
-            "types": [DType.SHAPE],
-            "error_if_validators": (TosaErrorValidator.evDimensionMismatch,),
-        },
-        "mul_shape": {
-            "op": Op.MUL_SHAPE,
-            "operands": (2, 0),
-            "rank": (1, 1),
-            "build_fcn": (
-                build_shape_op,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgMul,
-                TosaArgGen.agNone,
-            ),
-            "types": [DType.SHAPE],
-            "error_if_validators": (TosaErrorValidator.evDimensionMismatch,),
-        },
-        "div_shape": {
-            "op": Op.DIV_SHAPE,
-            "operands": (2, 0),
-            "rank": (1, 1),
-            "build_fcn": (
-                build_shape_op,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgIntDiv,
-                TosaArgGen.agNone,
-            ),
-            "types": [DType.SHAPE],
-            "error_if_validators": (TosaErrorValidator.evDimensionMismatch,),
-        },
-        "concat_shape": {
-            "op": Op.CONCAT_SHAPE,
-            "operands": (2, 0),
-            "rank": (1, 1),
-            "build_fcn": (
-                build_concat,
-                TosaTensorGen.tgConcat,
-                TosaTensorValuesGen.tvgConcat,
-                TosaArgGen.agNone,
-            ),
-            "types": [DType.SHAPE],
-            "error_if_validators": (),
-        },
         "const_shape": {
             "op": Op.CONST_SHAPE,
             "operands": (0, 1),
@@ -5984,25 +5842,3 @@ class OutputShaper:
         outputs.append(serializer.addOutput(output_shape, output_dtype))
         outputs.append(serializer.addOutput(output_shape, output_dtype))
         return outputs
-
-    @staticmethod
-    def addShapeOp(ser, rng, a, b, error_name=None):
-        if error_name != ErrorIf.RankMismatch:
-            assert len(a.shape) == len(b.shape)
-        assert a.dtype == b.dtype
-
-        shape = a.shape.copy()
-
-        # Do not expect rank 0 tests!
-        assert len(shape) > 0
-        if error_name == ErrorIf.DimensionMismatch:
-            # Can only create this error for rank > 0
-            fuzz_idx = rng.integers(0, len(shape))
-            shape[fuzz_idx] += 1
-
-        if error_name == ErrorIf.WrongOutputType:
-            wrong_dtypes = gtu.get_wrong_output_type(a.dtype)
-            outputDType = rng.choice(wrong_dtypes)
-        else:
-            outputDType = DType.SHAPE
-        return ser.addOutput(shape, outputDType)

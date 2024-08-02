@@ -659,10 +659,6 @@ class TosaErrorValidator:
                     error_result = True
                 # invalid input types are ignored, to avoid reporting multiple errors
 
-            elif op["op"] in {Op.ADD_SHAPE, Op.SUB_SHAPE, Op.MUL_SHAPE, Op.DIV_SHAPE}:
-                if output_dtype != DType.SHAPE:
-                    error_result = True
-
             else:
                 if output_dtype != input_dtype:
                     error_result = True
@@ -1175,13 +1171,7 @@ class TosaErrorValidator:
                 kwargs["input3"].shape if "input3" in kwargs else input2_shape
             )
 
-            op = kwargs["op"]
-            if op["op"] in (Op.ADD_SHAPE, Op.SUB_SHAPE, Op.MUL_SHAPE, Op.DIV_SHAPE):
-                output_shape = kwargs["result_tensors"][0].shape
-                if input1_shape != output_shape:
-                    error_result = True
-
-            elif len(input1_shape) == len(input2_shape) == len(input3_shape):
+            if len(input1_shape) == len(input2_shape) == len(input3_shape):
                 calculated_shape = TosaErrorValidator.calculateBroadcastShape(
                     input3_shape,
                     TosaErrorValidator.calculateBroadcastShape(

@@ -281,69 +281,6 @@ int OpPad<Rank, Dtype>::eval()
     return GraphNode::eval();
 }
 
-template <int Rank, TOSA_REF_TYPE Dtype>
-OpDim<Rank, Dtype>::OpDim(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-    : GraphNode(sgt_, Op_DIM, id_)
-{
-    setRequiredOperands(1, 1);
-
-    INIT_ATTRIBUTE(Axis);
-}
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-OpDim<Rank, Dtype>::~OpDim()
-{
-    if (attribute)
-        delete attribute;
-}
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-int OpDim<Rank, Dtype>::checkTensorAttributes()
-{
-    // Check Tosa Level
-    auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(Rank <= tosa_level.MAX_RANK, "Rank should be smaller than or equal to MAX_RANK");
-
-    if (validateRequiredOperands())
-        return 1;
-
-    if (validateRequiredRank(inputs[0]))
-        return 1;
-
-    if (attribute->axis() < 0 || (size_t)attribute->axis() >= Rank)
-    {
-        printNodeValidationError("OpDim: axis must between [0, input_rank - 1]");
-        return 1;
-    }
-
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-
-    ASSERT_MEM(in && out);
-
-    return 0;
-}
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-int OpDim<Rank, Dtype>::eval()
-{
-    int32_t axis    = attribute->axis();
-    int64_t out_val = in->getShape()[axis];
-
-    this->out->getTensor().setValues({ out_val });
-
-    // set the shapeValue given the actual tensor value
-    std::vector<int> shapeValue;
-    for (int i = 0; i < out->getTensor().size(); ++i)
-    {
-        shapeValue.push_back(out->getTensor()(i));
-    }
-
-    this->getOutputs()[0]->setShapeValue(shapeValue);
-
-    return GraphNode::eval();
-}
-
 template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
 OpReshape<InRank, OutRank, Dtype>::OpReshape(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESHAPE, id_)
@@ -861,16 +798,6 @@ DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, BOOL);
 DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, FP64);
 DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, FP8E4M3);
 DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, FP8E5M2);
-
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP16);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, BF16);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP32);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT8);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT16);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT32);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, BOOL);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP8E4M3);
-DEF_INSTANTIATE_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP8E5M2);
 
 DEF_INSTANTIATE_RESHAPE(OpReshape, FP16);
 DEF_INSTANTIATE_RESHAPE(OpReshape, BF16);
