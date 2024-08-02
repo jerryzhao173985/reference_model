@@ -446,17 +446,6 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
             DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, FP8E4M3);
             DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpPad, FP8E5M2);
             break;
-        case Op_DIM:
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP16);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, BF16);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP32);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT32);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT8);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, INT16);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, BOOL);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP8E4M3);
-            DEF_FACTORY_RANK1_6_ONE_RANK_ONE_TYPE(OpDim, FP8E5M2);
-            break;
         case Op_RESHAPE:
             DEF_FACTORY_RESHAPE(OpReshape, FP16);
             DEF_FACTORY_RESHAPE(OpReshape, BF16);
@@ -665,16 +654,6 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
 
         case Op_CONST_SHAPE:
             return new OpConstShape(sgt, id);
-        case Op_CONCAT_SHAPE:
-            return new OpConcatShape(sgt, id);
-        case Op_ADD_SHAPE:
-            return new OpAddShape(sgt, id);
-        case Op_SUB_SHAPE:
-            return new OpSubShape(sgt, id);
-        case Op_MUL_SHAPE:
-            return new OpMulShape(sgt, id);
-        case Op_DIV_SHAPE:
-            return new OpDivShape(sgt, id);
 
         // Ops not recognized
         default:

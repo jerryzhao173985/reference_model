@@ -964,10 +964,8 @@ class TosaTensorValuesGen:
                 pCount == 2 and cCount == 0
             ), "Op.ADD / Op.SUB must have 2 placeholders, 0 consts"
             tens_ser_list = []
-            add = op["op"] in (Op.ADD, Op.ADD_SHAPE)
+            add = op["op"] == Op.ADD
             data_range = None  # Use default
-            if op["op"] in (Op.ADD_SHAPE, Op.SUB_SHAPE):
-                data_range = testGen.args.tensor_shape_range
             a_arr = rng.randTensor(shapeList[0], dtypeList[0], data_range)
             b_arr = rng.randTensor(shapeList[1], dtypeList[1], data_range)
             if add:
@@ -1257,12 +1255,11 @@ class TosaTensorValuesGen:
             if data_range:
                 argsDict["data_range"] = data_range
 
-            if dtypeList[0] != DType.SHAPE:
-                # Need to supply shift tensor for MUL (not needed for MUL_SHAPE)
-                dtypeList[2] = DType.INT8
-                shapeList[2] = [1]
-                # Create a new list for the pre-generated data in argsDict["fixed_data"]
-                argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
+            # Need to supply shift tensor for MUL
+            dtypeList[2] = DType.INT8
+            shapeList[2] = [1]
+            # Create a new list for the pre-generated data in argsDict["fixed_data"]
+            argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
 
             return TosaTensorValuesGen.tvgLazyGenDefault(
                 testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -1332,29 +1329,20 @@ class TosaTensorValuesGen:
                 a_arr = a_arr // 2
                 b_arr = b_arr // 2
 
-            if dtypeList[0] == DType.SHAPE:
-                # MUL_SHAPE with 2 inputs
-                tens_ser_list.append(
-                    testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr_64)
+            # MUL with 3 inputs (3rd is shift)
+            tens_ser_list.append(
+                testGen.ser.addPlaceholder(
+                    shapeList[0], dtypeList[0], a_arr.astype(np_type)
                 )
-                tens_ser_list.append(
-                    testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr_64)
+            )
+            tens_ser_list.append(
+                testGen.ser.addPlaceholder(
+                    shapeList[1], dtypeList[1], b_arr.astype(np_type)
                 )
-            else:
-                # MUL with 3 inputs (3rd is shift)
-                tens_ser_list.append(
-                    testGen.ser.addPlaceholder(
-                        shapeList[0], dtypeList[0], a_arr.astype(np_type)
-                    )
-                )
-                tens_ser_list.append(
-                    testGen.ser.addPlaceholder(
-                        shapeList[1], dtypeList[1], b_arr.astype(np_type)
-                    )
-                )
-                tens_ser_list.append(
-                    testGen.ser.addPlaceholder([1], DType.INT8, np.int8([shift]))
-                )
+            )
+            tens_ser_list.append(
+                testGen.ser.addPlaceholder([1], DType.INT8, np.int8([shift]))
+            )
 
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
@@ -1368,14 +1356,9 @@ class TosaTensorValuesGen:
         if testGen.args.num_const_inputs_concat == 0:
             count = len(shapeList)
 
-        op = testGen.TOSA_OP_LIST[opName]
-        if op["op"] == Op.CONCAT_SHAPE:
-            # Set the axis to 0
-            shapeList = TosaTensorGen.tgConcatConstInput(rng, shapeList, 0, error_name)
-        else:
-            shapeList = TosaTensorGen.tgConcatConstInput(
-                rng, shapeList, argsDict["axis"], error_name
-            )
+        shapeList = TosaTensorGen.tgConcatConstInput(
+            rng, shapeList, argsDict["axis"], error_name
+        )
 
         # Override default pCount/cCount for operator
         argsDict["p_count"] = count
