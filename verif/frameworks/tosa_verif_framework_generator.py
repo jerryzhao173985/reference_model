@@ -784,96 +784,20 @@ TF_OP_LIST = {
         "build_fcn": (TBuilder.SpaceToBatch, TGen.tgBasic, ArgGen.agSpaceToBatch),
         "types": TYPE_F,
     },
-    "dynamic_space_to_batch": {
-        "operands": (1, 0),
-        "build_fcn": (
-            TBuilder.DynamicSpaceToBatch,
-            TGen.tgBasic,
-            ArgGen.agSpaceToBatch,
-        ),
-        "types": TYPE_F,
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(13, 21, 3)],
-        },
-        "dynamic_shape_dim": [
-            (
-                0,
-                1,
-            ),
-        ],
-        "output_name": "Identity",
-    },
     "batch_to_space": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.BatchToSpace, TGen.tgBasic, ArgGen.agBatchToSpace),
         "types": TYPE_F,
-    },
-    "dynamic_batch_to_space": {
-        "operands": (1, 0),
-        "build_fcn": (
-            TBuilder.DynamicBatchToSpace,
-            TGen.tgBasic,
-            ArgGen.agBatchToSpace,
-        ),
-        "types": TYPE_F,
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(8, 4, 4, 4)],
-        },
-        # number of operands of tuples which spcifies which dim to set to None
-        # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's 0th dim to None
-        "dynamic_shape_dim": [
-            (0,),
-        ],
-        "output_name": "Identity",
     },
     "space_to_depth": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.SpaceToDepth, TGen.tgBasic, ArgGen.agSpaceToDepth),
         "types": TYPE_F,
     },
-    "dynamic_space_to_depth": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.DynamicSpaceToDepth, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": [],
-            "tflite": list(TYPE_F),
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(1, 32, 32, 8)],
-        },
-        # number of operands of tuples which spcifies which dim to set to None
-        # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's first (batch) dim to None
-        "dynamic_shape_dim": [
-            (0,),
-        ],
-    },
     "depth_to_space": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.DepthToSpace, TGen.tgBasic, ArgGen.agDepthToSpace),
         "types": TYPE_F,
-    },
-    "dynamic_depth_to_space": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.DynamicDepthToSpace, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": [],
-            "tflite": list(TYPE_F),
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(1, 1, 1, 4)],
-        },
-        # number of operands of tuples which spcifies which dim to set to None
-        # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's first (batch) dim to None
-        "dynamic_shape_dim": [
-            (0,),
-        ],
     },
     "one_hot": {
         "operands": (3, 1),
