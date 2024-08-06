@@ -511,10 +511,24 @@ class ArgGen:
                 else:
                     strides[j] = rng.choice(possible_stride)
 
-            # Do not set the other masks
+            # Randomly set the masks, except ellipsis_mask and new_axis_mask
+            # which must be zero for now For begin/end mask this to work,
+            # strides must be adjusted to still be divsible...
             ellipsis_mask = 0
             new_axis_mask = 0
-            shrink_axis_mask = 0
+
+            # if rng.choice([0, 1]) and rank > 1:
+            #    new_axis_mask = 1 << rng.integers(0, rank - 1)
+            # else:
+            #    new_axis_mask = 0
+
+            if rng.choice([0, 1]) and rank > 1:
+                shrink_axis_mask = 1 << rng.integers(0, rank - 1)
+            else:
+                shrink_axis_mask = 0
+
+            # Only one of these bits may be set.  Prefer shrink_axis_mask
+            new_axis_mask = new_axis_mask & ~shrink_axis_mask
 
             arg_list.append(
                 [
