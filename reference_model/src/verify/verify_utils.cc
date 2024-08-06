@@ -277,7 +277,17 @@ bool tosaCheckFloatBound(
     }
 
     // Check the errorBound
-    TOSA_REF_REQUIRE(errorBound >= 0.f, " Invalid error bound (%g)", errorBound);
+    if (!std::isfinite(errorBound))
+    {
+        // When the errorBound is infinite (or NaN) there is no valid check to perform
+        // This can happen for example in POW or EXP when the resulting reference
+        // value is infinite, but the bounds value determined by compliance is finite.
+        // Multiplying these two together to produce the errorBound will create an
+        // infinite.
+        resultDifference = 0.0;
+        return true;
+    }
+    TOSA_REF_REQUIRE(errorBound >= 0.f, " Invalid error bound (%g), expected positive value", errorBound);
 
     // Make the sign of the reference value positive
     // and adjust the test value appropriately.
