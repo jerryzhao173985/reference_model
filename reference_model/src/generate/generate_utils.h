@@ -49,6 +49,13 @@ enum class InputType
     Constant,
 };
 
+/// \brief Supported special test sets for FP_SPECIAL tests
+enum class SpecialTestSet
+{
+    Default,
+    CastFpToInt,
+};
+
 /// \brief Dot-product generator meta-data
 struct DotProductInfo
 {
@@ -94,6 +101,7 @@ struct FpSpecialInfo
 
     uint8_t startIndex;
     int64_t rngSeed;
+    SpecialTestSet specialTestSet;
 };
 
 /// \brief Generator configuration
