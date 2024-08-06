@@ -105,6 +105,12 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::FpSpecial, "FP_SPECIAL" },
                              })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(SpecialTestSet,
+                             {
+                                 { SpecialTestSet::Default, "DEFAULT" },
+                                 { SpecialTestSet::CastFpToInt, "CAST_FP_TO_INT" },
+                             })
+
 // NOTE: This assumes it's VARIABLE if the InputType is not recognized
 NLOHMANN_JSON_SERIALIZE_ENUM(InputType,
                              {
@@ -154,9 +160,19 @@ void from_json(const nlohmann::json& j, FpSpecialInfo& fpSpecialInfo)
     {
         j.at("start_idx").get_to(fpSpecialInfo.startIndex);
     }
+
     if (j.contains("rng_seed"))
     {
         j.at("rng_seed").get_to(fpSpecialInfo.rngSeed);
+    }
+
+    if (j.contains("special_test_set"))
+    {
+        j.at("special_test_set").get_to(fpSpecialInfo.specialTestSet);
+    }
+    else
+    {
+        fpSpecialInfo.specialTestSet = SpecialTestSet::Default;
     }
 }
 

@@ -150,6 +150,10 @@
                                 "rng_seed": {
                                     "description": "random number generator seed",
                                     "type": "integer"
+                                },
+                                "special_test_set": {
+                                  "description": "SpecialTestSet to use for this test - usually DEFAULT",
+                                  "type": "string"
                                 }
                             },
                             "additionalProperties": false,

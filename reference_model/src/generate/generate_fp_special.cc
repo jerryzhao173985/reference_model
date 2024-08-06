@@ -13,10 +13,13 @@
 //    limitations under the License.
 
 #include "generate_fp_special.h"
+#include "dtype_limits.h"
 #include "half.hpp"
 
 #include <map>
 #include <random>
+
+using namespace TosaReference;
 
 namespace
 {
@@ -155,13 +158,24 @@ public:
         Two,
         Ten,
         Euler,         // Floating point number
-        Pythagorus,    // Floating point number
+        Pythagoras,    // Floating point number
         MinDenorm,     // Smallest positive denormal floating point value
         ULPMax,        // To force overflows to infinity when added/subtracted
         RndFloat,
         RndInteger,
         RndEvenInteger,
-        RndOddInteger
+        RndOddInteger,
+        AboveMaxINT8,
+        AboveMaxINT16,
+        AboveMaxINT32,
+        GAP1,
+        GAP2,
+        AboveMaxBF16,
+        AboveMaxFP16,
+        AboveMaxFP32,
+        BelowLowestINT8,
+        BelowLowestINT16,
+        BelowLowestINT32,
     };
 
     SpecialValue() = default;
@@ -211,9 +225,18 @@ public:
             case Two:
             case Ten:
             case Euler:
-            case Pythagorus:
+            case Pythagoras:
             case MinDenorm:
             case ULPMax:
+            case AboveMaxINT8:
+            case AboveMaxINT16:
+            case AboveMaxINT32:
+            case AboveMaxBF16:
+            case AboveMaxFP16:
+            case AboveMaxFP32:
+            case BelowLowestINT8:
+            case BelowLowestINT16:
+            case BelowLowestINT32:
                 return _static_evaluate<DataType>(_value, _negative);
             default:
                 // Handle the Random and unsupported cases below
@@ -270,7 +293,7 @@ private:
                 return static_cast<DataType>(negate ? -10.0 : 10.0);
             case Euler:
                 return static_cast<DataType>(negate ? -2.71828 : 2.71828);
-            case Pythagorus:
+            case Pythagoras:
                 return static_cast<DataType>(negate ? -1.41421 : 1.41421);
             case MinDenorm:
                 return negate ? -std::numeric_limits<DataType>::denorm_min()
@@ -279,6 +302,51 @@ private:
                 DataType max = std::numeric_limits<DataType>::max();
                 DataType ulp = max - nextafter(max, static_cast<DataType>(0.0));
                 return negate ? -ulp : ulp;
+            }
+            case AboveMaxINT8: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT8>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case AboveMaxINT16: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT16>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case AboveMaxINT32: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT32>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case AboveMaxBF16: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_BF16>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case AboveMaxFP16: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_FP16>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case AboveMaxFP32: {
+                DataType above_max =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_FP32>::max) * static_cast<DataType>(2.);
+                return negate ? -above_max : above_max;
+            }
+            case BelowLowestINT8: {
+                DataType below_lowest =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT8>::lowest) * static_cast<DataType>(2.);
+                return negate ? -below_lowest : below_lowest;
+            }
+            case BelowLowestINT16: {
+                DataType below_lowest =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT16>::lowest) * static_cast<DataType>(2.);
+                return negate ? -below_lowest : below_lowest;
+            }
+            case BelowLowestINT32: {
+                DataType below_lowest =
+                    static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT32>::lowest) * static_cast<DataType>(2.);
+                return negate ? -below_lowest : below_lowest;
             }
             default:
                 // Assumption that we only get called with a valid enum
@@ -296,7 +364,10 @@ private:
 Test vals format
 
 I: Number of inputs to an op - referenced by cfg.inputPos
-T: Number of test cases defined for the op
+T: Number of test cases defined for the op.
+   Only the values that fit in the input tensor will be used. The minimum
+   guaranteed size for input tensors is defined by the TOSA_FP_SPECIAL_MIN_SIZE
+   value in the TosaTestGen python class.
 
 vector of test inputs: {
     vector of values for test 0:   { valueForinputPos0, valueForinputPos1, ..., valueForinputPosI-1 },
@@ -358,7 +429,7 @@ TestValues mulTestVals{ { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE:
                         { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
 
 TestValues powTestVals{ { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Euler) },
-                        { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Pythagorus) },
+                        { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Pythagoras) },
                         { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE::Max) },
                         { -SValue(SVE::Max), SValue(SVE::RndOddInteger, SVE::One, SVE::Ten) },
                         { -SValue(SVE::Max), SValue(SVE::RndEvenInteger, SVE::One, SVE::Ten) },
@@ -377,6 +448,28 @@ TestValues minMaxTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) },
                            /* TODO: Add denorm numbers - need spec clarification */
                            { SValue(SVE::RndFloat), SValue(SVE::NaN) },
                            { SValue(SVE::NaN), -SValue(SVE::RndFloat) } };
+
+TestValues castTestVals{
+    { SValue(SVE::Zero) },
+    { -SValue(SVE::Zero) },
+    { SValue(SVE::Inf) },
+    { -SValue(SVE::Inf) },
+    { SValue(SVE::Min) },
+    { -SValue(SVE::Min) },
+    { SValue(SVE::Max) },
+    { -SValue(SVE::Max) },
+    { SValue(SVE::NaN) },
+    // Values for testing overflows. We add one for each possible target type because we don't
+    // really know the output type in the generator library
+    { SValue(SVE::AboveMaxBF16) },
+    { SValue(SVE::AboveMaxFP16) },
+    { SValue(SVE::AboveMaxFP32) },
+    { -SValue(SVE::AboveMaxBF16) },
+    { -SValue(SVE::AboveMaxFP16) },
+    { -SValue(SVE::AboveMaxFP32) },
+    // TODO: Testing of cast underflows as part of a general improvement to underflow/overflow
+    // analysis in the verification library.
+};
 
 TestValues defaultTestVals{ { SValue(SVE::Zero) },       { -SValue(SVE::Zero) }, { SValue(SVE::Inf) },
                             { -SValue(SVE::Inf) },       { SValue(SVE::Min) },   { -SValue(SVE::Min) },
@@ -413,6 +506,28 @@ std::map<Op, TestValues> testValues = {
     { Op::Op_REDUCE_PRODUCT, dotProductTestVals },
 };
 
+// NaN is unpredictable for casts to non-fp types, so we don't want to test it
+TestValues castFpToInt = {
+    { SValue(SVE::Zero) },
+    { -SValue(SVE::Zero) },
+    { SValue(SVE::Inf) },
+    { -SValue(SVE::Inf) },
+    { SValue(SVE::Min) },
+    { -SValue(SVE::Min) },
+    { SValue(SVE::Max) },
+    { -SValue(SVE::Max) },
+    // Values for testing overflows. We add one for each possible target type because we don't
+    // really know the output type in the generator library
+    { SValue(SVE::AboveMaxINT8) },
+    { SValue(SVE::AboveMaxINT16) },
+    { SValue(SVE::AboveMaxINT32) },
+    { SValue(SVE::BelowLowestINT8) },
+    { SValue(SVE::BelowLowestINT16) },
+    { SValue(SVE::BelowLowestINT32) },
+};
+
+std::map<SpecialTestSet, TestValues> specialTestValues = { { SpecialTestSet::CastFpToInt, castFpToInt } };
+
 template <typename DataType>
 bool generate(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
 {
@@ -420,13 +535,28 @@ bool generate(const TosaReference::GenerateConfig& cfg, DataType* data, size_t s
     uint8_t startIndex                         = fsinfo.startIndex;
 
     std::vector<DataType> values;
-    auto testValuesResult = testValues.find(cfg.opType);
+
     TestValues opTestVals = defaultTestVals;
     size_t inputIndex     = 0;
-    if (testValuesResult != testValues.end())
+
+    if (fsinfo.specialTestSet != SpecialTestSet::Default)
     {
-        // When an op has an entry in testValues we use its op specific special test values, otherwise default values are used
-        opTestVals = testValuesResult->second;
+        // Use a SpecialTestSet if present in the configuration.
+        if (specialTestValues.find(fsinfo.specialTestSet) != specialTestValues.end())
+        {
+            opTestVals = specialTestValues.at(fsinfo.specialTestSet);
+        }
+        else
+        {
+            WARNING("[Generator][FS] SpecialTestSet values are not defined.");
+            return false;
+        }
+    }
+    else if (testValues.find(cfg.opType) != testValues.end())
+    {
+        // When no special test set is defined, if an op has an entry in testValues
+        // we use its op specific special test values, otherwise default values are used
+        opTestVals = testValues.at(cfg.opType);
         inputIndex = cfg.inputPos;
     }
 

@@ -54,6 +54,22 @@ class DataGenType(IntEnum):
     BOUNDARY = 2
     FULL_RANGE = 3
     FP_SPECIAL = 4
+    FIXED_DATA = 5
+
+
+class SpecialTestSet(IntEnum):
+    """Special test values for FP_SPECIAL tests"""
+
+    DEFAULT = 0
+    CAST_FP_TO_INT = 1
+
+
+def dtypeWidth(dtype):
+    """Get the datatype width for data types"""
+    if dtype in DTYPE_ATTRIBUTES:
+        return DTYPE_ATTRIBUTES[dtype]["width"]
+    else:
+        raise Exception(f"Unknown dtype, cannot determine width: {dtype}")
 
 
 def dtypeIsFloat(dtype):

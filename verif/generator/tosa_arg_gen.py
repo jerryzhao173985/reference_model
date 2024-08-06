@@ -704,6 +704,12 @@ class TosaTensorValuesGen:
         return None
 
     @staticmethod
+    def _get_special_test_set(opInfo, argsDict):
+        if opInfo["op"] == Op.CAST and not gtu.dtypeIsFloat(argsDict["out_type"]):
+            return gtu.SpecialTestSet.CAST_FP_TO_INT
+        return gtu.SpecialTestSet.DEFAULT
+
+    @staticmethod
     def tvgLazyGenDefault(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
@@ -762,6 +768,9 @@ class TosaTensorValuesGen:
 
         fp_special_info = {}
         fp_special_info["start_idx"] = int(rng.randInt())
+        fp_special_info["special_test_set"] = TosaTensorValuesGen._get_special_test_set(
+            testGen.TOSA_OP_LIST[opName], argsDict
+        ).name
 
         if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
             broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
@@ -1755,9 +1764,11 @@ class TosaArgGen:
     @staticmethod
     def _add_data_generators(testGen, opName, shapeList, dtype, arg_list, error_name):
         """Add extra tests for each type of data generator for this op."""
+        op = testGen.TOSA_OP_LIST[opName]
+
         if (
             error_name is None
-            and "data_gen" in testGen.TOSA_OP_LIST[opName]
+            and "data_gen" in op
             and gtu.dtypeIsSupportedByCompliance(dtype)
         ):
             dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"].get(
@@ -1835,8 +1846,12 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create only one special test per data type
-                    only_one = True
+                    # Create only one special test per data type, unless the op
+                    # explicitly marks it allows more than one.
+                    allow_multiple_special_tests = op.get(
+                        "allow_multiple_special_tests", False
+                    )
+                    only_one = not allow_multiple_special_tests
 
                 elif dg_type == gtu.DataGenType.FP_SPECIAL:
                     if testGen.args.no_special_tests:
@@ -1844,7 +1859,7 @@ class TosaArgGen:
                     if not check_min_size(
                         opName,
                         shapeList[0],
-                        testGen.TOSA_MI_FP_SPECIAL_MIN_SIZE,
+                        testGen.TOSA_FP_SPECIAL_MIN_SIZE,
                         "FP special",
                     ):
                         continue
@@ -1870,8 +1885,12 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create only one special test per data type
-                    only_one = True
+                    # Create only one special test per data type, unless the op
+                    # explicitly marks it requires more than one.
+                    allow_multiple_special_tests = op.get(
+                        "allow_multiple_special_tests", False
+                    )
+                    only_one = not allow_multiple_special_tests
 
                 gen_args_dict["dg_type"] = dg_type
 
@@ -2905,7 +2924,7 @@ class TosaArgGen:
             testGen,
             opName,
             shapeList,
-            dtype,
+            inDtype,
             arg_list,
             error_name,
         )
