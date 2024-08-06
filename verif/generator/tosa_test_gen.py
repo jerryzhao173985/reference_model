@@ -46,7 +46,7 @@ class TosaTestGen:
     TOSA_MI_DOT_PRODUCT_MIN = 1000
 
     # Minimum tensor size for the FP special tests
-    TOSA_MI_FP_SPECIAL_MIN_SIZE = 20
+    TOSA_FP_SPECIAL_MIN_SIZE = 20
 
     def __init__(self, args):
         self.args = args
@@ -4741,8 +4741,9 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PSEUDO_RANDOM_DATAGEN,
+            "data_gen": PR_FS_DATAGEN,
             "compliance": {"ulp": 0.5},
+            "allow_multiple_special_tests": True,
         },
         "rescale": {
             "op": Op.RESCALE,

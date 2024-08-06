@@ -145,4 +145,17 @@ struct DtypeLimits<TOSA_REF_TYPE_INT8>
     static constexpr bool has_infinity   = false;
 };
 
+template <>
+struct DtypeLimits<TOSA_REF_TYPE_BOOL>
+{
+    static constexpr bool lowest       = std::numeric_limits<bool>::lowest();
+    static constexpr bool max          = std::numeric_limits<bool>::max();
+    static constexpr bool min          = std::numeric_limits<bool>::min();
+    static constexpr bool denorm_min   = std::numeric_limits<bool>::denorm_min();
+    static constexpr bool infinity     = std::numeric_limits<bool>::infinity();
+    static constexpr bool low_extreme  = lowest;
+    static constexpr bool high_extreme = max;
+    static constexpr bool has_infinity = false;
+};
+
 }    // namespace TosaReference

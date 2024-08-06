@@ -41,6 +41,7 @@ PROFILE_OPS_INFO = {
     "operator_test_params": "tosa_ext_profile_ops_info.json",
 }
 PROFILES_EXTENSIONS_ALL = "all"
+PROFILES_EXTENSIONS_NONE = "none"
 
 DEFAULT_SEED = 42
 
@@ -166,6 +167,16 @@ def build_op_tests(
                 selector_name,
             ]
         )
+
+    if "generator_profile_filter" in supports:
+        # Add extra profile/extension info to allow test filtering
+        build_cmd_base.append("--profile")
+        build_cmd_base.extend(args.profile)
+        build_cmd_base.append("--extension")
+        if len(args.extension) == 0:
+            build_cmd_base.append(PROFILES_EXTENSIONS_NONE)
+        else:
+            build_cmd_base.extend(args.extension)
 
     build_cmds_list = []
 
@@ -535,16 +546,14 @@ def get_framework_tests_selection(args, operator, test_picks, op_build_dir):
 def parse_args(argv=None):
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
-    profiles = TosaProfiles.profiles()
-    profiles.append(PROFILES_EXTENSIONS_ALL)
     parser.add_argument(
         "--profile",
         dest="profile",
-        choices=profiles,
-        default=[TosaProfiles.TosaProINT],
+        choices=TosaProfiles.profiles() + [PROFILES_EXTENSIONS_ALL],
+        default=[PROFILES_EXTENSIONS_ALL],
         type=str,
         nargs="*",
-        help=f"TOSA profile (default is {TosaProfiles.TosaProINT})",
+        help=f"TOSA profile(s) (default is {PROFILES_EXTENSIONS_ALL})",
     )
     parser.add_argument(
         "--operators",
@@ -556,11 +565,12 @@ def parse_args(argv=None):
     parser.add_argument(
         "--extension",
         dest="extension",
-        choices=TosaProfiles.extensions() + [PROFILES_EXTENSIONS_ALL],
+        choices=TosaProfiles.extensions()
+        + [PROFILES_EXTENSIONS_ALL, PROFILES_EXTENSIONS_NONE],
         default=[],
         type=str,
         nargs="*",
-        help="TOSA extension(s) to create tests for, if not supplied, no extension tests will be created",
+        help=f"TOSA extension(s) to create tests for, if not supplied or {PROFILES_EXTENSIONS_NONE}, no extension tests will be created",
     )
     parser.add_argument(
         "--unit-tests",
@@ -792,6 +802,14 @@ def parse_args(argv=None):
             )
             return None
 
+    if PROFILES_EXTENSIONS_ALL in args.profile:
+        args.profile = TosaProfiles.profiles()
+
+    if PROFILES_EXTENSIONS_ALL in args.extension:
+        args.extension = TosaProfiles.extensions()
+    elif PROFILES_EXTENSIONS_NONE in args.extension:
+        args.extension = []
+
     return args
 
 
@@ -863,17 +881,7 @@ def main():
         with args.tests_list_file.open("w") as fd:
             fd.write("")
 
-    if PROFILES_EXTENSIONS_ALL in args.profile:
-        profiles = TosaProfiles.profiles()
-    else:
-        profiles = args.profile
-
-    if PROFILES_EXTENSIONS_ALL in args.extension:
-        extensions = TosaProfiles.extensions()
-    else:
-        extensions = args.extension
-
-    profileExtList = profiles + extensions
+    profileExtList = args.profile + args.extension
     profileExtDone = []
 
     try:

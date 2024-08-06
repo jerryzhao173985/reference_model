@@ -35,15 +35,13 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     double errBound = 0.0;
     if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
     {
-        // Find the exponent of the reference value.
-        int32_t refExponent = ilog2(std::abs(referenceValue));
-
         // Work out the values magnitude - by raising 2 to the power of the
-        // exponent and taking the normalized minimum for denormal values
-        const double refPower2 = std::max(exp2(refExponent), AccPrecision<OutType>::normal_min);
+        // exponent
+        const double refPower2 = exp2(ilog2(std::abs(referenceValue)));
         // Get the value of changing the last bit - by shifting the least significant bit to this magnitude
         // i.e. the ULP.
-        double ulpValue = refPower2 * exp2(-AccPrecision<OutType>::normal_frac);
+        double ulpValue =
+            std::max(refPower2 * exp2(-AccPrecision<OutType>::normal_frac), AccPrecision<OutType>::normal_min);
 
         errBound = ulpValue * cfg->ulp;
     }

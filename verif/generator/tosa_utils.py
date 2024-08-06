@@ -57,6 +57,13 @@ class DataGenType(IntEnum):
     FIXED_DATA = 5
 
 
+class SpecialTestSet(IntEnum):
+    """Special test values for FP_SPECIAL tests"""
+
+    DEFAULT = 0
+    CAST_FP_TO_INT = 1
+
+
 def dtypeWidth(dtype):
     """Get the datatype width for data types"""
     if dtype in DTYPE_ATTRIBUTES:
