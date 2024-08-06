@@ -251,11 +251,7 @@ def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
                 if not isinstance(e, (TosaTestInvalid, GenerateError)):
                     # Show stack trace on unexpected exceptions
                     print(
-                        "".join(
-                            traceback.format_exception(
-                                etype=type(e), value=e, tb=e.__traceback__
-                            )
-                        )
+                        "".join(traceback.format_exception(type(e), e, e.__traceback__))
                     )
                 rc = TosaTestRunner.Result.INTERNAL_ERROR
             finally:

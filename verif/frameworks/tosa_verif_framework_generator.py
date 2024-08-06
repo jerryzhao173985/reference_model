@@ -1471,11 +1471,7 @@ def run_unit_test(
     except Exception as e:
         msg = "Error running task: {}".format(e)
         print(msg)
-        print(
-            "".join(
-                traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-            )
-        )
+        print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
         return False
     return True
 

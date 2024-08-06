@@ -822,13 +822,7 @@ def worker_thread(task_queue, args, result_queue):
             (rc, tolerance, msg, test_name) = run_test(args, test, framework)
         except Exception as e:
             print(f"Internal regression error: {e}")
-            print(
-                "".join(
-                    traceback.format_exception(
-                        etype=type(e), value=e, tb=e.__traceback__
-                    )
-                )
-            )
+            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
             rc = TestResult.INTERNAL_ERROR
             tolerance = 0.0
 
