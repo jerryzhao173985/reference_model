@@ -3150,6 +3150,7 @@
                         "--tensor-dim-range",
                         "35,64",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3"
@@ -3194,6 +3195,7 @@
                         "--tensor-dim-range",
                         "15,64",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3"
@@ -8729,6 +8731,7 @@
                         "--tensor-dim-range",
                         "35,60",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3"
@@ -8773,6 +8776,7 @@
                         "--tensor-dim-range",
                         "15,64",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3"
