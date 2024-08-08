@@ -6369,13 +6369,15 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "fp16",
+                        "fp32",
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
                         "4",
-                        "5"
+                        "5",
+                        "6"
                     ]
                 ]
             },
@@ -6407,6 +6409,17 @@
                         "--target-shape",
                         "65534,3,1,1",
                         "2,65541,1,1,1"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,9",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
