@@ -33,7 +33,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
     double err    = 0.0;
     bool is_valid = true;
 
-    if (std::isinf(static_cast<OutType>(bnd * (1 + exp2(-1 - AccPrecision<OutType>::normal_frac)))))
+    if (std::isinf(static_cast<OutType>(bnd * (1 + KS * exp2(-1 - AccPrecision<OutType>::normal_frac)))))
     {
         // dot product can overflow and there is no accuracy limit
         is_valid = true;

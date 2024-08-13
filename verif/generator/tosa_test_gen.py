@@ -344,9 +344,11 @@ class TosaTestGen:
             out_dtype = outputTensor.dtype
             acc_dtype = argsDict["acc_type"]
             ksb = int(argsDict["ks"])
-            ksb = math.ceil(
-                ksb / (2.0 ** (gtu.normal_frac(acc_dtype) - gtu.normal_frac(out_dtype)))
+            ksb_divide_by = 2.0 ** (
+                (gtu.normal_frac(acc_dtype) - gtu.normal_frac(out_dtype)) / 2
             )
+
+            ksb = math.ceil(ksb / ksb_divide_by)
             ksb += argsDict.get("ksb_increment", 0)
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
