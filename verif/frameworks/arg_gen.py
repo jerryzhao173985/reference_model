@@ -483,26 +483,53 @@ class ArgGen:
         if rank == 1 and shapes[0] == 1:
             return arg_list
 
-        for i in range(4):
+        for k in range(4):
             # Pick a few random begin points, axes, and strides
-            begin = np.empty((rank), dtype=int)
-            end = np.empty((rank), dtype=int)
-            strides = np.empty((rank), dtype=int)
 
-            begin_mask = rng.integers(0, (1 << (rank - 1)))
-            end_mask = rng.integers(0, (1 << (rank - 1)))
+            # However, new_axis must be done first, since it is a reshape
+            # on the original tensor, before anything else, and affects
+            # the range permitted in begin/end/strides
 
-            for j in range(rank):
+            if rng.choice([0, 1]) and rank > 1:
+                new_axis_mask = rng.integers(0, rank)
+            else:
+                new_axis_mask = 0
 
-                if begin_mask & (1 << j) or shapes[j] < 2:
+            # Create the new shape, post the new_axis reshape
+            new_shapes = []
+            new_axis_encountered = 0
+            i = 0
+            while i < new_axis_encountered + rank:
+                if new_axis_mask & (1 << i):
+                    new_shapes.append(1)
+                    new_axis_encountered += 1
+                else:
+                    new_shapes.append(shapes[i - new_axis_encountered])
+                i += 1
+            new_rank = len(new_shapes)
+
+            begin = np.empty((new_rank), dtype=int)
+            end = np.empty((new_rank), dtype=int)
+            strides = np.empty((new_rank), dtype=int)
+
+            begin_mask = rng.integers(0, new_rank)
+            end_mask = rng.integers(0, new_rank)
+
+            for j in range(new_rank):
+
+                if begin_mask & (1 << j) or new_shapes[j] < 2:
                     begin[j] = 0
                 else:
-                    begin[j] = rng.integers(0, shapes[j] - 1)
+                    begin[j] = rng.integers(0, new_shapes[j] - 1)
 
-                if end_mask & (1 << j) or shapes[j] < 2 or (begin[j] + 2) >= shapes[j]:
-                    end[j] = shapes[j]
+                if (
+                    end_mask & (1 << j)
+                    or new_shapes[j] < 2
+                    or (begin[j] + 2) >= new_shapes[j]
+                ):
+                    end[j] = new_shapes[j]
                 else:
-                    end[j] = rng.integers(begin[j] + 1, shapes[j] - 1)
+                    end[j] = rng.integers(begin[j] + 1, new_shapes[j] - 1)
 
                 possible_stride = ArgGen.getFactors(end[j] - begin[j], 2)
 
@@ -511,28 +538,17 @@ class ArgGen:
                 else:
                     strides[j] = rng.choice(possible_stride)
 
-            # Randomly set the masks, except ellipsis_mask and new_axis_mask
-            # which must be zero for now For begin/end mask this to work,
-            # strides must be adjusted to still be divsible...
+            # We don't support ellipsis_mask
             ellipsis_mask = 0
-            new_axis_mask = 0
 
-            # if rng.choice([0, 1]) and rank > 1:
-            #    new_axis_mask = 1 << rng.integers(0, rank - 1)
-            # else:
-            #    new_axis_mask = 0
-
-            if rng.choice([0, 1]) and rank > 1:
-                shrink_axis_mask = 1 << rng.integers(0, rank - 1)
+            if rng.choice([0, 1]) and new_rank > 1:
+                shrink_axis_mask = rng.integers(0, new_rank)
             else:
                 shrink_axis_mask = 0
 
-            # Only one of these bits may be set.  Prefer shrink_axis_mask
-            new_axis_mask = new_axis_mask & ~shrink_axis_mask
-
             arg_list.append(
                 [
-                    "_perm{}".format(i),
+                    "_perm{}".format(k),
                     [
                         begin,
                         end,
