@@ -91,7 +91,8 @@ extern "C"
             WARNING("[Verifier] Tensors have different number of dimensions.");
             return false;
         }
-        if (!ref->shape || !imp->shape)
+        //checks shape info is given, but still allows rank 0 tensors to pass
+        if ((!ref->shape || !imp->shape) && ref->num_dims != 0)
         {
             WARNING("[Verifier] One of tensors' shape is missing.");
             return false;
