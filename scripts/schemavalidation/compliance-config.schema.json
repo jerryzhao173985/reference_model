@@ -29,6 +29,15 @@
                             "description": "tensor data type, such as: BOOL, INT16, FP32",
                             "type": "string"
                         },
+                        "shape": {
+                            "description": "tensor shape array (rank 0 should be [])",
+                            "type": "array",
+                            "items": {
+                                "description": "shape dimension",
+                                "type": "integer",
+                                "minimum": 1
+                            }
+                        },
                         "ulp_info": {
                             "description": "info required for the ULP mode",
                             "type": "object",

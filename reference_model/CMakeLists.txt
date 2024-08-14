@@ -16,6 +16,8 @@ cmake_minimum_required (VERSION 3.16)
 
 project(tosa_reference_model LANGUAGES CXX)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/verify verify)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -239,6 +241,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       test/generate_tests.cpp
       test/model_runner_tests.cpp
       test/verify_tests.cpp
+      test/verify_exe_testing.cpp
       ${DOCTEST_DIR}/doctest.h
   )
 

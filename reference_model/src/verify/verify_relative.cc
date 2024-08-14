@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "verifiers.h"
-#include "verify/verify_utils.h"
+#include "verify_utils.h"
 
 namespace TosaReference
 {

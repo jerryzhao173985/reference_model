@@ -253,6 +253,8 @@ class TosaTestGen:
             "mode": None,
             # Data type is needed for all FP runs, as refmodel precise mode produces FP64
             "data_type": gtu.DTYPE_ATTRIBUTES[outputTensor.dtype]["json"],
+            # Shape is needed for all FP runs, when the C executable is used
+            "shape": outputTensor.shape,
         }
 
         op_compliance = op.get("compliance", {})
