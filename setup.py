@@ -44,4 +44,8 @@ class CMakeBuild(build_py):
         build_py.run(self)
 
 
-setup(cmdclass={"build_py": CMakeBuild})
+build_pybind = False
+if build_pybind:
+    setup(cmdclass={"build_py": CMakeBuild})
+else:
+    setup()
