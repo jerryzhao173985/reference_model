@@ -127,8 +127,10 @@ public:
     float operator()(uint32_t k) override
     {
         unused(k);
-        const float s = _set_data();
-        float v       = 0.75f + 0.25f * s;
+        const float s0 = _set_data();
+        const float s1 = _set_data();
+        float v        = s0 < 0 ? -0.75f : 0.75f;
+        v += 0.25f * s1;
         if (_p != P2)
             return (_B / std::sqrt(_KS + 1)) * v;
         else
