@@ -1248,9 +1248,14 @@ class TosaTensorValuesGen:
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         dtypeList[1] = DType.SHAPE
-        shapeList[1] = [len(argsDict["new_shape"])]
+        # Check for rank 0 shapes
+        size_shape = len(argsDict["new_shape"])
+        shapeList[1] = [size_shape] if size_shape > 0 else []
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, argsDict["new_shape"]]
+        argsDict["fixed_data"] = [
+            None,
+            argsDict["new_shape"] if size_shape > 0 else [0],
+        ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -3473,8 +3478,15 @@ class TosaArgGen:
         # Find new shapes up to the number of permutations asked for
         # This code is NOT fast.  Fortunately, the numbers are fairly small.
         for p in range(testGen.args.num_rand_permutations):
-            # Rank from 1 to MAX_TENSOR_RANK
-            newRank = rng.randInt(1, (gtu.MAX_TENSOR_RANK + 1))
+            if totalElements > 1:
+                # Can't rescale to a rank 0 with more than one element
+                startRank = 1
+            else:
+                assert totalElements == 1
+                startRank = 0
+
+            # Rank from 0/1 to MAX_TENSOR_RANK
+            newRank = rng.randInt(startRank, (gtu.MAX_TENSOR_RANK + 1))
 
             # escape_counter limits the generation of new shapes to a reasonable time
             for escape_counter in range(100):
@@ -3490,7 +3502,8 @@ class TosaArgGen:
                     shuffledFactors = rng.permutation(
                         TosaArgGen.getFactors(remainingElements)
                     )
-                newShape.append(remainingElements)
+                if newRank > 0:
+                    newShape.append(remainingElements)
 
                 # Check for duplicates
                 duplicate = False
@@ -3500,7 +3513,7 @@ class TosaArgGen:
                         break
 
                 if not duplicate:
-                    outShape = "x".join([str(x) for x in newShape])
+                    outShape = testGen.shapeStr(newShape)
                     arg_list.append(
                         (
                             "perm{}_rank{}_out{}".format(p, newRank, outShape),

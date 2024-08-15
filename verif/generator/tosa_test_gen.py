@@ -2990,6 +2990,9 @@ class TosaTestGen:
 
         _, tgen_fcn, _, agen_fcn = op["build_fcn"]
 
+        assert tgen_fcn
+        assert agen_fcn
+
         # Test list consists of a tuple of:
         # (opName, testNameStr, dtype, shapeList, argumentsList)
         testList = []
@@ -3046,23 +3049,22 @@ class TosaTestGen:
 
                         shapeStr = self.shapeStr(shapeList[0])
 
-                        # Argument lists consists of tuples of the (str, []) string representation and the build function argument list
+                        # Argument lists consists of tuples of the (str_args, args_dict)
+                        #   str_args - arguments of test in string form for test name
+                        #   args_dict - dictionary of arguments and other test related data
                         argList = []
-                        if agen_fcn:
-                            if self.args.stable_rng:
-                                arg_rng = TosaHashRandomGenerator(
-                                    self.random_seed,
-                                    [opName, shapeStr, typeStr],
-                                    self.random_dtype_range,
-                                )
-                            else:
-                                arg_rng = self.global_rng
-
-                            argList = agen_fcn(
-                                self, arg_rng, opName, shapeList, t, error_name
+                        if self.args.stable_rng:
+                            arg_rng = TosaHashRandomGenerator(
+                                self.random_seed,
+                                [opName, shapeStr, typeStr],
+                                self.random_dtype_range,
                             )
                         else:
-                            argList = [("", [])]
+                            arg_rng = self.global_rng
+
+                        argList = agen_fcn(
+                            self, arg_rng, opName, shapeList, t, error_name
+                        )
 
                         for argStr, args in argList:
                             # Create the test name string - for example: add_1x2x3_i32
@@ -4647,7 +4649,7 @@ class TosaTestGen:
         "reshape": {
             "op": Op.RESHAPE,
             "operands": (2, 0),
-            "rank": (1, gtu.MAX_TENSOR_RANK),
+            "rank": (0, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_reshape,
                 TosaTensorGen.tgBasic,
