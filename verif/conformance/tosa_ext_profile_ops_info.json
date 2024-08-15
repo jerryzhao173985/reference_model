@@ -7400,10 +7400,31 @@
                         "--target-dtype",
                         "bool",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
                         "4",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bool",
+                        "--target-shape",
+                        "1",
+                        "1,1,1,1,1",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "5",
+                        "6",
                         "--num-rand-permutations",
                         "2"
                     ]
@@ -7420,10 +7441,22 @@
                         "int16",
                         "int32",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
                         "4",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "int16",
+                        "int32",
+                        "--target-shape",
+                        "1",
+                        "1,1,1,1",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -7435,39 +7468,12 @@
                         "1,65538,1,2",
                         "--num-rand-permutations",
                         "2"
-                    ]
-                ]
-            },
-            "8k_level": {
-                "supports_all": [
-                    "tosa-pro-int"
-                ],
-                "no_negative_tests": "true",
-                "generator_args": [
+                    ],
                     [
                         "--target-dtype",
                         "int8",
                         "int16",
                         "int32",
-                        "--tensor-dim-range",
-                        "1,10",
-                        "--target-rank",
-                        "5",
-                        "6",
-                        "--num-rand-permutations",
-                        "2"
-                    ]
-                ]
-            },
-            "8k_level-pro-int-pro-fp": {
-                "supports_all": [
-                    "tosa-pro-int"
-                ],
-                "no_negative_tests": "true",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
@@ -7490,9 +7496,22 @@
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1",
+                        "1,1,1,1,1,1",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -7539,9 +7558,21 @@
                         "--fp-values-range",
                         "-max,max",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1",
+                        "1,1,1",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -7577,9 +7608,21 @@
                         "--tensor-dim-range",
                         "32,64",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1",
+                        "1,1",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -7615,9 +7658,21 @@
                         "--tensor-dim-range",
                         "32,64",
                         "--target-rank",
+                        "0",
                         "1",
                         "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "1",
+                        "1,1,1,1,1",
                         "--num-rand-permutations",
                         "2"
                     ],
