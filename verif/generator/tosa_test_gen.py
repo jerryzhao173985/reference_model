@@ -214,7 +214,7 @@ class TosaTestGen:
         if isinstance(dtype, list) or isinstance(dtype, tuple):
             assert len(dtype) >= 2
             strs = [self.typeStr(t) for t in dtype]
-            # Limit types to the first 2 as the 3rd is the accumulator
+            # Limit types to the first 2 as the 3rd is the output.
             return "x".join(strs[:2])
         else:
             if dtype in gtu.DTYPE_ATTRIBUTES:
@@ -3226,14 +3226,13 @@ class TosaTestGen:
         DType.FP32,
     ]
 
-    # List of [Input Type 1, Input Type 2, Accumulator Type]
+    # List of [Input Type 1, Input Type 2, Output Type]
     TYPE_CONV = [
         [DType.INT8, DType.INT4, DType.INT32],
         [DType.INT8, DType.INT8, DType.INT32],
         [DType.INT16, DType.INT8, DType.INT48],
         [DType.FP16, DType.FP16, DType.FP16],
-        [DType.FP16, DType.FP16, DType.FP32],
-        [DType.BF16, DType.BF16, DType.FP32],
+        [DType.BF16, DType.BF16, DType.BF16],
         [DType.FP32, DType.FP32, DType.FP32],
         [DType.FP8E4M3, DType.FP8E4M3, DType.FP16],
         [DType.FP8E5M2, DType.FP8E5M2, DType.FP16],

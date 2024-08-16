@@ -199,7 +199,7 @@ def product(shape):
     return value
 
 
-def get_accum_dtypes_from_tgTypes(dtypes):
+def get_conv_accum_dtypes_from_tgTypes(dtypes):
     # Get accumulate data-types from the test generator's defined types
     assert isinstance(dtypes, list) or isinstance(dtypes, tuple)
     input_dtype = dtypes[0]
