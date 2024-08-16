@@ -74,10 +74,10 @@ class TosaQuantGen:
     @staticmethod
     def qgConv(rng, zeropoint, op, dtype_or_dtypeList, error_name=None):
         if isinstance(dtype_or_dtypeList, list):
-            # a list of [input, weights, accumulator] dtypes
+            # a list of [input, weights, output] dtypes
             dtypeList = dtype_or_dtypeList
         else:
-            # an int, [input, weights, accumulator] dtypes are the same
+            # an int, [input, weights, output] dtypes are the same
             dtypeList = [dtype_or_dtypeList] * 3
 
         if error_name == ErrorIf.InputZeroPointNotZero:
@@ -2162,7 +2162,7 @@ class TosaArgGen:
         # Shape: (OFM channels), (KD), KH, KW, IFM channels
         filter_shape = shapeList[1]
 
-        accum_dtypes = gtu.get_accum_dtypes_from_tgTypes(dtypes)
+        accum_dtypes = gtu.get_conv_accum_dtypes_from_tgTypes(dtypes)
 
         if error_name == ErrorIf.WrongAccumulatorType:
             accum_dtypes = (
@@ -2529,7 +2529,7 @@ class TosaArgGen:
         ifm_shape = shapeList[0]
         filter_shape = shapeList[1]
 
-        accum_dtypes = gtu.get_accum_dtypes_from_tgTypes(dtypes)
+        accum_dtypes = gtu.get_conv_accum_dtypes_from_tgTypes(dtypes)
 
         if error_name == ErrorIf.WrongAccumulatorType:
             accum_dtypes = (
