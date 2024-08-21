@@ -88,9 +88,9 @@ void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
     {
         j.at("bound_as_magnitude").get_to(absErrorInfo.boundAsMagnitude);
     }
-    if (j.contains("bound_addition"))
+    if (j.contains("max_compare"))
     {
-        j.at("bound_addition").get_to(absErrorInfo.boundAddition);
+        j.at("max_compare").get_to(absErrorInfo.maxCompare);
     }
 }
 
@@ -123,7 +123,6 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     cfg.absErrorInfo.lowerBound       = 0;
     cfg.absErrorInfo.normalDivisor    = 1;
     cfg.absErrorInfo.boundAsMagnitude = false;
-    cfg.absErrorInfo.boundAddition    = 0;
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);
