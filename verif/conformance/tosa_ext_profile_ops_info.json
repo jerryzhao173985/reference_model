@@ -138,9 +138,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "add": {
@@ -268,9 +266,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "argmax": {
@@ -512,9 +508,7 @@
             }
         },
         "selection": {
-            "default": {
-              "generator_select": true
-            }
+            "default": {}
         }
     },
     "arithmetic_right_shift": {
@@ -582,9 +576,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "avg_pool2d": {
@@ -752,7 +744,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": "true",
                 "permutes": [
                     "shape",
                     "type",
@@ -836,9 +827,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "bitwise_not": {
@@ -914,9 +903,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "bitwise_or": {
@@ -981,9 +968,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "bitwise_xor": {
@@ -1048,9 +1033,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "cast": {
@@ -1279,7 +1262,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "rank",
                     "type",
@@ -1377,9 +1359,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "clamp": {
@@ -1565,9 +1545,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "clz": {
@@ -1629,9 +1607,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "concat": {
@@ -1904,7 +1880,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "maximum": 3
             }
         }
@@ -1948,9 +1923,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "const": {
@@ -2150,9 +2123,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "const_shape": {
@@ -2190,9 +2161,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "conv2d": {
@@ -2412,7 +2381,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "shape",
                     "type",
@@ -2625,7 +2593,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "shape",
                     "type",
@@ -2737,9 +2704,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "depthwise_conv2d": {
@@ -2912,7 +2877,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "shape",
                     "type",
@@ -3084,9 +3048,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "erf": {
@@ -3178,9 +3140,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "exp": {
@@ -3272,9 +3232,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "fft2d": {
@@ -3313,9 +3271,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "floor": {
@@ -3407,9 +3363,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "gather": {
@@ -3545,9 +3499,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "greater": {
@@ -3709,9 +3661,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "greater_equal": {
@@ -3862,9 +3812,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "identity": {
@@ -4054,9 +4002,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "intdiv": {
@@ -4119,9 +4065,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "log": {
@@ -4213,9 +4157,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_and": {
@@ -4278,9 +4220,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_left_shift": {
@@ -4349,9 +4289,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_not": {
@@ -4414,9 +4352,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_or": {
@@ -4479,9 +4415,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_right_shift": {
@@ -4550,9 +4484,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "logical_xor": {
@@ -4615,9 +4547,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "matmul": {
@@ -4783,9 +4713,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "max_pool2d": {
@@ -4956,7 +4884,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "shape",
                     "type",
@@ -5106,9 +5033,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "minimum": {
@@ -5248,9 +5173,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "mul": {
@@ -5428,9 +5351,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "negate": {
@@ -5579,9 +5500,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "pad": {
@@ -5885,7 +5804,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "maximum": 5,
                 "specifics": {
                     "pad": [
@@ -5899,7 +5817,6 @@
                 }
             },
             "minimal": {
-                "generator_select": true,
                 "maximum": 2
             }
         }
@@ -5991,9 +5908,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reciprocal": {
@@ -6085,9 +6000,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_all": {
@@ -6143,9 +6056,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_any": {
@@ -6201,9 +6112,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_max": {
@@ -6359,9 +6268,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_min": {
@@ -6517,9 +6424,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_product": {
@@ -6627,9 +6532,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reduce_sum": {
@@ -6819,7 +6722,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "maximum": 3
             }
         }
@@ -6939,7 +6841,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "rank",
                     "type",
@@ -7184,9 +7085,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "resize": {
@@ -7305,9 +7204,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "reverse": {
@@ -7523,7 +7420,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "maximum": 3
             }
         }
@@ -7564,9 +7460,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "rsqrt": {
@@ -7658,9 +7552,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "scatter": {
@@ -7785,9 +7677,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "select": {
@@ -7985,9 +7875,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "sigmoid": {
@@ -8079,9 +7967,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "sin": {
@@ -8173,9 +8059,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "slice": {
@@ -8436,9 +8320,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "sub": {
@@ -8567,9 +8449,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "table": {
@@ -8675,9 +8555,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "tanh": {
@@ -8769,9 +8647,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "tile": {
@@ -9010,9 +8886,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "transpose": {
@@ -9230,9 +9104,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     },
     "transpose_conv2d": {
@@ -9425,7 +9297,6 @@
         },
         "selection": {
             "default": {
-                "generator_select": true,
                 "permutes": [
                     "shape",
                     "type",
@@ -9485,9 +9356,7 @@
             }
         },
         "selection": {
-            "default": {
-                "generator_select": true
-            }
+            "default": {}
         }
     }
 }

@@ -49,9 +49,8 @@ In the selection dictionary each entry is a name for a selection criteria - ther
 Each selection criteria is a dictionary that contains:
 
 * "all": "true" - to select all tests (and not use test_select)
-* "generator_select" - optional "true" to use generator selector instead of conformance test_select
 
-for selection criteria that has "generator_select" set:
+If "all" is not set, the following selection criteria is used:
 
 * "permutes" - optional list of parameters whose values are to be permuted, the default is ["rank", "dtype"]
 * "maximum" - optional number - at most "maximum" tests (not including specific tests) will be captured per permuted "permutes" value, effects "full_params" as well
@@ -59,14 +58,3 @@ for selection criteria that has "generator_select" set:
 * "specifics" - optional dictionary of params with lists of values, tests that meet any of these "specifics" will be selected and kept (even using "post_sparsity")
 * "groups" - optional list of parameters that should be considered as a grouping of tests and treated as one test for "sparsity" and "specifics"
 * "num_errorifs" - optional value of error_if tests to keep per error_if case, the default is 1
-
-or for other select criteria it defaults to the old test select (more information for each entry in `test_select.py`):
-
-* "params" - optional dictionary with mappings of parameter names to the values to select
-* "permutes" - optional list of parameter names to be permuted
-* "preselected" - optional list of dictionaries containing parameter names and pre-chosen values
-* "sparsity" - optional dictionary of parameter names with a sparsity value
-* "exclude_patterns" - optional list of regex's whereby each match will not be considered for selection. Exclusion happens BEFORE test selection (i.e.
-before permutes are applied)
-* "errorifs" - optional list of ERRORIF case names to be selected after exclusion (negative tests)
-
