@@ -18,25 +18,30 @@
 #include <type_traits>
 #include <utility>
 
+#include "func_debug.h"
 #include "half.hpp"
 #include "verifiers.h"
+
 namespace TosaReference
 {
 
 namespace
 {
+// TODO: Document the pre-conditions and expectations from arguments to this function
+// Similarly, write about how `boundAsMagnitude` is meant to be understood
 template <typename OutType>
 double calcErrorBound(double referenceValue, double boundsValue, const void* cfgPtr)
 {
     const auto cfg = reinterpret_cast<const AbsErrorVerifyInfo*>(cfgPtr);
+    ASSERT_MSG(cfg != nullptr, "AbsErrorVerifyInfo is nullptr in calcErrorBound");
 
-    double boundsMagnitude;
+    double boundsMagnitude{ 0.0 };
     if (cfg->boundAsMagnitude)
     {
         // Special case for SIN/COS
         // use the input value (stored in the bounds tensor) as the magnitude and value
         boundsMagnitude = boundsValue;
-        boundsValue     = std::abs(boundsValue);
+        boundsValue     = 1.0;
     }
     else
     {
@@ -47,14 +52,17 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     double errorBound = 0.0;
     if (std::isfinite(boundsValue) || std::abs(boundsMagnitude) != 0.0)
     {
-        double valueBound = std::abs(boundsMagnitude) * (boundsValue + cfg->boundAddition);
+        double valueBound = std::abs(boundsMagnitude) * (boundsValue);
         if (cfg->lowerBound > 0)
         {
             valueBound = std::max(cfg->lowerBound, valueBound);
         }
         errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valueBound;
     }
-    return errorBound;
+    // TODO: If this function proves to no longer be generic,
+    // calculate errorBound in this function and introduce
+    // calcAbsErrorBound for all verify_*_error.cc variants
+    return cfg->maxCompare > 0.0 ? std::max(errorBound, (cfg->maxCompare)) : errorBound;
 }
 }    // namespace
 

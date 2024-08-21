@@ -181,8 +181,12 @@ int OpCos<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return
-                this->fcn = [](InEigenType a) -> OutEigenType { return a; };
+                // We don't need to calculate boundsValue for COS or SIN as they are both set as constants (1.0).
+                // So instead we pass boundsMagnitude in place of boundsValue as the boundsMagnitude
+                // depends on the input values with a different calculation that cannot be done at validation time.
+                this->fcn = [](InEigenType a) -> OutEigenType {
+                    return 1.0 + (a > static_cast<InEigenType>(0) ? a : (-a));
+                };
             }
             else
             {
@@ -414,7 +418,9 @@ int OpSin<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return
+                // We don't need to calculate boundsValue for COS or SIN as they are both set as constants (1.0).
+                // So instead we pass boundsMagnitude in place of boundsValue as the boundsMagnitude
+                // depends on the input values with a different calculation that cannot be done at validation time.
                 this->fcn = [](InEigenType a) -> OutEigenType { return a; };
             }
             else

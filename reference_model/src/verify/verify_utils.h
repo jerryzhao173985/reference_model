@@ -21,6 +21,7 @@
 #include "half.hpp"
 #include "types.h"
 
+#include <cmath>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -86,10 +87,10 @@ struct AbsErrorVerifyInfo
 {
     AbsErrorVerifyInfo() = default;
 
-    double lowerBound;
-    double normalDivisor;
-    bool boundAsMagnitude;
-    double boundAddition;
+    double lowerBound{ 0.0 };
+    double normalDivisor{ 1.0 };
+    bool boundAsMagnitude{ false };
+    double maxCompare{ 0.0 };    // One value to compare against, before deciding absolute error-bound
 };
 
 /// \brief relative verification meta-data

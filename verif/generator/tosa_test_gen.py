@@ -298,12 +298,17 @@ class TosaTestGen:
         elif op["op"] in (Op.SIN, Op.COS):
             mode = gtu.ComplianceMode.ABS_ERROR
             normal_divisor = op_compliance.get("abs_error_normal_divisor", 1)
-            bound_addition = op_compliance.get("abs_error_bound_addition", 0)
+            if op is Op.SIN:
+                max_compare = op_compliance.get(
+                    "abs_error_max_compare", math.pi * gtu.normal_min(inputType)
+                )
+            else:
+                max_compare = op_compliance.get("abs_error_max_compare", 0.0)
 
             compliance_tens["abs_error_info"] = {
                 "normal_divisor": normal_divisor,
                 "bound_as_magnitude": True,
-                "bound_addition": bound_addition,
+                "max_compare": max_compare,
             }
         elif argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
             if gtu.ComplianceMode.DOT_PRODUCT in op["data_gen"][inputType]:
@@ -4061,7 +4066,6 @@ class TosaTestGen:
             "data_gen": EW_UNARY_DATAGEN,
             "compliance": {
                 "abs_error_normal_divisor": 2,
-                "abs_error_bound_addition": 1,
             },
         },
         "exp": {
@@ -4213,7 +4217,10 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": EW_UNARY_DATAGEN,
-            "compliance": {"abs_error_normal_divisor": 2},
+            "compliance": {
+                "abs_error_normal_divisor": 2,
+                # "abs_error_max_compare": Calculated in tensorComplianceMetaData() as it has data_type
+            },
         },
         # Elementwise Ternary operators
         "select": {
