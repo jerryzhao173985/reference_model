@@ -11,7 +11,6 @@ Steps:
 - Tests are converted to JSON and/or copied and saved to desired output directory.
 """
 import argparse
-import copy
 import json
 import logging
 import multiprocessing as mp
@@ -21,16 +20,13 @@ import shlex
 import shutil
 import subprocess
 from functools import partial
-from itertools import tee
 from pathlib import Path
 
 import conformance.model_files as cmf
-from conformance.test_select import Operator
 from conformance.tosa_profiles import TosaProfiles
 from convert2conformance.convert2conformance import main as c2c_main
 from convert2conformance.convert2conformance import OUTPUT_TYPE_DEFAULT
 from convert2conformance.convert2conformance import OUTPUT_TYPES
-from distutils.dir_util import copy_tree
 from serializer.tosa_serializer import TOSA_VERSION
 
 logging.basicConfig()
@@ -147,26 +143,27 @@ def build_op_tests(
         if "lazy_data_gen" in supports and args.lazy_data_generation:
             build_cmd_base.append("--lazy-data-generation")
 
-    if "generator_select" in supports:
-        # When using the new generator select we can also enable the following
-        if "stable_random_gen" in supports and not args.global_random_generation:
-            build_cmd_base.append("--stable-random-generation")
-        if "random_const_inputs" in supports:
-            build_cmd_base.append("--random-const-inputs")
-        if selector_info is None:
-            logger.error(
-                "build_op_tests error: generator_select mode without selector information"
-            )
-            raise (GenConformanceError())
-        selector_config, selector_name = selector_info
-        build_cmd_base.extend(
-            [
-                "--test-selection-config",
-                str(selector_config),
-                "--test-selection-criteria",
-                selector_name,
-            ]
+    if "stable_random_gen" in supports and not args.global_random_generation:
+        build_cmd_base.append("--stable-random-generation")
+
+    if "random_const_inputs" in supports:
+        build_cmd_base.append("--random-const-inputs")
+
+    # Always use the new generator_select mode for conformance
+    if selector_info is None:
+        logger.error(
+            "build_op_tests error: generator_select mode without selector information"
         )
+        raise (GenConformanceError())
+    selector_config, selector_name = selector_info
+    build_cmd_base.extend(
+        [
+            "--test-selection-config",
+            str(selector_config),
+            "--test-selection-criteria",
+            selector_name,
+        ]
+    )
 
     if "generator_profile_filter" in supports:
         # Add extra profile/extension info to allow test filtering
@@ -370,8 +367,6 @@ def convert_tests(
     if tags is not None:
         for tag in tags:
             c2c_args_base.extend(["--tag", tag])
-    if args.framework_schema:
-        c2c_args_base.extend(["--framework-schema", str(args.framework_schema)])
     if _supports_for_enabled(profile_ext):
         if "lazy_data_gen" in supports and args.lazy_data_generation:
             c2c_args_base.append("--lazy-data-generation")
@@ -431,34 +426,6 @@ def convert_tests(
     return output_dir
 
 
-def get_op_tests_selection(
-    args,
-    profile_ext,
-    operator,
-    op_build_dir,
-    selection_config,
-    negative=False,
-    ignore_missing=False,
-):
-    """Use test picker to get subsection of tests generated."""
-    # Need a full copy of the config as the selector updates it
-    config = copy.deepcopy(selection_config)
-    logger.info(
-        "Choosing {} tests for {}".format(
-            ("negative" if negative else "positive"), profile_ext
-        )
-    )
-    try:
-        op = Operator.registry[operator](
-            op_build_dir, config, negative=negative, ignore_missing=ignore_missing
-        )
-    except KeyError:
-        logger.error(f"{operator} operator is not supported by test_select")
-        raise (GenConformanceError())
-
-    return op.select_tests()
-
-
 def check_op_tests(args, profile, operator, output_dir):
     """Move test folders than contain files larger than 30MB to new directory."""
     destination_dir = str(args.output_dir) + "_large_files"
@@ -493,56 +460,6 @@ def check_op_tests(args, profile, operator, output_dir):
             shutil.move(str(tdir), move_destination)
 
 
-def copy_rename_framework_tests(args, operator, test_picks):
-    """Copy framework tests into new folder and rename them if needed.
-
-    The tests are renamed to match the framework operator names if an
-    alternate name has been used instead.
-    """
-    framework_tests_dir = args.framework_tests_dir
-    new_tests_dir = args.build_dir / "frameworks" / operator
-    os.makedirs(new_tests_dir, exist_ok=True)
-
-    # Get the framework tests operator name
-    if "alternate_names" in test_picks[operator]:
-        alternate_names = test_picks[operator]["alternate_names"]
-    else:
-        alternate_names = [operator]
-
-    # Get the alternate named test directories for the operator
-    for alt_name in alternate_names:
-        test_prefix = f"test_{alt_name}"
-        test_dirs = list(framework_tests_dir.glob(f"{test_prefix}_*"))
-
-        # Copy tests to new directory and rename to match framework operator names
-        # - if there is just 1 alternate name, replace the full test prefix
-        #       test_add_... -> add_...
-        # - if there are multiple alternate names, just replace the "test"
-        #       test_concatv2_... -> concatenation_concatv2_...
-        old_prefix = test_prefix if len(alternate_names) == 1 else "test"
-
-        for tdir in test_dirs:
-            new_test_name = tdir.name.replace(old_prefix, operator)
-            copy_destination = new_tests_dir / new_test_name
-            logger.debug(f"copying test folder {tdir} to {copy_destination}")
-            copy_tree(str(tdir), str(copy_destination))
-
-    logger.info(f"Copied and renamed {len(test_dirs)} framework test folders")
-    return new_tests_dir.parent
-
-
-def get_framework_tests_selection(args, operator, test_picks, op_build_dir):
-    """Get the list of pre-chosen tests with relative paths."""
-    try:
-        tests = test_picks[operator]["tests"]
-    except KeyError:
-        logger.error(f"Framework test selection not defined for {operator} operator")
-        raise (GenConformanceError())
-
-    test_paths = [op_build_dir / operator / test for test in tests]
-    return test_paths
-
-
 def parse_args(argv=None):
     """Parse the arguments."""
     parser = argparse.ArgumentParser()
@@ -575,7 +492,7 @@ def parse_args(argv=None):
     parser.add_argument(
         "--unit-tests",
         dest="unit_tests",
-        choices=["operator", "framework", "both"],
+        choices=["operator"],
         default="operator",
         type=str,
         help="Which unit tests are produced (default is operator)",
@@ -659,19 +576,6 @@ def parse_args(argv=None):
         default=DEFAULT_SEED,
         type=int,
         help="Random test seed",
-    )
-    parser.add_argument(
-        "--framework-tests-directory",
-        dest="framework_tests_dir",
-        type=Path,
-        default=Path.cwd() / "tests",
-        help="The pre-built framework tests directory (default is tests)",
-    )
-    parser.add_argument(
-        "--framework-schema",
-        dest="framework_schema",
-        type=Path,
-        help="Framework flatbuffers schema needed to convert framework models",
     )
     parser.add_argument(
         "--build-directory",
@@ -787,21 +691,6 @@ def parse_args(argv=None):
     if args.param_config is not None:
         args.param_config = args.param_config.absolute()
 
-    if args.unit_tests in ["framework", "both"]:
-        logger.warning(
-            "DEPRECATION - Framework tests are not part of TOSA conformance testing"
-        )
-        if not args.framework_schema:
-            logger.error(
-                "Need to supply location of Framework flatbuffers schema via --framework-schema"
-            )
-            return None
-        if not args.framework_tests_dir.is_dir():
-            logger.error(
-                f"Missing or invalid framework tests directory: {args.framework_tests_dir}"
-            )
-            return None
-
     if PROFILES_EXTENSIONS_ALL in args.profile:
         args.profile = TosaProfiles.profiles()
 
@@ -886,12 +775,8 @@ def main():
 
     try:
         for profile_ext in profileExtList:
-            # Framework unit tests
-            if args.unit_tests in ["framework", "both"]:
-                logger.error("Framework test support has been removed")
-
             # Operator unit tests
-            if args.unit_tests in ["operator", "both"]:
+            if args.unit_tests in ("operator",):
                 logger.debug("Creating OPERATOR unit tests")
                 if args.param_config is None:
                     # Use default config
@@ -1016,12 +901,6 @@ def main():
                             )
                             raise (GenConformanceError())
 
-                        if test_params[op]["selection"][selector_name].get(
-                            "generator_select", False
-                        ):
-                            # Extend the support to include the new test selection in the generator
-                            supports = supports + ["generator_select"]
-
                         op_build_dir = build_op_tests(
                             args,
                             test_type,
@@ -1039,76 +918,16 @@ def main():
                             logger.info("Tests list file extended")
                             continue
 
-                        if args.convert_all_tests or "generator_select" in supports:
-                            if test_type in ["positive", "both"]:
-                                logger.info(f"Running and converting all {op} tests")
-                                generate_results(
-                                    args,
-                                    profile_ext,
-                                    op,
-                                    op_build_dir,
-                                    supports=supports,
-                                )
-                            operator_test_list = None
-                        else:
-                            logger.info(
-                                f"Running and converting selection of {op} tests"
+                        if test_type in ["positive", "both"]:
+                            logger.info(f"Running and converting all {op} tests")
+                            generate_results(
+                                args,
+                                profile_ext,
+                                op,
+                                op_build_dir,
+                                supports=supports,
                             )
-                            # Selection criteria
-                            selection_config = test_params[op]["selection"][
-                                selector_name
-                            ]
-                            if test_type in ["positive", "both"]:
-                                if (
-                                    "all" in selection_config
-                                    and selection_config["all"] == "true"
-                                ):
-                                    # Just get all the positive tests
-                                    tests_gen, tests_gen2 = tee(
-                                        _get_all_tests_list(
-                                            "positive",
-                                            op_build_dir,
-                                            op,
-                                        )
-                                    )
-                                else:
-                                    ignore_missing = (
-                                        gen_name != STANDARD_GENERATOR_GROUP
-                                    )
-
-                                    # Get a selection of positive tests
-                                    tests_gen, tests_gen2 = tee(
-                                        get_op_tests_selection(
-                                            args,
-                                            profile_ext,
-                                            op,
-                                            op_build_dir,
-                                            selection_config,
-                                            ignore_missing=ignore_missing,
-                                        )
-                                    )
-                                generate_results(
-                                    args,
-                                    profile_ext,
-                                    op,
-                                    op_build_dir,
-                                    supports=supports,
-                                    tests=tests_gen,
-                                )
-                                operator_test_list = list(tests_gen2)
-                            else:
-                                operator_test_list = []
-                            if test_type in ["negative", "both"]:
-                                operator_test_list.extend(
-                                    get_op_tests_selection(
-                                        args,
-                                        profile_ext,
-                                        op,
-                                        op_build_dir,
-                                        selection_config,
-                                        negative=True,
-                                    )
-                                )
+                        operator_test_list = None
 
                         tags = (
                             [gen_name] if gen_name != STANDARD_GENERATOR_GROUP else None
