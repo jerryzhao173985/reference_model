@@ -766,6 +766,12 @@ class TosaTensorValuesGen:
             shapeList
         ), "Placeholders & Constant tensors must match shapes list"
 
+        # Check if we need to create the serialization tensors
+        serialize_data = argsDict.get("serialization", True)
+        if not serialize_data:
+            # Create data storage area in the argsDict
+            argsDict["tensor_data"] = []
+
         tens_ser_list = []
 
         # Retrieve any fixed data tensors
@@ -810,10 +816,18 @@ class TosaTensorValuesGen:
                 if round_mode:
                     arr = np.round(arr)
 
-                if tensor_is_variable(pCount, idx):
-                    tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
+                if serialize_data:
+                    if tensor_is_variable(pCount, idx):
+                        tens_ser_list.append(
+                            testGen.ser.addPlaceholder(shape, dtype, arr)
+                        )
+                    else:
+                        tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
                 else:
-                    tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
+                    # We will do the serialization later
+                    argsDict["tensor_data"].append(
+                        {"dtype": dtype, "shape": shape, "data": arr}
+                    )
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
@@ -839,6 +853,7 @@ class TosaTensorValuesGen:
 
         for idx, shape in enumerate(shapeList):
             tens_meta = {}
+            dtype = dtypeList[idx]
 
             if fixed_data_tensors[idx] is not None:
                 dg_type = gtu.DataGenType.FIXED_DATA
@@ -850,7 +865,7 @@ class TosaTensorValuesGen:
             dg_type = dg_override.get(operand_idx_str, dg_type)
 
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
-            tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
+            tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtype]["json"]
             tens_meta["shape"] = [int(i) for i in shape]
             tens_meta["input_pos"] = idx
             tens_meta["op"] = testGen.getOperatorNameStr(opName).upper()
@@ -873,7 +888,7 @@ class TosaTensorValuesGen:
 
                 data_range, round_mode = get_data_range(idx)
                 if data_range is None:
-                    data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
+                    data_range = rng.dTypeRange(dtype, high_inclusive=True)
                 info["range"] = [str(v) for v in data_range]
                 if round_mode:
                     info["round"] = round_mode
@@ -897,7 +912,7 @@ class TosaTensorValuesGen:
             elif dg_type == gtu.DataGenType.FULL_RANGE:
                 info = {}
                 info["start_val"] = int(
-                    rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["fullset"])
+                    rng.randInt(0, gtu.DTYPE_ATTRIBUTES[dtype]["fullset"])
                 )
                 tens_meta["full_range_info"] = info
 
@@ -939,14 +954,24 @@ class TosaTensorValuesGen:
             if testGen.args.lazy_data_gen:
                 data = None
 
-            if variable:
-                tens = testGen.ser.addPlaceholder(shape, dtypeList[idx], data)
-            else:
-                tens = testGen.ser.addConst(shape, dtypeList[idx], data)
+            if serialize_data:
+                if variable:
+                    tens = testGen.ser.addPlaceholder(shape, dtype, data)
+                else:
+                    tens = testGen.ser.addConst(shape, dtype, data)
 
-            tens_ser_list.append(tens)
-            # Add the meta data to the list using the serializer tensor name
-            dg_tens_meta[tens.name] = tens_meta
+                tens_ser_list.append(tens)
+                # Add the meta data to the list using the serializer tensor name
+                dg_tens_meta[tens.name] = tens_meta
+            else:
+                # We will do the serialization later
+                tdata = {
+                    "dtype": dtype,
+                    "shape": shape,
+                    "data": data,
+                    "meta": tens_meta,
+                }
+                argsDict["tensor_data"].append(tdata)
 
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, tens_data)
 
@@ -1072,48 +1097,29 @@ class TosaTensorValuesGen:
     def tvgCondIf(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        if dtypeList[0] in (
-            DType.INT32,
-            DType.INT16,
-            DType.INT8,
-        ):
-            # Limit input tensors with cond_if_binary or while_loop to stop
-            # saturation of add/sub ops with int32 and keep all logical shift
-            # values between 0 to 31 for int16 or int8
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            pRemain = pCount
-            tens_ser_list = []
-            for idx, shape in enumerate(shapeList[:]):
-                if dtypeList[0] == DType.INT32:
-                    # Limit data range to avoid saturation
-                    arr = np.int32(rng.randTensor(shapeList[idx], DType.INT16))
-                elif dtypeList[0] == DType.INT16:
-                    arr = rng.randTensor(
-                        shapeList[idx], DType.INT16, data_range=(0, 16)
-                    )
-                elif dtypeList[0] == DType.INT8:
-                    arr = rng.randTensor(shapeList[idx], DType.INT8, data_range=(0, 8))
-                else:
-                    arr = rng.randTensor(
-                        shapeList[idx], dtypeList[0], data_range=(0, 32)
-                    )
-
-                if pRemain > 0:
-                    tens_ser_list.append(
-                        testGen.ser.addPlaceholder(shape, dtypeList[idx], arr)
-                    )
-                    pRemain -= 1
-                else:
-                    tens_ser_list.append(
-                        testGen.ser.addConst(shape, dtypeList[idx], arr)
-                    )
-
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
+        dtype = dtypeList[0]
+        if opName == "cond_if_const":
+            # We don't want to serialize the tensors until build_cond_if_const
+            argsDict["serialization"] = False
         else:
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+            assert opName == "cond_if_binary", f"Unexpected COND_IF op {opName}"
+            if dtype == DType.INT32:
+                # Limit data range to avoid saturation in add/sub
+                argsDict["data_range"] = rng.dTypeRange(DType.INT16)
+            elif dtype == DType.INT16:
+                # Limit logical shift values
+                argsDict["data_range"] = (0, 15)
+            elif dtype == DType.INT8:
+                # Limit logical shift values
+                argsDict["data_range"] = (0, 7)
+            elif not gtu.dtypeIsFloat(dtype):
+                assert (
+                    False
+                ), f"No COND_IF binary generation support for Dtype: {testGen.typeStr(dtype)}"
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgWhileLoop(

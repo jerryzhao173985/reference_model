@@ -333,7 +333,8 @@ class TosaTestGen:
     class BuildInfo:
         """Enhanced build information containing result tensor and associated compliance dict."""
 
-        def __init__(self, resultTensor, complianceDict):
+        def __init__(self, resultTensor, complianceDict, dataGenTensorDict=None):
+            self.dataGenTensorDict = dataGenTensorDict
             if isinstance(resultTensor, list):
                 assert complianceDict is None or isinstance(complianceDict, list)
                 self.resultTensorList = resultTensor
@@ -363,6 +364,9 @@ class TosaTestGen:
                 else:
                     compliance = None
                 return compliance
+
+        def getDataGenTensors(self):
+            return self.dataGenTensorDict
 
     def build_unary(
         self,
@@ -2304,41 +2308,36 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        # For cond_if with constants, we're supplied with then/else tensors that we ignore
-        # (except for the generated shape) and the condition.  Build Then/Else blocks
-        # and fill them with const nodes for the body.
-        assert len(inputs) == 2
-        then_tens, else_tens = inputs
+        # For cond_if with constants, we don't get any pre-serialized tensors
+        # instead we have access to the generated data to serialize into the
+        # different blocks
+        assert len(inputs) == 0
+        assert len(args_dict["tensor_data"]) == 2
+        then_tdata = args_dict["tensor_data"][0]
+        else_tdata = args_dict["tensor_data"][1]
 
         cond = args_dict["condition"]
 
         # Condition tensor
         cond_tens = self._get_condition_tensor(rng, op, cond, error_name)
 
-        # Make then/else tensors
-        out_shape = then_tens.shape
-
-        dtype = DType.INT32
+        # Add the result tensor based on one of the outputs
+        out_shape = then_tdata["shape"]
+        dtype = then_tdata["dtype"]
+        result_tensor = self.ser.addOutput(out_shape, dtype)
 
         # Create an incorrect output shape for error_if tests
         if error_name in [
             ErrorIf.CondIfOutputListThenGraphMismatch,
             ErrorIf.CondIfOutputListElseGraphMismatch,
         ]:
-            incorrect_shape = deepcopy(then_tens.shape)
+            incorrect_shape = then_tdata["shape"].copy()
             for i in range(len(incorrect_shape)):
                 incorrect_shape[i] += (
                     rng.choice([-3, -2, 2, 3])
                     if incorrect_shape[i] > 3
                     else rng.choice([1, 2, 4])
                 )
-            incorrect_arr = np.int32(rng.integers(0, 256, size=incorrect_shape))
-
-        then_arr = np.int32(rng.integers(0, 256, size=out_shape))
-        else_arr = np.int32(rng.integers(0, 256, size=out_shape))
-
-        # And the result tensor based on any of the outputs
-        result_tensor = self.ser.addOutput(out_shape, dtype)
 
         # Create the attribute with the names of the then/else blocks
         then_block = "THEN_BLOCK"
@@ -2349,17 +2348,22 @@ class TosaTestGen:
         # Finally, build the op and the two blocks
         self.ser.addOperator(op["op"], [cond_tens.name], [result_tensor.name], attr)
 
+        # Get the pre-generated data
+        # Note: these arrays might be None if lazy data gen is enabled
+        then_arr = then_tdata["data"]
+        else_arr = else_tdata["data"]
+
+        # Serialize the then/else tensors inside their blocks
         self.ser.addBasicBlock(then_block)
-        # Build the actual then/else tensors inside their blocks
         if error_name == ErrorIf.CondIfOutputListThenGraphMismatch:
-            then_tens = self.ser.addConst(incorrect_shape, dtype, incorrect_arr)
+            then_tens = self.ser.addConst(incorrect_shape, dtype, then_arr)
         else:
             then_tens = self.ser.addConst(out_shape, dtype, then_arr)
         self.ser.addOutputTensor(then_tens)
 
         self.ser.addBasicBlock(else_block)
         if error_name == ErrorIf.CondIfOutputListElseGraphMismatch:
-            else_tens = self.ser.addConst(incorrect_shape, dtype, incorrect_arr)
+            else_tens = self.ser.addConst(incorrect_shape, dtype, else_arr)
         else:
             else_tens = self.ser.addConst(out_shape, dtype, else_arr)
         self.ser.addOutputTensor(else_tens)
@@ -2378,7 +2382,14 @@ class TosaTestGen:
             op, dtype, args_dict, result_tensor, error_name
         )
 
-        return TosaTestGen.BuildInfo(result_tensor, compliance)
+        # Because we have added the tensors late, we need to update the
+        # data generation meta data, in case we have lazy data gen enabled
+        dg_tens_meta = {}
+        for tdata, tens in zip(args_dict["tensor_data"], [then_tens, else_tens]):
+            if "meta" in tdata:
+                dg_tens_meta[tens.name] = tdata["meta"]
+
+        return TosaTestGen.BuildInfo(result_tensor, compliance, dg_tens_meta)
 
     def build_cond_if_binary(
         self,
@@ -2433,7 +2444,9 @@ class TosaTestGen:
                 self.TOSA_OP_LIST["logical_left_shift"],
             )
         else:
-            assert False, f"No tests for DType: {a.dtype}"
+            assert (
+                False
+            ), f"No COND_IF test generation for DType: {self.typeStr(a.dtype)}"
 
         # Determine the element-wise binary operation that compliance will need to
         # check the results of
@@ -2924,6 +2937,14 @@ class TosaTestGen:
                 f"genOpTestList: Error={error_name}, Filters S={cleanShapeFilter}, R={cleanRankFilter}, T={cleanDtypeFilter}"
             )
 
+            if (
+                len(cleanRankFilter) == 0
+                or len(cleanDtypeFilter) == 0
+                or len(cleanShapeFilter) == 0
+            ):
+                # No valid tests to create
+                return []
+
             for r in cleanRankFilter:
                 for t in cleanDtypeFilter:
                     for shape in cleanShapeFilter:
@@ -3128,6 +3149,10 @@ class TosaTestGen:
                 compliance = result.getComplianceInfo()
                 if compliance:
                     tensMeta["compliance"] = compliance
+                # Add late serialized tensors (like cond_if_const)
+                dataGenTensors = result.getDataGenTensors()
+                if "data_gen" in tensMeta and dataGenTensors is not None:
+                    tensMeta["data_gen"]["tensors"].update(dataGenTensors)
             self.serialize("test", tensMeta, tags)
             return True
         else:
@@ -4845,13 +4870,14 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgCondIf,
                 TosaArgGen.agCondIf,
             ),
-            "types": [DType.BOOL],
+            "types": [DType.BOOL] + TYPE_INT_FP,
             "error_if_validators": (
                 TosaErrorValidator.evOutputListThenGraphMismatch,
                 TosaErrorValidator.evOutputListElseGraphMismatch,
                 TosaErrorValidator.evCondIfCondNotMatchingBool,
                 TosaErrorValidator.evCondIfCondShapeNotSizeOne,
             ),
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "cond_if_binary": {
             "op": Op.COND_IF,
@@ -4871,6 +4897,7 @@ class TosaTestGen:
                 TosaErrorValidator.evCondIfCondNotMatchingBool,
                 TosaErrorValidator.evCondIfCondShapeNotSizeOne,
             ),
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         # while_loop
         "while_loop": {
