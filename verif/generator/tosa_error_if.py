@@ -2353,7 +2353,13 @@ class TosaErrorValidator:
             while_inputs = while_block.inputs
             while_outputs = while_block.outputs
             while_tens = while_block.tensors
-            if while_tens[while_inputs[1]].shape != while_tens[while_outputs[0]].shape:
+
+            pl_body_tens_name = while_inputs[0]
+            out_body_tens_name = while_outputs[0]
+            if (
+                while_tens[pl_body_tens_name].shape
+                != while_tens[out_body_tens_name].shape
+            ):
                 error_result = True
 
         info_dict = {
@@ -2377,11 +2383,17 @@ class TosaErrorValidator:
             while_inputs = while_block.inputs
             while_tens = while_block.tensors
             cond_block = basicBlocks[1]
-            cond_inputs = cond_block.inputs
             cond_tens = cond_block.tensors
+
+            pl_body_tens_name = while_inputs[0]
+            pl_iter_tens_name = while_inputs[1]
             if (
-                while_tens[while_inputs[0]].shape != cond_tens[cond_inputs[0]].shape
-            ) or (while_tens[while_inputs[1]].shape != cond_tens[cond_inputs[2]].shape):
+                while_tens[pl_body_tens_name].shape
+                != cond_tens[pl_body_tens_name].shape
+            ) or (
+                while_tens[pl_iter_tens_name].shape
+                != cond_tens[pl_iter_tens_name].shape
+            ):
                 error_result = True
 
         info_dict = {
@@ -2405,12 +2417,16 @@ class TosaErrorValidator:
             while_inputs = while_block.inputs
             while_tens = while_block.tensors
             body_block = basicBlocks[2]
-            body_outputs = body_block.inputs
             body_tens = body_block.tensors
+
+            pl_body_tens_name = while_inputs[0]
+            pl_iter_tens_name = while_inputs[1]
             if (
-                while_tens[while_inputs[0]].shape != body_tens[body_outputs[0]].shape
+                while_tens[pl_body_tens_name].shape
+                != body_tens[pl_body_tens_name].shape
             ) or (
-                while_tens[while_inputs[1]].shape != body_tens[body_outputs[2]].shape
+                while_tens[pl_iter_tens_name].shape
+                != body_tens[pl_iter_tens_name].shape
             ):
                 error_result = True
 
@@ -2437,10 +2453,17 @@ class TosaErrorValidator:
             body_block = basicBlocks[2]
             body_outputs = body_block.outputs
             body_tens = body_block.tensors
+
+            pl_body_tens_name = while_inputs[0]
+            pl_iter_tens_name = while_inputs[1]
+            out_body_tens_name = body_outputs[2]
+            out_iter_tens_name = body_outputs[0]
             if (
-                while_tens[while_inputs[0]].shape != body_tens[body_outputs[0]].shape
+                while_tens[pl_body_tens_name].shape
+                != body_tens[out_body_tens_name].shape
             ) or (
-                while_tens[while_inputs[1]].shape != body_tens[body_outputs[2]].shape
+                while_tens[pl_iter_tens_name].shape
+                != body_tens[out_iter_tens_name].shape
             ):
                 error_result = True
         info_dict = {

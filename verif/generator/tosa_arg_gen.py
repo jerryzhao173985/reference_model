@@ -167,16 +167,14 @@ class TosaTensorGen:
         pass
 
     @staticmethod
-    def tgBasic(testGen, rng, op, rank, error_name=None):
-        pl, const = op["operands"]
+    def _get_basic_shapes(testGen, rng, num_shapes, rank, error_name=None):
         shape = testGen.makeShape(rng, rank)
-
         # Constrict the overall size of the shape when creating ERROR_IF tests
         if error_name:
             shape = TosaErrorIfArgGen.eiRestrictDimensions(shape)
 
         shape_list = []
-        for i in range(pl + const):
+        for i in range(num_shapes):
             shape_list.append(shape.copy())
 
             # Generates an input rank mismatch for operators with more than one input
@@ -187,6 +185,13 @@ class TosaTensorGen:
                     shape = testGen.makeShape(rng, rank + rng.choice([-1, 1]))
 
         return shape_list
+
+    @staticmethod
+    def tgBasic(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+        return TosaTensorGen._get_basic_shapes(
+            testGen, rng, pl + const, rank, error_name
+        )
 
     @staticmethod
     def tgNHWC(testGen, rng, op, rank, error_name=None):
@@ -637,6 +642,23 @@ class TosaTensorGen:
 
         return new_shapeList
 
+    @staticmethod
+    def tgWhileLoop(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+        assert pl == 2 and const == 3, "Unsupported tensors for WHILE_LOOP"
+
+        # Get a tensor for the body of the loop - used as a constant and an input
+        body_shape = TosaTensorGen._get_basic_shapes(testGen, rng, 1, rank, error_name)[
+            0
+        ]
+
+        # Default iteration value shape is rank 0
+        iter_shape = []
+
+        # Create the shape list for body and iteration tensors
+        # pl_body_tens, pl_iter_tens, const_body_tens, const_iterchk_tens, const_itersub_tens
+        return [body_shape, iter_shape, body_shape, iter_shape, iter_shape]
+
 
 class TosaTensorValuesGen:
     """Tensor Value generators create the random data for each tensor in each test."""
@@ -722,6 +744,19 @@ class TosaTensorValuesGen:
                 variable = idx < pCount
             return variable
 
+        def get_data_range(idx):
+            round_mode = False
+            data_range = None
+            if "data_range" in argsDict:
+                data_range = argsDict["data_range"]
+            elif (
+                "data_range_list" in argsDict
+                and argsDict["data_range_list"][idx] is not None
+            ):
+                data_range = argsDict["data_range_list"][idx]["range"]
+                round_mode = argsDict["data_range_list"][idx].get("round", False)
+            return (data_range, round_mode)
+
         # Variable inputs versus constants
         pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
         if "p_count" in argsDict:
@@ -746,48 +781,40 @@ class TosaTensorValuesGen:
             or "data_gen" not in testGen.TOSA_OP_LIST[opName]
         ):
             # Fall back to internal data gen when dealing with unsupported types or ops
-            data_range = argsDict["data_range"] if "data_range" in argsDict else None
             for idx, info in enumerate(zip(shapeList, dtypeList)):
-                roundMode = False
+                data_range, round_mode = get_data_range(idx)
                 shape, dtype = info
-                if "data_range_list" in argsDict:
-                    data_range = argsDict["data_range_list"][idx]["range"]
-                    roundMode = (
-                        "round" in argsDict["data_range_list"][idx]
-                        and argsDict["data_range_list"][idx]["round"] is True
-                    )
-                if data_range is not None and dtype not in (
-                    DType.FP16,
-                    DType.FP32,
-                    DType.BF16,
-                    DType.FP8E4M3,
-                    DType.FP8E5M2,
-                ):
+                if data_range is not None and not gtu.dtypeIsFloat(dtype):
                     # Change from inclusive to exclusive range
                     data_range = (data_range[0], data_range[1] + 1)
 
-                # Ignore lazy data gen option and create data array using any range limits
                 if fixed_data_tensors[idx] is not None:
+                    size = gtu.product(shape)
+                    data = np.array(fixed_data_tensors[idx])
+                    if size > 1 and data.size == 1:
+                        # Broadcast the data to the correct size
+                        data = np.broadcast_to(data, shape)
+                    assert (
+                        data.size == size
+                    ), "Fixed data length does not match tensor size"
                     if dtype == DType.SHAPE:
-                        arr = np.int64(fixed_data_tensors[idx])
+                        arr = np.int64(data)
                     elif dtype == DType.INT8:
-                        arr = np.int8(fixed_data_tensors[idx])
+                        arr = np.int8(data)
                     elif dtype == DType.INT16:
-                        arr = np.int16(fixed_data_tensors[idx])
-                    elif dtype == DType.INT32:
-                        arr = np.int32(fixed_data_tensors[idx])
+                        arr = np.int16(data)
                     else:
-                        assert False, "Unsupported fixed_data type"
+                        # Treat data as int32
+                        arr = np.int32(data)
                 else:
                     arr = rng.randTensor(shape, dtype, data_range)
-                if roundMode:
+                if round_mode:
                     arr = np.round(arr)
 
                 if tensor_is_variable(pCount, idx):
                     tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
                 else:
                     tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
-
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
         # Create data generator meta-data
@@ -846,17 +873,12 @@ class TosaTensorValuesGen:
                 info = {}
                 info["rng_seed"] = rng.getDataGenSeed(idx)
 
-                data_range = None
-                if "data_range_list" in argsDict:
-                    data_range = argsDict["data_range_list"][idx]["range"]
-                    if "round" in argsDict["data_range_list"][idx]:
-                        info["round"] = argsDict["data_range_list"][idx]["round"]
-                elif "data_range" in argsDict:
-                    data_range = argsDict["data_range"]
-
+                data_range, round_mode = get_data_range(idx)
                 if data_range is None:
                     data_range = rng.dTypeRange(dtypeList[idx], high_inclusive=True)
                 info["range"] = [str(v) for v in data_range]
+                if round_mode:
+                    info["round"] = round_mode
                 tens_meta["pseudo_random_info"] = info
 
             elif dg_type == gtu.DataGenType.DOT_PRODUCT:
@@ -1049,7 +1071,7 @@ class TosaTensorValuesGen:
             )
 
     @staticmethod
-    def tvgCondIfWhileLoop(
+    def tvgCondIf(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         if dtypeList[0] in (
@@ -1094,6 +1116,92 @@ class TosaTensorValuesGen:
             return TosaTensorValuesGen.tvgLazyGenDefault(
                 testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
             )
+
+    @staticmethod
+    def tvgWhileLoop(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        def scale_add_values_to_iterations(iterations, values):
+            # Avoid exceeding maximum values by scaling to number of iterations,
+            # so that the ADD operation does not saturate
+            if iterations > 1:
+                new_values = []
+                for index in range(len(values)):
+                    new_values.append(values[index] // iterations)
+                return tuple(new_values)
+            return values
+
+        dtype = dtypeList[0]
+        iterations = argsDict["iterations"]
+        body_data_range = None
+
+        if gtu.dtypeIsFloat(dtype):
+            # Create a range using a higher limit table of high value scaled to iterations
+            add_op = True
+            assert (
+                dtype in TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE
+            ), "Unsupported FP type in WHILE_LOOP values gen"
+            high_value = TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype]
+
+            high_value = scale_add_values_to_iterations(iterations, [high_value])[0]
+            body_data_range = TosaTensorValuesGen._get_data_range(
+                rng, dtype, {dtype: high_value}
+            )
+        elif dtype == DType.INT32:
+            # Scale the data range to allow multiple ADDs without saturation
+            add_op = True
+            body_data_range = scale_add_values_to_iterations(
+                iterations, rng.dTypeRange(dtype)
+            )
+        elif dtype in (DType.INT8, DType.INT16):
+            # Allow any positive values for LOGICAL_RIGHT_SHIFT
+            add_op = False
+            body_data_range = (0, rng.dTypeRange(dtype)[1])
+
+        assert (
+            body_data_range is not None
+        ), "Unsupported data type for WHILE_LOOP values generation"
+
+        # Sort out data types, data ranges and fixed data
+        shapes = len(shapeList)
+        assert shapes == 5, "Unexpected tensor list in WHILE_LOOP values generation"
+        data_range_list = [None] * shapes
+        fixed_data = [None] * shapes
+
+        # pl_body_tens
+        if add_op:
+            # ADD Accumulator set to zero
+            fixed_data[0] = np.array([0], dtype=np.int32)
+        else:
+            # Tensor to perform LOGICAL_RIGHT_SHIFT on
+            data_range_list[0] = {"range": body_data_range}
+
+        # pl_iter_tens - iterations tensor
+        dtypeList[1] = DType.INT32
+        fixed_data[1] = np.array([argsDict["iterations"]], dtype=np.int32)
+
+        # const_body_tens
+        if add_op:
+            # Tensor to ADD to accumulator per loop
+            data_range_list[2] = {"range": body_data_range}
+        else:
+            # Tensor of shift values set to 1
+            fixed_data[2] = np.array([1], dtype=np.int32)
+
+        # const_iterchk_tens - iteraions value to check against (0)
+        dtypeList[3] = DType.INT32
+        fixed_data[3] = np.array([0], dtype=np.int32)
+
+        # const_itersub_tens - value to subtract from iterations (1)
+        dtypeList[4] = DType.INT32
+        fixed_data[4] = np.array([1], dtype=np.int32)
+
+        argsDict["data_range_list"] = data_range_list
+        argsDict["fixed_data"] = fixed_data
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgArithmeticRightShift(

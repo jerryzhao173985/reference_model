@@ -92,6 +92,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Op,
                                  { Op::Op_TILE, "TILE" },
                                  { Op::Op_TRANSPOSE, "TRANSPOSE" },
                                  { Op::Op_TRANSPOSE_CONV2D, "TRANSPOSE_CONV2D" },
+                                 { Op::Op_WHILE_LOOP, "WHILE_LOOP" },
                              })
 
 }    // namespace tosa

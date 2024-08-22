@@ -2495,11 +2495,28 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 1
-        a = inputs[0]
-        iter_val = args_dict["iterations"]
+        assert len(inputs) == 5
+        (
+            pl_body_tens,
+            pl_iter_tens,
+            const_body_tens,
+            const_iterchk_tens,
+            const_itersub_tens,
+        ) = inputs
 
-        iter = self.ser.addPlaceholder([], DType.INT32, [np.int32(iter_val)])
+        # There are three blocks, the main block with the while loop operator,
+        # a conditional checking block (COND) and the body (BODY) block which
+        # executes if the conditional check is successful
+
+        # Has 5 input tensors:  pl_body, const_body, pl_iter, iter_chk, iter_sub
+        # iter_chk is always 0 and iter_sub is always 1
+        # BODY block:
+        # * Will update pl_body with ADD(pl_body, const_body) or
+        #   LOGICAL_RIGHT_SHIFT(pl_body, const_body) depending on the dtype.
+        # * It will also update pl_iter using SUB(pl_iter, iter_sub)
+        # * All inputs other than pl_body and pl_iter will remain unchanged.
+        # COND block
+        # *  Will check if iter reached iter_chk
 
         cond_block = "COND_BLOCK"
         body_block = "BODY_BLOCK"
@@ -2507,58 +2524,68 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.WhileLoopAttribute(cond_block, body_block)
 
-        # Accumulator tensor
-        # acc = self.ser.addOutput(a.shape, a.dtype)
-        acc_init_val = np.int32(np.zeros(a.shape))
-        acc = self.ser.addPlaceholder(a.shape, a.dtype, acc_init_val)
+        if const_body_tens.dtype in (DType.FP32, DType.BF16, DType.FP16, DType.INT32):
+            body_op = Op.ADD
+        elif const_body_tens.dtype in (DType.INT16, DType.INT8):
+            body_op = Op.LOGICAL_RIGHT_SHIFT
+        else:
+            assert (
+                False
+            ), f"No WHILE_LOOP test generation for DType: {self.typeStr(const_body_tens.dtype)}"
 
         # Intermediate/output tensors for everything going through the loop
-        iter_out = self.ser.addIntermediate(iter.shape, iter.dtype)
-        a_out = self.ser.addIntermediate(a.shape, a.dtype)
+        out_iter_int = self.ser.addIntermediate(pl_iter_tens.shape, pl_iter_tens.dtype)
+        out_const_int = self.ser.addIntermediate(
+            const_body_tens.shape, const_body_tens.dtype
+        )
         if error_name == ErrorIf.InputListOutputListMismatch:
-            incorrect_acc = deepcopy(acc)
-            for i in range(len(incorrect_acc.shape)):
-                incorrect_acc.shape[i] += rng.choice([-3, -2, 2, 3])
-            acc_out = self.ser.addIntermediate(incorrect_acc.shape, acc.dtype)
+            incorrect_body_tens = deepcopy(pl_body_tens)
+            for i in range(len(incorrect_body_tens.shape)):
+                incorrect_body_tens.shape[i] += rng.choice([-3, -2, 2, 3])
+            out_body_tens = self.ser.addIntermediate(
+                incorrect_body_tens.shape, pl_body_tens.dtype
+            )
         else:
-            acc_out = self.ser.addIntermediate(acc.shape, acc.dtype)
+            out_body_tens = self.ser.addIntermediate(
+                pl_body_tens.shape, pl_body_tens.dtype
+            )
 
         # While_loop operator
         self.ser.addOperator(
             op["op"],
-            [iter.name, a.name, acc.name],
-            [iter_out.name, a_out.name, acc_out.name],
+            [pl_iter_tens.name, const_body_tens.name, pl_body_tens.name],
+            [out_iter_int.name, out_const_int.name, out_body_tens.name],
             attr,
         )
-        self.ser.addOutputTensor(acc_out)
+        self.ser.addOutputTensor(out_body_tens)
 
         if error_name in [
             ErrorIf.InputListCondGraphMismatch,
             ErrorIf.InputListBodyGraphInputMismatch,
             ErrorIf.InputListBodyGraphOutputMismatch,
         ]:
-            incorrect_iter = deepcopy(iter)
-            for i in range(len(incorrect_iter.shape)):
-                incorrect_iter.shape[i] += rng.choice([-3, -2, 2, 3])
-            if len(incorrect_iter.shape) == 0:
-                incorrect_iter.shape.append(rng.choice([-3, -2, 2, 3]))
+            incorrect_iter_tens = deepcopy(pl_iter_tens)
+            assert (
+                len(incorrect_iter_tens.shape) == 0
+            ), "Unsupported iteration tensor shape in WHILE_LOOP"
+            incorrect_iter_tens.shape.append(rng.choice([-3, -2, 2, 3]))
 
-            incorrect_acc = deepcopy(acc)
-            for i in range(len(incorrect_acc.shape)):
-                incorrect_acc.shape[i] += rng.choice([-3, -2, 2, 3])
+            incorrect_body_tens = deepcopy(pl_body_tens)
+            for i in range(len(incorrect_body_tens.shape)):
+                incorrect_body_tens.shape[i] += rng.choice([-3, -2, 2, 3])
 
-        # COND block (input: iter, output: cond_tens )
+        # COND block (input: pl_iter_tens, output: out_cond_tens)
+        # Conditional GREATER check of iteration value versus 0
         self.ser.addBasicBlock(cond_block)
 
         if error_name == ErrorIf.InputListCondGraphMismatch:
-            self.ser.addInputTensor(incorrect_iter)
-            self.ser.addInputTensor(a)
-            self.ser.addInputTensor(incorrect_acc)
+            self.ser.addInputTensor(incorrect_iter_tens)
+            self.ser.addInputTensor(const_body_tens)
+            self.ser.addInputTensor(incorrect_body_tens)
         else:
-            self.ser.addInputTensor(iter)
-            self.ser.addInputTensor(a)
-            self.ser.addInputTensor(acc)
-        zero_tens = self.ser.addConst([], DType.INT32, [np.int32(0)])
+            self.ser.addInputTensor(pl_iter_tens)
+            self.ser.addInputTensor(const_body_tens)
+            self.ser.addInputTensor(pl_body_tens)
 
         if error_name == ErrorIf.CondGraphOutputNotMatchingBool:
             cond_type = rng.choice([DType.INT8, DType.INT32, DType.FP32])
@@ -2572,41 +2599,54 @@ class TosaTestGen:
                 cond_shape = [1, 2]
         else:
             cond_shape = []
-        cond_tens = self.ser.addOutput(cond_shape, cond_type)
+        out_cond_tens = self.ser.addOutput(cond_shape, cond_type)
 
-        self.ser.addOperator(Op.GREATER, [iter.name, zero_tens.name], [cond_tens.name])
+        # Check for end of loop - when the iter_tens reaches zero
+        self.ser.addOperator(
+            Op.GREATER,
+            [pl_iter_tens.name, const_iterchk_tens.name],
+            [out_cond_tens.name],
+        )
 
-        # BODY block (input: a, acc, iter, output: a, acc, iter)
+        # BODY block (input: const_body_tens, pl_body_tens, pl_iter_tens, output: const_body_tens, pl_body_tens, pl_iter_tens)
         # Note that local intermediate tensors need to be declared here for the outputs
+        # Body block operation using input and accumulator, whilst decrementing iteration variable
         self.ser.addBasicBlock(body_block)
 
         if error_name == ErrorIf.InputListBodyGraphInputMismatch:
-            self.ser.addInputTensor(incorrect_iter)
-            self.ser.addInputTensor(a)
-            self.ser.addInputTensor(incorrect_acc)
+            self.ser.addInputTensor(incorrect_iter_tens)
+            self.ser.addInputTensor(const_body_tens)
+            self.ser.addInputTensor(incorrect_body_tens)
         else:
-            self.ser.addInputTensor(iter)
-            self.ser.addInputTensor(a)
-            self.ser.addInputTensor(acc)
-
-        one_tens = self.ser.addConst([], DType.INT32, [np.int32(1)])
+            self.ser.addInputTensor(pl_iter_tens)
+            self.ser.addInputTensor(const_body_tens)
+            self.ser.addInputTensor(pl_body_tens)
 
         if error_name == ErrorIf.InputListBodyGraphOutputMismatch:
-            iter_body_out = self.ser.addIntermediate(
-                incorrect_iter.shape, incorrect_iter.dtype
+            out_cond_int = self.ser.addIntermediate(
+                incorrect_iter_tens.shape, incorrect_iter_tens.dtype
             )
-            acc_body_out = self.ser.addIntermediate(
-                incorrect_acc.shape, incorrect_acc.dtype
+            out_body_int = self.ser.addIntermediate(
+                incorrect_body_tens.shape, incorrect_body_tens.dtype
             )
         else:
-            iter_body_out = self.ser.addIntermediate(iter.shape, iter.dtype)
-            acc_body_out = self.ser.addIntermediate(acc.shape, acc.dtype)
+            out_cond_int = self.ser.addIntermediate(
+                pl_iter_tens.shape, pl_iter_tens.dtype
+            )
+            out_body_int = self.ser.addIntermediate(
+                pl_body_tens.shape, pl_body_tens.dtype
+            )
 
-        self.ser.addOperator(Op.ADD, [a.name, acc.name], [acc_body_out.name])
-        self.ser.addOperator(Op.SUB, [iter.name, one_tens.name], [iter_body_out.name])
-        self.ser.addOutputTensor(iter_body_out)
-        self.ser.addOutputTensor(a)
-        self.ser.addOutputTensor(acc_body_out)
+        self.ser.addOperator(
+            body_op, [pl_body_tens.name, const_body_tens.name], [out_body_int.name]
+        )
+        # Decrement iteration value
+        self.ser.addOperator(
+            Op.SUB, [pl_iter_tens.name, const_itersub_tens.name], [out_cond_int.name]
+        )
+        self.ser.addOutputTensor(out_cond_int)
+        self.ser.addOutputTensor(const_body_tens)
+        self.ser.addOutputTensor(out_body_int)
 
         if not TosaErrorValidator.evValidateErrorIfs(
             self.ser,
@@ -2618,10 +2658,10 @@ class TosaTestGen:
             return None
 
         compliance = self.tensorComplianceMetaData(
-            op, a.dtype, args_dict, acc_out, error_name
+            op, const_body_tens.dtype, args_dict, out_body_tens, error_name
         )
 
-        return TosaTestGen.BuildInfo(acc_out, compliance)
+        return TosaTestGen.BuildInfo(out_body_tens, compliance)
 
     def build_fft2d(
         self,
@@ -4804,7 +4844,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_cond_if_const,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgCondIfWhileLoop,
+                TosaTensorValuesGen.tvgCondIf,
                 TosaArgGen.agCondIf,
             ),
             "types": [DType.BOOL],
@@ -4821,7 +4861,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_cond_if_binary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgCondIfWhileLoop,
+                TosaTensorValuesGen.tvgCondIf,
                 TosaArgGen.agCondIf,
             ),
             "types": TYPE_INT_FP,
@@ -4837,14 +4877,14 @@ class TosaTestGen:
         # while_loop
         "while_loop": {
             "op": Op.WHILE_LOOP,
-            "operands": (0, 1),
+            "operands": (2, 3),
             "build_fcn": (
                 build_while_loop,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgCondIfWhileLoop,
+                TosaTensorGen.tgWhileLoop,
+                TosaTensorValuesGen.tvgWhileLoop,
                 TosaArgGen.agWhileLoop,
             ),
-            "types": [DType.INT32],
+            "types": TYPE_INT_FP,
             "error_if_validators": (
                 TosaErrorValidator.evInputListOutputListMismatch,
                 TosaErrorValidator.evInputListCondGraphMismatch,
@@ -4853,6 +4893,7 @@ class TosaTestGen:
                 TosaErrorValidator.evCondGraphOutputNotMatchingBool,
                 TosaErrorValidator.evCondGraphOutputShapeNotSizeOne,
             ),
+            "data_gen": PSEUDO_RANDOM_DATAGEN,
         },
         "fft2d": {
             "op": Op.FFT2D,

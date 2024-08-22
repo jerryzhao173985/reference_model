@@ -38,7 +38,7 @@ template <typename T>
 void check_value(bool match, T result, T expected, uint32_t idx)
 {
     std::stringstream msg;
-    msg << "index: " << idx << " expected: " << std::hex << expected << " got: " << result;
+    msg << "index: " << idx << " expected: 0x" << std::hex << expected << " got: 0x" << result;
     if (match)
     {
         REQUIRE_MESSAGE(expected == result, msg.str());
@@ -1709,6 +1709,57 @@ TEST_CASE("positive - FP16 FP Special")
                                                                                 { one, ten } };
         std::vector<valueType> expectedValueType                            = { Float, OddInteger, EvenInteger };
         fp_special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+    }
+}
+
+TEST_CASE("positive - Fixed Data")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "fixed0" : {
+                "generator": "FIXED_DATA",
+                "data_type": "INT8",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 3 ],
+                "input_pos": 0,
+                "op" : "ADD",
+                "fixed_data_info": {
+                    "data": [ 9, 8, 7, 6, 5, 4, 3, 2, 1 ]
+                }
+            },
+            "fixed1" : {
+                "generator": "FIXED_DATA",
+                "data_type": "FP16",
+                "input_type": "VARIABLE",
+                "shape" : [ 9 ],
+                "input_pos": 1,
+                "op" : "ADD",
+                "fixed_data_info": {
+                    "data": [ 7 ]
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName0 = "fixed0";
+    const std::string tosaName1 = "fixed1";
+    const size_t tosaElements   = 3 * 3;
+
+    SUBCASE("add, INT8 with all data")
+    {
+        std::vector<int8_t> expected = { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
+        std::vector<int8_t> buffer(tosaElements);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName0.c_str(), (void*)buffer.data(), tosaElements));
+        check_output(buffer, expected);
+    }
+    SUBCASE("add, FP16 with broadcast data")
+    {
+        const half_float::half vh      = half_float::half(7.0);
+        const uint16_t v               = *(uint16_t*)&vh;
+        std::vector<uint16_t> expected = { v, v, v, v, v, v, v, v, v };
+        std::vector<half_float::half> buffer(tosaElements);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName1.c_str(), (void*)buffer.data(), tosaElements * 2));
+        check_output(buffer, expected);
     }
 }
 
