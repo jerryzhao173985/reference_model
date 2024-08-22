@@ -13,6 +13,7 @@
 //    limitations under the License.
 #include "generate.h"
 #include "generate_utils.h"
+#include "half.hpp"
 
 #include <algorithm>
 #include <array>
@@ -23,11 +24,23 @@
 namespace
 {
 template <typename OutType>
-bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, OutType* outData)
+bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, OutType* outData, bool broadcastMode)
 {
-    for (auto t = 0; t < elements; t++)
+    // Copy the input int32 data and cast it to the required output type
+
+    if (broadcastMode)
     {
-        outData[t] = inData[t];
+        for (auto t = 0; t < elements; t++)
+        {
+            outData[t] = static_cast<OutType>(inData[0]);
+        }
+    }
+    else
+    {
+        for (auto t = 0; t < elements; t++)
+        {
+            outData[t] = static_cast<OutType>(inData[t]);
+        }
     }
     return true;
 }
@@ -47,9 +60,13 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
 
     std::vector<int32_t> inData = cfg.fixedDataInfo.data;
     const auto T                = TosaReference::numElementsFromShape(cfg.shape);
-    if (T != static_cast<int64_t>(inData.size()))
+    const int64_t inSize        = static_cast<int64_t>(inData.size());
+    const bool broadcastMode    = (inSize == 1);
+    // Check data size matches tensor size or it is 1 so that we can broadcast the values
+    if (T != inSize && !broadcastMode)
     {
-        WARNING("[Generator][FD] Given data size %d does not match output size %d.", inData.size(), T);
+        WARNING("[Generator][FD] Given data size %d is not broadcastable or does not match output size %d.",
+                inData.size(), T);
         return false;
     }
 
@@ -57,11 +74,27 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
     {
         case DType::DType_SHAPE: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
-            return copyFixedData(T, inData, outData);
+            return copyFixedData(T, inData, outData, broadcastMode);
+        }
+        case DType::DType_INT32: {
+            int32_t* outData = reinterpret_cast<int32_t*>(data);
+            return copyFixedData(T, inData, outData, broadcastMode);
         }
         case DType::DType_INT8: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return copyFixedData(T, inData, outData);
+            return copyFixedData(T, inData, outData, broadcastMode);
+        }
+        case DType::DType_FP16: {
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            return copyFixedData(T, inData, outData, broadcastMode);
+        }
+        case DType::DType_FP32: {
+            float* outData = reinterpret_cast<float*>(data);
+            return copyFixedData(T, inData, outData, broadcastMode);
+        }
+        case DType::DType_BF16: {
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            return copyFixedData(T, inData, outData, broadcastMode);
         }
         default:
             WARNING("[Generator][FD] Unsupported type.");

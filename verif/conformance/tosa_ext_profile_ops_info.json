@@ -9752,16 +9752,22 @@
     },
     "while_loop": {
         "group": "control_flow",
+        "support_for": [
+            "stable_random_gen"
+        ],
         "generation": {
-            "standard": {
+            "tosa-pro-int": {
                 "supports_any": [
-                    "tosa-pro-int",
-                    "tosa-pro-fp"
+                    "tosa-pro-int"
                 ],
                 "generator_args": [
                     [
                         "--target-dtype",
                         "int32",
+                        "int16",
+                        "int8",
+                        "--tensor-dim-range",
+                        "1,24",
                         "--target-rank",
                         "0",
                         "1",
@@ -9777,10 +9783,89 @@
                     ],
                     [
                         "--target-dtype",
-                        "int32",
+                        "int16",
+                        "int8",
                         "--tensor-dim-range",
-                        "1,7",
+                        "2,7",
                         "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int32",
+                        "int16",
+                        "int8",
+                        "--tensor-dim-range",
+                        "1,4",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            },
+            "tosa-pro-fp": {
+                "supports_any": [
+                    "tosa-pro-fp"
+                ],
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,20",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,6",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6"
+                    ]
+                ]
+            },
+            "tosa-ext-bf16": {
+                "supports_all": [
+                    "tosa-ext-bf16"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,21",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "2,6",
+                        "--target-rank",
+                        "4",
+                        "5",
                         "6"
                     ]
                 ]
