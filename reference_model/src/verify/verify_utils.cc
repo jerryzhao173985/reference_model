@@ -172,6 +172,10 @@ int64_t numElements(const std::vector<int32_t>& shape)
 
 std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& shape)
 {
+    // Shape is rank 0 (scalar).
+    if (shape.size() == 0)
+        return { 0 };
+
     std::vector<int32_t> pos;
     for (auto d = shape.end() - 1; d >= shape.begin(); --d)
     {
