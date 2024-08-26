@@ -43,13 +43,13 @@ else()
   set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
 endif()
 
-# If Flatbuffers, Eigen, Half path isn't specified, set to remotely fetched directory.
+# If Flatbuffers, Eigen, Half path isn't specified, set to thirdparty directory.
 if(NOT FLATBUFFERS_DIR)
   set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
 endif()
 
 if(NOT EIGEN_DIR)
-  set(EIGEN_DIR "${eigen_SOURCE_DIR}")
+  set(EIGEN_DIR "../thirdparty/eigen/")
 endif()
 
 if(NOT HALF_DIR)
@@ -57,7 +57,7 @@ if(NOT HALF_DIR)
 endif()
 
 if(NOT JSON_DIR)
-  set(JSON_DIR "${json_SOURCE_DIR}")
+  set(JSON_DIR "../thirdparty/json")
 endif()
 
 if(NOT PYBIND11_DIR)
@@ -229,9 +229,9 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   # Set definition so unit tests can find examples directory.
   add_definitions(-DPROJECT_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
-  # Set doctest location to remotely fetched directory if not specified.
+  # Set doctest location if not specified.
   if(NOT DOCTEST_DIR)
-    set(DOCTEST_DIR "${doctest_SOURCE_DIR}/doctest")
+    set(DOCTEST_DIR "../thirdparty/doctest/doctest")
   endif()
 
   # Sources only required for unit tests.

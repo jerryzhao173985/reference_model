@@ -29,8 +29,8 @@ target_include_directories(tosa_example_plugin
         "../../thirdparty/serialization_lib/include"
         "../../thirdparty/serialization_lib/third_party/flatbuffers/include"
         "../../thirdparty/serialization_lib/third_party/half/include"
-        ${eigen_SOURCE_DIR}
-        "${eigen_SOURCE_DIR}/unsupported"
+        "../../thirdparty/eigen/"
+        "../../thirdparty/eigen/unsupported"
         "../include"
         "../src"
         "../src/ops"

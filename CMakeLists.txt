@@ -36,8 +36,6 @@ endif()
 
 add_subdirectory(thirdparty)
 
-include(cmake/dependencies.cmake)
-
 if(TOSA_TOOLS_BUILD_REFERENCE_MODEL)
     add_subdirectory(reference_model)
 endif()
