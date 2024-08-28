@@ -111,14 +111,6 @@ def dtypeIsSupportedByDataGen(dtype):
     )
 
 
-def getOpNameFromOpListName(opName):
-    """Get the op name from a TOSA_OP_LIST name that can have suffixes."""
-    for name in ("conv2d", "depthwise_conv2d", "transpose_conv2d", "conv3d"):
-        if opName.startswith(name):
-            return name
-    return opName
-
-
 def valueToName(item, value):
     """Get the name of an attribute with the given value.
 

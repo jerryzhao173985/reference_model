@@ -828,7 +828,7 @@ class TosaTensorValuesGen:
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtypeList[idx]]["json"]
             tens_meta["shape"] = [int(i) for i in shape]
             tens_meta["input_pos"] = idx
-            tens_meta["op"] = gtu.getOpNameFromOpListName(opName).upper()
+            tens_meta["op"] = testGen.getOperatorNameStr(opName).upper()
 
             variable = tensor_is_variable(pCount, idx)
 

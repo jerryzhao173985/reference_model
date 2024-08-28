@@ -95,7 +95,7 @@ def parseArgs(argv):
         dest="filter",
         default="",
         type=str,
-        help="Filter operator test names by this expression",
+        help="Filter operators by this regular expression (all operator names are lower case)",
     )
 
     filter_group.add_argument(
@@ -435,26 +435,32 @@ def main(argv=None):
     for test_type in testType:
         testList = tts.TestList(selectionCfg, selectionCriteria=selectionCriteria)
         try:
-            for opName in ttg.TOSA_OP_LIST:
-                if re.match(args.filter + ".*", opName):
+            for operator in ttg.TOSA_OP_LIST:
+                name = ttg.getOperatorNameStr(operator)
+                if re.match(args.filter + ".*", name):
                     tests = ttg.genOpTestList(
-                        opName,
+                        operator,
                         shapeFilter=args.target_shapes,
                         rankFilter=args.target_ranks,
                         dtypeFilter=args.target_dtypes,
                         testType=test_type,
                     )
-                    for testOpName, testStr, dtype, error, shapeList, argsDict in tests:
-                        if "real_name" in ttg.TOSA_OP_LIST[testOpName]:
-                            name = ttg.TOSA_OP_LIST[testOpName]["real_name"]
-                        else:
-                            name = testOpName
+                    for testOp, testStr, dtype, error, shapeList, argsDict in tests:
+                        testOpName = ttg.getOperatorNameStr(testOp)
                         test = tts.Test(
-                            name, testStr, dtype, error, shapeList, argsDict, testOpName
+                            testOpName,
+                            testStr,
+                            dtype,
+                            error,
+                            shapeList,
+                            argsDict,
+                            testOp,
                         )
                         testList.add(test)
         except Exception as e:
-            logger.error(f"INTERNAL ERROR: Failure generating test lists for {opName}")
+            logger.error(
+                f"INTERNAL ERROR: Failure generating test lists for {operator}"
+            )
             raise e
 
         if not selectionMode:

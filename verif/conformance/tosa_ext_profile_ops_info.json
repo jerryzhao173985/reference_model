@@ -1886,7 +1886,6 @@
     },
     "cond_if": {
         "group": "control_flow",
-        "gen_filter": "^cond_if",
         "generation": {
             "standard": {
                 "supports_any": [
@@ -2171,7 +2170,6 @@
             "stable_random_gen",
             "random_const_inputs"
         ],
-        "gen_filter": "^conv2d",
         "generation": {
             "tosa-pro-int": {
                 "supports_all": [
@@ -2410,7 +2408,6 @@
             "stable_random_gen",
             "random_const_inputs"
         ],
-        "gen_filter": "^conv3d",
         "generation": {
             "tosa-pro-int": {
                 "supports_all": [
@@ -2714,7 +2711,6 @@
             "stable_random_gen",
             "random_const_inputs"
         ],
-        "gen_filter": "^depthwise_conv2d",
         "generation": {
             "tosa-pro-int": {
                 "supports_all": [
@@ -9114,7 +9110,6 @@
             "stable_random_gen",
             "random_const_inputs"
         ],
-        "gen_filter": "^transpose_conv2d",
         "generation": {
             "tosa-pro-int": {
                 "supports_all": [
