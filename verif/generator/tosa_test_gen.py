@@ -53,6 +53,8 @@ class TosaTestGen:
         self.basePath = args.output_dir
         self.random_seed = args.random_seed
         self.ser = None
+        # Create Op number to name look-up
+        self.OP_NAME_LOOKUP = dict((v, k) for k, v in Op.__dict__.items())
         self.createDynamicOpLists()
         self.initOpListDefaults()
         self.quantGen = TosaQuantGen()
@@ -3104,7 +3106,7 @@ class TosaTestGen:
         # Add dynamic ops based on kernel sizes
         for opName in templateKeys:
             assert opName.endswith("_TEMPLATE"), "Found incorrect template"
-            realName = opName[: len(opName) - len("_TEMPLATE")]
+            realName = self.getOperatorNameStr(opName)
             template = self.TOSA_OP_LIST[opName]
             k_rank = 3 if realName == "conv3d" else 2
 
@@ -3133,7 +3135,6 @@ class TosaTestGen:
                 kernelOp = template.copy()
                 kernelOp["filter"] = k
                 kernelOp["template"] = False
-                kernelOp["real_name"] = realName
                 self.TOSA_OP_LIST[testName] = kernelOp
 
             # Delete the template after having created the dynamic ops
@@ -3180,6 +3181,14 @@ class TosaTestGen:
                 _ = self.TOSA_OP_LIST[op]["rank"]
             except KeyError:
                 self.TOSA_OP_LIST[op]["rank"] = self.DEFAULT_RANK_RANGE
+
+    def getOperatorNameStr(self, operator):
+        # Converts an operator entry name in TOSA_OP_LIST into a TOSA operator name
+        assert operator in self.TOSA_OP_LIST, "Operator not found in TOSA_OP_LIST"
+
+        op = self.TOSA_OP_LIST[operator]["op"]
+        # Look up operator name in the Op class look up dictionary
+        return self.OP_NAME_LOOKUP[op].lower()
 
     # Tensor operator list
     #  'op': op name
