@@ -14,6 +14,7 @@
 //    limitations under the License.
 
 #include "reduction.h"
+#include "dtype_limits.h"
 #include "quant_util.h"
 
 using namespace TosaReference;
@@ -103,6 +104,7 @@ struct AllReducer
         return accum;
     }
 };
+
 struct AnyReducer
 {
     static const bool PacketAccess = false;
@@ -115,6 +117,42 @@ struct AnyReducer
         return false;
     }
     bool finalize(const bool accum) const
+    {
+        return accum;
+    }
+};
+
+template <TOSA_REF_TYPE Dtype, typename T>
+struct MaxReducer
+{
+    static const bool PacketAccess = false;
+    void reduce(const T val, T* accum)
+    {
+        *accum = applyMax<T>(*accum, val);
+    }
+    T initialize() const
+    {
+        return DtypeLimits<Dtype>::low_extreme;
+    }
+    T finalize(const T accum) const
+    {
+        return accum;
+    }
+};
+
+template <TOSA_REF_TYPE Dtype, typename T>
+struct MinReducer
+{
+    static const bool PacketAccess = false;
+    void reduce(const T val, T* accum)
+    {
+        *accum = applyMin<T>(*accum, val);
+    }
+    T initialize() const
+    {
+        return DtypeLimits<Dtype>::high_extreme;
+    }
+    T finalize(const T accum) const
     {
         return accum;
     }
@@ -141,7 +179,28 @@ int OpReduceAny<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceMax<Rank, Dtype>::eval()
 {
-    this->out->getTensor() = this->in->getTensor().maximum(this->dims).reshape(this->out->getTensor().dimensions());
+    auto reduce = [this]<typename T>() {
+        return this->out->getTensor() = this->in->getTensor()
+                                            .reduce(this->dims, MaxReducer<Dtype, T>())
+                                            .reshape(this->out->getTensor().dimensions());
+    };
+
+    if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
+    {
+        reduce.template operator()<float>();
+    }
+    else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
+    {
+        reduce.template operator()<double>();
+    }
+    else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)
+    {
+        this->out->getTensor() = this->in->getTensor().maximum(this->dims).reshape(this->out->getTensor().dimensions());
+    }
+    else
+    {
+        ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
+    }
 
     return GraphNode::eval();
 }
@@ -149,7 +208,28 @@ int OpReduceMax<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceMin<Rank, Dtype>::eval()
 {
-    this->out->getTensor() = this->in->getTensor().minimum(this->dims).reshape(this->out->getTensor().dimensions());
+    auto reduce = [this]<typename T>() {
+        return this->out->getTensor() = this->in->getTensor()
+                                            .reduce(this->dims, MinReducer<Dtype, T>())
+                                            .reshape(this->out->getTensor().dimensions());
+    };
+
+    if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
+    {
+        reduce.template operator()<float>();
+    }
+    else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
+    {
+        reduce.template operator()<double>();
+    }
+    else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)
+    {
+        this->out->getTensor() = this->in->getTensor().minimum(this->dims).reshape(this->out->getTensor().dimensions());
+    }
+    else
+    {
+        ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
+    }
 
     return GraphNode::eval();
 }
