@@ -297,6 +297,25 @@ class TGen:
         return tf_placeholders, tf_consts
 
     @staticmethod
+    def tgReduce(op, shape, dtype, rng, elem_signedness=ElemSignedness.ALL_RANGE):
+        tf_placeholders, tf_consts = TGen.tgBasic(
+            op, shape, dtype, rng, elem_signedness
+        )
+        assert len(tf_placeholders) == 1
+
+        def sample(size):
+            return np.random.choice([1, 0], size, p=[0.1, 0.9]).astype(bool)
+
+        # Fills a small random sample from the input with nan, inf, and -inf.
+        if dtype == tf.float32 or dtype == tf.float16 or dtype == tf.complex64:
+            element = tf_placeholders[0][1]
+            element[sample(element.shape)] = np.nan
+            element[sample(element.shape)] = np.inf
+            element[sample(element.shape)] = -np.inf
+
+        return tf_placeholders, tf_consts
+
+    @staticmethod
     def tgRecurrent(op, ifm_shape, dtype, rng):
         # Require rank 3 shape for recurrent networks
         if len(ifm_shape) != 3:

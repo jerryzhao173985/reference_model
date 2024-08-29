@@ -922,6 +922,30 @@ TF_OP_LIST = {
             "tf": TYPE_FIB,
         },
     },
+    "reduce_max_special_fp": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.ReduceMax, TGen.tgReduce, ArgGen.agAxesListKeepdims),
+        "types": {
+            "tf": TYPE_F,
+            # This test generates special floating number such as nan and inf that cannot be quantized.
+        },
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(14, 19)],
+        },
+    },
+    "reduce_min_special_fp": {
+        "operands": (1, 0),
+        "build_fcn": (TBuilder.ReduceMin, TGen.tgReduce, ArgGen.agAxesListKeepdims),
+        "types": {
+            "tf": TYPE_F,
+            # This test generates special floating number such as nan and inf that cannot be quantized.
+        },
+        "custom_shapes": {
+            "custom_shape_only": True,
+            "shape_list": [(14, 19)],
+        },
+    },
 }
 
 # Shapes to be tested; default can be overwritten
