@@ -436,9 +436,11 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,32",
+                        "1,12",
                         "--target-rank",
                         "4",
+                        "5",
+                        "6",
                         "--num-rand-permutations",
                         "2"
                     ]
@@ -464,6 +466,33 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "12,24",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,12",
+                        "--target-rank",
+                        "6",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             },
@@ -485,6 +514,33 @@
                         "1",
                         "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "10,26",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,6",
+                        "--target-rank",
+                        "6",
                         "--num-rand-permutations",
                         "2"
                     ]
