@@ -1912,7 +1912,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,16",
+                        "2,15",
                         "--target-rank",
                         "4",
                         "5",
@@ -1942,6 +1942,21 @@
                         "3",
                         "--num-const-inputs-concat",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,9",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-const-inputs-concat",
+                        "1"
                     ]
                 ]
             },
@@ -1965,6 +1980,21 @@
                         "3",
                         "--num-const-inputs-concat",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,12",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-const-inputs-concat",
+                        "1"
                     ]
                 ]
             }
@@ -5842,7 +5872,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,11",
+                        "1,7",
                         "--target-rank",
                         "4",
                         "5",
@@ -5870,6 +5900,19 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,11",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6"
                     ]
                 ]
             },
@@ -5893,6 +5936,19 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "2,10",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6"
                     ]
                 ]
             },
@@ -7186,7 +7242,7 @@
                         "--fp-values-range",
                         "-max,max",
                         "--tensor-dim-range",
-                        "1,10",
+                        "1,13",
                         "--target-rank",
                         "4",
                         "5",
@@ -7216,6 +7272,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,10",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             },
@@ -7239,6 +7310,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,6",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             }
