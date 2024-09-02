@@ -503,6 +503,56 @@ TEST_CASE("positive - ulp")
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
+
+    SUBCASE("same - small inputs")
+    {
+        // We have introduced bugs in the past in the computation of ULP for values that are near
+        // the normal minimum. Adding a specialized test to capture those errors in the future.
+
+        // Generate random values in [normal_min, 10*normal_min]
+        std::uniform_real_distribution<float> smallDis(1.0, 10.0);
+        auto smallData_fp32 = std::vector<float>(elementCount);
+        std::generate(std::begin(smallData_fp32), std::end(smallData_fp32),
+                      [&]() { return std::numeric_limits<float>::min() * smallDis(getRandomGenerator()); });
+
+        std::vector<double> smallData_fp64(smallData_fp32.begin(), smallData_fp32.end());
+
+        std::for_each(std::begin(smallData_fp32), std::end(smallData_fp32), [](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value = increment(value, 5);
+        });
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
+    }
+    SUBCASE("different - small inputs")
+    {
+        // We have introduced bugs in the past in the computation of ULP for values that are near
+        // the normal minimum. Adding a specialized test to capture those errors in the future.
+
+        // Generate random values in [normal_min, 10*normal_min]
+        std::uniform_real_distribution<float> smallDis(1.0, 10.0);
+        auto smallData_fp32 = std::vector<float>(elementCount);
+        std::generate(std::begin(smallData_fp32), std::end(smallData_fp32),
+                      [&]() { return std::numeric_limits<float>::min() * smallDis(getRandomGenerator()); });
+
+        std::vector<double> smallData_fp64(smallData_fp32.begin(), smallData_fp32.end());
+
+        std::for_each(std::begin(smallData_fp32), std::end(smallData_fp32), [](auto& value) {
+            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+                value = increment(value, 6);
+        });
+
+        const auto referenceTensor =
+            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
+        const auto implementationTensor =
+            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
+        REQUIRE_FALSE(
+            tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
+    }
 }
 
 TEST_CASE("positive - abs error")

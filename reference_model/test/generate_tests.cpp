@@ -684,19 +684,18 @@ TEST_CASE("positive - FP32 fully_connected dot product (values -8, -7 & -6 from 
     }
     SUBCASE("fully_connected, set 1, param 0")
     {
-        // NOTE: Python test script produced 0x5e6cc8d7 - so off by 1
-        std::vector<uint32_t> lastExpected = { 0x5e531bbf, 0x5e6cc8d8, 0x5e4e2539 };
+        // NOTE: Python test script produced 0xde964d44 - so off by 1
+        std::vector<uint32_t> lastExpected = { 0xdea1b757, 0xde56d7ca, 0xde964d43 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 0, lastExpected);
     }
     SUBCASE("fully_connected, set 1, param 1")
     {
-        std::vector<uint32_t> lastExpected = { 0x5e9870df, 0x5e9824c5, 0x5e9a898f };
+        std::vector<uint32_t> lastExpected = { 0xde5fddaa, 0x5e4aba06, 0x5ea189e1 };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 1, lastExpected);
     }
     SUBCASE("fully_connected, set 1, param 2")
     {
-        // NOTE: Python test script produced 0x7dc95352 - so off by 1
-        std::vector<uint32_t> lastExpected = { 0x7d9a212a, 0x7dc95351, 0x7db7c1f2 };
+        std::vector<uint32_t> lastExpected = { 0x7db7c1f2, 0xfd54bc35, 0xfdaa63de };
         fully_connected_test_FP32(tosaName, tosaElements, templateJsonCfg, "1", 2, lastExpected);
     }
     SUBCASE("fully_connected, set 2, param 0")
