@@ -3540,12 +3540,20 @@
                         "fp32",
                         "--fp-values-range",
                         "-max,max",
-                        "--tensor-dim-range",
-                        "5,20",
                         "--target-shape",
                         "2,65536,1",
                         "1,2,65535",
                         "5000,1,1"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "49,7,3",
+                        "11,11,11"
                     ]
                 ]
             },
@@ -3588,6 +3596,16 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "83,3,3",
+                        "7,29,19"
                     ]
                 ]
             },
@@ -3611,6 +3629,16 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "83,3,3",
+                        "7,29,19"
                     ]
                 ]
             }
@@ -7885,7 +7913,21 @@
                         "--target-shape",
                         "1,65541,1",
                         "1,1,65531",
-                        "2989,6,1"
+                        "2989,6,1",
+                        "19,67,11",
+                        "7,13,2",
+                        "41,83,3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "5,67,29",
+                        "53,5,2",
+                        "41,83,3"
                     ]
                 ]
             },
@@ -7905,6 +7947,17 @@
                         "5,56",
                         "--max-batch-size",
                         "56"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "11,7,2",
+                        "3,5,97",
+                        "23,17,3"
                     ]
                 ]
             },
@@ -8141,6 +8194,19 @@
                         "4",
                         "5",
                         "6"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "7,31,2",
+                        "47,59",
+                        "5,2,11,13,3",
+                        "--num-rand-permutations",
+                        "2"
                     ]
                 ]
             }
