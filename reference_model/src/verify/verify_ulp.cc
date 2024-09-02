@@ -37,11 +37,10 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     {
         // Work out the values magnitude - by raising 2 to the power of the
         // exponent
-        const double refPower2 = exp2(ilog2(std::abs(referenceValue)));
+        const double refPower2 = std::max(exp2(ilog2(std::abs(referenceValue))), AccPrecision<OutType>::normal_min);
         // Get the value of changing the last bit - by shifting the least significant bit to this magnitude
         // i.e. the ULP.
-        double ulpValue =
-            std::max(refPower2 * exp2(-AccPrecision<OutType>::normal_frac), AccPrecision<OutType>::normal_min);
+        double ulpValue = refPower2 * exp2(-AccPrecision<OutType>::normal_frac);
 
         errBound = ulpValue * cfg->ulp;
     }
