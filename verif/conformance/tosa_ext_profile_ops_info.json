@@ -7552,6 +7552,19 @@
                         "1",
                         "2",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,8",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6"
                     ]
                 ]
             },
@@ -7573,6 +7586,19 @@
                         "1",
                         "2",
                         "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,12",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6"
                     ]
                 ]
             }
@@ -8451,6 +8477,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,7",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             },
@@ -8474,6 +8515,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "2,14",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             }
@@ -9052,6 +9108,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,12",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             },
@@ -9075,6 +9146,21 @@
                         "3",
                         "--num-rand-permutations",
                         "2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,10",
+                        "--target-rank",
+                        "4",
+                        "5",
+                        "6",
+                        "--num-rand-permutations",
+                        "1"
                     ]
                 ]
             }
