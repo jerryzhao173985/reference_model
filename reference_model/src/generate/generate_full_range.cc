@@ -13,24 +13,38 @@
 //    limitations under the License.
 
 #include "generate_full_range.h"
+#include "cfloat.h"
 #include "half.hpp"
+
+using namespace std;
 
 namespace
 {
-
-template <typename DataType>
-bool generate(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
+template <typename BinaryType>
+void generateBinaryValues(const TosaReference::GenerateConfig& cfg, BinaryType* data, const int64_t elements)
 {
     const TosaReference::FullRangeInfo& frinfo = cfg.fullRangeInfo;
-    DataType value                             = frinfo.startVal;
+    BinaryType value                           = frinfo.startVal;
 
-    const auto T = TosaReference::numElementsFromShape(cfg.shape);
-    for (auto t = 0; t < T; ++t)
+    // Generate the full range of binary data values - wrapping as necessary
+    // For floating point type representations this will enable testing of all values
+    for (auto t = 0; t < elements; ++t)
     {
         data[t] = value;
         value++;
     }
-    return true;
+}
+
+template <typename DataType>
+void zeroSubnorm(DataType* data, const int64_t elements)
+{
+    for (auto t = 0; t < elements; ++t)
+    {
+        if (fpclassify(data[t]) == FP_SUBNORMAL)
+        {
+            data[t] = static_cast<DataType>(0.0);
+        }
+    }
 }
 }    // namespace
 
@@ -45,16 +59,37 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
         return false;
     }
 
+    const auto elements = TosaReference::numElementsFromShape(cfg.shape);
+
     switch (cfg.dataType)
     {
-        case DType::DType_FP16:
+        case DType::DType_FP16: {
+            uint16_t* outBinaryData = reinterpret_cast<uint16_t*>(data);
+            generateBinaryValues(cfg, outBinaryData, elements);
+
+            // TODO: Re-enable subnorm testing
+            // Skip sub-normal values as they are allowed to be flushed to zero
+            // This is not currently supported by Conformance Testing
+            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            zeroSubnorm(outData, elements);
+            break;
+        }
         case DType::DType_BF16: {
-            uint16_t* outData = reinterpret_cast<uint16_t*>(data);
-            return generate(cfg, outData, size);
+            uint16_t* outBinaryData = reinterpret_cast<uint16_t*>(data);
+            generateBinaryValues(cfg, outBinaryData, elements);
+
+            // TODO: Re-enable subnorm testing
+            // Skip sub-normal values as they are allowed to be flushed to zero and
+            // this is not currently supported by Conformance Testing
+            bf16* outData = reinterpret_cast<bf16*>(data);
+            zeroSubnorm(outData, elements);
+            break;
         }
         default:
             WARNING("[Generator][FR] Unsupported type.");
             return false;
     }
+
+    return true;
 }
 }    // namespace TosaReference
