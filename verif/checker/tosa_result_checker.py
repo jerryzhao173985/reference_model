@@ -193,7 +193,6 @@ def test_check(
         np.uint8,
         np.uint16,
     ):
-
         if np.all(np.absolute(reference_result - test_result) <= quantize_tolerance):
             _print_result(LogColors.GREEN, "Results PASS {}".format(test_name))
             return (TestResult.PASS, 0.0, "")

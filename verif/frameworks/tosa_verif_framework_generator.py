@@ -992,7 +992,6 @@ def gen_rand_shapes(args):
             volume = 1
             skip_shape = False
             for i in range(rank):
-
                 volume *= new_shape[i]
 
                 # Reduce the shape, while it's larger than the maximum volume
@@ -1022,7 +1021,6 @@ def run_unit_test(
     result_name,
     seed,
 ):
-
     try:
         op = TF_OP_LIST[op_name]
         op_fcn, tensor_gen_fcn, arg_gen_fcn = op["build_fcn"]
@@ -1167,12 +1165,10 @@ def run_unit_test(
         ).get_concrete_function()
 
         if is_quantized:
-
             assert dtype is tf.float32, "quantized test must come from float32 graph"
 
             # 1. Quantize float placeholder npy to quantized to feed the graph
             for idx, (name, val) in enumerate(placeholders):
-
                 # we use np.amin()/np.amax() to determine dynamic range
                 # for quantized test
                 zeropoint = 0
@@ -1280,7 +1276,6 @@ def run_unit_test(
                 f.write(tflite_model)
 
         else:  # is_quantized is False
-
             # 1. Saved out numpy array directly
             for idx, (name, val) in enumerate(placeholders):
                 placeholder_vals.append(tf.convert_to_tensor(val))
@@ -1437,7 +1432,6 @@ def build_const_net(
     filter,
     unit_test_args,
 ):
-
     if quantized_inference_dtype:
         quant_dtype = get_tf_dtype(quantized_inference_dtype)
         test_dir = "test_{}_{}".format(op_name, get_shape_str(curr_shape, quant_dtype))
@@ -1498,7 +1492,6 @@ def op_name_hash(op_name):
 
 
 def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_args):
-
     if not args.quiet:
         print(
             "Generating tests for {}                                        ".format(
@@ -1567,7 +1560,6 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
 
     # populate non quantized unit test arguments
     for dtype in nonquantized_dtypes:
-
         excluded_framework_set = set(ALL_FRAMEWORKS)
         if dtype in tf_nonquantized_dtypes:
             excluded_framework_set.remove("tf")

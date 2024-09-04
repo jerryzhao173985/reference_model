@@ -109,7 +109,6 @@ class ArgGen:
                 for padding in ["SAME", "VALID"]:
                     for dilation_h in [1, 2]:
                         for dilation_w in [1, 2]:
-
                             # Disqualify argument combinations that would cause
                             # an illegal convolution
 
@@ -169,7 +168,6 @@ class ArgGen:
                         for dilation_d in [1, 2]:
                             for dilation_h in [1, 2]:
                                 for dilation_w in [1, 2]:
-
                                     # Disqualify argument combinations that would cause
                                     # an illegal convolution
                                     # fmt: off
@@ -253,7 +251,6 @@ class ArgGen:
             for padding in ["SAME", "VALID"]:
                 for dilation_h in [1, 2]:
                     for dilation_w in [1, 2]:
-
                         # Disqualify argument combinations that would cause an illegal
                         # convolution
 
@@ -337,7 +334,6 @@ class ArgGen:
                 for kernel_h in [1, 2]:
                     for kernel_w in [1, 2]:
                         for padding in ["SAME", "VALID"]:
-
                             if (padding == "VALID") and (
                                 (shapes[1] % (kernel_h * stride_h) > 0)
                                 or (shapes[2] % (kernel_w * stride_w) > 0)
@@ -516,7 +512,6 @@ class ArgGen:
             end_mask = rng.integers(0, new_rank)
 
             for j in range(new_rank):
-
                 if begin_mask & (1 << j) or new_shapes[j] < 2:
                     begin[j] = 0
                 else:

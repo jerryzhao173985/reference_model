@@ -378,7 +378,6 @@ def positive_integer_type(argv_str):
 
 
 def main(argv=None):
-
     args = parseArgs(argv)
 
     loglevels = (logging.WARNING, logging.INFO, logging.DEBUG)

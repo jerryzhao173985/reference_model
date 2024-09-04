@@ -136,7 +136,6 @@ class TGen:
 
     @staticmethod
     def tgConvCommon(op, ifm_shape, filter_shape, out_channels, dtype, rng):
-
         # Take the shape and generate an input and filter
         tf_placeholders = []
         tf_consts = []
@@ -157,7 +156,6 @@ class TGen:
 
     @staticmethod
     def tgConv2d(op, ifm_shape, dtype, rng):
-
         # Require rank 4 shape
         if len(ifm_shape) != 4:
             return [], []
@@ -173,7 +171,6 @@ class TGen:
 
     @staticmethod
     def tgDepthwiseConv2d(op, ifm_shape, dtype, rng):
-
         # Require rank 4 shape
         if len(ifm_shape) != 4:
             return [], []
@@ -189,7 +186,6 @@ class TGen:
 
     @staticmethod
     def tgTransposeConv2d(op, ifm_shape, dtype, rng):
-
         # Require rank 4 shape
         if len(ifm_shape) != 4:
             return [], []
@@ -205,7 +201,6 @@ class TGen:
 
     @staticmethod
     def tgConv3d(op, ifm_shape, dtype, rng):
-
         # Require rank 5 shape
         if len(ifm_shape) != 5:
             return [], []
@@ -356,7 +351,6 @@ class TGen:
 
     @staticmethod
     def tgBroadcastTo(op, shape, dtype, rng):
-
         pl, const = op["operands"]
 
         assert pl == 1

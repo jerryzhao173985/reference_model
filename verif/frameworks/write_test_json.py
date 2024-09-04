@@ -22,7 +22,6 @@ def write_test_json(
     test_name=None,
     num_variables=None,
 ):
-
     test_desc = dict()
 
     if test_name:

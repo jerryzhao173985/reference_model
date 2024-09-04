@@ -77,7 +77,6 @@ def _run_sh_command(args, cwd, full_cmd):
         logger.info(f"stderr: \n{stderr}")
         logger.info(f"stdout: \n{stdout}")
     if rc.returncode != 0:
-
         raise Exception(
             "Error running command: {}.\n{}".format(
                 " ".join(full_cmd_esc), rc.stderr.decode("utf-8")

@@ -32,7 +32,6 @@ class TosaQuantGen:
 
     @staticmethod
     def getZeroPoint(rng, zeropoint, dtype, error_name=None):
-
         if dtype == DType.INT8:
             if zeropoint is not None:
                 return min(127, max(-128, zeropoint))
@@ -839,7 +838,6 @@ class TosaTensorValuesGen:
                 assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
 
         for idx, shape in enumerate(shapeList):
-
             tens_meta = {}
 
             if fixed_data_tensors[idx] is not None:
@@ -1435,7 +1433,6 @@ class TosaTensorValuesGen:
 
             i = 0
             while True:
-
                 a_arr_64 = a_arr.astype(np.int64)
                 b_arr_64 = b_arr.astype(np.int64)
 
@@ -3254,7 +3251,6 @@ class TosaArgGen:
                     # Per_channel is only valid with rank > 0
                     pc_options = (False, True) if len(shapeList[0]) > 0 else (False,)
                     for per_channel in pc_options:
-
                         if (
                             inDtype == DType.INT48
                             and scale32
@@ -3345,7 +3341,6 @@ class TosaArgGen:
 
         if dtype is DType.INT32:
             for p in range(testGen.args.num_rand_permutations):
-
                 shift = rng.randInt(0, 32)
                 arg_list.append(("perm{}_shift{}".format(p, shift), {"shift": shift}))
         else:
@@ -3467,7 +3462,6 @@ class TosaArgGen:
 
             # escape_counter limits the generation of new shapes to a reasonable time
             for escape_counter in range(100):
-
                 # Generate the new shape of the chosen new rank
                 newShape = []
                 remainingElements = totalElements
@@ -3614,7 +3608,6 @@ class TosaArgGen:
         rank = len(ifm_shape)
 
         for p in range(testGen.args.num_rand_permutations):
-
             # Pick a few random, but small multiple values
             # because otherwise this has a tendency to generate
             # enormous tensors

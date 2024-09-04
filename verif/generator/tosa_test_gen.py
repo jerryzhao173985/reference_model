@@ -2885,7 +2885,6 @@ class TosaTestGen:
         dtypeFilter=None,
         testType="positive",
     ):
-
         try:
             op = self.TOSA_OP_LIST[opName]
         except KeyError:
@@ -3189,7 +3188,6 @@ class TosaTestGen:
         """Fill in default fields for ops if they aren't already specified.
         Look for missing required fields (datastructure linting)."""
         for op in self.TOSA_OP_LIST:
-
             # Required fields
             try:
                 pl, c = self.TOSA_OP_LIST[op]["operands"]
@@ -5185,7 +5183,6 @@ class OutputShaper:
     def conv2dOp(
         ser, rng, ifm, filter, accum_dtype, strides, padding, dilations, error_name=None
     ):
-
         # IFM:    NHWC
         # Filter: OHWI
         # OFM:    NHWC
@@ -5239,7 +5236,6 @@ class OutputShaper:
     def conv3dOp(
         ser, rng, ifm, filter, accum_dtype, strides, padding, dilations, error_name=None
     ):
-
         # IFM:    NDHWC
         # Filter: ODHWI
         # OFM:    NDHWC
@@ -5492,7 +5488,6 @@ class OutputShaper:
 
     @staticmethod
     def padOp(ser, rng, a, padding, error_name=None):
-
         output_shape = a.shape.copy()
 
         for i in range(len(output_shape)):
@@ -5569,7 +5564,6 @@ class OutputShaper:
 
     @staticmethod
     def sliceOp(ser, rng, input, start, size, error_name=None):
-
         if error_name == ErrorIf.WrongOutputType:
             all_dtypes = [
                 DType.INT8,
@@ -5603,7 +5597,6 @@ class OutputShaper:
 
     @staticmethod
     def tileOp(ser, rng, a, multiples, error_name=None):
-
         output_shape = a.shape.copy()
         assert len(multiples) == len(output_shape)
 
@@ -5827,7 +5820,6 @@ class OutputShaper:
     def transposeConv2DOp(
         ser, rng, ifm, filter, accum_dtype, strides, padding, error_name=None
     ):
-
         h = (ifm.shape[1] - 1) * strides[0] + padding[0] + padding[1] + filter.shape[1]
 
         w = (ifm.shape[2] - 1) * strides[1] + padding[2] + padding[3] + filter.shape[2]
