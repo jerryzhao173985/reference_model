@@ -296,8 +296,11 @@ private:
             case Pythagoras:
                 return static_cast<DataType>(negate ? -1.41421 : 1.41421);
             case MinDenorm:
-                return negate ? -std::numeric_limits<DataType>::denorm_min()
-                              : std::numeric_limits<DataType>::denorm_min();
+                // TODO: Re-enable subnorm testing
+                // Do not test subnormal values for anything but FP8
+                // as they are allowed to be flushed to zero and are
+                // not currently supported by Conformance Testing
+                return static_cast<DataType>(negate ? -0.0 : 0.0);
             case ULPMax: {
                 DataType max = std::numeric_limits<DataType>::max();
                 DataType ulp = max - nextafter(max, static_cast<DataType>(0.0));

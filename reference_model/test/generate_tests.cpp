@@ -1581,7 +1581,8 @@ TEST_CASE("positive - FP16 full range")
 
         std::vector<half_float::half> buffer(tosaElements);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
-        std::vector<uint16_t> expected = { 0, 1, 2 };
+        // TODO: Re-enable subnorm testing - (0, 1, 2)
+        std::vector<uint16_t> expected = { 0, 0, 0 };
         check_output<half_float::half>(buffer, expected);
 
         std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
@@ -1596,7 +1597,8 @@ TEST_CASE("positive - FP16 full range")
 
         std::vector<half_float::half> buffer(tosaElements);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
-        std::vector<uint16_t> expected = { 100, 101, 102 };
+        // TODO: Re-enable subnorm testing - (100, 101, 102)
+        std::vector<uint16_t> expected = { 0, 0, 0 };
         check_output<half_float::half>(buffer, expected);
 
         std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
