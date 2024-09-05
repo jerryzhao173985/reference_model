@@ -7651,6 +7651,16 @@
                         "1,1103,1,2",
                         "--max-resize-output-dim",
                         "9100"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "3,27,57,11"
                     ]
                 ]
             },
@@ -7666,6 +7676,15 @@
                         "bf16",
                         "--fp-values-range",
                         "-max,max"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "2,41,59,3"
                     ]
                 ]
             },
