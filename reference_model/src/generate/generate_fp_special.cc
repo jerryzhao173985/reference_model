@@ -315,11 +315,27 @@ private:
                     static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT16>::max) * static_cast<DataType>(2.);
                 return negate ? -above_max : above_max;
             }
+
+// TODO: If casting to a cfloat.h type, we will implicitly cast the input to float, which cannot
+// represent all int32 values precisely. We can ignore the warning for now, as we do not need this
+// to be precise currently. But cfloat.h should be extended to support casting from other types to
+// avoid this loss of precision.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-const-int-float-conversion"
+#endif
+
             case AboveMaxINT32: {
                 DataType above_max =
                     static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_INT32>::max) * static_cast<DataType>(2.);
                 return negate ? -above_max : above_max;
             }
+
+// Recover the previous settings for diagnostics
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+
             case AboveMaxFP8E4M3: {
                 DataType above_max =
                     static_cast<DataType>(DtypeLimits<TOSA_REF_TYPE_FP8E4M3>::max) * static_cast<DataType>(2.);
