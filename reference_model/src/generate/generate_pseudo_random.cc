@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -69,14 +69,26 @@ private:
         // The code below needs to be careful with overflows.
         double mid = (max / 2) + (min / 2);
 
-        const std::array<double, 5> intervals{ min, (min / 2) + (mid / 2), mid, (mid / 2) + (max / 2), max };
+        // We will give a higher probability for numbers around the mid-point.
+        // This looks closer to real world data than a uniform distribution
+        // as we'd expect to see much more values in [-1, 1] and [-1000, 1000]
+        // than a uniform distribution would suggest
+        const double small_radius = 1.;
+        const double large_radius = 1000.;
+
+        const std::array<double, 7> intervals{ min, mid - large_radius, mid - small_radius,
+                                               mid, mid + small_radius, mid + large_radius,
+                                               max };
+
         // One weight for each interval in-between values in the intervals array
-        const std::array<double, 4> weights{ 1.0, 1.0, 1.0, 1.0 };
+        const std::array<double, 6> weights{ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
         _pwcdis = std::piecewise_constant_distribution<FP>(intervals.begin(), intervals.end(), weights.begin());
 
-        // Uniform distribution works well on smaller ranges
-        _useUniform = (std::abs(max - min) < 2000.0);
+        // Uniform distribution works well on smaller ranges and piecewise-constant will misbehave
+        // if we cannot fit four large_radius-sized segments inside the full range.
+        const double use_uniform_threshold = large_radius * 4;
+        _useUniform                        = (std::abs(max - min) < use_uniform_threshold);
     }
 
     std::mt19937_64 _gen;
