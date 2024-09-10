@@ -700,6 +700,17 @@ int initTestDesc(json& test_desc)
         test_desc["variable_file"]                 = variable_file_vec;
     }
 
+    // Overwirte --terminate_early command-line option, if test_desc["terminate_early"] specified.
+    if (test_desc.contains("terminate_early"))
+    {
+        if (!(test_desc["terminate_early"].is_boolean()))
+        {
+            WARNING("terminate_early is not a boolean in the JSON file.");
+            return 1;
+        }
+        g_func_config.terminate_early = test_desc["terminate_early"].get<bool>();
+    }
+
     return 0;
 }
 
