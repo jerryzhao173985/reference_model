@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ int func_model_parse_cmd_line(
         ("validate_only", "Validate the network, but do not read inputs or evaluate (0/1)",
             cxxopts::value<uint32_t>(func_config.validate_only))
         ("output_tensors", "Output tensors to a file (0/1)", cxxopts::value<uint32_t>(func_config.output_tensors))
+        ("terminate_early", "Terminate early if REQUIRE() fails (boolean)", cxxopts::value<bool>(func_config.terminate_early))
         ("tosa_level", "Set TOSA level (NONE, EIGHTK)",
             cxxopts::value<tosa_level_t>(func_config.tosa_level))
         ("dump_intermediates", "Dump intermediate tensors (0/1)", cxxopts::value<uint32_t>(func_config.dump_intermediates))

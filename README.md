@@ -129,6 +129,12 @@ The JSON test descriptor must have the following field:
     The expected return code of the reference model i
     (0 = VALID, 1 = ERROR, 2 = UNPREDICTABLE)
 
+The JSON test descriptor may contain the following optional field:
+* terminate_early:
+    type: boolean.
+    If set, the test will terminate early on REQUIRE() failures.
+    This value will not be overridden by the --terminate_early command-line option.
+
 Note by default, all the files specified by "tosa_file", "ifm_file",
 "ofm_file" are relative to desc.json. This could be overwritten by
 --flatbuffer_dir=, if desired.
