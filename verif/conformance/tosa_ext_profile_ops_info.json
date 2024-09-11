@@ -1248,6 +1248,16 @@
                         "--target-shape",
                         "1,1,1,65533,1",
                         "2,65538,1,1"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp16",
+                        "fp32",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--target-shape",
+                        "2,23,7,19,3,5"
                     ]
                 ]
             },
@@ -1291,7 +1301,8 @@
                         "1,16",
                         "--target-rank",
                         "4",
-                        "5"
+                        "5",
+                        "6"
                     ]
                 ]
             },
