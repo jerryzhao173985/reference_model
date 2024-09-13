@@ -16,6 +16,7 @@
 #ifndef FUNC_CONFIG_H_
 #define FUNC_CONFIG_H_
 
+#include <cstdint>
 #include <iostream>
 #include <stdio.h>
 
