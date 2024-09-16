@@ -572,6 +572,32 @@ make flatc
 ### Python bindings for the ModelRunner API
 As another alternative to the `tosa_reference_model` executable, Python bindings are provided which can be used to invoke the TOSA Reference Model easily within Python. Example usage can be found in `reference_model/python_bindings/example.py`. The Python bindings can be built by running `pip install .` from the repository's root directory, which automatically runs CMake and then installs a Python package `tosa_reference_model`. See the docstring in `reference_model/python_bindings/python_bindings.cpp` or use Python's built-in `help()` for more information.
 
+## Pre Commit Checks
+
+Before pushing a commit, pre commit checks must be run to ensure conformity.
+
+### Prerequisites
+* Install the necessary tools stated in the [Installation Requirements section](#installation-requirements) and run the stated command to check out the required git submodules.
+* Compile the TOSA Reference Model following the instructions stated in the [Compilation section](#compilation)
+* Do as instructed in the [Installation section](#installation)
+
+#### Extra Tools
+While in the virtual environment, install these using [pip](https://pypi.org/project/pip/)
+* pre-commit (tested with 3.5.0)
+* pytest (tested with 8.3.3)
+* clang-format (tested with 14)
+
+``` bash
+pip install pre-commit==3.5.0 pytest==8.3.3 clang-format==14
+```
+
+### Run Pre Commit Checks
+While still in the virtual environment run:
+
+``` bash
+pre-commit run --all
+```
+
 ## License
 
 The *TOSA Reference Model* and TOSA Unit Tests are licensed under Apache-2.0.
