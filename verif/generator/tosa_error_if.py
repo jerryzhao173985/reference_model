@@ -426,7 +426,7 @@ class TosaErrorValidator:
             Op.DEPTHWISE_CONV2D,
             Op.TRANSPOSE_CONV2D,
         ]:
-            wrong_input_dtypes = [[t, t, t] for t in wrong_input_dtypes]
+            wrong_input_dtypes = [[t, t, t, t, t] for t in wrong_input_dtypes]
 
         if op["op"] == Op.CLAMP:
             wrong_input_dtypes.remove(DType.INT48)

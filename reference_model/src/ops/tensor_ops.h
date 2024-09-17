@@ -92,6 +92,8 @@ public:
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
     using TBias           = Eigen::Tensor<OutEigenType, 1>;
+    using TInZp           = Eigen::Tensor<InEigenType, 1>;
+    using TWeightZp       = Eigen::Tensor<WeightEigenType, 1>;
     using TOut            = Eigen::Tensor<OutEigenType, 4>;
 
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
@@ -122,6 +124,8 @@ public:
     using TIn             = Eigen::Tensor<InEigenType, 5>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 5>;
     using TBias           = Eigen::Tensor<OutEigenType, 1>;
+    using TInZp           = Eigen::Tensor<InEigenType, 1>;
+    using TWeightZp       = Eigen::Tensor<WeightEigenType, 1>;
     using TOut            = Eigen::Tensor<OutEigenType, 5>;
 
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
@@ -151,6 +155,8 @@ public:
     using OutEigenType    = typename GetEigenType<OutDtype>::type;
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
+    using TInZp           = Eigen::Tensor<InEigenType, 1>;
+    using TWeightZp       = Eigen::Tensor<WeightEigenType, 1>;
     using TBias           = Eigen::Tensor<OutEigenType, 1>;
     using TOut            = Eigen::Tensor<OutEigenType, 4>;
 
@@ -280,6 +286,8 @@ public:
     using TIn             = Eigen::Tensor<InEigenType, 4>;
     using TWeight         = Eigen::Tensor<WeightEigenType, 4>;
     using TBias           = Eigen::Tensor<OutEigenType, 1>;
+    using TInZp           = Eigen::Tensor<InEigenType, 1>;
+    using TWeightZp       = Eigen::Tensor<WeightEigenType, 1>;
     using TOut            = Eigen::Tensor<OutEigenType, 4>;
     using TAcc            = Eigen::Tensor<AccEigenType, 4>;
 

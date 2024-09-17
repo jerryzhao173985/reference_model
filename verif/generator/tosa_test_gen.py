@@ -887,8 +887,8 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 3
-        ifm, filter, bias = inputs
+        assert len(inputs) == 5
+        ifm, filter, bias, input_zp, weight_zp = inputs
         accum_dtype = args_dict["acc_type"]
         strides = args_dict["stride"]
         padding = args_dict["pad"]
@@ -908,16 +908,10 @@ class TosaTestGen:
             error_name,
         )
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType and ifm.dtype not in (
-            DType.INT8,
-            DType.UINT8,
-        ):
+        if qinfo is None:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
-                TosaQuantGen.getZeroPoint(
-                    rng, self.args.zeropoint, result_tensor.dtype
-                ),
+                args_dict["input_zp"][0],
+                args_dict["weight_zp"][0],
             ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
@@ -939,7 +933,7 @@ class TosaTestGen:
             bias.dtype = rng.choice(wrong_dtypes)
 
         # Invalidate Input/Output list for error_if checks.
-        input_list = [ifm.name, filter.name, bias.name]
+        input_list = [ifm.name, filter.name, bias.name, input_zp.name, weight_zp.name]
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -970,9 +964,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(
-            padding, strides, dilations, qinfo[0], qinfo[1], local_bound, accum_dtype
-        )
+        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -992,8 +984,8 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 3
-        ifm, filter, bias = inputs
+        assert len(inputs) == 5
+        ifm, filter, bias, input_zp, weight_zp = inputs
         accum_dtype = args_dict["acc_type"]
         strides = args_dict["stride"]
         padding = args_dict["pad"]
@@ -1013,16 +1005,10 @@ class TosaTestGen:
             error_name,
         )
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType and ifm.dtype not in (
-            DType.INT8,
-            DType.UINT8,
-        ):
+        if qinfo is None:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
-                TosaQuantGen.getZeroPoint(
-                    rng, self.args.zeropoint, result_tensor.dtype
-                ),
+                args_dict["input_zp"][0],
+                args_dict["weight_zp"][0],
             ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
@@ -1044,7 +1030,7 @@ class TosaTestGen:
             bias.dtype = rng.choice(wrong_dtypes)
 
         # Invalidate Input/Output list for error_if checks.
-        input_list = [ifm.name, filter.name, bias.name]
+        input_list = [ifm.name, filter.name, bias.name, input_zp.name, weight_zp.name]
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1075,9 +1061,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(
-            padding, strides, dilations, qinfo[0], qinfo[1], local_bound, accum_dtype
-        )
+        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1097,8 +1081,8 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 3
-        ifm, filter, bias = inputs
+        assert len(inputs) == 5
+        ifm, filter, bias, input_zp, weight_zp = inputs
         accum_dtype = args_dict["acc_type"]
         strides = args_dict["stride"]
         out_pad = args_dict["pad"]
@@ -1109,16 +1093,10 @@ class TosaTestGen:
             self.ser, rng, ifm, filter, accum_dtype, strides, out_pad, error_name
         )
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType and ifm.dtype not in (
-            DType.INT8,
-            DType.UINT8,
-        ):
+        if qinfo is None:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
-                TosaQuantGen.getZeroPoint(
-                    rng, self.args.zeropoint, result_tensor.dtype
-                ),
+                args_dict["input_zp"][0],
+                args_dict["weight_zp"][0],
             ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
@@ -1140,7 +1118,7 @@ class TosaTestGen:
             bias.dtype = rng.choice(wrong_dtypes)
 
         # Invalidate Input/Output list for error_if checks.
-        input_list = [ifm.name, filter.name, bias.name]
+        input_list = [ifm.name, filter.name, bias.name, input_zp.name, weight_zp.name]
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1170,9 +1148,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.TransposeConvAttribute(
-            out_pad, strides, qinfo[0], qinfo[1], local_bound, accum_dtype
-        )
+        attr.TransposeConvAttribute(out_pad, strides, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1192,8 +1168,8 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 3
-        ifm, filter, bias = inputs
+        assert len(inputs) == 5
+        ifm, filter, bias, input_zp, weight_zp = inputs
         accum_dtype = args_dict["acc_type"]
         strides = args_dict["stride"]
         padding = args_dict["pad"]
@@ -1212,16 +1188,10 @@ class TosaTestGen:
             error_name,
         )
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType and ifm.dtype not in (
-            DType.INT8,
-            DType.UINT8,
-        ):
+        if qinfo is None:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, ifm.dtype),
-                TosaQuantGen.getZeroPoint(
-                    rng, self.args.zeropoint, result_tensor.dtype
-                ),
+                args_dict["input_zp"][0],
+                args_dict["weight_zp"][0],
             ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
@@ -1243,7 +1213,7 @@ class TosaTestGen:
             bias.dtype = rng.choice(wrong_dtypes)
 
         # Invalidate Input/Output list for error_if checks.
-        input_list = [ifm.name, filter.name, bias.name]
+        input_list = [ifm.name, filter.name, bias.name, input_zp.name, weight_zp.name]
         output_list = [result_tensor.name]
         num_operands = sum(op["operands"])
         input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
@@ -1274,9 +1244,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(
-            padding, strides, dilations, qinfo[0], qinfo[1], local_bound, accum_dtype
-        )
+        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -3426,16 +3394,16 @@ class TosaTestGen:
         DType.FP32,
     ]
 
-    # List of [Input Type 1, Input Type 2, Output Type]
+    # List of [Input Type, Weight Type, Output Type, Input ZP Type, Weight ZP type]
     TYPE_CONV = [
-        [DType.INT8, DType.INT4, DType.INT32],
-        [DType.INT8, DType.INT8, DType.INT32],
-        [DType.INT16, DType.INT8, DType.INT48],
-        [DType.FP16, DType.FP16, DType.FP16],
-        [DType.BF16, DType.BF16, DType.BF16],
-        [DType.FP32, DType.FP32, DType.FP32],
-        [DType.FP8E4M3, DType.FP8E4M3, DType.FP16],
-        [DType.FP8E5M2, DType.FP8E5M2, DType.FP16],
+        [DType.INT8, DType.INT4, DType.INT32, DType.INT8, DType.INT4],
+        [DType.INT8, DType.INT8, DType.INT32, DType.INT8, DType.INT8],
+        [DType.INT16, DType.INT8, DType.INT48, DType.INT16, DType.INT8],
+        [DType.FP16, DType.FP16, DType.FP16, DType.FP16, DType.FP16],
+        [DType.BF16, DType.BF16, DType.BF16, DType.BF16, DType.BF16],
+        [DType.FP32, DType.FP32, DType.FP32, DType.FP32, DType.FP32],
+        [DType.FP8E4M3, DType.FP8E4M3, DType.FP16, DType.FP8E4M3, DType.FP8E4M3],
+        [DType.FP8E5M2, DType.FP8E5M2, DType.FP16, DType.FP8E5M2, DType.FP8E5M2],
     ]
 
     DEFAULT_RANK_RANGE = (0, gtu.MAX_TENSOR_RANK)
@@ -3681,7 +3649,7 @@ class TosaTestGen:
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
             "op": Op.CONV2D,
-            "operands": (1, 2),
+            "operands": (1, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_conv2d,
@@ -3717,7 +3685,7 @@ class TosaTestGen:
         # Templated operator.  Filled in by createDynamicOpLists
         "conv3d_TEMPLATE": {
             "op": Op.CONV3D,
-            "operands": (1, 2),
+            "operands": (1, 4),
             "rank": (5, 5),
             "build_fcn": (
                 build_conv3d,
@@ -3752,7 +3720,7 @@ class TosaTestGen:
         # Templated operator.  Filled in by createDynamicOpLists
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
-            "operands": (1, 2),
+            "operands": (1, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_depthwise_conv2d,
@@ -3838,7 +3806,7 @@ class TosaTestGen:
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
             "op": Op.TRANSPOSE_CONV2D,
-            "operands": (1, 2),
+            "operands": (1, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_transpose_conv2d,

@@ -214,7 +214,8 @@ def get_conv_accum_dtypes_from_tgTypes(dtypes):
     # Get accumulate data-types from the test generator's defined types
     assert isinstance(dtypes, list) or isinstance(dtypes, tuple)
     input_dtype = dtypes[0]
-    output_dtype = dtypes[-1]
+    output_dtype = dtypes[2]
+
     # by default, accum_dtypes contains only output_dtype
     accum_dtypes = [output_dtype]
     if input_dtype == DType.FP16 and output_dtype == DType.FP16:
