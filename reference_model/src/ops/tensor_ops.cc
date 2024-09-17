@@ -636,7 +636,8 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                     else
                     {
                         REQUIRE(filter_count != 0, "OpAvgPool2d number of filters should be non-zero.");
-                        out_tens(ob, oh, ow, oc) = acc / static_cast<OutEigenType>(filter_count);
+                        out_tens(ob, oh, ow, oc) =
+                            static_cast<OutEigenType>(acc / static_cast<AccEigenType>(filter_count));
                     }
                 }
             }
