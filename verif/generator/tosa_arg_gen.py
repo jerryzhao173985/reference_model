@@ -10,6 +10,8 @@ import numpy as np
 from conformance.tosa_profiles import TosaProfiles
 from generator.tosa_error_if import ErrorIf
 from generator.tosa_error_if import TosaErrorIfArgGen
+from ml_dtypes import bfloat16
+from ml_dtypes import float8_e4m3fn
 from serializer.tosa_serializer import DTypeNames
 from tosa.DType import DType
 from tosa.NanPropagationMode import NanPropagationMode
@@ -368,7 +370,11 @@ class TosaTensorGen:
             pass
         bias_shape = np.asarray([ofm_depth])
 
-        return [ifm_shape, filter_shape, bias_shape]
+        # The shape of zero points.
+        ifm_zp_shape = np.asarray([1])
+        filter_zp_shape = np.asarray([1])
+
+        return [ifm_shape, filter_shape, bias_shape, ifm_zp_shape, filter_zp_shape]
 
     @staticmethod
     def tgConv3D(testGen, rng, op, rank, error_name=None):
@@ -401,7 +407,11 @@ class TosaTensorGen:
         # The bias is OC
         bias_shape = np.asarray([ofm_channel])
 
-        return [ifm_shape, filter_shape, bias_shape]
+        # The shape of zero points.
+        ifm_zp_shape = np.asarray([1])
+        filter_zp_shape = np.asarray([1])
+
+        return [ifm_shape, filter_shape, bias_shape, ifm_zp_shape, filter_zp_shape]
 
     @staticmethod
     def tgTransposeConv2D(testGen, rng, op, rank, error_name=None):
@@ -432,7 +442,11 @@ class TosaTensorGen:
         # The bias is OC
         bias_shape = np.asarray([ofm_depth])
 
-        return [ifm_shape, filter_shape, bias_shape]
+        # The shape of zero points.
+        ifm_zp_shape = np.asarray([1])
+        filter_zp_shape = np.asarray([1])
+
+        return [ifm_shape, filter_shape, bias_shape, ifm_zp_shape, filter_zp_shape]
 
     @staticmethod
     def tgDepthwiseConv2D(testGen, rng, op, rank, error_name=None):
@@ -440,7 +454,7 @@ class TosaTensorGen:
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 4
-        assert pl == 1 and const == 2
+        assert pl == 1 and const == 4
 
         # IFM dimensions are NHWC
         ifm_shape = testGen.makeShape(rng, rank)
@@ -468,7 +482,11 @@ class TosaTensorGen:
         # The bias is M * C
         bias_shape = np.asarray([ifm_shape[3] * filter_m])
 
-        return [ifm_shape, filter_shape, bias_shape]
+        # The shape of zero points.
+        ifm_zp_shape = np.asarray([1])
+        filter_zp_shape = np.asarray([1])
+
+        return [ifm_shape, filter_shape, bias_shape, ifm_zp_shape, filter_zp_shape]
 
     @staticmethod
     def tgFFT2d(testGen, rng, op, rank, error_name=None):
@@ -776,6 +794,39 @@ class TosaTensorValuesGen:
                 round_mode = argsDict["data_range_list"][idx].get("round", False)
             return (data_range, round_mode)
 
+        def convert_to_target_type(dtype, data):
+            if dtype == DType.SHAPE:
+                arr = np.int64(data)
+            elif dtype == DType.INT4:
+                in_size = len(data)
+                out_size = (in_size + 1) // 2
+                for i in range(out_size):
+                    val_0 = np.array(data[2 * i]).astype(np.uint8)
+                    if (2 * i + 1) < in_size:
+                        val_1 = np.array(data[2 * i + 1]).astype(np.uint8)
+                    else:
+                        val_1 = 0
+                    mask = np.uint8(0xF)
+                    arr = (val_0 & mask) | ((val_1 & mask) << 4)
+            elif dtype == DType.INT8:
+                arr = np.int8(data)
+            elif dtype == DType.INT16:
+                arr = np.int16(data)
+            elif dtype == DType.FP16:
+                arr = np.array(data, dtype=np.float16)
+            elif dtype == DType.FP32:
+                arr = np.array(data, dtype=np.float32)
+            elif dtype == DType.BF16:
+                arr = np.array(data, dtype=bfloat16)
+            elif dtype == DType.FP8E4M3:
+                arr = np.array(data).astype(float8_e4m3fn)
+            elif dtype == DType.FP8E5M2:
+                arr = np.array(data).astype(np.uint8)
+            else:
+                # Treat data as int32
+                arr = np.int32(data)
+            return arr
+
         # Variable inputs versus constants
         pCount, cCount = op["operands"]
         if "p_count" in argsDict:
@@ -822,15 +873,8 @@ class TosaTensorValuesGen:
                     assert (
                         data.size == size
                     ), "Fixed data length does not match tensor size"
-                    if dtype == DType.SHAPE:
-                        arr = np.int64(data)
-                    elif dtype == DType.INT8:
-                        arr = np.int8(data)
-                    elif dtype == DType.INT16:
-                        arr = np.int16(data)
-                    else:
-                        # Treat data as int32
-                        arr = np.int32(data)
+
+                    arr = convert_to_target_type(dtype, data)
                 else:
                     arr = rng.randTensor(shape, dtype, data_range)
                 if round_mode:
@@ -1015,6 +1059,32 @@ class TosaTensorValuesGen:
 
             if test_set:
                 argsDict["special_test_sets"] = test_set
+
+        qinfo = TosaQuantGen.qgConv(rng, None, None, dtypeList, error_name)
+
+        # Ensure new output type has correct qinfo
+        input_dtype = dtypeList[0]
+        weight_dtype = dtypeList[1]
+        if error_name == ErrorIf.WrongInputType and input_dtype not in (
+            DType.INT8,
+            DType.UINT8,
+        ):
+            qinfo = [
+                TosaQuantGen.getZeroPoint(rng, None, input_dtype),
+                TosaQuantGen.getZeroPoint(rng, None, weight_dtype),
+            ]
+
+        argsDict["input_zp"] = np.int32([qinfo[0]])
+        argsDict["weight_zp"] = np.int32([qinfo[1]])
+
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [
+            None,
+            None,
+            None,
+            argsDict["input_zp"],
+            argsDict["weight_zp"],
+        ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -2508,6 +2578,7 @@ class TosaArgGen:
 
     @staticmethod
     def agTransposeConv2D(testGen, rng, opName, shapeList, dtypes, error_name=None):
+        """The order of shape and dtype parameters is [input, weight, bias, input_zp, weight_zp]"""
         arg_list = []
 
         if testGen.args.level8k and error_name is not None:
@@ -2540,6 +2611,12 @@ class TosaArgGen:
             if error_name == ErrorIf.PadLargerEqualKernel:
                 max_filter_size = -max(k_shape[0], k_shape[1])
                 p_vals = [rng.choice(range(max_filter_size - 10, max_filter_size))]
+            elif (
+                error_name == ErrorIf.InputZeroPointNotZero
+                or error_name == ErrorIf.WeightZeroPointNotZero
+            ):
+                # Ensure the output shape is valid to focus on ZeroPointNotZero errors.
+                p_vals = [0]
             else:
                 p_vals = [
                     x
@@ -2547,12 +2624,19 @@ class TosaArgGen:
                         smallest_padding_size, testGen.args.max_conv_padding + 1
                     )
                 ]
-            paddings = {x for x in itertools.product(*([p_vals] * 4))}
             if error_name == ErrorIf.StrideSmallerOne:
                 # Can't use stride=0, as it is used to derive output shape, as a divisor
                 s_vals = [rng.choice(range(-5, 0))]
+            elif (
+                error_name == ErrorIf.InputZeroPointNotZero
+                or error_name == ErrorIf.WeightZeroPointNotZero
+            ):
+                # Ensure the output shape is valid to focus on ZeroPointNotZero errors.
+                s_vals = [1]
             else:
                 s_vals = [x for x in range(1, testGen.args.max_conv_stride + 1)]
+
+            paddings = {x for x in itertools.product(*([p_vals] * 4))}
             strides = {x for x in itertools.product(*([s_vals] * 2))}
 
             if not error_name and testGen.args.oversize:

@@ -21,10 +21,12 @@
 #include <type_traits>
 #include <vector>
 
+using namespace TosaReference;
+
 namespace
 {
-template <typename OutType>
-bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, OutType* outData, bool broadcastMode)
+template <typename StorageType, DType DataType>
+bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, StorageType* outData, bool broadcastMode)
 {
     // Copy the input int32 data and cast it to the required output type
 
@@ -32,14 +34,39 @@ bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, Ou
     {
         for (auto t = 0; t < elements; t++)
         {
-            outData[t] = static_cast<OutType>(inData[0]);
+            outData[t] = static_cast<StorageType>(inData[0]);
         }
     }
     else
     {
         for (auto t = 0; t < elements; t++)
         {
-            outData[t] = static_cast<OutType>(inData[t]);
+            outData[t] = static_cast<StorageType>(inData[t]);
+        }
+    }
+    return true;
+}
+
+template <>
+bool copyFixedData<int8_t, DType_INT4>(const int64_t elements,
+                                       const std::vector<int32_t> inData,
+                                       int8_t* outData,
+                                       bool broadcastMode)
+{
+    // Copy the input int32 data and cast it to the required output type
+
+    if (broadcastMode)
+    {
+        for (auto t = 0; t < elements; t++)
+        {
+            writeValue<int8_t, TOSA_REF_TYPE_INT4>(static_cast<int64_t>(inData[0]), t, outData);
+        }
+    }
+    else
+    {
+        for (auto t = 0; t < elements; t++)
+        {
+            writeValue<int8_t, TOSA_REF_TYPE_INT4>(static_cast<int64_t>(inData[t]), t, outData);
         }
     }
     return true;
@@ -59,7 +86,7 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
     }
 
     std::vector<int32_t> inData = cfg.fixedDataInfo.data;
-    const auto T                = TosaReference::numElementsFromShape(cfg.shape);
+    const auto T                = numElementsFromShape(cfg.shape);
     const int64_t inSize        = static_cast<int64_t>(inData.size());
     const bool broadcastMode    = (inSize == 1);
     // Check data size matches tensor size or it is 1 so that we can broadcast the values
@@ -72,33 +99,45 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
 
     switch (cfg.dataType)
     {
-        case DType::DType_SHAPE: {
+        case DType_SHAPE: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<int32_t, DType_SHAPE>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_INT32: {
+        case DType_INT32: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<int32_t, DType_INT32>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_INT16: {
+        case DType_INT16: {
             int16_t* outData = reinterpret_cast<int16_t*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<int16_t, DType_INT16>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_INT8: {
+        case DType_INT8: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<int8_t, DType_INT8>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_FP16: {
+        case DType_INT4: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return copyFixedData<int8_t, DType_INT4>(T, inData, outData, broadcastMode);
+        }
+        case DType_FP16: {
             half_float::half* outData = reinterpret_cast<half_float::half*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<half_float::half, DType_FP16>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_FP32: {
+        case DType_FP32: {
             float* outData = reinterpret_cast<float*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<float, DType_FP32>(T, inData, outData, broadcastMode);
         }
-        case DType::DType_BF16: {
+        case DType_BF16: {
             bf16* outData = reinterpret_cast<bf16*>(data);
-            return copyFixedData(T, inData, outData, broadcastMode);
+            return copyFixedData<bf16, DType_BF16>(T, inData, outData, broadcastMode);
+        }
+        case DType_FP8E4M3: {
+            fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
+            return copyFixedData<fp8e4m3, DType_FP8E4M3>(T, inData, outData, broadcastMode);
+        }
+        case DType_FP8E5M2: {
+            fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
+            return copyFixedData<fp8e5m2, DType_FP8E5M2>(T, inData, outData, broadcastMode);
         }
         default:
             WARNING("[Generator][FD] Unsupported type %s.", EnumNameDType(cfg.dataType));

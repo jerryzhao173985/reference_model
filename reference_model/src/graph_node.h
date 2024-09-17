@@ -307,7 +307,12 @@ protected:
     }
 
     int validateRequiredOperands();
+
+    // Validate if the rank of input tensor is within the range [requiredRankMin, requiredRankMax].
     int validateRequiredRank(const Tensor* t);
+
+    // Validate if the rank of input tensor is within the specified range [rankMin, rankMax].
+    int validateRequiredRank(const Tensor* t, int rankMin, int rankMax);
 
     // Parent SubgraphTraverser
     SubgraphTraverser* parent_sgt;

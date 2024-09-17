@@ -218,17 +218,6 @@ int check_conv_attribute(std::unique_ptr<tosa::TosaConvAttribute>& attribute,
         return 1;
     }
 
-    if (InDtype != TOSA_REF_TYPE_INT8 && attribute->input_zp() != 0)
-    {
-        msg = "Input zero point must be zero for non-int8 data";
-        return 1;
-    }
-    if (WeightDtype != TOSA_REF_TYPE_INT8 && attribute->weight_zp() != 0)
-    {
-        msg = "Weight zero point must be zero for non-int8 data";
-        return 1;
-    }
-
     return 0;
 }
 
@@ -662,7 +651,7 @@ OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv2d(SubgraphTraverser* 
                                                              uint64_t id_)
     : GraphNode(sgt_, Op_CONV2D, id_)
 {
-    setRequiredOperands(3, 1);
+    setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
     INIT_ATTRIBUTE(Conv);
@@ -678,15 +667,11 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(inputs[4], 1, 1) ||
+        validateRequiredRank(outputs[0]))
     {
         return 1;
-    }
-
-    // 'bias' checked separatedly since it doens't make sense to make required rank ranging from 1 to 4
-    if (inputs[2]->getRank() != 1)
-    {
-        printNodeValidationError("OpConv2d: bias tensor must be rank 1");
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
@@ -773,12 +758,26 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     pad[2] = std::make_pair(pad_left, pad_right);
     pad[3] = std::make_pair(0, 0);
 
-    TIn input_val      = this->input->getTensor();
-    TWeight weight_val = this->weight->getTensor();
-    if (InDtype == TOSA_REF_TYPE_INT8 || WeightDtype == TOSA_REF_TYPE_INT8)
+    TIn input_val        = this->input->getTensor();
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    if (InDtype == TOSA_REF_TYPE_INT8)
     {
-        input_val  = input_val - (InEigenType)attribute->input_zp();
-        weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
+        input_val = input_val - input_zp;
+    }
+    else
+    {
+        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
+    }
+
+    TWeight weight_val        = this->weight->getTensor();
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    if (WeightDtype == TOSA_REF_TYPE_INT8)
+    {
+        weight_val = weight_val - weight_zp;
+    }
+    else
+    {
+        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
     }
 
     TBias bias_val = this->bias->getTensor();
@@ -870,7 +869,7 @@ OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv3d(SubgraphTraverser* 
                                                              uint64_t id_)
     : GraphNode(sgt_, Op_CONV3D, id_)
 {
-    setRequiredOperands(3, 1);
+    setRequiredOperands(5, 1);
     setRequiredRank(5, 5);
 
     INIT_ATTRIBUTE(Conv);
@@ -886,15 +885,11 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(inputs[4], 1, 1) ||
+        validateRequiredRank(outputs[0]))
     {
         return 1;
-    }
-
-    // 'bias' checked separatedly since it doens't make sense to make required rank ranging from 1 to 4
-    if (inputs[2]->getRank() != 1)
-    {
-        printNodeValidationError("OpConv3d: bias tensor must be rank 1");
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
@@ -996,12 +991,26 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     pad[3] = std::make_pair(pad_left, pad_right);
     pad[4] = std::make_pair(0, 0);
 
-    TIn input_val      = this->input->getTensor();
-    TWeight weight_val = this->weight->getTensor();
-    if (InDtype == TOSA_REF_TYPE_INT8 || WeightDtype == TOSA_REF_TYPE_INT8)
+    TIn input_val        = this->input->getTensor();
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    if (InDtype == TOSA_REF_TYPE_INT8)
     {
-        input_val  = input_val - (InEigenType)attribute->input_zp();
-        weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
+        input_val = input_val - input_zp;
+    }
+    else
+    {
+        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
+    }
+
+    TWeight weight_val        = this->weight->getTensor();
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    if (WeightDtype == TOSA_REF_TYPE_INT8)
+    {
+        weight_val = weight_val - weight_zp;
+    }
+    else
+    {
+        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
     }
 
     TBias bias_val = this->bias->getTensor();
@@ -1103,7 +1112,7 @@ OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpDepthwiseConv2d(S
                                                                                uint64_t id_)
     : GraphNode(sgt_, Op_DEPTHWISE_CONV2D, id_)
 {
-    setRequiredOperands(3, 1);
+    setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
     INIT_ATTRIBUTE(Conv);
@@ -1119,15 +1128,11 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttr
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(inputs[4], 1, 1) ||
+        validateRequiredRank(outputs[0]))
     {
         return 1;
-    }
-
-    // 'bias' checked separatedly since it doens't make sense to make required rank ranging from 1 to 4
-    if (inputs[2]->getRank() != 1)
-    {
-        printNodeValidationError("OpDepthwiseConv2d: bias tensor must be rank 1");
     }
 
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
@@ -1214,12 +1219,26 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     pad[2] = std::make_pair(pad_left, pad_right);
     pad[3] = std::make_pair(0, 0);
 
-    TIn input_val      = this->input->getTensor();
-    TWeight weight_val = this->weight->getTensor();
-    if (InDtype == TOSA_REF_TYPE_INT8 || WeightDtype == TOSA_REF_TYPE_INT8)
+    TIn input_val        = this->input->getTensor();
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    if (InDtype == TOSA_REF_TYPE_INT8)
     {
-        input_val  = input_val - (InEigenType)attribute->input_zp();
-        weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
+        input_val = input_val - input_zp;
+    }
+    else
+    {
+        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
+    }
+
+    TWeight weight_val        = this->weight->getTensor();
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    if (WeightDtype == TOSA_REF_TYPE_INT8)
+    {
+        weight_val = weight_val - weight_zp;
+    }
+    else
+    {
+        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
     }
 
     TBias bias_val = this->bias->getTensor();
@@ -1911,7 +1930,7 @@ OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpTransposeConv2d(S
                                                                                uint64_t id_)
     : GraphNode(sgt_, Op_TRANSPOSE_CONV2D, id_)
 {
-    setRequiredOperands(3, 1);
+    setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
     INIT_ATTRIBUTE(TransposeConv);
@@ -1927,7 +1946,9 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttr
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(inputs[4], 1, 1) ||
+        validateRequiredRank(outputs[0]))
     {
         return 1;
     }
@@ -1993,11 +2014,6 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttr
         return 1;
     }
 
-    ERROR_IF(InDtype != TOSA_REF_TYPE_INT8 && attribute->input_zp() != 0,
-             "OpTransposeConv2d: Input zeropoint must be zero for non int8_t data");
-    ERROR_IF(WeightDtype != TOSA_REF_TYPE_INT8 && attribute->weight_zp() != 0,
-             "OpTransposeConv2d: Weight zeropoint must be zero for non int8_t data");
-
     return 0;
 }
 
@@ -2056,12 +2072,26 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                out_height, out_width, out_channels, stride_y, stride_x, out_pad_top, out_pad_bottom, out_pad_left,
                out_pad_right);
 
-    TIn input_val      = this->input->getTensor();
-    TWeight weight_val = this->weight->getTensor();
-    if (InDtype == TOSA_REF_TYPE_INT8 || WeightDtype == TOSA_REF_TYPE_INT8)
+    TIn input_val        = this->input->getTensor();
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    if (InDtype == TOSA_REF_TYPE_INT8)
     {
-        input_val  = input_val - (InEigenType)attribute->input_zp();
-        weight_val = weight_val - (WeightEigenType)attribute->weight_zp();
+        input_val = input_val - input_zp;
+    }
+    else
+    {
+        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
+    }
+
+    TWeight weight_val        = this->weight->getTensor();
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    if (WeightDtype == TOSA_REF_TYPE_INT8)
+    {
+        weight_val = weight_val - weight_zp;
+    }
+    else
+    {
+        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
     }
 
     TBias bias_val = this->bias->getTensor();

@@ -204,30 +204,35 @@ int GraphNode::validateRequiredOperands()
     return 0;
 }
 
-int GraphNode::validateRequiredRank(const Tensor* t)
+int GraphNode::validateRequiredRank(const Tensor* t, int rankMin, int rankMax)
 {
-    if (requiredRankMin >= 0 && requiredRankMax >= 0)
+    if (rankMin >= 0 && rankMax >= 0)
     {
         std::string err_message = std::string(EnumNamesOp()[nodeType]) +
                                   " operand has illegal rank=" + std::to_string(t->getRank()) + " not in range [" +
-                                  std::to_string(requiredRankMin) + "," + std::to_string(requiredRankMax) +
+                                  std::to_string(rankMin) + "," + std::to_string(rankMax) +
                                   "]. tensorName: " + t->getName();
-        ERROR_IF(t->checkRequiredRank(requiredRankMin, requiredRankMax), "%s", err_message.c_str());
+        ERROR_IF(t->checkRequiredRank(rankMin, rankMax), "%s", err_message.c_str());
 
         return 0;
     }
 
-    if (requiredRankMin >= 0)
+    if (rankMin >= 0)
     {
         std::string err_message = std::string(EnumNamesOp()[nodeType]) +
                                   " operand has illegal rank=" + std::to_string(t->getRank()) + " not equal to " +
-                                  std::to_string(requiredRankMin) + ". tensorName: " + t->getName();
-        ERROR_IF(t->checkRequiredRank(requiredRankMin), "%s", err_message.c_str());
+                                  std::to_string(rankMin) + ". tensorName: " + t->getName();
+        ERROR_IF(t->checkRequiredRank(rankMin), "%s", err_message.c_str());
 
         return 0;
     }
 
     return 0;
+}
+
+int GraphNode::validateRequiredRank(const Tensor* t)
+{
+    return validateRequiredRank(t, requiredRankMin, requiredRankMax);
 }
 
 int GraphNode::idiv_check(int input1, int input2, int& result)
