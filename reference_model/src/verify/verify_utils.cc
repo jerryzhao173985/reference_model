@@ -99,6 +99,7 @@ void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
 {
     j.at("max").get_to(rInfo.max);
     j.at("scale").get_to(rInfo.scale);
+    j.at("ulp_bound").get_to(rInfo.ulpBound);
 }
 
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
@@ -128,8 +129,9 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);
     }
-    cfg.relativeInfo.max   = 0;
-    cfg.relativeInfo.scale = 0;
+    cfg.relativeInfo.max      = 0;
+    cfg.relativeInfo.scale    = 0;
+    cfg.relativeInfo.ulpBound = 0;
     if (j.contains("relative_info"))
     {
         j.at("relative_info").get_to(cfg.relativeInfo);

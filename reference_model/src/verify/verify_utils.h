@@ -100,6 +100,7 @@ struct RelativeVerifyInfo
 
     double max;
     double scale;
+    double ulpBound;
 };
 
 /// \brief Verification meta-data
