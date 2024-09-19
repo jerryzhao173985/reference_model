@@ -641,7 +641,8 @@ TEST_CASE("positive - relative")
                 "data_type": "FP32",
                 "relative_info": {
                     "max": _MAXIMUM_,
-                    "scale": _SCALE_
+                    "scale": _SCALE_,
+                    "ulp_bound": _ULP_BOUND_
                 }
             }
         }
@@ -654,8 +655,10 @@ TEST_CASE("positive - relative")
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
     std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
 
-    float scale = 0.0006;
-    float max   = 0.0;
+    float scale     = 0.0006;
+    float max       = 0.0;
+    float ulp_bound = 20.0;
+
     std::for_each(std::begin(data_fp32), std::end(data_fp32), [&max](auto& value) {
         if (!std::isinf(value) && !std::isnan(value))
         {
@@ -665,6 +668,7 @@ TEST_CASE("positive - relative")
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_MAXIMUM_", std::to_string(max));
     update_json_template(jsonCfg, "_SCALE_", std::to_string(scale));
+    update_json_template(jsonCfg, "_ULP_BOUND_", std::to_string(ulp_bound));
 
     float errBound = max * scale;
     // Use 10% error margin to test due to using v.large values in our random data

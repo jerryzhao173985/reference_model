@@ -287,6 +287,7 @@ class TosaTestGen:
             compliance_tens["relative_info"] = {
                 "max": argsDict["max_abs_value"],
                 "scale": op["compliance"]["relative"],
+                "ulp_bound": op["compliance"]["ulp_bound"],
             }
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
@@ -4804,7 +4805,7 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
             "data_gen": PR_FS_DATAGEN,
-            "compliance": {"relative": 0.006},
+            "compliance": {"relative": 0.006, "ulp_bound": 20.0},
         },
         # Type conversion
         "cast": {

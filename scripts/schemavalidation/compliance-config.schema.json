@@ -124,12 +124,18 @@
                                     "description": "relative scaling factor",
                                     "type": "number",
                                     "minimum": 0
+                                },
+                                "ulp_bound": {
+                                    "description": "ulp bound multiplier",
+                                    "type": "number",
+                                    "minimum": 0
                                 }
                             },
                             "additionalProperties": false,
                             "required": [
                                 "max",
-                                "scale"
+                                "scale",
+                                "ulp_bound"
                             ]
                         }
 
