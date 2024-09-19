@@ -15,22 +15,18 @@
 
 #include "cxxopts.hpp"
 #include "func_debug.h"
-#include "generate_utils.cc"
-#include "tensor.h"
-#include "verify_entry.cc"
-#include <cstring>
-#include <dtype.h>
+#include "generate_utils.h"
+#include "numpy_utils.h"
+#include "verifiers.h"
+#include "verify.h"
 #include <fstream>
-#include <iostream>
 #include <nlohmann/json.hpp>
-#include <sstream>
-#include <stdio.h>
-#include <string>
-#include <types.h>
 
-using json      = nlohmann::json;
-using EigenType = typename TosaReference::GetEigenType<TosaReference::TOSA_REF_TYPE_SHAPE>::type;
-using TOut      = Eigen::Tensor<EigenType, 1>;
+using json = nlohmann::json;
+
+#define VERIFY_EXIT_COMPLIANT EXIT_SUCCESS
+#define VERIFY_EXIT_ERROR EXIT_FAILURE
+#define VERIFY_EXIT_NON_COMPLIANT 2
 
 int initTestDesc(json& test_desc, const char* desc_path)
 {
@@ -44,20 +40,20 @@ int initTestDesc(json& test_desc, const char* desc_path)
             if (!test_desc.contains("meta") || !test_desc["meta"].contains("compliance") ||
                 !test_desc["meta"]["compliance"].contains("tensors"))
             {
-                WARNING("Invalid json test descriptor - missing information (meta/compliance/tensors) required for "
-                        "validation.");
+                WARNING("[Verifier] Invalid json test descriptor - missing information (meta/compliance/tensors) "
+                        "required for validation.");
                 return 1;
             }
         }
         catch (nlohmann::json::parse_error& e)
         {
-            WARNING("Error parsing test descriptor json: %s", e.what());
+            WARNING("[Verifier] Error parsing test descriptor json: %s", e.what());
             return 1;
         }
     }
     else
     {
-        WARNING("Error opening json test descriptor - %s", desc_path);
+        WARNING("[Verifier] Error opening json test descriptor - %s", desc_path);
         return 1;
     }
     return 0;
@@ -74,7 +70,7 @@ int parse_cmd_line(int argc,
 {
     try
     {
-        cxxopts::Options options("Verify", "The verify executable");
+        cxxopts::Options options("tosa_verify", "The TOSA test result verifier");
 
         // clang-format off
         options.add_options()
@@ -87,16 +83,21 @@ int parse_cmd_line(int argc,
         // clang-format on
 
         auto result = options.parse(argc, argv);
-        if (result.count("help") || !result.count("test_desc") || !result.count("imp_result_file") ||
-            !result.count("ref_result_file"))
+        if (result.count("help"))
         {
             std::cout << options.help() << std::endl;
+            return 1;
+        }
+        if (!result.count("test_desc") || !result.count("imp_result_file") || !result.count("ref_result_file"))
+        {
+            WARNING(
+                "[Verifier] Missing one or more required arguments: --test_desc, --imp_result_file, --ref_result_file");
             return 1;
         }
     }
     catch (const std::exception& e)
     {
-        WARNING(e.what());
+        WARNING("[Verifier] %s", e.what());
         return 1;
     }
 
@@ -109,7 +110,7 @@ DType mapToDType(const std::string dataType)
         { "BOOL", DType_BOOL },   { "INT4", DType_INT4 },   { "INT8", DType_INT8 },       { "UINT16", DType_UINT16 },
         { "INT16", DType_INT16 }, { "INT32", DType_INT32 }, { "INT48", DType_INT48 },     { "FP16", DType_FP16 },
         { "BF16", DType_BF16 },   { "FP32", DType_FP32 },   { "FP8E4M3", DType_FP8E4M3 }, { "FP8E5M2", DType_FP8E5M2 },
-        { "UINT8", DType_UINT8 },
+        { "UINT8", DType_UINT8 }, { "SHAPE", DType_SHAPE },
     };
 
     if (typeMap.count(dataType))
@@ -120,50 +121,29 @@ DType mapToDType(const std::string dataType)
     return DType_UNKNOWN;
 }
 
-tosa_datatype_t mapToTosaDtype(const DType dataType, const bool isFP64)
+tosa_datatype_t mapToTosaDtype(const DType dataType)
 {
     if ((dataType == DType_FP16 || dataType == DType_BF16 || dataType == DType_FP32 || dataType == DType_FP8E4M3 ||
          dataType == DType_FP8E5M2) &&
-        isFP64)
+        g_func_config.precise_mode)
     {
         return tosa_datatype_fp64_t;
     }
 
     static std::map<DType, tosa_datatype_t> typeMap = {
-        { DType_BOOL, tosa_datatype_bool_t },
-        { DType_INT4, tosa_datatype_int4_t },
-        { DType_INT8, tosa_datatype_int8_t },
-        { DType_UINT16, tosa_datatype_uint16_t },
-        { DType_INT16, tosa_datatype_int16_t },
-        { DType_INT32, tosa_datatype_int32_t },
-        { DType_INT48, tosa_datatype_int48_t },
-        { DType_FP16, tosa_datatype_fp16_t },
-        { DType_BF16, tosa_datatype_bf16_t },
-        {
-            DType_FP32,
-            tosa_datatype_fp32_t,
-        },
-        { DType_SHAPE, tosa_datatype_shape_t },
-        {
-            DType_FP8E4M3,
-            tosa_datatype_fp8e4m3_t,
-        },
-        { DType_FP8E5M2, tosa_datatype_fp8e5m2_t },
-        { DType_UINT8, tosa_datatype_uint8_t },
+        { DType_BOOL, tosa_datatype_bool_t },       { DType_INT4, tosa_datatype_int4_t },
+        { DType_INT8, tosa_datatype_int8_t },       { DType_UINT16, tosa_datatype_uint16_t },
+        { DType_INT16, tosa_datatype_int16_t },     { DType_INT32, tosa_datatype_int32_t },
+        { DType_INT48, tosa_datatype_int48_t },     { DType_FP16, tosa_datatype_fp16_t },
+        { DType_BF16, tosa_datatype_bf16_t },       { DType_FP32, tosa_datatype_fp32_t },
+        { DType_SHAPE, tosa_datatype_shape_t },     { DType_FP8E4M3, tosa_datatype_fp8e4m3_t },
+        { DType_FP8E5M2, tosa_datatype_fp8e5m2_t }, { DType_UINT8, tosa_datatype_uint8_t },
     };
 
-    // if (typeMap.count(dataType))
-    // {
     return typeMap[dataType];
-    // }
-
-    //return uint8 in the case of failure
-    //return tosa_datatype_uint8_t;
-    // WARNING("Unsupported datatype");
-    // return tosa;
 }
 
-//loads numpy file and put it into the tosa_tensor struct for usage in verify library
+// Loads numpy file and put it into the tosa_tensor struct for usage in verify library
 int createTensorMap(const char* resultFile,
                     tosa_tensor_t* resultMapTensor,
                     const DType dtype,
@@ -291,7 +271,7 @@ int createTensorMap(const char* resultFile,
             delete[] i16databuf;
         }
     }
-    else if (dtype == DType_INT48)
+    else if (dtype == DType_INT48 || dtype == DType_SHAPE)
     {
         int64_t* i64databuf             = new int64_t[elems];
         NumpyUtilities::NPError nperror = NumpyUtilities::readFromNpyFile(resultFile, elems, i64databuf);
@@ -333,7 +313,7 @@ int createTensorMap(const char* resultFile,
             delete[] u16databuf;
         }
     }
-    else if (dtype == DType_INT8)
+    else if (dtype == DType_INT8 || dtype == DType_INT4)
     {
         int8_t* i8databuf               = new int8_t[elems];
         NumpyUtilities::NPError nperror = NumpyUtilities::readFromNpyFile(resultFile, elems, i8databuf);
@@ -363,12 +343,12 @@ int createTensorMap(const char* resultFile,
     }
     else
     {
-        WARNING("Unsupported data type!");
+        WARNING("[Verifier] Unsupported Numpy data type in %s", resultFile);
     }
     // If we failed to read the tensor data, clean up and return error
     if (!success)
     {
-        WARNING("Failed to get buffer from %s", resultFile);
+        WARNING("[Verifier] Failed to load data from %s", resultFile);
 
         return 1;
     }
@@ -390,8 +370,7 @@ int main(int argc, char* argv[])
 
     if (parse_cmd_line(argc, argv, &configFile, &refResultFile, &impResultFile, &bndResultFile, &ofmName))
     {
-
-        return 1;
+        return VERIFY_EXIT_ERROR;
     }
 
     json test_desc;
@@ -400,15 +379,15 @@ int main(int argc, char* argv[])
     if (initTestDesc(test_desc, configFile.c_str()))
     {
         // Errors will be reported by the initTestDesc function
-        return 1;
+        return VERIFY_EXIT_ERROR;
     }
     if (ofmName.empty())
     {
         if (test_desc["ofm_name"].size() > 1)
         {
-            WARNING("More than one test output file, please specify which one should be validated using the "
+            WARNING("[Verifier] More than one test output file, please specify which one should be validated using the "
                     "`--ofm_name` option.");
-            return 1;
+            return VERIFY_EXIT_ERROR;
         }
         ofmName = (test_desc["ofm_name"][0]).get<std::string>();
     }
@@ -416,13 +395,13 @@ int main(int argc, char* argv[])
     if (!test_desc["meta"]["compliance"]["tensors"].contains(ofmName))
     {
         WARNING(("Invalid json test descriptor - missing information about ofmName - " + ofmName).c_str());
-        return 1;
+        return VERIFY_EXIT_ERROR;
     }
 
     if (!test_desc["meta"]["compliance"]["tensors"][ofmName].contains("shape"))
     {
-        WARNING("Invalid json test descriptor - missing shape information required for validation.");
-        return 1;
+        WARNING("[Verifier] Invalid json test descriptor - missing shape information required for validation.");
+        return VERIFY_EXIT_ERROR;
     }
 
     std::vector<int> shape = test_desc["meta"]["compliance"]["tensors"][ofmName]["shape"];
@@ -431,8 +410,8 @@ int main(int argc, char* argv[])
 
     if (!test_desc["meta"]["compliance"]["tensors"][ofmName].contains("data_type"))
     {
-        WARNING("Invalid json test descriptor - missing datatype information required for validation.");
-        return 1;
+        WARNING("[Verifier] Invalid json test descriptor - missing datatype information required for validation.");
+        return VERIFY_EXIT_ERROR;
     }
 
     std::string typeText = test_desc["meta"]["compliance"]["tensors"][ofmName]["data_type"];
@@ -441,44 +420,40 @@ int main(int argc, char* argv[])
 
     if (dtype == DType_UNKNOWN)
     {
-        WARNING("Unsupported data type in json test descriptor");
-        return 1;
+        WARNING("[Verifier] Unsupported data type in json test descriptor");
+        return VERIFY_EXIT_ERROR;
     }
 
-    //implementation result numpy into a data buffer
-
+    // Read implementation result numpy into a data buffer
     tosa_tensor_t* imp = new tosa_tensor_t;
 
     if (createTensorMap(impResultFile.c_str(), imp, dtype, ofmName.c_str(), shape, elems))
     {
         delete imp;
-
-        WARNING("Failed to create implementation tensor type");
-        return 1;
+        return VERIFY_EXIT_ERROR;
     }
 
     imp->name      = ofmName.c_str();
-    imp->data_type = mapToTosaDtype(dtype, false);
+    imp->data_type = mapToTosaDtype(dtype);
     imp->num_dims  = static_cast<int32_t>(shape.size());
     imp->size      = TosaReference::elementSizeFromType(dtype);
     imp->shape     = shape.data();
 
+    // Read reference result numpy into a data buffer
     tosa_tensor_t* ref = new tosa_tensor_t;
 
-    //where floating point implementation is used, fp64 is used for reference
-    //so turning precise mode allows for support of fp64
+    // For floating point results, fp64 is used for reference data
+    // Turn on precise mode allows to enable support of fp64
     g_func_config.precise_mode = true;
 
     if (createTensorMap(refResultFile.c_str(), ref, dtype, ofmName.c_str(), shape, elems))
     {
-
         delete ref;
-        WARNING("Failed to create reference tensor type");
-        return 1;
+        return VERIFY_EXIT_ERROR;
     }
 
     ref->name      = ofmName.c_str();
-    ref->data_type = mapToTosaDtype(dtype, true);
+    ref->data_type = mapToTosaDtype(dtype);
     ref->num_dims  = static_cast<int32_t>(shape.size());
     ref->size      = TosaReference::elementSizeFromType(dtype);
     ref->shape     = shape.data();
@@ -487,16 +462,16 @@ int main(int argc, char* argv[])
 
     if (!bndResultFile.empty())
     {
-
+        // Read reference bounds result numpy into a data buffer
         bnd = new tosa_tensor_t;
         if (createTensorMap(bndResultFile.c_str(), bnd, dtype, ofmName.c_str(), shape, elems))
         {
             delete bnd;
-            WARNING("Failed to create bound tensor type");
+            return VERIFY_EXIT_ERROR;
         }
 
         bnd->name      = ofmName.c_str();
-        bnd->data_type = mapToTosaDtype(dtype, true);
+        bnd->data_type = mapToTosaDtype(dtype);
         bnd->num_dims  = static_cast<int32_t>(shape.size());
         bnd->size      = TosaReference::elementSizeFromType(dtype);
         bnd->shape     = shape.data();
@@ -506,16 +481,9 @@ int main(int argc, char* argv[])
 
     // Serialize the JSON object to a string
     std::string testDescString = test_desc["meta"]["compliance"].dump();
-    bool success               = true;
-    if (tvf_verify_data(ref, bnd, imp, testDescString.c_str()))
-    {
-        std::cout << "Test passed" << std::endl;
-    }
-    else
-    {
-        WARNING("Test Failed");
-        success = false;
-    }
+
+    // Check for compliant results
+    bool success = tvf_verify_data(ref, bnd, imp, testDescString.c_str());
 
     if (imp)
     {
@@ -534,7 +502,9 @@ int main(int argc, char* argv[])
     }
     if (!success)
     {
-        return 1;
+        std::cout << "Test results: Failure - non-compliant" << std::endl;
+        return VERIFY_EXIT_NON_COMPLIANT;
     }
-    return 0;
+    std::cout << "Test results: Pass - compliant" << std::endl;
+    return VERIFY_EXIT_COMPLIANT;
 }

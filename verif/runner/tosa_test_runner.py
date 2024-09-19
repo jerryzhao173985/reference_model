@@ -1,5 +1,5 @@
 """Template test runner class for running TOSA tests."""
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 from enum import IntEnum
@@ -8,11 +8,12 @@ import schemavalidation.schemavalidation as sch
 from checker.color_print import LogColors
 from checker.color_print import print_color
 from checker.color_print import set_print_in_color
-from checker.tosa_result_checker import set_print_result
-from checker.tosa_result_checker import test_check
+from checker.tosa_result_checker import TosaVerifyReturnCode
 from generator.datagenerator import GenerateLibrary
 from json2fbbin import json2fbbin
 from json2numpy import json2numpy
+from runner.run_command import run_sh_command
+from runner.run_command import RunShCommandError
 from runner.tosa_test_presets import TOSA_REFCOMPLIANCE_RUNNER
 
 
@@ -72,12 +73,10 @@ class TosaTestRunner:
         self.testDir = str(testDirPath)
         self.testDirPath = testDirPath
         self.testName = self.testDirPath.name
-        self.verify_lib_path = args.verify_lib_path
+        self.verify_path = args.verify_path
         self.generate_lib_path = args.generate_lib_path
 
         set_print_in_color(not args.no_color)
-        # Stop the result checker printing anything - we will do it
-        set_print_result(False)
 
         # Check if we want to run binary and if its already converted
         descFilePath = testDirPath / "desc.json"
@@ -224,21 +223,44 @@ class TosaTestRunner:
 
                     if conformanceFilePath:
                         print_check_result = True  # Result from checker
-                        chkResult, tolerance, msg = test_check(
-                            conformanceFilePath,
-                            resultFilePath,
-                            test_name=self.testName,
-                            test_desc=self.testDesc,
-                            bnd_result_path=conformanceBoundsPath,
-                            ofm_name=self.testDesc["ofm_name"][resultNum],
-                            verify_lib_path=self.verify_lib_path,
-                        )
+                        cmd = [
+                            str(self.verify_path),
+                            "--test_desc",
+                            str(self.descFilePath),
+                            "--imp_result_file",
+                            str(resultFilePath),
+                            "--ref_result_file",
+                            str(conformanceFilePath),
+                            "--ofm_name",
+                            self.testDesc["ofm_name"][resultNum],
+                        ]
+
+                        if conformanceBoundsPath is not None:
+                            cmd.extend(
+                                ["--bnd_result_file", str(conformanceBoundsPath)]
+                            )
+
+                        try:
+                            run_sh_command(cmd, self.args.verbose, capture_output=True)
+                            chkResult = 0
+                        except RunShCommandError as e:
+                            msg = e.stderr
+                            chkResult = e.return_code
+
                         # Change EXPECTED_PASS assumption if we have any failures
-                        if chkResult != 0:
+                        if chkResult == TosaVerifyReturnCode.TOSA_NONCOMPLIANT:
                             result = TosaTestRunner.Result.UNEXPECTED_FAILURE
                             messages.append(msg)
                             if self.args.verbose:
                                 print(msg)
+                        elif chkResult != TosaVerifyReturnCode.TOSA_COMPLIANT:
+                            result = TosaTestRunner.Result.INTERNAL_ERROR
+                            messages.append(
+                                "Internal error: tosa_verify failed to verify results"
+                            )
+                            messages.append(msg)
+                            print(msg)
+
                     else:
                         # No conformance file to verify, just check results file exists
                         if not resultFilePath.is_file():

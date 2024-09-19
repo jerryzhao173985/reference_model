@@ -112,9 +112,7 @@ extern "C"
             return false;
         }
 
-        //INT4 Tensor Datatype is supported by using int8 implementation type
-        if (cfg->dataType != TosaReference::mapToDType(imp_type) &&
-            !(cfg->dataType == DType_INT4 && imp_type == tosa_datatype_int8_t))
+        if (cfg->dataType != TosaReference::mapToDType(imp_type))
         {
             WARNING("[Verifier] Incorrect implementation tensor data type.");
             return false;

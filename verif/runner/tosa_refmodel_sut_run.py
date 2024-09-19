@@ -1,5 +1,5 @@
 """TOSA test runner module for the Reference Model."""
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 from enum import IntEnum
 from enum import unique
@@ -37,9 +37,12 @@ class TosaSUTRunner(TosaTestRunner):
         # Call Reference model with description file to provide all file details
         cmd = [
             str(args.ref_model_path),
-            f"--tosa_level={args.tosa_level}",
-            f"--operator_fbs={str(args.schema_path)}",
-            f"--test_desc={self.descFile}",
+            "--tosa_level",
+            f"{args.tosa_level}",
+            "--operator_fbs",
+            str(args.schema_path),
+            "--test_desc",
+            self.descFile,
         ]
 
         # Specific debug options for reference model

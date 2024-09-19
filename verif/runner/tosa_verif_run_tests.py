@@ -65,9 +65,15 @@ def parseArgs(argv):
         "--verify-lib-path",
         dest="verify_lib_path",
         type=Path,
+        help="DEPRECATED - use `--tosa-verify-path`",
+    )
+    parser.add_argument(
+        "--verify-path",
+        dest="verify_path",
+        type=Path,
         help=(
-            "Path to TOSA verify library. Defaults to "
-            "the library in the directory of `ref-model-path`"
+            "Path to TOSA verify executable. Defaults to the executable "
+            "in the directory of `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -362,9 +368,9 @@ def main(argv=None):
         args.generate_lib_path = cmf.find_tosa_file(
             cmf.TosaFileType.GENERATE_LIBRARY, args.ref_model_path
         )
-    if args.verify_lib_path is None:
-        args.verify_lib_path = cmf.find_tosa_file(
-            cmf.TosaFileType.VERIFY_LIBRARY, args.ref_model_path
+    if args.verify_path is None:
+        args.verify_path = cmf.find_tosa_file(
+            cmf.TosaFileType.VERIFY, args.ref_model_path
         )
     if args.flatc_path is None:
         args.flatc_path = cmf.find_tosa_file(

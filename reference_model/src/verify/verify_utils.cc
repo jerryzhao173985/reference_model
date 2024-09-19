@@ -39,7 +39,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                                { DType::DType_FP8E4M3, "FP8E4M3" },
                                { DType::DType_FP8E5M2, "FP8E5M2" },
                                { DType::DType_UINT16, "UINT16" },
-                               { DType::DType_UINT8, "UINT8" } })
+                               { DType::DType_UINT8, "UINT8" },
+                               { DType::DType_SHAPE, "SHAPE" } })
 
 }    // namespace tosa
 
