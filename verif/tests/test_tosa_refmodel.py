@@ -9,8 +9,6 @@ from shutil import rmtree
 import conformance.model_files as cmf
 import numpy as np
 import pytest
-from checker.tosa_result_checker import test_check as tosa_check
-from checker.tosa_result_checker import TestResult as TosaResult
 from generator.tosa_verif_build_tests import main as tosa_builder
 from ml_dtypes import bfloat16
 from ml_dtypes import float8_e4m3fn
@@ -28,6 +26,7 @@ REF_MODEL_EXE_PATH = cmf.find_tosa_file(
 GENERATE_LIB_PATH = cmf.find_tosa_file(
     cmf.TosaFileType.GENERATE_LIBRARY, REF_MODEL_EXE_PATH
 )
+VERIFY_EXE_PATH = cmf.find_tosa_file(cmf.TosaFileType.VERIFY, REF_MODEL_EXE_PATH)
 
 # Set this to False if you want ot preserve the test directories after running
 CLEAN_UP_TESTS = True
@@ -186,11 +185,8 @@ def test_refmodel_simple_op(tosaTest):
     # Generate TOSA test(s) (mostly should be single test)
     test_dirs = tosaTest.create_test()
 
-    # Indicate miscellaneous checks to run in tosa_check
-    misc_checks = []
-
     for test_dir in test_dirs:
-        # Run ref model
+        # Run ref model in precise mode for compliance
         desc_file = test_dir / TEST_DESC_FILENAME
         assert desc_file.is_file()
         refmodel_cmd = [
@@ -201,6 +197,8 @@ def test_refmodel_simple_op(tosaTest):
             OUTPUT_OFM_FILE,
             "--tosa_level",
             TOSA_LEVEL,
+            "--precise_mode",
+            "1",
         ]
         try:
             run_sh_command(refmodel_cmd, verbose=True, capture_output=True)
@@ -280,10 +278,16 @@ def test_refmodel_simple_op(tosaTest):
         assert result_file.is_file()
 
         # Check Numpy result versus refmodel
-        check_result, tolerance, msg = tosa_check(
-            result_file,
-            ofm_file,
-            test_name=test_dir.name,
-            misc_checks=misc_checks,
-        )
-        assert check_result == TosaResult.PASS
+        verify_cmd = [
+            str(VERIFY_EXE_PATH),
+            "--test_desc",
+            str(desc_file),
+            "--imp_result_file",
+            str(result_file),
+            "--ref_result_file",
+            str(ofm_file),
+        ]
+        try:
+            run_sh_command(verify_cmd, verbose=True, capture_output=True)
+        except RunShCommandError as err:
+            assert False, f"Verify failed: {err}"

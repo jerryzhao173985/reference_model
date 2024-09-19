@@ -1,4 +1,4 @@
-# Copyright (c) 2023, ARM Limited.
+# Copyright (c) 2023-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Locate model files helper functions."""
 from enum import IntEnum
@@ -9,6 +9,7 @@ DEFAULT_REF_MODEL_BUILD_FLATC_PATH = Path(
     "thirdparty/serialization_lib/third_party/flatbuffers"
 )
 DEFAULT_REF_MODEL_BUILD_EXE_PATH = Path("reference_model")
+DEFAULT_VERIFY_BUILD_EXE_PATH = Path("reference_model/verify")
 DEFAULT_BUILD_DIR = Path("build")
 
 
@@ -20,6 +21,7 @@ class TosaFileType(IntEnum):
     FLATC = 2
     VERIFY_LIBRARY = 3
     GENERATE_LIBRARY = 4
+    VERIFY = 5
 
 
 TOSA_FILE_TYPE_TO_DETAILS = {
@@ -46,6 +48,11 @@ TOSA_FILE_TYPE_TO_DETAILS = {
     TosaFileType.GENERATE_LIBRARY: {
         "name": "libtosa_reference_generate_lib.so",
         "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
+        "build": True,
+    },
+    TosaFileType.VERIFY: {
+        "name": "tosa_verify",
+        "location": DEFAULT_VERIFY_BUILD_EXE_PATH,
         "build": True,
     },
 }

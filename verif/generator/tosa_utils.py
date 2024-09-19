@@ -95,6 +95,7 @@ def dtypeIsSupportedByCompliance(dtype):
         DType.BF16,
         DType.FP8E4M3,
         DType.FP8E5M2,
+        DType.SHAPE,
     )
 
 

@@ -74,6 +74,7 @@ set(CXX_SOURCE
     ${BASE_REF_DIR}/reference_model/src/tensor.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_abs_error.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_dot_product.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_entry.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cc
@@ -81,6 +82,7 @@ set(CXX_SOURCE
     ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cc
     ${BASE_REF_DIR}/reference_model/src/verify/verify_config.cc
+    ${BASE_REF_DIR}/reference_model/src/generate/generate_utils.cc
 )
 
 set(PUBLIC_INCLUDE_DIRS

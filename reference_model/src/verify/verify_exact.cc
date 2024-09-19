@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -116,6 +116,9 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
                               std::next(impData, elementCount), exact_int<int16_t>);
         }
 
+        case tosa_datatype_int4_t:
+            // Treated the same as int8_t
+            [[fallthrough]];
         case tosa_datatype_int8_t: {
 
             const auto* refData_int = reinterpret_cast<const int8_t*>(referenceTensor->data);
@@ -129,6 +132,9 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
                               std::next(impData, elementCount), exact_int<int8_t>);
         }
 
+        case tosa_datatype_shape_t:
+            // Treated the same as int48_t
+            [[fallthrough]];
         case tosa_datatype_int48_t: {
 
             const auto* refData_int = reinterpret_cast<const int64_t*>(referenceTensor->data);

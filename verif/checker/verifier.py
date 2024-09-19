@@ -1,4 +1,4 @@
-# Copyright (c) 2023, ARM Limited.
+# Copyright (c) 2023-2024, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Verfier library interface."""
 import ctypes as ct
@@ -77,13 +77,18 @@ class VerifierLibrary:
     def _get_tensor_data(self, name, array, cfg_type=None):
         """Set up tosa_tensor_t using the given a numpy array."""
         shape = (ct.c_int32 * len(array.shape))(*array.shape)
-        # Set the correct client type for FP8E5M2 as it shares the same numpy type as uint8
-        clientType = (
-            # "type" matches enum - see include/types.h
-            13
-            if cfg_type == "FP8E5M2"
-            else NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["type"]
-        )
+
+        clientType = NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["type"]
+        clientTypeFP64 = NUMPY_DATATYPE_TO_CLIENTTYPE[np.dtype("float64")]["type"]
+        # Set the correct client type for types that share numpy types
+        if cfg_type == "FP8E5M2" and clientType != clientTypeFP64:
+            # Only override implementation types (not FP64 for compliance)
+            clientType = 13
+        elif cfg_type == "SHAPE":
+            clientType = 11
+        elif cfg_type == "INT4":
+            clientType = 7
+
         size_in_bytes = array.size * NUMPY_DATATYPE_TO_CLIENTTYPE[array.dtype]["size"]
 
         tensor = TosaTensor(
@@ -111,12 +116,17 @@ class VerifierLibrary:
         jsb = bytes(json.dumps(compliance_json_config), "utf8")
 
         # name of map that contains the type info could differ
-        data_type = compliance_json_config["tensors"][output_name]["data_type"]
+        try:
+            data_type = compliance_json_config["tensors"][output_name]["data_type"]
+        except KeyError:
+            raise VerifierError(
+                f"Could not find output tensor ({output_name}) in compliance config"
+            )
 
         imp = self._get_tensor_data(output_name, imp_result_array, data_type)
-        ref = self._get_tensor_data(output_name, ref_result_array)
+        ref = self._get_tensor_data(output_name, ref_result_array, data_type)
         if bnd_result_array is not None:
-            ref_bnd = self._get_tensor_data(output_name, bnd_result_array)
+            ref_bnd = self._get_tensor_data(output_name, bnd_result_array, data_type)
         else:
             ref_bnd = None
 
