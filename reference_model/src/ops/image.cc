@@ -205,21 +205,14 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         InEigenType v10 = in->getTensor()(b, iy1, ix0, c);
                         InEigenType v11 = in->getTensor()(b, iy1, ix1, c);
 
-                        if (std::is_floating_point<resize_t>::value)
+                        if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(half_float::half)))
                         {
-                            acc = (OutEigenType)v00 * (1.0 - dy) * (1.0 - dx);
-                            acc += (OutEigenType)v01 * (1.0 - dy) * dx;
-                            acc += (OutEigenType)v10 * dy * (1.0 - dx);
-                            acc += (OutEigenType)v11 * dy * dx;
-                        }
-                        else if ((typeid(resize_t) == typeid(bf16)) || (typeid(resize_t) == typeid(half_float::half)))
-                        {
-                            resize_t f16_acc;
-                            f16_acc = (resize_t)v00 * (resize_t)(1.0 - dy) * (resize_t)(1.0 - dx);
-                            f16_acc += (resize_t)v01 * (resize_t)(1.0 - dy) * (resize_t)dx;
-                            f16_acc += (resize_t)v10 * (resize_t)dy * (resize_t)(1.0 - dx);
-                            f16_acc += (resize_t)v11 * (resize_t)dy * (resize_t)dx;
-                            acc = (float)f16_acc;
+                            resize_t native_acc;
+                            native_acc = (resize_t)v00 * (resize_t)(1.0 - dy) * (resize_t)(1.0 - dx);
+                            native_acc += (resize_t)v01 * (resize_t)(1.0 - dy) * (resize_t)dx;
+                            native_acc += (resize_t)v10 * (resize_t)dy * (resize_t)(1.0 - dx);
+                            native_acc += (resize_t)v11 * (resize_t)dy * (resize_t)dx;
+                            acc = OutEigenType(native_acc);
                         }
                         else
                         {
