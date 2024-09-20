@@ -203,11 +203,13 @@ int SubgraphTraverser::initializeGraph()
         TOSA_REF_TYPE input_dtype  = TOSA_REF_TYPE_UNKNOWN;
         TOSA_REF_TYPE output_dtype = TOSA_REF_TYPE_UNKNOWN;
         TOSA_REF_TYPE weight_dtype = TOSA_REF_TYPE_UNKNOWN;
+        TOSA_REF_TYPE bias_dtype   = TOSA_REF_TYPE_UNKNOWN;
         uint32_t input_rank        = 0;
         uint32_t output_rank       = 0;
         uint32_t weight_rank       = 0;
         int32_t input_index        = -1;
         int32_t weight_index       = -1;
+        int32_t bias_index         = -1;
 
         switch (op->GetOp())
         {
@@ -215,6 +217,11 @@ int SubgraphTraverser::initializeGraph()
             case Op_CONV3D:
             case Op_DEPTHWISE_CONV2D:
             case Op_TRANSPOSE_CONV2D:
+                input_index  = 0;
+                weight_index = 1;
+                bias_index   = 2;
+                break;
+            case Op_MATMUL:
                 input_index  = 0;
                 weight_index = 1;
                 break;
@@ -287,6 +294,34 @@ int SubgraphTraverser::initializeGraph()
             output_name.c_str());
         output_dtype = ConvertDType(output_tensor->GetDtype());
         output_rank  = output_tensor->GetShape().size();
+
+        if (bias_index != -1)
+        {
+            SUBGRAPH_ERROR_IF(
+                (size_t)bias_index >= op->GetInputTensorNames().size(),
+                "SubgraphTraverser::initializeGraph(): Op=%s, bias_index %d must be within [0, num_input - 1]",
+                EnumNamesOp()[op->GetOp()], bias_index);
+            std::string bias_name                = op->GetInputTensorNames()[bias_index];
+            TosaSerializationTensor* bias_tensor = nullptr;
+            for (auto ser_tensor : ser_tensor_vec)
+            {
+                if (ser_tensor->GetName() == bias_name)
+                {
+                    bias_tensor = ser_tensor;
+                }
+            }
+
+            SUBGRAPH_ERROR_IF(
+                !bias_tensor,
+                "SubgraphTraverser::initializeGraph(): fail to get bias tensor %s from TosaSerializationHandler",
+                bias_name.c_str());
+            bias_dtype = ConvertDType(bias_tensor->GetDtype());
+
+            SUBGRAPH_ERROR_IF(
+                bias_dtype != output_dtype,
+                "SubgraphTraverser::initializeGraph(): Op=%s, bias_dtype (%s) is different from output_dtype (%s)",
+                EnumNamesOp()[op->GetOp()], EnumNameTOSAREFTYPE(bias_dtype), EnumNameTOSAREFTYPE(output_dtype));
+        }
 
         DEBUG_INFO(GT, "Creating operator id_%03u, %8s, %lu input tensors, %lu output tensors", idx,
                    EnumNamesOp()[op->GetOp()], op->GetInputTensorNames().size(), op->GetOutputTensorNames().size());
