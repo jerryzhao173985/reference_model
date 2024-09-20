@@ -11,6 +11,9 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+#include "cfloat.h"
+#include "half.hpp"
+#include "tosa_generated.h"
 #include "verify.h"
 
 #include <algorithm>
@@ -27,8 +30,104 @@
 #include <type_traits>
 #include <vector>
 
+using namespace ct;
+using namespace tosa;
+
+using fp8_e4m3 = cfloat_advanced<8, 4, FloatFeatures::HasNaN | FloatFeatures::HasDenorms>;
+using fp8_e5m2 = cfloat_advanced<8, 5, float_support::AllFeats>;
+using binary32 = cfloat_advanced<32, 8, float_support::AllFeats>;
+using binary16 = cfloat_advanced<16, 5, float_support::AllFeats>;
+using bfloat16 = cfloat_advanced<16, 8, float_support::AllFeats>;
+
 namespace
 {
+
+// TODO(ITL): NativeType2Dtype could be useful elsewhere, but currently it is
+// hard to find a good place for it. Move it somewhere reasonable later.
+template <typename T>
+constexpr DType NativeType2Dtype()
+{
+    if constexpr (std::is_same<T, bool>::value)
+        return DType_BOOL;
+
+    if constexpr (std::is_same<T, int8_t>::value)
+        return DType_INT8;
+
+    if constexpr (std::is_same<T, uint8_t>::value)
+        return DType_UINT8;
+
+    if constexpr (std::is_same<T, int16_t>::value)
+        return DType_INT16;
+
+    if constexpr (std::is_same<T, uint16_t>::value)
+        return DType_UINT16;
+
+    if constexpr (std::is_same<T, uint32_t>::value)
+        return DType_INT32;
+
+    if constexpr (std::is_same<T, binary16>::value)
+        return DType_FP16;
+
+    if constexpr (std::is_same<T, half_float::half>::value)
+        return DType_FP16;
+
+    if constexpr (std::is_same<T, float>::value)
+        return DType_FP32;
+
+    if constexpr (std::is_same<T, binary32>::value)
+        return DType_FP32;
+
+    if constexpr (std::is_same<T, bfloat16>::value)
+        return DType_BF16;
+
+    if constexpr (std::is_same<T, fp8_e5m2>::value)
+        return DType_FP8E5M2;
+
+    if constexpr (std::is_same<T, fp8_e4m3>::value)
+        return DType_FP8E4M3;
+
+    return DType_UNKNOWN;
+}
+
+// TODO(ITL): DType2tosa_datatype_t could be useful elsewhere, but currently
+// it is hard to find a good place for it. Move it somewhere reasonable later.
+tosa_datatype_t DType2tosa_datatype_t(DType dtype)
+{
+    switch (dtype)
+    {
+        case DType_BOOL:
+            return tosa_datatype_bool_t;
+        case DType_UINT8:
+            return tosa_datatype_uint8_t;
+        case DType_INT4:
+            return tosa_datatype_int4_t;
+        case DType_INT8:
+            return tosa_datatype_int8_t;
+        case DType_INT16:
+            return tosa_datatype_int16_t;
+        case DType_INT32:
+            return tosa_datatype_int32_t;
+        case DType_INT48:
+            return tosa_datatype_int48_t;
+        case DType_FP32:
+            return tosa_datatype_fp32_t;
+        case DType_UINT16:
+            return tosa_datatype_uint16_t;
+        case DType_FP16:
+            return tosa_datatype_fp16_t;
+        case DType_BF16:
+            return tosa_datatype_bf16_t;
+        case DType_FP8E4M3:
+            return tosa_datatype_fp8e4m3_t;
+        case DType_FP8E5M2:
+            return tosa_datatype_fp8e5m2_t;
+        case DType_SHAPE:
+            return tosa_datatype_shape_t;
+        default:
+            throw "Unknown Dtype";
+    }
+}
+
 void update_json_template(std::string& str, const std::string& find, const std::string& change)
 {
     // Update the 'str' by looking for instances of 'find' and replacing them with 'change'
@@ -40,10 +139,10 @@ void update_json_template(std::string& str, const std::string& find, const std::
     }
 }
 
-class TosaTensor
+class TosaVerifTensor
 {
 public:
-    TosaTensor(std::string name, tosa_datatype_t dataType, std::vector<int32_t> shape, uint8_t* data = nullptr)
+    TosaVerifTensor(std::string name, tosa_datatype_t dataType, std::vector<int32_t> shape, uint8_t* data = nullptr)
         : _name(std::move(name))
         , _shape(std::move(shape))
     {
@@ -184,9 +283,9 @@ TEST_CASE("negative - api")
             }
         })";
 
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), invalidJsonCfg.c_str()));
     }
@@ -201,8 +300,8 @@ TEST_CASE("negative - api")
             }
         })";
 
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), nullptr, imp.cTensor(), unknownJsonCfg.c_str()));
     }
@@ -217,40 +316,40 @@ TEST_CASE("negative - api")
             }
         })";
 
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), nullptr, imp.cTensor(), unknownJsonCfg.c_str()));
     }
     SUBCASE("mismatching dimensions")
     {
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 4, 4 });
-        const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 4, 4 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 4, 4 });
+        const TosaVerifTensor refAbs("out1", tosa_datatype_fp64_t, { 4, 4 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("mismatching shapes")
     {
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 4, 4, 4 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 4, 4, 4 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("mismatching data types")
     {
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp16_t, { 8, 8, 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp16_t, { 8, 8, 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("missing tensor data")
     {
-        const TosaTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
-        const TosaTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
+        const TosaVerifTensor ref("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor refAbs("out1", tosa_datatype_fp64_t, { 8, 8, 8 });
+        const TosaVerifTensor imp("out1", tosa_datatype_fp32_t, { 8, 8, 8 });
 
         REQUIRE_FALSE(tvf_verify_data(ref.cTensor(), refAbs.cTensor(), imp.cTensor(), jsonCfg.c_str()));
     }
@@ -276,9 +375,9 @@ TEST_CASE("positive - exact")
     SUBCASE("same")
     {
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(data_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(data_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -293,9 +392,9 @@ TEST_CASE("positive - exact")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
@@ -329,9 +428,9 @@ TEST_CASE("positive - exact")
         }
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(denormData_fp64.data()));
-        const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(denormZeroData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(denormData_fp64.data()));
+        const auto implementationTensor = TosaVerifTensor("out1", tosa_datatype_fp32_t, shape,
+                                                          reinterpret_cast<uint8_t*>(denormZeroData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -360,9 +459,9 @@ TEST_CASE("positive - exact")
         }
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(normData_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(normData_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(normZeroData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(normZeroData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
@@ -418,9 +517,9 @@ TEST_CASE("positive - reduce product")
         }
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data_fp64.data()));
-        const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto implementationTensor = TosaVerifTensor("out1", tosa_datatype_fp32_t, outputShape,
+                                                          reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -443,9 +542,9 @@ TEST_CASE("positive - reduce product")
         }
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data_fp64.data()));
-        const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, outputShape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, outputShape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+        const auto implementationTensor = TosaVerifTensor("out1", tosa_datatype_fp32_t, outputShape,
+                                                          reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
@@ -481,9 +580,9 @@ TEST_CASE("positive - ulp")
                 value = increment(value, 5);
         });
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -497,9 +596,9 @@ TEST_CASE("positive - ulp")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
@@ -523,9 +622,9 @@ TEST_CASE("positive - ulp")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
     SUBCASE("different - small inputs")
@@ -547,9 +646,9 @@ TEST_CASE("positive - ulp")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(smallData_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(smallData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
@@ -598,11 +697,11 @@ TEST_CASE("positive - abs error")
             }
         });
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto boundsTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
                                 jsonCfg.c_str()));
     }
@@ -622,11 +721,11 @@ TEST_CASE("positive - abs error")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto boundsTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
                                       jsonCfg.c_str()));
     }
@@ -684,9 +783,9 @@ TEST_CASE("positive - relative")
                 value += insideErrBound;
         });
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE(tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 
@@ -700,11 +799,256 @@ TEST_CASE("positive - relative")
         });
 
         const auto referenceTensor =
-            TosaTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
         const auto implementationTensor =
-            TosaTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
+            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
         REQUIRE_FALSE(
             tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str()));
     }
 }
+
+/*
+ * SPECIAL CASES
+ *
+ * Testing of special cases like overflow and handling of subnormals
+*/
+
+template <typename FP_TYPE>
+void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp = 1.0)
+{
+    DType dtype               = NativeType2Dtype<FP_TYPE>();
+    tosa_datatype_t tosaDtype = DType2tosa_datatype_t(dtype);
+
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "ULP",
+                "data_type": "_DATATYPE_",
+                "ulp_info": {
+                  "ulp": _ULP_
+                }
+            }
+        }
+    })";
+
+    update_json_template(jsonCfg, "_DATATYPE_", tosa::EnumNameDType(dtype));
+    update_json_template(jsonCfg, "_ULP_", std::to_string(ulp));
+
+    const auto shape            = std::vector<int32_t>{ 1 };
+    std::vector<double> refVec  = { ref };
+    std::vector<FP_TYPE> impVec = { imp };
+
+    const auto referenceTensor =
+        TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(refVec.data()));
+    const auto implementationTensor =
+        TosaVerifTensor("out1", tosaDtype, shape, reinterpret_cast<uint8_t*>(impVec.data()));
+
+    const bool verified =
+        tvf_verify_data(referenceTensor.cTensor(), nullptr, implementationTensor.cTensor(), jsonCfg.c_str());
+    INFO("ref: ", ref, " imp: ", double(imp), " should_pass: ", should_pass, " ulp : ", ulp);
+    if (should_pass)
+        REQUIRE(verified);
+    else
+        REQUIRE_FALSE(verified);
+}
+
+TEST_CASE_TEMPLATE("overflow handling - ulp", FP_TYPE, float, binary16, bfloat16, fp8_e4m3, fp8_e5m2)
+{
+    // Some definitions for readability.
+    const bool has_inf           = std::numeric_limits<FP_TYPE>::has_infinity;
+    const FP_TYPE dtype_max      = std::numeric_limits<FP_TYPE>::max();
+    const FP_TYPE dtype_inf      = std::numeric_limits<FP_TYPE>::infinity();
+    const FP_TYPE dtype_qnan     = std::numeric_limits<FP_TYPE>::quiet_NaN();
+    const FP_TYPE dtype_overflow = has_inf ? dtype_inf : dtype_qnan;
+    const double double_qnan     = std::numeric_limits<double>::quiet_NaN();
+    const double double_inf      = std::numeric_limits<double>::infinity();
+
+    SUBCASE("positive overflow of reference allows positive overflow of implementation")
+    checkULPVerification<FP_TYPE>(double(dtype_max) * 2, dtype_overflow, true, /* ulp */ 0.5);
+
+    SUBCASE("negative overflow of reference allows negative overflow of implementation")
+    checkULPVerification<FP_TYPE>(-double(dtype_max) * 2, -dtype_overflow, true, /* ulp */ 0.5);
+
+    SUBCASE("positive overflow within error bound of reference allows positive overflow of implementation")
+    checkULPVerification<FP_TYPE>(double(dtype_max), dtype_overflow, true, /* ulp */ 2.0);
+
+    SUBCASE("negative overflow within error bound of reference allows negative overflow of implementation")
+    checkULPVerification<FP_TYPE>(-double(dtype_max), -dtype_overflow, true, /* ulp */ 2.0);
+
+    SUBCASE("positive overflow within error bound of reference allows within bounds finite value in implementation")
+    checkULPVerification<FP_TYPE>(double(dtype_max), dtype_max, true, /* ulp */ 2.0);
+
+    SUBCASE("negative overflow within error bound of reference allows within bounds finite value in implementation")
+    checkULPVerification<FP_TYPE>(-double(dtype_max), -dtype_max, true, /* ulp */ 2.0);
+
+    SUBCASE("NaN allows NaN")
+    checkULPVerification<FP_TYPE>(double_qnan, dtype_qnan, true);
+
+    SUBCASE("+inf disallows 0")
+    checkULPVerification<FP_TYPE>(double_inf, 0, false);
+
+    SUBCASE("-inf disallows 0")
+    checkULPVerification<FP_TYPE>(-double_inf, 0, false);
+
+    SUBCASE("positive overflow disallows 0")
+    checkULPVerification<FP_TYPE>(double(dtype_max) * 2, 0, false);
+
+    SUBCASE("negative overflow disallows 0")
+    checkULPVerification<FP_TYPE>(-double(dtype_max) * 2, 0, false);
+
+    SUBCASE("NaN disallows 0")
+    checkULPVerification<FP_TYPE>(double_qnan, 0, false);
+
+    if constexpr (std::numeric_limits<FP_TYPE>::has_infinity)
+    {
+        SUBCASE("positive overflow disallows -inf")
+        checkULPVerification<FP_TYPE>(double(dtype_max) * 2, -dtype_inf, false);
+
+        SUBCASE("negative overflow disallows +inf")
+        checkULPVerification<FP_TYPE>(-double(dtype_max) * 2, dtype_inf, false);
+
+        SUBCASE("nan disallows +inf")
+        checkULPVerification<FP_TYPE>(double_qnan, dtype_inf, false);
+
+        SUBCASE("nan disallows -inf")
+        checkULPVerification<FP_TYPE>(double_qnan, -dtype_inf, false);
+
+        SUBCASE("+inf disallows nan")
+        checkULPVerification<FP_TYPE>(double_inf, dtype_qnan, false);
+
+        SUBCASE("-inf disallows nan")
+        checkULPVerification<FP_TYPE>(-double_inf, dtype_qnan, false);
+
+        SUBCASE("+inf allows +inf")
+        checkULPVerification<FP_TYPE>(double_inf, dtype_inf, true);
+
+        SUBCASE("-inf allows -inf")
+        checkULPVerification<FP_TYPE>(-double_inf, -dtype_inf, true);
+    }
+};
+
+TEST_CASE_TEMPLATE("subnormal handling non-fp8 - ulp", FP_TYPE, float, binary16, bfloat16)
+{
+    // Some definitions for readability.
+    const FP_TYPE dtype_denorm_min = std::numeric_limits<FP_TYPE>::denorm_min();
+    const FP_TYPE dtype_norm_min   = std::numeric_limits<FP_TYPE>::min();
+
+    SUBCASE("positive subnormal reference allows flush to plus zero")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), 0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), 0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, 0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, 0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, 0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, 0.0, true, /* ulp */ 0.5);
+
+    SUBCASE("positive subnormal reference allows flush to minus zero")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -0.0, true, /* ulp */ 0.5);
+
+    SUBCASE("negative subnormal reference allows flush to plus zero")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), 0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), 0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, 0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, 0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, 0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, 0.0, true, /* ulp */ 0.5);
+
+    SUBCASE("negative subnormal reference allows flush to minus zero")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, -0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, -0.0, true, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, -0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, -0.0, true, /* ulp */ 0.5);
+
+    // a ULP of denorm_min is denorm_min
+    SUBCASE("positive denorm_min allows negative denorm_min with ulp > 2")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -dtype_denorm_min, true, /* ulp */ 2.5);
+
+    // a ULP of denorm_min is denorm_min
+    SUBCASE("negative denorm_min allows positive denorm_min with ulp > 2")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), dtype_denorm_min, true, /* ulp */ 2.5);
+
+    SUBCASE("positive subnormal reference disallows negative subnormal")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -dtype_denorm_min, false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * .5, false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * .5, false, /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * .1, false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * .1, false, /* ulp */ 3);
+
+    SUBCASE("negative subnormal reference disallows positive subnormal")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), dtype_denorm_min, false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * .5, false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * .5, false, /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * .1, false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * .1, false, /* ulp */ 3);
+
+    // Specifically covering a previous bug which allowed all subnormal values
+    // when the reference was a subnormal input
+    SUBCASE("positive subnormal reference disallows high-error subnormals")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+
+    SUBCASE("negative subnormal reference disallows high-error subnormals")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+};
+
+TEST_CASE_TEMPLATE("subnormal handling fp8 - ulp", FP_TYPE, fp8_e5m2, fp8_e4m3)
+{
+    // Some definitions for readability.
+    const FP_TYPE dtype_denorm_min = std::numeric_limits<FP_TYPE>::denorm_min();
+    const FP_TYPE dtype_norm_min   = std::numeric_limits<FP_TYPE>::min();
+
+    SUBCASE("positive subnormal reference allows flush to zero if within bounds")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), 0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -0.0, true);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), 0.0, true, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -0.0, true, /* ulp */ 2);
+
+    SUBCASE("negative subnormal reference allows flush to zero if within bounds")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), 0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -0.0, true);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), 0.0, true, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -0.0, true, /* ulp */ 2);
+
+    SUBCASE("positive subnormal reference disallows flush to zero if not within bounds")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), 0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, 0.0, false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -0.0, false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, 0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -0.0, false, /* ulp */ 0.5);
+
+    SUBCASE("negative subnormal reference disallows flush to zero if not within bounds")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), 0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, 0.0, false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, -0.0, false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, 0.0, false, /* ulp */ 0.5);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, -0.0, false, /* ulp */ 0.5);
+
+    // Specifically covering a previous bug which allowed all subnormal values when the
+    // reference was a subnormal input
+    SUBCASE("positive subnormal reference disallows high-error subnormals")
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+
+    SUBCASE("negative subnormal reference disallows high-error subnormals")
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+}
+
 TEST_SUITE_END();    // verify

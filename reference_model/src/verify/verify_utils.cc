@@ -271,9 +271,9 @@ bool tosaCheckFloatBound(
     OutType testValue, double referenceValue, double errorBound, double& resultDifference, std::string& resultWarning)
 {
     // Both must be NaNs to be correct
-    if (std::isnan(referenceValue) || (std::isnan(testValue) && !std::is_same<OutType, fp8e4m3>::value))
+    if (std::isnan(referenceValue))
     {
-        if (std::isnan(referenceValue) && std::isnan(testValue))
+        if (std::isnan(testValue))
         {
             resultDifference = 0.0;
             return true;
@@ -307,71 +307,38 @@ bool tosaCheckFloatBound(
     double referenceMax = referenceValue + errorBound;
     double referenceMin = referenceValue - errorBound;
 
-    // Handle the overflow cases.
-    if (referenceMax > AccPrecision<OutType>::normal_max)
-    {
-        if (std::is_same<OutType, fp8e4m3>::value)
-        {
-            referenceMax = std::numeric_limits<OutType>::quiet_NaN();
-        }
-        else
-        {
-            referenceMax = std::numeric_limits<OutType>::infinity();
-        }
-    }
+    // Some definitions for readability
+    constexpr bool typeHasInf = std::numeric_limits<OutType>::has_infinity;
+    constexpr bool typeRequiresSubnormals =
+        std::is_same<OutType, fp8e4m3>::value || std::is_same<OutType, fp8e5m2>::value;
 
-    if (referenceMin > AccPrecision<OutType>::normal_max)
-    {
-        if (std::is_same<OutType, fp8e4m3>::value)
-        {
-            referenceMin = std::numeric_limits<OutType>::quiet_NaN();
-        }
-        else
-        {
-            referenceMin = std::numeric_limits<OutType>::infinity();
-        }
-    }
-    // And the underflow cases.
-    if (referenceMax < AccPrecision<OutType>::normal_min)
-    {
-        referenceMax = AccPrecision<OutType>::normal_min;
-    }
+    constexpr double inf        = std::numeric_limits<double>::infinity();
+    constexpr double normal_max = AccPrecision<OutType>::normal_max;
+    constexpr double normal_min = AccPrecision<OutType>::normal_min;
 
-    if (referenceMin < AccPrecision<OutType>::normal_min)
-    {
-        if (!std::is_same<OutType, fp8e4m3>::value && !std::is_same<OutType, fp8e5m2>::value)
-        {
-            // Allow subnormal values to be flushed to zero for non FP8 types
-            // Also support large error bounds where referenceMin is negative
-            referenceMin = std::min(0.0, referenceMin);
-        }
-    }
+    if (referenceMax > normal_max)
+        referenceMax = +inf;
+
+    if (referenceMin > normal_max)
+        referenceMin = +inf;
+    else if (referenceMin < -normal_max)
+        referenceMin = -inf;
 
     // And finally... Do the comparison.
     double testValue64 = static_cast<double>(testValue);
     bool withinBound   = false;
-    // referenceMax and/or referenceMin can be NaN for fp8e4m3
-    if (std::isnan(referenceMax) && std::isnan(referenceMin))
+
+    // Allow subnormal values to be flushed to zero for non FP8 types
+    if (!typeRequiresSubnormals && referenceMin < normal_min && (testValue64 == 0.0))
     {
-        // this check should never really occur, just accept any value of fp8e4m3
         withinBound = true;
     }
-    else if (std::isnan(referenceMax))
+    else if (std::isnan(testValue))
     {
-        withinBound = std::isnan(testValue64) || testValue64 >= referenceMin;
-    }
-    else if (std::isnan(referenceMin))
-    {
-        withinBound = std::isnan(testValue64) || testValue64 <= referenceMax;
-    }
-    else
-    {
-        withinBound = testValue64 >= referenceMin && testValue64 <= referenceMax;
-    }
-    // handle resultDifference and resultWarning for NaN cases for fp8e4m3
-    if (std::isnan(testValue64))
-    {
-        if (withinBound)
+        // Case where ref is NaN was handled at the beginning of the function.
+        // Note because `ref` is made to be >= 0, there is no point in also
+        // checking if referenceMin == -inf
+        if (!typeHasInf && referenceMax == +inf)
         {
             resultDifference = 0.0;
             return true;
@@ -379,6 +346,11 @@ bool tosaCheckFloatBound(
         setNaNWarning(testValue64, referenceValue, resultDifference, resultWarning);
         return false;
     }
+    else
+    {
+        withinBound = testValue64 >= referenceMin && testValue64 <= referenceMax;
+    }
+
     resultDifference = testValue64 - referenceValue;
 
     if (!withinBound)
