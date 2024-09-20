@@ -52,12 +52,15 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     double errorBound = 0.0;
     if (std::isfinite(boundsValue) || std::abs(boundsMagnitude) != 0.0)
     {
-        double valueBound = std::abs(boundsMagnitude) * (boundsValue);
+        // ULPs for subnormal values are the ULP of the normal minimum
+        double valueBound = std::max(std::abs(boundsMagnitude), double(std::numeric_limits<OutType>::min()));
+
         if (cfg->lowerBound > 0)
         {
-            valueBound = std::max(cfg->lowerBound, valueBound);
+            valueBound = std::max(cfg->lowerBound / boundsValue, valueBound);
         }
         errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valueBound;
+        errorBound *= boundsValue;
     }
     // TODO: If this function proves to no longer be generic,
     // calculate errorBound in this function and introduce

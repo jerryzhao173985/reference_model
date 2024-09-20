@@ -29,7 +29,9 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     const auto cfg = reinterpret_cast<const ReduceProductVerifyInfo*>(cfgPtr);
     unused(boundsValue);
 
-    return std::abs(referenceValue) *
+    // ULPs for subnormal values are the ULP of the normal minimum
+    const double referenceMagnitude = std::max(std::abs(referenceValue), double(std::numeric_limits<OutType>::min()));
+    return referenceMagnitude *
            (std::pow(1 + std::pow(2, -AccPrecision<OutType>::normal_frac - 1), cfg->numberOfProducts) - 1);
 }
 }    // namespace
