@@ -177,27 +177,27 @@ int SubgraphTraverser::initializeGraph()
     // Get all the serialized tensors from TosaSerializationHandler.
     if (tsh)
     {
-        for (auto region : tsh->GetRegions())
+        for (const auto& region : tsh->GetRegions())
         {
-            for (auto block : region->GetBlocks())
+            for (const auto& block : region->GetBlocks())
             {
-                for (auto ser_tensor : block->GetTensors())
+                for (const auto& ser_tensor : block->GetTensors())
                 {
-                    ser_tensor_vec.push_back(ser_tensor);
+                    ser_tensor_vec.push_back(ser_tensor.get());
                 }
             }
         }
     }
     else
     {
-        for (auto ser_tensor : block->GetTensors())
+        for (const auto& ser_tensor : block->GetTensors())
         {
-            ser_tensor_vec.push_back(ser_tensor);
+            ser_tensor_vec.push_back(ser_tensor.get());
         }
     }
 
     std::vector<GraphNode*> non_const_node_vec;
-    for (auto op : block->GetOperators())
+    for (const auto& op : block->GetOperators())
     {
         // translated TosaSerializationOperator to GraphNode
         TOSA_REF_TYPE input_dtype  = TOSA_REF_TYPE_UNKNOWN;
@@ -414,9 +414,9 @@ int SubgraphTraverser::initializeGraph()
         idx++;
     }
 
-    for (auto ts : block->GetTensors())
+    for (const auto& ts : block->GetTensors())
     {
-        addTensor(ts);
+        addTensor(ts.get());
     }
 
     DEBUG_INFO(GT, "Enumerating block %s graph inputs", block->GetName().c_str());
@@ -490,7 +490,7 @@ int SubgraphTraverser::allocateInputTensors()
     }
 
     // allocate variable tensors if not already allocated
-    for (auto ts : block->GetTensors())
+    for (const auto& ts : block->GetTensors())
     {
         if (ts->GetVariable())
         {

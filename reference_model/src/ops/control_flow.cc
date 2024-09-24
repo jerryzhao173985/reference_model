@@ -191,8 +191,8 @@ int OpCondIf::checkTensorAttributes()
     if (then_region && else_region)
     {
         // new serialization: then_graph and else_graph point to regions
-        then_block = then_region->GetBlocks().front();
-        else_block = else_region->GetBlocks().front();
+        then_block = then_region->GetBlocks().front().get();
+        else_block = else_region->GetBlocks().front().get();
     }
     else
     {
@@ -342,8 +342,8 @@ int OpWhileLoop::checkTensorAttributes()
     if (cond_region && body_region)
     {
         // new serialization: then_graph and else_graph point to regions
-        cond_block = cond_region->GetBlocks().front();
-        body_block = body_region->GetBlocks().front();
+        cond_block = cond_region->GetBlocks().front().get();
+        body_block = body_region->GetBlocks().front().get();
     }
     else
     {

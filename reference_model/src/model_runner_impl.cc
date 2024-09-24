@@ -44,7 +44,7 @@ void ModelRunnerImpl::setFuncDebug(func_debug_t& func_debug)
 GraphStatus ModelRunnerImpl::initialize(TosaSerializationHandler& serialization_handler)
 {
     validateTosaVersion(serialization_handler);
-    return initialize(serialization_handler.GetMainRegion()->GetBlocks()[0], &serialization_handler);
+    return initialize(serialization_handler.GetMainRegion()->GetBlocks()[0].get(), &serialization_handler);
 }
 
 GraphStatus ModelRunnerImpl::initialize(TosaSerializationBasicBlock& bb)
