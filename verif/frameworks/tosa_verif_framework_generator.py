@@ -94,6 +94,11 @@ TF_OP_LIST = {
             ),
         },
     },
+    "floor_div": {
+        "operands": (2, 0),
+        "build_fcn": (TBuilder.FloorDiv, TGen.tgDiv, ArgGen.agNone),
+        "types": TYPE_FI,
+    },
     "exp": {
         "operands": (1, 0),
         "build_fcn": (TBuilder.Exp, TGen.tgBasic, ArgGen.agNone),

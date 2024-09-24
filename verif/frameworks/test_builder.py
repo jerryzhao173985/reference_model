@@ -58,6 +58,13 @@ class TBuilder:
         def eval(self, a, b):
             return tf.multiply(a, b, name=self.result_name)
 
+    class FloorDiv:
+        def __init__(self, name):
+            self.result_name = name
+
+        def eval(self, a, b):
+            return tf.math.floordiv(a, b, name=self.result_name)
+
     class Exp:
         def __init__(self, name):
             self.result_name = name
