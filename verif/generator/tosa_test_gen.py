@@ -900,6 +900,25 @@ class TosaTestGen:
                 ),
             ]
 
+        # Set an invalid bias type for WrongBiasType ErrorIf check
+        if error_name == ErrorIf.WrongBiasType:
+            # DType.INT4 will cause serialization bug, exclude it by default
+            excludes = [DType.INT4]
+            if ifm.dtype == DType.FP16:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.FP32:
+                excludes.append(DType.FP32)
+            elif ifm.dtype == DType.INT8:
+                excludes.append(DType.INT32)
+            elif ifm.dtype == DType.BF16:
+                excludes.append(DType.BF16)
+            elif ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.INT16:
+                excludes.append(DType.INT48)
+            wrong_dtypes = list(gtu.usableDTypes(excludes=excludes))
+            bias.dtype = rng.choice(wrong_dtypes)
+
         # Invalidate Input/Output list for error_if checks.
         input_list = [ifm.name, filter.name, bias.name]
         output_list = [result_tensor.name]
@@ -927,6 +946,7 @@ class TosaTestGen:
             weight_shape=filter.shape,
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
+            bias_dtype=bias.dtype,
         ):
             return None
 
@@ -986,6 +1006,25 @@ class TosaTestGen:
                 ),
             ]
 
+        # Set an invalid bias type for WrongBiasType ErrorIf check
+        if error_name == ErrorIf.WrongBiasType:
+            # DType.INT4 will cause serialization bug, exclude it by default
+            excludes = [DType.INT4]
+            if ifm.dtype == DType.FP16:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.FP32:
+                excludes.append(DType.FP32)
+            elif ifm.dtype == DType.INT8:
+                excludes.append(DType.INT32)
+            elif ifm.dtype == DType.BF16:
+                excludes.append(DType.BF16)
+            elif ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.INT16:
+                excludes.append(DType.INT48)
+            wrong_dtypes = list(gtu.usableDTypes(excludes=excludes))
+            bias.dtype = rng.choice(wrong_dtypes)
+
         # Invalidate Input/Output list for error_if checks.
         input_list = [ifm.name, filter.name, bias.name]
         output_list = [result_tensor.name]
@@ -1013,6 +1052,7 @@ class TosaTestGen:
             weight_shape=filter.shape,
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
+            bias_dtype=bias.dtype,
         ):
             return None
 
@@ -1063,6 +1103,25 @@ class TosaTestGen:
                 ),
             ]
 
+        # Set an invalid bias type for WrongBiasType ErrorIf check
+        if error_name == ErrorIf.WrongBiasType:
+            # DType.INT4 will cause serialization bug, exclude it by default
+            excludes = [DType.INT4]
+            if ifm.dtype == DType.FP16:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.FP32:
+                excludes.append(DType.FP32)
+            elif ifm.dtype == DType.INT8:
+                excludes.append(DType.INT32)
+            elif ifm.dtype == DType.BF16:
+                excludes.append(DType.BF16)
+            elif ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.INT16:
+                excludes.append(DType.INT48)
+            wrong_dtypes = list(gtu.usableDTypes(excludes=excludes))
+            bias.dtype = rng.choice(wrong_dtypes)
+
         # Invalidate Input/Output list for error_if checks.
         input_list = [ifm.name, filter.name, bias.name]
         output_list = [result_tensor.name]
@@ -1089,6 +1148,7 @@ class TosaTestGen:
             weight_shape=filter.shape,
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
+            bias_dtype=bias.dtype,
         ):
             return None
 
@@ -1147,6 +1207,25 @@ class TosaTestGen:
                 ),
             ]
 
+        # Set an invalid bias type for WrongBiasType ErrorIf check
+        if error_name == ErrorIf.WrongBiasType:
+            # DType.INT4 will cause serialization bug, exclude it by default
+            excludes = [DType.INT4]
+            if ifm.dtype == DType.FP16:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.FP32:
+                excludes.append(DType.FP32)
+            elif ifm.dtype == DType.INT8:
+                excludes.append(DType.INT32)
+            elif ifm.dtype == DType.BF16:
+                excludes.append(DType.BF16)
+            elif ifm.dtype in [DType.FP8E4M3, DType.FP8E5M2]:
+                excludes.append(DType.FP16)
+            elif ifm.dtype == DType.INT16:
+                excludes.append(DType.INT48)
+            wrong_dtypes = list(gtu.usableDTypes(excludes=excludes))
+            bias.dtype = rng.choice(wrong_dtypes)
+
         # Invalidate Input/Output list for error_if checks.
         input_list = [ifm.name, filter.name, bias.name]
         output_list = [result_tensor.name]
@@ -1174,6 +1253,7 @@ class TosaTestGen:
             weight_shape=filter.shape,
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
+            bias_dtype=bias.dtype,
         ):
             return None
 
@@ -3442,6 +3522,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
+                TosaErrorValidator.evWrongBiasType,
             ),
             "data_gen": DP_FS_DATAGEN,
             "broadcastable_bias": True,
@@ -3476,6 +3557,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
+                TosaErrorValidator.evWrongBiasType,
             ),
             "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_3D,
@@ -3509,6 +3591,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
+                TosaErrorValidator.evWrongBiasType,
             ),
             "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_2D,
@@ -3602,6 +3685,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongRank,
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evWrongAccumulatorType,
+                TosaErrorValidator.evWrongBiasType,
             ),
             "data_gen": DP_FS_DATAGEN,
             "filter": KERNELS_2D,

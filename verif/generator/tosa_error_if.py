@@ -86,6 +86,7 @@ class ErrorIf(object):
     ReshapeOutputSizeNonInteger = "ReshapeOutputSizeNonInteger"
     BroadcastShapesMismatch = "BroadcastShapesMismatch"
     WrongAccumulatorType = "WrongAccumulatorType"
+    WrongBiasType = "WrongBiasType"
 
 
 class TosaErrorIfArgGen:
@@ -2723,6 +2724,48 @@ class TosaErrorValidator:
                 elif (
                     input_dtype in (DType.FP8E4M3, DType.FP8E5M2)
                     and accum_dtype != DType.FP16
+                ):
+                    error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evWrongBiasType(check=False, **kwargs):
+        error_name = ErrorIf.WrongBiasType
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "An unsupported bias data type was requested"
+
+        if check:
+            op = kwargs["op"]
+            input_dtype = kwargs["input_dtype"]
+            bias_dtype = kwargs["bias_dtype"]
+
+            if op["op"] in {
+                Op.CONV2D,
+                Op.CONV3D,
+                Op.DEPTHWISE_CONV2D,
+                Op.TRANSPOSE_CONV2D,
+            }:
+                if input_dtype == DType.INT8 and bias_dtype != DType.INT32:
+                    error_result = True
+                elif input_dtype == DType.INT16 and bias_dtype != DType.INT48:
+                    error_result = True
+                elif input_dtype == DType.FP32 and bias_dtype != DType.FP32:
+                    error_result = True
+                elif input_dtype == DType.BF16 and bias_dtype != DType.BF16:
+                    error_result = True
+                elif input_dtype == DType.FP16 and bias_dtype != DType.FP16:
+                    error_result = True
+                elif (
+                    input_dtype in (DType.FP8E4M3, DType.FP8E5M2)
+                    and bias_dtype != DType.FP16
                 ):
                     error_result = True
 
