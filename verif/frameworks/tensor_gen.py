@@ -103,6 +103,27 @@ class TGen:
         return tf_placeholders, tf_consts
 
     @staticmethod
+    def tgDiv(op, shape, dtype, rng):
+        # Build random tensor placeholder node args of a given shape for Div
+        # ops tests, so the denominator will not consist of any zero elem
+        pl, const = op["operands"]
+
+        assert pl == 2
+
+        tf_placeholders = []
+        tf_consts = []
+
+        tf_placeholders.append(("placeholder_0", TGen.getRand(shape, dtype, rng)))
+
+        # Make sure that the denominator tensor doesn't contain any 0 element
+        denom = TGen.getRand(shape, dtype, rng)
+        denom[denom == 0] = 3
+
+        tf_placeholders.append(("placeholder_1", denom))
+
+        return tf_placeholders, tf_consts
+
+    @staticmethod
     def tgBFuzz(op, shape, dtype, rng, for_tflite_converter=True):
         # Build random tensor placeholder node args of a given shape, optionally
         # fuzzing the arguments with random 1's to force broadcasting
