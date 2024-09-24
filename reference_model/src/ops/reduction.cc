@@ -179,19 +179,17 @@ int OpReduceAny<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceMax<Rank, Dtype>::eval()
 {
-    auto reduce = [this]<typename T>() {
-        return this->out->getTensor() = this->in->getTensor()
-                                            .reduce(this->dims, MaxReducer<Dtype, T>())
-                                            .reshape(this->out->getTensor().dimensions());
-    };
-
     if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
     {
-        reduce.template operator()<float>();
+        this->out->getTensor() = this->in->getTensor()
+                                     .reduce(this->dims, MaxReducer<Dtype, float>())
+                                     .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
     {
-        reduce.template operator()<double>();
+        this->out->getTensor() = this->in->getTensor()
+                                     .reduce(this->dims, MaxReducer<Dtype, double>())
+                                     .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)
     {
@@ -208,19 +206,17 @@ int OpReduceMax<Rank, Dtype>::eval()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceMin<Rank, Dtype>::eval()
 {
-    auto reduce = [this]<typename T>() {
-        return this->out->getTensor() = this->in->getTensor()
-                                            .reduce(this->dims, MinReducer<Dtype, T>())
-                                            .reshape(this->out->getTensor().dimensions());
-    };
-
     if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
     {
-        reduce.template operator()<float>();
+        this->out->getTensor() = this->in->getTensor()
+                                     .reduce(this->dims, MinReducer<Dtype, float>())
+                                     .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
     {
-        reduce.template operator()<double>();
+        this->out->getTensor() = this->in->getTensor()
+                                     .reduce(this->dims, MinReducer<Dtype, double>())
+                                     .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)
     {
