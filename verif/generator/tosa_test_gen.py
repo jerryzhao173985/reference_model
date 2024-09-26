@@ -902,8 +902,7 @@ class TosaTestGen:
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
-            # DType.INT4 will cause serialization bug, exclude it by default
-            excludes = [DType.INT4]
+            excludes = []
             if ifm.dtype == DType.FP16:
                 excludes.append(DType.FP16)
             elif ifm.dtype == DType.FP32:
@@ -1008,8 +1007,7 @@ class TosaTestGen:
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
-            # DType.INT4 will cause serialization bug, exclude it by default
-            excludes = [DType.INT4]
+            excludes = []
             if ifm.dtype == DType.FP16:
                 excludes.append(DType.FP16)
             elif ifm.dtype == DType.FP32:
@@ -1105,8 +1103,7 @@ class TosaTestGen:
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
-            # DType.INT4 will cause serialization bug, exclude it by default
-            excludes = [DType.INT4]
+            excludes = []
             if ifm.dtype == DType.FP16:
                 excludes.append(DType.FP16)
             elif ifm.dtype == DType.FP32:
@@ -1209,8 +1206,7 @@ class TosaTestGen:
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
-            # DType.INT4 will cause serialization bug, exclude it by default
-            excludes = [DType.INT4]
+            excludes = []
             if ifm.dtype == DType.FP16:
                 excludes.append(DType.FP16)
             elif ifm.dtype == DType.FP32:
