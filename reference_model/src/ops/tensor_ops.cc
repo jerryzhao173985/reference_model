@@ -427,19 +427,24 @@ int OpArgMax<Rank, Dtype>::eval()
 
     Eigen::Tensor<OutEigenType, 1> argmaxes(matrix_dimensions[1]);
 
-    // Find the maximum of a row in the matrix. If there are NaNs, return the last NaN position.
+    // Find the maximum of a row in the matrix.
     for (DenseIndex j = 0; j < matrix_dimensions[1]; j++)
     {
-        InEigenType max_value = DtypeLimits<Dtype>::low_extreme;
-        OutEigenType max_idx  = 0;
+        InEigenType max_val  = DtypeLimits<Dtype>::low_extreme;
+        OutEigenType max_idx = 0;
 
         for (OutEigenType i = 0; i < matrix_dimensions[0]; i++)
         {
-            InEigenType val = shuffled_input(i, j);
-            if (std::isnan(val) || val > max_value)
+            InEigenType val    = shuffled_input(i, j);
+            InEigenType result = applyMax<InEigenType>(val, max_val);
+            if (result != max_val)
             {
-                max_value = val;
-                max_idx   = i;
+                // If there are NaNs, return the first NaN position.
+                if (!(std::is_floating_point_v<InEigenType> && std::isnan(result) && std::isnan(max_val)))
+                {
+                    max_val = result;
+                    max_idx = i;
+                }
             }
         }
 

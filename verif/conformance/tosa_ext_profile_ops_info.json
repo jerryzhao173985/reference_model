@@ -367,6 +367,7 @@
                 ],
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp32",
                         "fp16",
@@ -374,8 +375,18 @@
                         "16,64",
                         "--target-rank",
                         "1",
-                        "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "2",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -416,6 +427,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bf16",
                         "--fp-values-range",
@@ -424,8 +436,19 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "bf16",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "2",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -454,6 +477,7 @@
                 "from_version": "v0.100.0",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp8e4m3",
                         "--fp-values-range",
@@ -462,8 +486,19 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "2",
                         "--num-rand-permutations",
                         "2"
                     ],
@@ -504,6 +539,7 @@
                 "from_version": "v0.100.0",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "fp8e5m2",
                         "--fp-values-range",
@@ -512,8 +548,19 @@
                         "32,64",
                         "--target-rank",
                         "1",
-                        "2",
                         "3",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,64",
+                        "--target-rank",
+                        "2",
                         "--num-rand-permutations",
                         "2"
                     ],
