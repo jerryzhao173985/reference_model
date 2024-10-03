@@ -732,6 +732,10 @@ class TosaTensorValuesGen:
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         def tensor_is_variable(pCount, idx):
+            if dtypeList[idx] == DType.SHAPE:
+                # Shapes must always be CONST_SHAPEs
+                return False
+
             # Determine if the tensor is constant or variable (a placeholder)
             if testGen.args.random_const_inputs:
                 # Choose type of tensor biased by defaults
