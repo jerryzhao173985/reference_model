@@ -87,6 +87,7 @@ class ErrorIf(object):
     BroadcastShapesMismatch = "BroadcastShapesMismatch"
     WrongAccumulatorType = "WrongAccumulatorType"
     WrongBiasType = "WrongBiasType"
+    InputRank0WrongRank = "InputRank0WrongRank"
 
 
 class TosaErrorIfArgGen:
@@ -2768,6 +2769,29 @@ class TosaErrorValidator:
                     and bias_dtype != DType.FP16
                 ):
                     error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evInputRank0WrongRank(check=False, **kwargs):
+        assert "op" in kwargs
+
+        error_name = ErrorIf.InputRank0WrongRank
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Rank not supported for rank 0 input"
+
+        if check:
+            rank0_shape = kwargs["rank0_shape"]
+
+            if len(rank0_shape) != 0:
+                error_result = True
 
         info_dict = {
             "error_name": error_name,

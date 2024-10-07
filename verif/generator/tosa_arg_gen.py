@@ -1380,6 +1380,10 @@ class TosaTensorValuesGen:
 
     @staticmethod
     def tvgMul(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+        # Need to supply shift tensor for MUL
+        dtypeList[2] = DType.INT8
+        shapeList[2] = [] if error_name != ErrorIf.InputRank0WrongRank else [1]
+
         if error_name is not None or dtypeList[0] in (
             DType.FP16,
             DType.BF16,
@@ -1392,9 +1396,6 @@ class TosaTensorValuesGen:
             if data_range:
                 argsDict["data_range"] = data_range
 
-            # Need to supply shift tensor for MUL
-            dtypeList[2] = DType.INT8
-            shapeList[2] = [1]
             # Create a new list for the pre-generated data in argsDict["fixed_data"]
             argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
 
@@ -1477,7 +1478,7 @@ class TosaTensorValuesGen:
                 )
             )
             tens_ser_list.append(
-                testGen.ser.addPlaceholder([1], DType.INT8, np.int8([shift]))
+                testGen.ser.addPlaceholder(shapeList[2], dtypeList[2], np.int8([shift]))
             )
 
             return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)

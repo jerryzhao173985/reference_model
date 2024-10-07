@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public:
     BinaryNodeBase(SubgraphTraverser* sgt_, const Op& nodeType, const uint64_t id_);
     virtual ~BinaryNodeBase();
 
-    virtual int checkTensorAttributes() final;
+    virtual int checkTensorAttributes();
     virtual int eval()         = 0;
     virtual int register_fcn() = 0;
 
@@ -173,8 +173,8 @@ public:
     using TIn         = Eigen::Tensor<InEigenType, Rank>;
     using TOut        = Eigen::Tensor<OutEigenType, Rank>;
     using TShiftRank0 = Eigen::Tensor<ShiftEigenType, 0>;
-    using TShiftRank1 = Eigen::Tensor<ShiftEigenType, 1>;
 
+    virtual int checkTensorAttributes();
     int register_fcn();
     int eval();
 
