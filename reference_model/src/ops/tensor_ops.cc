@@ -1577,8 +1577,7 @@ int OpMaxPool2d<Dtype>::eval()
         for (int i = 0; i < im2col_input_dims[0]; i++)
         {
             OutEigenType val = input_extract_patches(i, j);
-            if (std::isnan(val) || val > max)
-                max = val;
+            max              = applyMax<OutEigenType>(max, val);
         }
 
         out_1d(j) = max;
