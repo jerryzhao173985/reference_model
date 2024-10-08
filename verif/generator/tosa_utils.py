@@ -4,6 +4,8 @@ import struct
 from enum import IntEnum
 
 from tosa.DType import DType
+from tosa.NanPropagationMode import NanPropagationMode
+from tosa.Op import Op
 
 # Maximum dimension size for output and inputs for RESIZE
 MAX_RESIZE_DIMENSION = 16384
@@ -304,3 +306,46 @@ def normal_frac(dtype):
         return 2
     else:
         raise Exception(f"Unknown support dtype for normal_frac: {dtype}")
+
+
+def has_nan_mode_by_enum(op_enum: int) -> bool:
+    # The list of ops supporting NaN propagation mode.
+    if op_enum in [
+        Op.REDUCE_MAX,
+        Op.REDUCE_MIN,
+        Op.CLAMP,
+        Op.MAXIMUM,
+        Op.MINIMUM,
+        Op.ARGMAX,
+        Op.MAX_POOL2D,
+    ]:
+        return True
+    return False
+
+
+def has_nan_mode_by_name(op_name: str) -> bool:
+    # The list of ops supporting NaN propagation mode.
+    if op_name in [
+        "reduce_max",
+        "reduce_min",
+        "clamp",
+        "maximum",
+        "minimum",
+        "argmax",
+        "max_pool2d",
+    ]:
+        return True
+    return False
+
+
+def get_nan_node(args_dict) -> NanPropagationMode:
+    # Enable NaN propagation mode by default.
+    if "nan_mode" not in args_dict:
+        return NanPropagationMode.PROPAGATE
+    nan_mode = args_dict["nan_mode"]
+    # When the NaN mode is set, must be valid mode.
+    assert (
+        nan_mode == NanPropagationMode.PROPAGATE
+        or nan_mode == NanPropagationMode.IGNORE
+    ), "Invalid NaN mode"
+    return nan_mode

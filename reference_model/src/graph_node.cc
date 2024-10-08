@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 //    limitations under the License.
 
 #include "graph_node.h"
+#include "arith_util.h"
 
 using namespace TosaReference;
 using namespace Eigen;
@@ -249,4 +250,10 @@ int GraphNode::idiv_floor(int input1, int input2)
         result--;
     }
     return result;
+}
+
+int GraphNode::validateNanMode(NanPropagationMode nan_mode)
+{
+    ERROR_IF(!(isPropagatingNan(nan_mode) || isIgnoringNan(nan_mode)), "validateNanMode: invalid NaN propagation mode");
+    return 0;
 }

@@ -3,6 +3,7 @@
 import itertools
 import logging
 import math
+from copy import deepcopy
 
 import generator.tosa_utils as gtu
 import numpy as np
@@ -11,6 +12,7 @@ from generator.tosa_error_if import ErrorIf
 from generator.tosa_error_if import TosaErrorIfArgGen
 from serializer.tosa_serializer import DTypeNames
 from tosa.DType import DType
+from tosa.NanPropagationMode import NanPropagationMode
 from tosa.Op import Op
 from tosa.ResizeMode import ResizeMode
 
@@ -1955,6 +1957,27 @@ class TosaArgGen:
         return new_arg_list
 
     @staticmethod
+    def _append_nan_mode(rng, arg_list):
+        new_arg_list = []
+        mode_to_str = {
+            NanPropagationMode.PROPAGATE: "modeP",
+            NanPropagationMode.IGNORE: "modeI",
+        }
+
+        for arg_str, args_dict in arg_list:
+            nan_mode = rng.choice(
+                [NanPropagationMode.PROPAGATE, NanPropagationMode.IGNORE]
+            )
+            mode_str = mode_to_str[nan_mode]
+            separator = "" if len(arg_str) == 0 else "_"
+            new_arg_str = separator.join((arg_str, mode_str))
+            new_args_dict = deepcopy(args_dict)
+            new_args_dict["nan_mode"] = nan_mode
+            new_arg_list.append((new_arg_str, new_args_dict))
+
+        return new_arg_list
+
+    @staticmethod
     def agNone(testGen, rng, opName, shapeList, dtype, error_name=None):
         """A trivial argument generator for operators that don't take any
         non-tensor arguments"""
@@ -1966,6 +1989,10 @@ class TosaArgGen:
             [("", {})],
             error_name,
         )
+
+        if gtu.dtypeIsFloat(dtype) and gtu.has_nan_mode_by_name(opName):
+            arg_list = TosaArgGen._append_nan_mode(rng, arg_list)
+
         # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
@@ -2025,6 +2052,10 @@ class TosaArgGen:
             arg_list,
             error_name,
         )
+
+        if gtu.dtypeIsFloat(dtype) and gtu.has_nan_mode_by_name(opName):
+            arg_list = TosaArgGen._append_nan_mode(rng, arg_list)
+
         # Return list of tuples: (arg_str, args_dict)
         return arg_list
 
@@ -2882,6 +2913,9 @@ class TosaArgGen:
             arg_list,
             error_name,
         )
+
+        if gtu.dtypeIsFloat(dtype) and gtu.has_nan_mode_by_name(opName):
+            arg_list = TosaArgGen._append_nan_mode(rng, arg_list)
 
         # Return list of tuples: (arg_str, args_dict)
         return arg_list

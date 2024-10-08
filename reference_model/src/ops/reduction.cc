@@ -82,6 +82,20 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
     return 0;
 }
 
+template <int Rank, TOSA_REF_TYPE Dtype>
+int ReduceNanNode<Rank, Dtype>::checkTensorAttributes()
+{
+    if (ReduceNode<Rank, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(this->attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
+}
+
 // These 2 reducers are to overcome a bug introduced in Eigen between 3.3.7 and 3.4.0
 // The in-built .any and .all operations now fail on an assert in TensorMorphing.h:150
 // which seems to be due to incorrect data being passed internally as m_impl
@@ -122,10 +136,12 @@ struct AnyReducer
 template <TOSA_REF_TYPE Dtype, typename T>
 struct MaxReducer
 {
-    static const bool PacketAccess = false;
+    MaxReducer(NanPropagationMode nan_mode)
+        : _nan_mode(nan_mode)
+    {}
     void reduce(const T val, T* accum)
     {
-        *accum = applyMax<T>(*accum, val);
+        *accum = applyMax<T>(*accum, val, _nan_mode);
     }
     T initialize() const
     {
@@ -135,15 +151,19 @@ struct MaxReducer
     {
         return accum;
     }
+    static const bool PacketAccess = false;
+    NanPropagationMode _nan_mode;
 };
 
 template <TOSA_REF_TYPE Dtype, typename T>
 struct MinReducer
 {
-    static const bool PacketAccess = false;
+    MinReducer(NanPropagationMode nan_mode)
+        : _nan_mode(nan_mode)
+    {}
     void reduce(const T val, T* accum)
     {
-        *accum = applyMin<T>(*accum, val);
+        *accum = applyMin<T>(*accum, val, _nan_mode);
     }
     T initialize() const
     {
@@ -153,6 +173,8 @@ struct MinReducer
     {
         return accum;
     }
+    static const bool PacketAccess = false;
+    NanPropagationMode _nan_mode;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -179,13 +201,13 @@ int OpReduceMax<Rank, Dtype>::eval()
     if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
     {
         this->out->getTensor() = this->in->getTensor()
-                                     .reduce(this->dims, MaxReducer<Dtype, float>())
+                                     .reduce(this->dims, MaxReducer<Dtype, float>(this->attribute->nan_mode()))
                                      .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
     {
         this->out->getTensor() = this->in->getTensor()
-                                     .reduce(this->dims, MaxReducer<Dtype, double>())
+                                     .reduce(this->dims, MaxReducer<Dtype, double>(this->attribute->nan_mode()))
                                      .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)
@@ -206,13 +228,13 @@ int OpReduceMin<Rank, Dtype>::eval()
     if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
     {
         this->out->getTensor() = this->in->getTensor()
-                                     .reduce(this->dims, MinReducer<Dtype, float>())
+                                     .reduce(this->dims, MinReducer<Dtype, float>(this->attribute->nan_mode()))
                                      .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP64)
     {
         this->out->getTensor() = this->in->getTensor()
-                                     .reduce(this->dims, MinReducer<Dtype, double>())
+                                     .reduce(this->dims, MinReducer<Dtype, double>(this->attribute->nan_mode()))
                                      .reshape(this->out->getTensor().dimensions());
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_INT32)

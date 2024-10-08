@@ -45,6 +45,25 @@ protected:
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+class ReduceNanNode : public ReduceNode<Rank, Dtype>
+{
+public:
+    ReduceNanNode(SubgraphTraverser* sgt_, const Op& nodeType, TosaAttributeBase* attribute_, const uint64_t id_)
+        : ReduceNode<Rank, Dtype>(sgt_, nodeType, attribute_, id_)
+    {}
+    virtual ~ReduceNanNode()
+    {}
+    // Check the NaN propagation mode as well.
+    virtual int checkTensorAttributes();
+    virtual int eval() = 0;
+
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    using TIn          = Eigen::Tensor<InEigenType, Rank>;
+    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+};
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 class OpReduceAll : public ReduceNode<Rank, Dtype>
 {
 public:
@@ -65,21 +84,21 @@ public:
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-class OpReduceMax : public ReduceNode<Rank, Dtype>
+class OpReduceMax : public ReduceNanNode<Rank, Dtype>
 {
 public:
     OpReduceMax(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MAX, attribute_, id_)
+        : ReduceNanNode<Rank, Dtype>(sgt_, Op_REDUCE_MAX, attribute_, id_)
     {}
     virtual int eval();
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-class OpReduceMin : public ReduceNode<Rank, Dtype>
+class OpReduceMin : public ReduceNanNode<Rank, Dtype>
 {
 public:
     OpReduceMin(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MIN, attribute_, id_)
+        : ReduceNanNode<Rank, Dtype>(sgt_, Op_REDUCE_MIN, attribute_, id_)
     {}
     virtual int eval();
 };

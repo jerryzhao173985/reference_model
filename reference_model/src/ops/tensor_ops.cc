@@ -359,6 +359,11 @@ int OpArgMax<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
+    if (validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+
     bool shape_check = true;
     for (int32_t i = 0; i < input->getRank(); i++)
     {
@@ -424,20 +429,25 @@ int OpArgMax<Rank, Dtype>::eval()
 
     Eigen::Tensor<OutEigenType, 1> argmaxes(matrix_dimensions[1]);
 
+    constexpr bool is_fp = std::is_floating_point_v<InEigenType>;
+    const auto nan_mode  = attribute->nan_mode();
+
     // Find the maximum of a row in the matrix.
     for (DenseIndex j = 0; j < matrix_dimensions[1]; j++)
     {
-        InEigenType max_val  = DtypeLimits<Dtype>::low_extreme;
+        InEigenType max_val =
+            (is_fp && isIgnoringNan(nan_mode)) ? DtypeLimits<Dtype>::quiet_NaN : DtypeLimits<Dtype>::low_extreme;
+
         OutEigenType max_idx = 0;
 
         for (OutEigenType i = 0; i < matrix_dimensions[0]; i++)
         {
             InEigenType val    = shuffled_input(i, j);
-            InEigenType result = applyMax<InEigenType>(val, max_val);
+            InEigenType result = applyMax<InEigenType>(val, max_val, nan_mode);
             if (result != max_val)
             {
                 // If there are NaNs, return the first NaN position.
-                if (!(std::is_floating_point_v<InEigenType> && std::isnan(result) && std::isnan(max_val)))
+                if (!(is_fp && std::isnan(result) && std::isnan(max_val)))
                 {
                     max_val = result;
                     max_idx = i;
@@ -1484,6 +1494,11 @@ int OpMaxPool2d<Dtype>::checkTensorAttributes()
         return 1;
     }
 
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1574,8 +1589,7 @@ int OpMaxPool2d<Dtype>::eval()
         for (int i = 0; i < im2col_input_dims[0]; i++)
         {
             OutEigenType val = input_extract_patches(i, j);
-            if (std::isnan(val) || val > max)
-                max = val;
+            max              = applyMax<OutEigenType>(max, val, attribute->nan_mode());
         }
 
         out_1d(j) = max;
