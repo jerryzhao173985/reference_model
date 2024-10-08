@@ -104,7 +104,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP32: {
             // apply fpTrunc<Dtype> after min/max
             this->fcn = [min, max](InEigenType a) -> OutEigenType {
-                return fpTrunc<Dtype>(a <= min ? min : a >= max ? max : a);
+                return fpTrunc<Dtype>(applyClip<InEigenType, InEigenType>(a, min, max));
             };
         }
         break;
@@ -112,7 +112,9 @@ int OpClamp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_INT8:
         case TOSA_REF_TYPE_INT16: {
             // simply min/max
-            this->fcn = [min, max](InEigenType a) -> OutEigenType { return (a <= min ? min : a >= max ? max : a); };
+            this->fcn = [min, max](InEigenType a) -> OutEigenType {
+                return applyClip<InEigenType, InEigenType>(a, min, max);
+            };
         }
         break;
         default:
