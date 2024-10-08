@@ -29,7 +29,7 @@ public:
     UnaryNode(SubgraphTraverser* sgt_, const Op& nodeType, const uint64_t id_);
     virtual ~UnaryNode();
 
-    virtual int checkTensorAttributes() final;
+    virtual int checkTensorAttributes();
     virtual int eval() final;
     virtual int register_fcn() = 0;
 

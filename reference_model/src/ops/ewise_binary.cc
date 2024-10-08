@@ -145,6 +145,26 @@ int BinaryNode<0, InDtype, OutDtype>::eval()
     return GraphNode::eval();
 }
 
+template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
+int BinaryNanNode<Rank, InDtype, OutDtype>::checkTensorAttributes()
+{
+    if (BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
+int BinaryNanNode<Rank, InDtype, OutDtype>::eval()
+{
+    return BinaryNode<Rank, InDtype, OutDtype>::eval();
+}
+
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpAdd<Rank, Dtype>::register_fcn()
 {
@@ -405,6 +425,7 @@ int OpLogicalXor<Rank, Dtype>::register_fcn()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpMaximum<Rank, Dtype>::register_fcn()
 {
+    auto nan_mode = this->attribute->nan_mode();
     switch (Dtype)
     {
         case TOSA_REF_TYPE_FP16:
@@ -412,8 +433,8 @@ int OpMaximum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
         case TOSA_REF_TYPE_INT32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
-                return static_cast<OutEigenType>(applyMax<InEigenType>(a, b));
+            this->fcn = [nan_mode](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(applyMax<InEigenType>(a, b, nan_mode));
             };
             break;
         default:
@@ -426,6 +447,7 @@ int OpMaximum<Rank, Dtype>::register_fcn()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpMinimum<Rank, Dtype>::register_fcn()
 {
+    auto nan_mode = this->attribute->nan_mode();
     switch (Dtype)
     {
         case TOSA_REF_TYPE_FP16:
@@ -433,8 +455,8 @@ int OpMinimum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
         case TOSA_REF_TYPE_INT32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
-                return static_cast<OutEigenType>(applyMin<InEigenType>(a, b));
+            this->fcn = [nan_mode](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(applyMin<InEigenType>(a, b, nan_mode));
             };
             break;
         default:

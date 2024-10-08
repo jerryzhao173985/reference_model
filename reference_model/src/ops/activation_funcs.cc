@@ -125,6 +125,20 @@ int OpClamp<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+int OpClamp<Rank, Dtype>::checkTensorAttributes()
+{
+    if (UnaryNode<Rank, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 OpClamp<Rank, Dtype>::~OpClamp()
 {
     if (attribute)
