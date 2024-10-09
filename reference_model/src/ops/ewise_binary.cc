@@ -411,24 +411,10 @@ int OpMaximum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
-                if (isnan(a))
-                {
-                    return a;
-                }
-                else if (isnan(b))
-                {
-                    return b;
-                }
-                else
-                {
-                    return a > b ? a : b;
-                }
-            };
-            break;
-
         case TOSA_REF_TYPE_INT32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a > b ? a : b; };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(applyMax<InEigenType>(a, b));
+            };
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -446,23 +432,10 @@ int OpMinimum<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
-                if (isnan(a))
-                {
-                    return a;
-                }
-                else if (isnan(b))
-                {
-                    return b;
-                }
-                else
-                {
-                    return a < b ? a : b;
-                }
-            };
-            break;
         case TOSA_REF_TYPE_INT32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a < b ? a : b; };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(applyMin<InEigenType>(a, b));
+            };
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
