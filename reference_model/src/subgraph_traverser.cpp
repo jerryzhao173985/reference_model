@@ -170,11 +170,57 @@ int SubgraphTraverser::registerVariableTensor(Tensor* tensor)
     return 0;
 }
 
+TosaSerializationTensor* SubgraphTraverser::getSerializationTensorByName(const std::string& name) const
+{
+    for (auto ser_tensor : ser_tensor_vec)
+    {
+        if (ser_tensor->GetName() == name)
+        {
+            return ser_tensor;
+        }
+    }
+    return nullptr;
+}
+
+TosaSerializationShape* SubgraphTraverser::getSerializationShapeByName(const std::string& name) const
+{
+    for (auto ser_shape : ser_shape_vec)
+    {
+        if (ser_shape->GetName() == name)
+        {
+            return ser_shape;
+        }
+    }
+    return nullptr;
+}
+
+bool SubgraphTraverser::findDtypeAndRankByName(const std::string& name, TOSA_REF_TYPE& dtype, int32_t& rank) const
+{
+    if (auto ser_tensor = getSerializationTensorByName(name))
+    {
+        dtype = ConvertDType(ser_tensor->GetDtype());
+        rank  = static_cast<int32_t>(ser_tensor->GetShape().size());
+        return true;
+    }
+    if (auto ser_shape = getSerializationShapeByName(name))
+    {
+        // shape values: dtype is TOSA_REF_TYPE_SHAPE and rank is 1
+        dtype = TOSA_REF_TYPE_SHAPE;
+        rank  = 1;
+        return true;
+    }
+
+    // name is not found
+    dtype = TOSA_REF_TYPE_UNKNOWN;
+    rank  = 0;
+
+    return false;
+}
+
 int SubgraphTraverser::initializeGraph()
 {
     uint64_t idx = 0;
 
-    std::vector<TosaSerializationTensor*> ser_tensor_vec;
     // Get all the serialized tensors from TosaSerializationHandler.
     if (tsh)
     {
@@ -186,6 +232,10 @@ int SubgraphTraverser::initializeGraph()
                 {
                     ser_tensor_vec.push_back(ser_tensor.get());
                 }
+                for (const auto& ser_shape : block->GetShapes())
+                {
+                    ser_shape_vec.push_back(ser_shape.get());
+                }
             }
         }
     }
@@ -194,6 +244,10 @@ int SubgraphTraverser::initializeGraph()
         for (const auto& ser_tensor : block->GetTensors())
         {
             ser_tensor_vec.push_back(ser_tensor.get());
+        }
+        for (const auto& ser_shape : block->GetShapes())
+        {
+            ser_shape_vec.push_back(ser_shape.get());
         }
     }
 
@@ -242,22 +296,12 @@ int SubgraphTraverser::initializeGraph()
                 "SubgraphTraverser::initializeGraph(): Op=%s, input_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], input_index);
 
-            std::string input_name                = op->GetInputTensorNames()[static_cast<size_t>(input_index)];
-            TosaSerializationTensor* input_tensor = nullptr;
-            for (auto ser_tensor : ser_tensor_vec)
-            {
-                if (ser_tensor->GetName() == input_name)
-                {
-                    input_tensor = ser_tensor;
-                }
-            }
-
+            std::string input_name = op->GetInputTensorNames()[static_cast<size_t>(input_index)];
+            bool found             = findDtypeAndRankByName(input_name, input_dtype, input_rank);
             SUBGRAPH_ERROR_IF(
-                !input_tensor,
+                !found,
                 "SubgraphTraverser::initializeGraph(): fail to get input tensor %s from TosaSerializationHandler",
                 input_name.c_str());
-            input_dtype = ConvertDType(input_tensor->GetDtype());
-            input_rank  = static_cast<int32_t>(input_tensor->GetShape().size());
         }
 
         if (weight_index != -1)
@@ -266,57 +310,38 @@ int SubgraphTraverser::initializeGraph()
                 (size_t)weight_index >= op->GetInputTensorNames().size(),
                 "SubgraphTraverser::initializeGraph(): Op=%s, weight_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], weight_index);
-            std::string weight_name                = op->GetInputTensorNames()[static_cast<size_t>(weight_index)];
-            TosaSerializationTensor* weight_tensor = nullptr;
-            for (auto ser_tensor : ser_tensor_vec)
-            {
-                if (ser_tensor->GetName() == weight_name)
-                {
-                    weight_tensor = ser_tensor;
-                }
-            }
-
+            std::string weight_name = op->GetInputTensorNames()[static_cast<size_t>(weight_index)];
+            bool found              = findDtypeAndRankByName(weight_name, weight_dtype, weight_rank);
             SUBGRAPH_ERROR_IF(
-                !weight_tensor,
+                !found,
                 "SubgraphTraverser::initializeGraph(): fail to get weight tensor %s from TosaSerializationHandler",
                 weight_name.c_str());
-            weight_dtype = ConvertDType(weight_tensor->GetDtype());
-            weight_rank  = static_cast<int32_t>(weight_tensor->GetShape().size());
         }
 
         SUBGRAPH_ERROR_IF(op->GetOutputTensorNames().size() == 0,
                           "SubgraphTraverser::initializeGraph(): Op=%s must have at least one output tensor.",
                           EnumNamesOp()[op->GetOp()]);
-        std::string output_name                = op->GetOutputTensorNames()[0];
-        TosaSerializationTensor* output_tensor = block->GetTensorByName(output_name);
-        SUBGRAPH_ERROR_IF(
-            !output_tensor,
-            "SubgraphTraverser::initializeGraph(): fail to get output tensor %s from TosaSerializationHandler",
-            output_name.c_str());
-        output_dtype = ConvertDType(output_tensor->GetDtype());
-        output_rank  = static_cast<int32_t>(output_tensor->GetShape().size());
-
+        std::string output_name = op->GetOutputTensorNames()[0];
+        {
+            bool found = findDtypeAndRankByName(output_name, output_dtype, output_rank);
+            SUBGRAPH_ERROR_IF(
+                !found,
+                "SubgraphTraverser::initializeGraph(): fail to get output tensor %s from TosaSerializationHandler",
+                output_name.c_str());
+        }
         if (bias_index != -1)
         {
             SUBGRAPH_ERROR_IF(
                 (size_t)bias_index >= op->GetInputTensorNames().size(),
                 "SubgraphTraverser::initializeGraph(): Op=%s, bias_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], bias_index);
-            std::string bias_name                = op->GetInputTensorNames()[static_cast<size_t>(bias_index)];
-            TosaSerializationTensor* bias_tensor = nullptr;
-            for (auto ser_tensor : ser_tensor_vec)
-            {
-                if (ser_tensor->GetName() == bias_name)
-                {
-                    bias_tensor = ser_tensor;
-                }
-            }
-
+            std::string bias_name = op->GetInputTensorNames()[static_cast<size_t>(bias_index)];
+            int32_t bias_rank;
+            bool found = findDtypeAndRankByName(bias_name, bias_dtype, bias_rank);
             SUBGRAPH_ERROR_IF(
-                !bias_tensor,
+                !found,
                 "SubgraphTraverser::initializeGraph(): fail to get bias tensor %s from TosaSerializationHandler",
                 bias_name.c_str());
-            bias_dtype = ConvertDType(bias_tensor->GetDtype());
 
             SUBGRAPH_ERROR_IF(
                 bias_dtype != output_dtype,
@@ -420,6 +445,11 @@ int SubgraphTraverser::initializeGraph()
         addTensor(ts.get());
     }
 
+    for (const auto& ts : block->GetShapes())
+    {
+        addShape(ts.get());
+    }
+
     DEBUG_INFO(GT, "Enumerating block %s graph inputs", block->GetName().c_str());
     for (auto& input_name : block->GetInputs())
     {
@@ -511,33 +541,64 @@ int SubgraphTraverser::allocateInputTensors()
 
 int SubgraphTraverser::allocateTensor(std::string name)
 {
-    auto ts = block->GetTensorByName(name);
+    std::vector<int32_t> shape;
+    std::vector<uint8_t> data;
+    DType dtype      = DType_UNKNOWN;
+    bool is_variable = false;
+
+    if (auto ser_tensor = getSerializationTensorByName(name))
+    {
+        shape       = ser_tensor->GetShape();
+        data        = ser_tensor->GetData();
+        dtype       = ser_tensor->GetDtype();
+        is_variable = ser_tensor->GetVariable();
+    }
+    else if (auto ser_shape = getSerializationShapeByName(name))
+    {
+        if (ser_shape->GetRank() == 0)
+        {
+            // special case: rank 0 has empty shape
+            shape = {};
+        }
+        else
+        {
+            shape = { static_cast<int32_t>(ser_shape->GetRank()) };
+        }
+        data        = ser_shape->GetData();
+        dtype       = DType_SHAPE;
+        is_variable = false;
+    }
+    else
+    {
+        SUBGRAPH_ERROR_IF(false, "SubgraphTraverser::allocateTensor(): can't find serialization tensor or shape %s.",
+                          name.c_str());
+    }
 
     // Bail out if tensor is used and any of its dimension is invalid.
-    auto got = used_tensor_name_set.find(ts->GetName());
+    auto got = used_tensor_name_set.find(name);
     if (got != used_tensor_name_set.end())
     {
         uint32_t elements = 1;
-        for (auto& dim : ts->GetShape())
+        for (auto& dim : shape)
         {
             if (dim <= 0)
             {
-                DEBUG_INFO(GT, "Failed to allocate tensor %s with invalid dimension of %d", ts->GetName().c_str(), dim);
+                DEBUG_INFO(GT, "Failed to allocate tensor %s with invalid dimension of %d", name.c_str(), dim);
                 this->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
                 return 1;
             }
             if (dim > static_cast<int32_t>(TOSA_MAX_TENSOR_SIZE / elements))
             {
                 // Size greather than maximum defined in spec
-                DEBUG_INFO(GT, "Tensor %s size is greater than allowed maximum", ts->GetName().c_str());
+                DEBUG_INFO(GT, "Tensor %s size is greater than allowed maximum", name.c_str());
                 this->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);
                 return 1;
             }
         }
     }
 
-    TosaReference::Tensor* tensor = findTensorByName(ts->GetName());
-    SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::allocateTensor(): can't find tensor %s.", ts->GetName().c_str());
+    TosaReference::Tensor* tensor = findTensorByName(name);
+    SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::allocateTensor(): can't find tensor %s.", name.c_str());
 
     DEBUG_INFO(GT, "Allocating tensor %s", tensor->getName().c_str());
     if (tensor->allocate())
@@ -546,61 +607,61 @@ int SubgraphTraverser::allocateTensor(std::string name)
     }
 
     // set valid for constant tensors:
-    if ((ts->GetShape().empty() && ts->GetDtype() == DType_SHAPE))
+    if ((shape.empty() && dtype == DType_SHAPE))
     {
         // corner case: const_shape {} has no data
         tensor->setIsValid();
     }
-    if (!ts->GetData().empty())
+    if (!data.empty())
     {
-        if (ts->GetVariable() && g_func_config.initialize_variable_tensor_from_numpy)
+        if (is_variable && g_func_config.initialize_variable_tensor_from_numpy)
             return 0;
         DEBUG_INFO(GT, "Setting data for tensor %s", tensor->getName().c_str());
-        auto serialization_dtype = ts->GetDtype();
+        auto serialization_dtype = dtype;
         switch (serialization_dtype)
         {
             case DType_INT4: {
                 std::vector<int8_t> i4_data;
-                TosaSerializationHandler::ConvertU8toI4(ts->GetData(), tensor->getElementCount(), i4_data);
+                TosaSerializationHandler::ConvertU8toI4(data, tensor->getElementCount(), i4_data);
                 std::vector<int32_t> i32_data(i4_data.begin(), i4_data.end());
                 tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
             }
             break;
             case DType_INT8: {
                 std::vector<int8_t> i8_data;
-                TosaSerializationHandler::ConvertU8toI8(ts->GetData(), tensor->getElementCount(), i8_data);
+                TosaSerializationHandler::ConvertU8toI8(data, tensor->getElementCount(), i8_data);
                 std::vector<int32_t> i32_data(i8_data.begin(), i8_data.end());
                 tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
             }
             break;
             case DType_INT16: {
                 std::vector<int16_t> i16_data;
-                TosaSerializationHandler::ConvertU8toI16(ts->GetData(), tensor->getElementCount(), i16_data);
+                TosaSerializationHandler::ConvertU8toI16(data, tensor->getElementCount(), i16_data);
                 std::vector<int32_t> i32_data(i16_data.begin(), i16_data.end());
                 tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
             }
             break;
             case DType_INT32: {
                 std::vector<int32_t> i32_data;
-                TosaSerializationHandler::ConvertU8toI32(ts->GetData(), tensor->getElementCount(), i32_data);
+                TosaSerializationHandler::ConvertU8toI32(data, tensor->getElementCount(), i32_data);
                 tensor->setTensorValueInt32(i32_data.size(), i32_data.data());
             }
             break;
             case DType_INT48: {
                 std::vector<int64_t> i64_data;
-                TosaSerializationHandler::ConvertU8toI48(ts->GetData(), tensor->getElementCount(), i64_data);
+                TosaSerializationHandler::ConvertU8toI48(data, tensor->getElementCount(), i64_data);
                 tensor->setTensorValueInt64(i64_data.size(), i64_data.data());
             }
             break;
             case DType_SHAPE: {
                 std::vector<int64_t> i64_data;
-                TosaSerializationHandler::ConvertU8toI64(ts->GetData(), tensor->getElementCount(), i64_data);
+                TosaSerializationHandler::ConvertU8toI64(data, tensor->getElementCount(), i64_data);
                 tensor->setTensorValueInt64(i64_data.size(), i64_data.data());
             }
             break;
             case DType_FP16: {
                 std::vector<half_float::half> f16_data;
-                TosaSerializationHandler::ConvertU8toF16(ts->GetData(), tensor->getElementCount(), f16_data);
+                TosaSerializationHandler::ConvertU8toF16(data, tensor->getElementCount(), f16_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data(f16_data.begin(), f16_data.end());
@@ -615,7 +676,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             case DType_BF16: {
                 std::vector<bf16> bf16_data;
-                TosaSerializationHandler::ConvertU8toBF16(ts->GetData(), tensor->getElementCount(), bf16_data);
+                TosaSerializationHandler::ConvertU8toBF16(data, tensor->getElementCount(), bf16_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data;
@@ -638,7 +699,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             case DType_FP8E4M3: {
                 std::vector<fp8e4m3> f8_data;
-                TosaSerializationHandler::ConvertU8toFP8E4M3(ts->GetData(), tensor->getElementCount(), f8_data);
+                TosaSerializationHandler::ConvertU8toFP8E4M3(data, tensor->getElementCount(), f8_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data;
@@ -661,7 +722,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             case DType_FP8E5M2: {
                 std::vector<fp8e5m2> f8_data;
-                TosaSerializationHandler::ConvertU8toFP8E5M2(ts->GetData(), tensor->getElementCount(), f8_data);
+                TosaSerializationHandler::ConvertU8toFP8E5M2(data, tensor->getElementCount(), f8_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data;
@@ -684,7 +745,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             case DType_FP32: {
                 std::vector<float> fp32_data;
-                TosaSerializationHandler::ConvertU8toF32(ts->GetData(), tensor->getElementCount(), fp32_data);
+                TosaSerializationHandler::ConvertU8toF32(data, tensor->getElementCount(), fp32_data);
                 if (tensor->getDtype() == TOSA_REF_TYPE_FP64)
                 {
                     std::vector<double> f64_data(fp32_data.begin(), fp32_data.end());
@@ -698,7 +759,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             case DType_BOOL: {
                 std::vector<bool> bool_data;
-                TosaSerializationHandler::ConvertU8toBool(ts->GetData(), tensor->getElementCount(), bool_data);
+                TosaSerializationHandler::ConvertU8toBool(data, tensor->getElementCount(), bool_data);
 
                 // std::vector<bool>::data() will return bit mask instead of array of bool array.
                 // Need to translate manually.
@@ -712,7 +773,7 @@ int SubgraphTraverser::allocateTensor(std::string name)
             break;
             default:
                 SUBGRAPH_ERROR_IF(true, "SubgraphTraverser::initializeGraph(): Unsupported tensor type %s.",
-                                  EnumNameDType(ts->GetDtype()));
+                                  EnumNameDType(dtype));
         }
         tensor->setIsValid();
     }
@@ -953,6 +1014,33 @@ int SubgraphTraverser::addTensor(const TosaSerializationTensor* ts)
 
     return 0;
 }
+
+int SubgraphTraverser::addShape(const TosaSerializationShape* ts)
+{
+    DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
+    std::vector<int> shape        = { static_cast<int>(ts->GetRank()) };
+    TosaReference::Tensor* tensor = TensorFactory::newTensor(ts->GetName(), DType_SHAPE, shape, 1);
+
+    SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::initializeGraph(): Unsupported tensor name=%s, type=%s, rank=%d",
+                      ts->GetName().c_str(), EnumNameDType(DType_SHAPE), 1);
+
+    // Enforce no duplicate tensors/tensor names
+    // O(N), but the number of tensors is small
+    for (TosaReference::Tensor* currTensor : tensors)
+    {
+        if (tensor == currTensor || currTensor->getName() == tensor->getName())
+        {
+            FATAL_ERROR("SubgraphTraverser::addTensor(): Duplicate tensor or tensor name being added to graph: %s\n",
+                        tensor->getName().c_str());
+            return 1;
+        }
+    }
+
+    tensors.push_back(tensor);
+
+    return 0;
+}
+
 int SubgraphTraverser::addNode(GraphNode* newNode)
 {
     // Enforce no duplicate nodes
