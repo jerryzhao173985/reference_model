@@ -82,11 +82,18 @@ public:
 
 private:
     int addTensor(const TosaSerializationTensor* ts);
+    int addShape(const TosaSerializationShape* ts);
     int addNode(GraphNode* cn);
 
     Tensor* findTensorByName(const std::string& name) const;
 
     GraphNode* getNextNode();
+
+    bool findDtypeAndRankByName(const std::string& name, TOSA_REF_TYPE& dtype, int32_t& rank) const;
+
+    TosaSerializationTensor* getSerializationTensorByName(const std::string& name) const;
+
+    TosaSerializationShape* getSerializationShapeByName(const std::string& name) const;
 
     GraphStatus graph_status;
 
@@ -125,6 +132,10 @@ private:
     // Maximum number of times to evalute a node before
     // warning.
     const int MAX_EVAL_COUNT = 10000;
+
+    // store all serialization tensors and shapes for easy lookup
+    std::vector<TosaSerializationTensor*> ser_tensor_vec;
+    std::vector<TosaSerializationShape*> ser_shape_vec;
 };
 };    // namespace TosaReference
 

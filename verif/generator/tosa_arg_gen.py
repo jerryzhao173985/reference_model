@@ -985,6 +985,7 @@ class TosaTensorValuesGen:
                 shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
                 assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
 
+        # Create all the tensor meta data and generate the data (if needed)
         for idx, shape in enumerate(shapeList):
             tens_meta = {}
             dtype = dtypeList[idx]
@@ -1072,10 +1073,14 @@ class TosaTensorValuesGen:
             # Using the finished generate config meta data - generate the data if
             # needed and assign a tensor name from the serializer
 
-            # Need to generate data when not lazy or for the bias tensor as we need
-            # to work out if the bias data is non-zero for compliance
-            if not testGen.args.lazy_data_gen or (
-                idx == 2 and dg_type == gtu.DataGenType.DOT_PRODUCT
+            # Need to generate data when not in lazy mode or we have CONST_SHAPE
+            # data or for the bias tensor as we need to work out if the bias data
+            # is non-zero for compliance
+            get_bias_data = idx == 2 and dg_type == gtu.DataGenType.DOT_PRODUCT
+            if (
+                not testGen.args.lazy_data_gen
+                or (dtype == DType.SHAPE and not variable)
+                or get_bias_data
             ):
                 # Give this tensor a temporary name until we get one from the serializer
                 temp_name = f"placeholder_{idx}"
@@ -1088,14 +1093,17 @@ class TosaTensorValuesGen:
                     data = np.int64(data)
                 # Remove the item as we will give it the correct name later
                 del dg_tens_meta[temp_name]
+            else:
+                # Don't produce the data until later (Lazy Data Generation)
+                data = None
 
-            if idx == 2 and dg_type == gtu.DataGenType.DOT_PRODUCT:
+            if get_bias_data:
                 # The KS value used by compliance verification is altered when the
                 # bias data is non-zero, store this in ksb_increment for tensorComplianceMetaData
                 argsDict["ksb_increment"] = 1 if max(abs(data)) > 0.0 else 0
-
-            if testGen.args.lazy_data_gen:
-                data = None
+                # Clear the data on lazy data gen mode
+                if testGen.args.lazy_data_gen:
+                    data = None
 
             if serialize_data:
                 if variable:

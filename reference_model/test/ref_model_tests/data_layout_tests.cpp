@@ -38,11 +38,7 @@ void testReshape(std::vector<T>& inVals, std::vector<int32_t>& oldShape, std::ve
 
     tb.addInput(oldShape, dtype);
 
-    // We treat shapes of rank 0 elements differently
-    if (newShape.size() == 0)
-        tb.addInput({}, DType_SHAPE);
-    else
-        tb.addInput({ static_cast<int32_t>(newShape.size()) }, DType_SHAPE);
+    tb.addInputShape(static_cast<int32_t>(newShape.size()));
 
     tb.addOutput(newShape, dtype);
 

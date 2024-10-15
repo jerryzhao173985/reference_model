@@ -112,6 +112,16 @@ public:
             std::make_unique<TosaSerializationTensor>(inputName, shape, dtype, data, false, false));
     }
 
+    void addInputShape(int32_t rank)
+    {
+        int previousSize      = _mainBlock->GetInputs().size();
+        std::string inputName = getInputName(previousSize);
+        _mainBlock->GetInputs().push_back(inputName);
+
+        std::vector<uint8_t> data;    // empty data: these are not constants
+        _mainBlock->GetShapes().push_back(std::make_unique<TosaSerializationShape>(inputName, rank, data));
+    }
+
     void addOutput(std::vector<int32_t> shape, DType dtype)
     {
         int previousSize       = _mainBlock->GetOutputs().size();
