@@ -81,7 +81,9 @@ set(CXX_SOURCE
     src/generate/generate_pseudo_random.cc
     src/generate/generate_fixed_data.cc
     src/generate/generate_full_range.cc
+    src/generate/generate_special.cc
     src/generate/generate_fp_special.cc
+    src/generate/generate_int_special.cc
     src/generate/generate_entry.cc
     src/generate/generate_utils.cc
     src/verify/verify_abs_error.cc
@@ -189,7 +191,9 @@ add_library(tosa_reference_generate_lib SHARED
   src/generate/generate_pseudo_random.cc
   src/generate/generate_fixed_data.cc
   src/generate/generate_full_range.cc
+  src/generate/generate_special.cc
   src/generate/generate_fp_special.cc
+  src/generate/generate_int_special.cc
   src/generate/generate_entry.cc
   src/generate/generate_utils.cc
   src/generate/generate_config.cc

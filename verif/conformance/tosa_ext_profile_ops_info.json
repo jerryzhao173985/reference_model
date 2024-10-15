@@ -3324,6 +3324,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -3333,6 +3334,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -3348,6 +3350,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -3955,6 +3958,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -3964,6 +3968,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -3979,6 +3984,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -4117,6 +4123,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -4126,6 +4133,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -4141,6 +4149,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",

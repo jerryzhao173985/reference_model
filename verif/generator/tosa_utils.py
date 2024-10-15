@@ -53,14 +53,13 @@ class DataGenType(IntEnum):
 
     PSEUDO_RANDOM = 0
     DOT_PRODUCT = 1
-    BOUNDARY = 2
-    FULL_RANGE = 3
-    FP_SPECIAL = 4
-    FIXED_DATA = 5
+    FULL_RANGE = 2
+    SPECIAL = 3
+    FIXED_DATA = 4
 
 
 class SpecialTestSet(IntEnum):
-    """Special test values for FP_SPECIAL tests"""
+    """Special test values for SPECIAL tests"""
 
     DEFAULT = 0
     CAST_FP_TO_INT = 1
@@ -80,7 +79,7 @@ def dtypeIsFloat(dtype):
 
 
 def dtypeIsSupportedByCompliance(dtype):
-    """Types supported by the new compliance flow."""
+    """Types supported by the C++ verification library."""
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         dtype = dtype[0]
     return dtype in (
@@ -102,16 +101,22 @@ def dtypeIsSupportedByCompliance(dtype):
 
 
 def dtypeIsSupportedByDataGen(dtype):
-    """Types supported by the new data generation"""
-    if isinstance(dtype, list) or isinstance(dtype, tuple):
-        dtype = dtype[0]
-    return dtype in (
+    """Types supported by the C++ data generation library"""
+    supported_types = (
+        DType.INT32,
+        DType.INT16,
+        DType.INT8,
         DType.FP32,
         DType.FP16,
         DType.BF16,
         DType.FP8E4M3,
         DType.FP8E5M2,
+        DType.SHAPE,
     )
+    if isinstance(dtype, list) or isinstance(dtype, tuple):
+        return all(dt in supported_types for dt in dtype)
+
+    return dtype in supported_types
 
 
 def valueToName(item, value):

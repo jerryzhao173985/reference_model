@@ -102,18 +102,18 @@ bool generateFP(const TosaReference::GenerateConfig& cfg, DataType* data, size_t
 {
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
 
-    PseudoRandomGeneratorFloat<float>* generator;
+    std::unique_ptr<PseudoRandomGeneratorFloat<float>> generator;
     bool roundMode = prinfo.round;
 
     if (prinfo.range.size() == 2)
     {
         const float min = std::stof(prinfo.range[0]);
         const float max = std::stof(prinfo.range[1]);
-        generator       = new PseudoRandomGeneratorFloat<float>(prinfo.rngSeed, min, max);
+        generator       = std::make_unique<PseudoRandomGeneratorFloat<float>>(prinfo.rngSeed, min, max);
     }
     else
     {
-        generator = new PseudoRandomGeneratorFloat<float>(prinfo.rngSeed);
+        generator = std::make_unique<PseudoRandomGeneratorFloat<float>>(prinfo.rngSeed);
     }
 
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
@@ -202,7 +202,7 @@ template <typename DataType>
 bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
 {
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
-    PseudoRandomGeneratorInteger<DataType>* generator;
+    std::unique_ptr<PseudoRandomGeneratorInteger<DataType>> generator;
 
     if (cfg.shape.size() != 2)
     {
@@ -217,7 +217,7 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
 
     const int32_t min = std::stoi(prinfo.range[0]);
     const int32_t max = std::stoi(prinfo.range[1]);
-    generator         = new PseudoRandomGeneratorInteger<DataType>(prinfo.rngSeed, min, max);
+    generator         = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed, min, max);
 
     // Work out inclusive range
     const auto range = std::abs(max - min) + 1;
@@ -253,7 +253,7 @@ template <typename DataType>
 bool generateINT(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
 {
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
-    PseudoRandomGeneratorInteger<DataType>* generator;
+    std::unique_ptr<PseudoRandomGeneratorInteger<DataType>> generator;
 
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
 
@@ -261,16 +261,23 @@ bool generateINT(const TosaReference::GenerateConfig& cfg, DataType* data, size_
     {
         const int32_t min = std::stoi(prinfo.range[0]);
         const int32_t max = std::stoi(prinfo.range[1]);
-        generator         = new PseudoRandomGeneratorInteger<DataType>(prinfo.rngSeed, min, max);
+        generator         = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed, min, max);
     }
     else
     {
-        generator = new PseudoRandomGeneratorInteger<DataType>(prinfo.rngSeed);
+        generator = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed);
     }
+
+    const bool comparisonOp =
+        (cfg.opType == Op::Op_EQUAL) || (cfg.opType == Op::Op_GREATER_EQUAL) || (cfg.opType == Op::Op_GREATER);
 
     for (auto t = 0; t < T; ++t)
     {
         data[t] = generator->getRandomInteger();
+        // Make sure we make more values match between tensors for comparison
+        // operators.
+        if (comparisonOp && (t % 4 == 0))
+            data[t] = 0;
     }
     return true;
 }
@@ -289,6 +296,11 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
     if (cfg.pseudoRandomInfo.range.size() != 0 && cfg.pseudoRandomInfo.range.size() != 2)
     {
         WARNING("[Generator][PR] Invalid range");
+        return false;
+    }
+    if (data == nullptr)
+    {
+        WARNING("[Generator][PR] Generator called with a null pointer.");
         return false;
     }
 
@@ -325,6 +337,14 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             {
                 return generateINT(cfg, outData, size);
             }
+        }
+        case DType::DType_INT16: {
+            int16_t* outData = reinterpret_cast<int16_t*>(data);
+            return generateINT(cfg, outData, size);
+        }
+        case DType::DType_INT8: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return generateINT(cfg, outData, size);
         }
         default:
             WARNING("[Generator][PR] Unsupported type.");

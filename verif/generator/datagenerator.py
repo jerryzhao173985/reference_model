@@ -92,6 +92,10 @@ class GenerateLibrary:
             # Create buffer and initialize to zero
             buffer = (ct.c_int32 * size)(0)
             size_bytes = size * 4
+        elif dtype == "INT16":
+            # Create buffer and initialize to zero
+            buffer = (ct.c_int16 * size)(0)
+            size_bytes = size * 2
         elif dtype == "INT8":
             size_bytes = size
             # Create buffer of bytes and initialize to zero
@@ -117,6 +121,8 @@ class GenerateLibrary:
         elif dtype == "FP8E5M2":
             # Convert from bytes back to FP8E5M2
             arr = np.frombuffer(arr, float8_e5m2).view(np.uint8)
+        elif dtype == "INT8":
+            arr = np.frombuffer(arr, np.int8)
         arr = np.reshape(arr, shape)
 
         return arr

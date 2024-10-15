@@ -22,7 +22,7 @@
                     "type": "object",
                     "properties": {
                         "generator": {
-                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT, FULL_RANGE, BOUNDARY, or FP_SPECIAL",
+                            "description": "data generator name - PSEUDO_RANDOM, DOT_PRODUCT, FULL_RANGE, or SPECIAL",
                             "type": "string"
                         },
                         "data_type": {
@@ -141,8 +141,8 @@
                             "additionalProperties": false,
                             "required": [ ]
                         },
-                        "fp_special_info": {
-                            "description": "info required for the FP_SPECIAL generator",
+                        "special_info": {
+                            "description": "info required for the SPECIAL generator",
                             "type": "object",
                             "properties":
                             {
