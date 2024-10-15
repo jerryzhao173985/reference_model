@@ -1439,12 +1439,12 @@ TEST_CASE("positive - FP16 full range")
     }
 }
 
-void fp_special_test_FP32(const std::string tosaName,
-                          const size_t tosaElements,
-                          const std::string templateJsonCfg,
-                          const std::string opStr,
-                          const std::string startIndexStr,
-                          const std::vector<std::pair<float, float>> expected)
+void special_test_FP32(const std::string tosaName,
+                       const size_t tosaElements,
+                       const std::string templateJsonCfg,
+                       const std::string opStr,
+                       const std::string startIndexStr,
+                       const std::vector<std::pair<float, float>> expected)
 {
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_OP_", opStr);
@@ -1465,8 +1465,12 @@ void fp_special_test_FP32(const std::string tosaName,
         }
         else
         {
-            bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
-            REQUIRE_MESSAGE(withinRange, msg.str());
+            // We check for sign to properly cover the sign of zero in floating point types.
+            const bool signMatches = std::signbit(buffer[idx]) == std::signbit(expected[idx].first) ||
+                                     std::signbit(buffer[idx]) == std::signbit(expected[idx].second);
+            const bool valueInRange  = (buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second);
+            const bool correctOutput = signMatches && valueInRange;
+            REQUIRE_MESSAGE(correctOutput, msg.str());
         }
     }
 }
@@ -1476,24 +1480,24 @@ TEST_CASE("positive - FP32 FP Special")
     std::string templateJsonCfg = R"({
         "tensors" : {
             "input0" : {
-                "generator": "FP_SPECIAL",
+                "generator": "SPECIAL",
                 "data_type": "FP32",
                 "input_type": "VARIABLE",
                 "shape" : [ 5, 6, 7 ],
                 "input_pos": 0,
                 "op" : "_OP_",
-                "fp_special_info": {
+                "special_info": {
                     "start_idx": _START_
                 }
             },
             "input1" : {
-                "generator": "FP_SPECIAL",
+                "generator": "SPECIAL",
                 "data_type": "FP32",
                 "input_type": "VARIABLE",
                 "shape" : [ 5, 6, 7 ],
                 "input_pos": 1,
                 "op" : "_OP_",
-                "fp_special_info": {
+                "special_info": {
                     "start_idx": _START_
                 }
             }
@@ -1518,7 +1522,7 @@ TEST_CASE("positive - FP32 FP Special")
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("equal, input 1")
     {
@@ -1527,7 +1531,7 @@ TEST_CASE("positive - FP32 FP Special")
             { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
             { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater, input 0")
     {
@@ -1537,7 +1541,7 @@ TEST_CASE("positive - FP32 FP Special")
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater, input 1")
     {
@@ -1546,7 +1550,7 @@ TEST_CASE("positive - FP32 FP Special")
             { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
             { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater_equal, input 0")
     {
@@ -1556,7 +1560,7 @@ TEST_CASE("positive - FP32 FP Special")
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("greater_equal, input 1")
     {
@@ -1565,33 +1569,33 @@ TEST_CASE("positive - FP32 FP Special")
             { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
             { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
+        special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
     SUBCASE("add, input 0")
     {
         std::vector<std::pair<float, float>> expected = { { ulpmax, max }, { -max, -max }, { inf, inf } };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "ADD", "0", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("add, input 1")
     {
         std::vector<std::pair<float, float>> expected = { { max, max }, { -max, -ulpmax }, { -inf, -inf } };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "ADD", "0", expected);
+        special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("maximum, input 0")
     {
         std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { min, min } };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, input 1")
     {
         std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -min, -min } };
-        fp_special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
+        special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, startIndex 100")
     {
         // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 6) 98 % 6 = 2
         std::vector<std::pair<float, float>> expected = { { min, min }, { max, max }, { 1.0, max } };
-        fp_special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "98", expected);
+        special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "98", expected);
     }
 }
 
@@ -1603,13 +1607,13 @@ enum valueType
     EvenInteger
 };
 
-void fp_special_test_FP16(const std::string tosaName,
-                          const size_t tosaElements,
-                          const std::string templateJsonCfg,
-                          const std::string opStr,
-                          const std::string startIndexStr,
-                          const std::vector<std::pair<half_float::half, half_float::half>> expected,
-                          const std::vector<valueType> expectedValueType)
+void special_test_FP16(const std::string tosaName,
+                       const size_t tosaElements,
+                       const std::string templateJsonCfg,
+                       const std::string opStr,
+                       const std::string startIndexStr,
+                       const std::vector<std::pair<half_float::half, half_float::half>> expected,
+                       const std::vector<valueType> expectedValueType)
 {
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_OP_", opStr);
@@ -1630,8 +1634,11 @@ void fp_special_test_FP16(const std::string tosaName,
         }
         else
         {
-            bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
-            REQUIRE_MESSAGE(withinRange, msg.str());
+            const bool signMatches = std::signbit(buffer[idx]) == std::signbit(expected[idx].first) ||
+                                     std::signbit(buffer[idx]) == std::signbit(expected[idx].second);
+            const bool valueInRange  = (buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second);
+            const bool correctOutput = signMatches && valueInRange;
+            REQUIRE_MESSAGE(correctOutput, msg.str());
 
             if (expectedValueType[idx] != Float)
             {
@@ -1664,24 +1671,24 @@ TEST_CASE("positive - FP16 FP Special")
     std::string templateJsonCfg = R"({
         "tensors" : {
             "input0" : {
-                "generator": "FP_SPECIAL",
+                "generator": "SPECIAL",
                 "data_type": "FP16",
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 0,
                 "op" : "_OP_",
-                "fp_special_info": {
+                "special_info": {
                     "start_idx": _START_
                 }
             },
             "input1" : {
-                "generator": "FP_SPECIAL",
+                "generator": "SPECIAL",
                 "data_type": "FP16",
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 1,
                 "op" : "_OP_",
-                "fp_special_info": {
+                "special_info": {
                     "start_idx": _START_
                 }
             }
@@ -1702,7 +1709,7 @@ TEST_CASE("positive - FP16 FP Special")
                                                                                 { -max, -max },
                                                                                 { -max, -max } };
         std::vector<valueType> expectedValueType                            = { Float, Float, Float };
-        fp_special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+        special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
     SUBCASE("pow, input 1")
     {
@@ -1710,7 +1717,90 @@ TEST_CASE("positive - FP16 FP Special")
                                                                                 { one, ten },
                                                                                 { one, ten } };
         std::vector<valueType> expectedValueType                            = { Float, OddInteger, EvenInteger };
-        fp_special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+        special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+    }
+}
+
+template <typename DataType>
+void special_test_INT(const std::string tosaName,
+                      const size_t tosaElements,
+                      const std::string templateJsonCfg,
+                      const std::string opStr,
+                      const std::string startIndexStr,
+                      const std::vector<std::pair<DataType, DataType>> expected)
+{
+    std::string jsonCfg = templateJsonCfg;
+    update_json_template(jsonCfg, "_OP_", opStr);
+    update_json_template(jsonCfg, "_START_", startIndexStr);
+
+    std::vector<DataType> buffer(tosaElements);
+    REQUIRE(
+        tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(DataType)));
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        std::stringstream msg;
+        msg << "index: " << idx << " expected between: " << expected[idx].first << " and: " << expected[idx].second
+            << ", but got: " << buffer[idx];
+        bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
+
+        REQUIRE_MESSAGE(withinRange, msg.str());
+    }
+}
+
+TEST_CASE("positive - int SPECIAL")
+{
+    std::string templateJsonCfg = R"({
+        "tensors" : {
+            "input0" : {
+                "generator": "SPECIAL",
+                "data_type": "INT32",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 6, 4 ],
+                "input_pos": 0,
+                "op" : "_OP_",
+                "special_info": {
+                    "start_idx": _START_
+                }
+            },
+            "input1" : {
+                "generator": "SPECIAL",
+                "data_type": "INT32",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 6, 4 ],
+                "input_pos": 1,
+                "op" : "_OP_",
+                "special_info": {
+                    "start_idx": _START_
+                }
+            }
+        }
+    })";
+
+    const std::string tosaName0 = "input0";
+    const std::string tosaName1 = "input1";
+    const size_t tosaElements   = 3 * 6 * 4;
+
+    const std::pair<int32_t, int32_t> zero{ 0, 0 };
+    const std::pair<int32_t, int32_t> max{ std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max() };
+    const std::pair<int32_t, int32_t> lowest{ std::numeric_limits<int32_t>::lowest(),
+                                              std::numeric_limits<int32_t>::lowest() };
+    const std::pair<int32_t, int32_t> random{ std::numeric_limits<int32_t>::lowest(),
+                                              std::numeric_limits<int32_t>::max() };
+
+    SUBCASE("equal, input 0")
+    {
+        const std::vector<std::pair<int32_t, int32_t>> expected = {
+            zero, lowest, zero, zero, random, max, random, lowest, random, zero, max,
+        };
+        special_test_INT<int32_t>(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "1", expected);
+    }
+
+    SUBCASE("equal, input 1")
+    {
+        const std::vector<std::pair<int32_t, int32_t>> expected = {
+            max, zero, lowest, random, zero, random, max, random, lowest, zero, zero, max, zero, lowest,
+        };
+        special_test_INT(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "1", expected);
     }
 }
 

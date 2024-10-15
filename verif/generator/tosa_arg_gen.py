@@ -731,6 +731,8 @@ class TosaTensorValuesGen:
     def tvgLazyGenDefault(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
+        op = testGen.TOSA_OP_LIST[opName]
+
         def tensor_is_variable(pCount, idx):
             if dtypeList[idx] == DType.SHAPE:
                 # Shapes must always be CONST_SHAPEs
@@ -762,7 +764,7 @@ class TosaTensorValuesGen:
             return (data_range, round_mode)
 
         # Variable inputs versus constants
-        pCount, cCount = testGen.TOSA_OP_LIST[opName]["operands"]
+        pCount, cCount = op["operands"]
         if "p_count" in argsDict:
             # Override for operators like CONCAT
             pCount = argsDict["p_count"]
@@ -787,8 +789,8 @@ class TosaTensorValuesGen:
 
         if (
             error_name is not None
-            or not gtu.dtypeIsSupportedByDataGen(dtypeList[0])
-            or "data_gen" not in testGen.TOSA_OP_LIST[opName]
+            or "data_gen" not in op
+            or not gtu.dtypeIsSupportedByDataGen(dtypeList)
         ):
             # Fall back to internal data gen when dealing with unsupported types or ops
             for idx, info in enumerate(zip(shapeList, dtypeList)):
@@ -842,16 +844,14 @@ class TosaTensorValuesGen:
         }
         dg_tens_meta = tens_data["tensors"]
 
-        fp_special_info = {}
-        fp_special_info["start_idx"] = int(rng.randInt())
-        fp_special_info["special_test_set"] = TosaTensorValuesGen._get_special_test_set(
-            testGen.TOSA_OP_LIST[opName], argsDict
+        special_info = {}
+        special_info["start_idx"] = int(rng.randInt())
+        special_info["special_test_set"] = TosaTensorValuesGen._get_special_test_set(
+            op, argsDict
         ).name
 
-        if argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
-            broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
-                "broadcastable_inputs", 0
-            )
+        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
+            broadcastable_inputs = op.get("broadcastable_inputs", 0)
             if broadcastable_inputs > 0:
                 shapes_set = {tuple(x) for x in shapeList[:broadcastable_inputs]}
                 assert len(shapes_set) == 1, "Broadcast shapes found in FP special test"
@@ -867,7 +867,7 @@ class TosaTensorValuesGen:
                 dg_type = argsDict["dg_type"]
 
             operand_idx_str = "operand" + str(idx)
-            dg_override = testGen.TOSA_OP_LIST[opName].get("data_gen_override", {})
+            dg_override = op.get("data_gen_override", {})
             dg_type = dg_override.get(operand_idx_str, dg_type)
 
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
@@ -922,11 +922,11 @@ class TosaTensorValuesGen:
                 )
                 tens_meta["full_range_info"] = info
 
-            elif dg_type == gtu.DataGenType.FP_SPECIAL:
+            elif dg_type == gtu.DataGenType.SPECIAL:
                 # Each tensor has its own seed
-                fp_special_info_tensor = fp_special_info.copy()
-                fp_special_info_tensor["rng_seed"] = rng.getDataGenSeed(idx)
-                tens_meta["fp_special_info"] = fp_special_info_tensor
+                special_info_tensor = special_info.copy()
+                special_info_tensor["rng_seed"] = rng.getDataGenSeed(idx)
+                tens_meta["special_info"] = special_info_tensor
 
             else:
                 # TODO - other data gen type
@@ -1161,12 +1161,12 @@ class TosaTensorValuesGen:
             # Scale the data range to allow multiple ADDs without saturation
             add_op = True
             body_data_range = scale_add_values_to_iterations(
-                iterations, rng.dTypeRange(dtype)
+                iterations, rng.dTypeRange(dtype, high_inclusive=True)
             )
         elif dtype in (DType.INT8, DType.INT16):
             # Allow any positive values for LOGICAL_RIGHT_SHIFT
             add_op = False
-            body_data_range = (0, rng.dTypeRange(dtype)[1])
+            body_data_range = (0, rng.dTypeRange(dtype, high_inclusive=True)[1])
 
         assert (
             body_data_range is not None
@@ -1543,51 +1543,6 @@ class TosaTensorValuesGen:
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
-    def tvgEqual(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
-        if error_name is None and not gtu.dtypeIsSupportedByDataGen(dtypeList[0]):
-            # Integer
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 2 and cCount == 0
-            ), "Op.EQUAL must have 2 placeholders, 0 consts"
-
-            a_arr = rng.randTensor(shapeList[0], dtypeList[0])
-            b_arr = rng.randTensor(shapeList[1], dtypeList[1])
-
-            # Using random numbers means that it will be very unlikely that
-            # there are any matching (equal) values, therefore force that
-            # there are twice the number of matching values as the tensor rank
-            for num in range(0, len(shapeList[0]) * 2):
-                a_index = []
-                b_index = []
-                # Choose an index in each axis for the whole shape
-                for axis in range(0, len(shapeList[0])):
-                    # Index can be up to the largest dimension in both shapes
-                    index = np.int32(
-                        rng.integers(0, max(shapeList[0][axis], shapeList[1][axis]))
-                    )
-                    # Reduce the index down to a shape's dim for broadcasting
-                    a_index.append(min(shapeList[0][axis] - 1, index))
-                    b_index.append(min(shapeList[1][axis] - 1, index))
-
-                a_arr[tuple(a_index)] = b_arr[tuple(b_index)]
-
-            tens_ser_list = []
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
-            )
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_arr)
-            )
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-        else:
-            # ERROR_IF or floating point test
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
-
-    @staticmethod
     def tvgReduceSum(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
@@ -1921,6 +1876,7 @@ class TosaTensorValuesGen:
     def tvgGather(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
+        op = testGen.TOSA_OP_LIST[opName]
         K = shapeList[0][1]
 
         # Fix the type of the indices tensor
@@ -1929,7 +1885,6 @@ class TosaTensorValuesGen:
         dtype = dtypeList[0]
         if not gtu.dtypeIsSupportedByDataGen(dtype):
             # Test unsupported by data generator
-            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 2 and cCount == 0
@@ -1966,6 +1921,8 @@ class TosaTensorValuesGen:
     def tvgScatter(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
+        op = testGen.TOSA_OP_LIST[opName]
+
         K = shapeList[0][1]
         W = shapeList[2][1]
 
@@ -1982,7 +1939,6 @@ class TosaTensorValuesGen:
         dtype = dtypeList[0]
         if not gtu.dtypeIsSupportedByDataGen(dtype):
             # Test unsupported by data generator
-            op = testGen.TOSA_OP_LIST[opName]
             pCount, cCount = op["operands"]
             assert (
                 pCount == 3 and cCount == 0
@@ -2047,7 +2003,7 @@ class TosaArgGen:
             and "data_gen" in op
             and gtu.dtypeIsSupportedByDataGen(dtype)
         ):
-            dataGenTypesList = testGen.TOSA_OP_LIST[opName]["data_gen"].get(
+            dataGenTypesList = op["data_gen"].get(
                 dtype, (gtu.DataGenType.PSEUDO_RANDOM,)
             )
         else:
@@ -2129,14 +2085,14 @@ class TosaArgGen:
                     )
                     only_one = not allow_multiple_special_tests
 
-                elif dg_type == gtu.DataGenType.FP_SPECIAL:
+                elif dg_type == gtu.DataGenType.SPECIAL:
                     if testGen.args.no_special_tests:
                         continue
                     if not check_min_size(
                         opName,
                         shapeList[0],
-                        testGen.TOSA_FP_SPECIAL_MIN_SIZE,
-                        "FP special",
+                        testGen.TOSA_SPECIAL_MIN_SIZE,
+                        "SPECIAL generator",
                     ):
                         continue
                     broadcastable_inputs = testGen.TOSA_OP_LIST[opName].get(
@@ -2148,7 +2104,7 @@ class TosaArgGen:
                         }
                         if len(shapes_set) != 1:
                             logger.info(
-                                f"Changing {opName} input shapes {shapes_set} - broadcasting incompatable with FP special test"
+                                f"Changing {opName} input shapes {shapes_set} - broadcasting incompatible with FP special test"
                             )
                             broadcasted_shape = np.int32(
                                 np.broadcast_shapes(*shapeList[:broadcastable_inputs])
@@ -2157,10 +2113,16 @@ class TosaArgGen:
                             for idx in range(broadcastable_inputs):
                                 shapeList[idx] = broadcasted_shape
 
-                    arg_str = f"{arg_str}_fs" if arg_str else "fs"
-                    gen_args_dict["tags"] = args_dict.get("tags", []) + [
-                        "non_finite_fp_data"
-                    ]
+                    if gtu.dtypeIsFloat(dtype):
+                        arg_str = f"{arg_str}_fs" if arg_str else "fs"
+                        gen_args_dict["tags"] = args_dict.get("tags", []) + [
+                            "non_finite_fp_data"
+                        ]
+                    else:
+                        arg_str = f"{arg_str}_is" if arg_str else "is"
+                        gen_args_dict["tags"] = args_dict.get("tags", []) + [
+                            "border_case_int_data"
+                        ]
                     # Create only one special test per data type, unless the op
                     # explicitly marks it requires more than one.
                     allow_multiple_special_tests = op.get(

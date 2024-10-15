@@ -12,23 +12,44 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#ifndef GENERATE_FP_SPECIAL_H_
-#define GENERATE_FP_SPECIAL_H_
+#ifndef GENERATE_SPECIAL_H_
+#define GENERATE_SPECIAL_H_
 
+#include "generate_special_utils.h"
 #include "generate_utils.h"
 
 namespace TosaReference
 {
 
-/// \brief Perform FP special data generation
+/// \brief Perform special data generation
 ///
 /// \param cfg Generator related meta-data
 /// \param data Buffer to generate the data to
 /// \param size Size of the buffer
 ///
 /// \return True on successful generation
-bool generateFpSpecial(const GenerateConfig& cfg, void* data, size_t size);
+bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size);
 
+/// \brief Configures how to generate special values
+///
+/// There will be one for floating point datatypes and a different one for
+struct SpecialGenProfile
+{
+    std::map<Op, TestValues> opValues;
+    TestValues defaultValues;
+    std::map<SpecialTestSet, TestValues> specialValues;
+};
+
+enum class SpecialConfig
+{
+    // defined in generate_int_special.cc
+    INT,
+    // defined in generate_fp_special.cc
+    FP,
+};
+
+template <SpecialConfig>
+SpecialGenProfile getSpecialConfig();
 };    // namespace TosaReference
 
-#endif    // GENERATE_FP_SPECIAL_H_
+#endif    // GENERATE_SPECIAL_H_

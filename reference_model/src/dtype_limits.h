@@ -12,6 +12,9 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+#ifndef _DTYPE_LIMITS_H
+#define _DTYPE_LIMITS_H
+
 #include "cfloat.h"
 #include "dtype.h"
 #include "half.hpp"
@@ -159,3 +162,5 @@ struct DtypeLimits<TOSA_REF_TYPE_BOOL>
 };
 
 }    // namespace TosaReference
+
+#endif

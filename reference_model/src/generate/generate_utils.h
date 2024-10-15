@@ -37,8 +37,7 @@ enum class GeneratorType
     PseudoRandom,
     DotProduct,
     FullRange,
-    Boundary,
-    FpSpecial,
+    Special,
     FixedData,
 };
 
@@ -49,7 +48,7 @@ enum class InputType
     Constant,
 };
 
-/// \brief Supported special test sets for FP_SPECIAL tests
+/// \brief Supported special test sets for SPECIAL tests
 enum class SpecialTestSet
 {
     Default,
@@ -95,9 +94,9 @@ struct FullRangeInfo
 };
 
 /// \brief Op specific generator meta-data
-struct FpSpecialInfo
+struct SpecialInfo
 {
-    FpSpecialInfo() = default;
+    SpecialInfo() = default;
 
     uint8_t startIndex;
     int64_t rngSeed;
@@ -117,7 +116,7 @@ struct GenerateConfig
     PseudoRandomInfo pseudoRandomInfo;
     FixedDataInfo fixedDataInfo;
     FullRangeInfo fullRangeInfo;
-    FpSpecialInfo fpSpecialInfo;
+    SpecialInfo specialInfo;
 };
 
 /// \brief Parse the generator config when given in JSON form

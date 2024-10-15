@@ -80,6 +80,10 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
             int32_t* outData = reinterpret_cast<int32_t*>(data);
             return copyFixedData(T, inData, outData, broadcastMode);
         }
+        case DType::DType_INT16: {
+            int16_t* outData = reinterpret_cast<int16_t*>(data);
+            return copyFixedData(T, inData, outData, broadcastMode);
+        }
         case DType::DType_INT8: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
             return copyFixedData(T, inData, outData, broadcastMode);
@@ -97,7 +101,7 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
             return copyFixedData(T, inData, outData, broadcastMode);
         }
         default:
-            WARNING("[Generator][FD] Unsupported type.");
+            WARNING("[Generator][FD] Unsupported type %s.", EnumNameDType(cfg.dataType));
             return false;
     }
 }

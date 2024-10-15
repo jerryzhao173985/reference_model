@@ -278,9 +278,9 @@ class TestOpList:
                             test.setMark()
                         append = True
 
-            # Check for FP special tests
+            # Check for FP and INT special tests
             if not append:
-                if test.argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+                if test.argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
                     append = True
 
             if append:

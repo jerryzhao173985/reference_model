@@ -46,7 +46,7 @@ class TosaTestGen:
     TOSA_MI_DOT_PRODUCT_MIN = 1000
 
     # Minimum tensor size for the FP special tests
-    TOSA_FP_SPECIAL_MIN_SIZE = 20
+    TOSA_SPECIAL_MIN_SIZE = 20
 
     def __init__(self, args):
         self.args = args
@@ -313,7 +313,7 @@ class TosaTestGen:
                 "bound_as_magnitude": True,
                 "max_compare": max_compare,
             }
-        elif argsDict["dg_type"] == gtu.DataGenType.FP_SPECIAL:
+        elif argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
             if gtu.ComplianceMode.DOT_PRODUCT in op["data_gen"][inputType]:
                 # Use special mode that only checks for matching inf/nan/zeroes
                 # as normal values need statistical analysis
@@ -3342,13 +3342,6 @@ class TosaTestGen:
         # Look up operator name in the Op class look up dictionary
         return self.OP_NAME_LOOKUP[op].lower()
 
-    # Tensor operator list
-    #  'op': op name
-    #  'operands': tuple of (placeholder, const) operands
-    #  'rank': optional, restricts rank to tuple inclusive of (min, max),
-    #    if not specified, defaults to (1, 4)
-    #  'build_fcn': tuple of the function to (build_operator(), TensorGen function, ArgGen enum)
-    #  'types': array of datatypes to be tested
     TYPE_FP = [DType.FP32, DType.FP16, DType.BF16]
 
     TYPE_INT = [DType.INT8, DType.INT16, DType.INT32]  # Excludes INT4
@@ -3420,24 +3413,61 @@ class TosaTestGen:
     }
     EW_UNARY_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
     }
     PR_FS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
-        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FP_SPECIAL),
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+    }
+    PR_FS_IS_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
     }
     DP_FS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
-        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
-        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.FP_SPECIAL),
+        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
     }
 
+    # Tensor operator list
+    #  'op': op name
+    #  'operands': tuple of (placeholder, const) operands
+    #  'rank': (optional) restricts rank to tuple inclusive of (min, max),
+    #    if not specified, defaults to (0, gtu.MAX_TENSOR_RANK)
+    #  'build_fcn': tuple of the function to (build_operator(), TensorGen function, ArgGen enum)
+    #  'qgen': (optional) function for generating quantized info like zero point
+    #  'types': list of datatypes to be tested
+    #    or list of lists of datatypes. In the second case, each list has datatypes for
+    #    each of the inputs in the operator.
+    #  'invalid_test_validators': tuple of functions to be used for validating the tests
+    #  'error_if_validators': tuple of functions to be used for validating ERROR_IF tests
+    #  'data_gen': list of DataGenTypes to be used
+    #  'data_gen_override': (optional) maps input names to alternative DataGenTypes. Used when
+    #    different inputs in the operator require different DataGenTypes.
+    #  'compliance': (optional) sets some extra information for compliance. E.g. the number of ULPs
+    #    of error allowed in implementations.
+    #  'broadcastable_bias': (optional) if set to True, the "bias" input of this operation will be
+    #    sometimes generated as an array of a single value regardless of the output shape.
+    #    Otherwise, output shape is always respected.
+    #  'broadcastable_inputs': (optional) number of inputs that can be broadcastable - all other
+    #    inputs are treated as normal tensors
+    #  'filter': (optional) list of shapes to be used for generating kernels/filters
+    #  'template': (optional) if True, this entry will be used to generate multiple entries, one
+    #    for each value in 'filter'
+    #  'allow_multiple_special_tests': (optional) if set to True, multiple special tests are
+    #    allowed for each datatype in this operator
     TOSA_OP_LIST = {
         # Tensor operators
         "argmax": {
@@ -4397,7 +4427,7 @@ class TosaTestGen:
             "data_gen": PR_FS_DATAGEN,
             "data_gen_override": {
                 # The first input i.e. "Input selector tensor" can't cope with
-                # gtu.DataGenType.FP_SPECIAL
+                # gtu.DataGenType.SPECIAL
                 "operand0": gtu.DataGenType.PSEUDO_RANDOM,
             },
             "broadcastable_inputs": 3,
@@ -4409,7 +4439,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_comparison,
                 TosaTensorGen.tgBroadcastFuzz,
-                TosaTensorValuesGen.tvgEqual,
+                TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
@@ -4422,7 +4452,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
         },
         "greater_equal": {
@@ -4444,7 +4474,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
         },
         "greater": {
@@ -4466,7 +4496,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
         },
         # Reduction operators
@@ -4817,7 +4847,7 @@ class TosaTestGen:
             "data_gen": PR_FS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
-                # gtu.DataGenType.FP_SPECIAL
+                # gtu.DataGenType.SPECIAL
                 "operand1": gtu.DataGenType.PSEUDO_RANDOM,
             },
         },
@@ -4842,7 +4872,7 @@ class TosaTestGen:
             "data_gen": PR_FS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
-                # gtu.DataGenType.FP_SPECIAL
+                # gtu.DataGenType.SPECIAL
                 "operand1": gtu.DataGenType.PSEUDO_RANDOM,
             },
         },

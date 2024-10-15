@@ -107,8 +107,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(GeneratorType,
                                  { GeneratorType::PseudoRandom, "PSEUDO_RANDOM" },
                                  { GeneratorType::DotProduct, "DOT_PRODUCT" },
                                  { GeneratorType::FullRange, "FULL_RANGE" },
-                                 { GeneratorType::Boundary, "BOUNDARY" },
-                                 { GeneratorType::FpSpecial, "FP_SPECIAL" },
+                                 { GeneratorType::Special, "SPECIAL" },
                                  { GeneratorType::FixedData, "FIXED_DATA" },
                              })
 
@@ -166,25 +165,25 @@ void from_json(const nlohmann::json& j, FullRangeInfo& fullRangeInfo)
     }
 }
 
-void from_json(const nlohmann::json& j, FpSpecialInfo& fpSpecialInfo)
+void from_json(const nlohmann::json& j, SpecialInfo& specialInfo)
 {
     if (j.contains("start_idx"))
     {
-        j.at("start_idx").get_to(fpSpecialInfo.startIndex);
+        j.at("start_idx").get_to(specialInfo.startIndex);
     }
 
     if (j.contains("rng_seed"))
     {
-        j.at("rng_seed").get_to(fpSpecialInfo.rngSeed);
+        j.at("rng_seed").get_to(specialInfo.rngSeed);
     }
 
     if (j.contains("special_test_set"))
     {
-        j.at("special_test_set").get_to(fpSpecialInfo.specialTestSet);
+        j.at("special_test_set").get_to(specialInfo.specialTestSet);
     }
     else
     {
-        fpSpecialInfo.specialTestSet = SpecialTestSet::Default;
+        specialInfo.specialTestSet = SpecialTestSet::Default;
     }
 }
 
@@ -232,11 +231,11 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     }
 
     //Set up defaults for fpSpecialInfo
-    cfg.fpSpecialInfo.startIndex = 0;
-    cfg.fpSpecialInfo.rngSeed    = 0;
-    if (j.contains("fp_special_info"))
+    cfg.specialInfo.startIndex = 0;
+    cfg.specialInfo.rngSeed    = 0;
+    if (j.contains("special_info"))
     {
-        j.at("fp_special_info").get_to(cfg.fpSpecialInfo);
+        j.at("special_info").get_to(cfg.specialInfo);
     }
 }
 
