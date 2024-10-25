@@ -1366,9 +1366,10 @@ def run_unit_test(
             # Prototype dynamic_shape testing
             # Need to resize the input tensors to known shapes when evaluating
             for idx, val in enumerate(placeholder_vals):
-                interpreter.resize_tensor_input(
-                    input_details[idx]["index"], placeholder_shapes[idx]
-                )
+                if len(placeholder_shapes[idx]) != 0:
+                    interpreter.resize_tensor_input(
+                        input_details[idx]["index"], placeholder_shapes[idx]
+                    )
             interpreter.allocate_tensors()
 
             assert len(input_details) == len(
