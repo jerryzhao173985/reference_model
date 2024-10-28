@@ -38,7 +38,7 @@ class Test:
         # Get parameter values (arguments) for this test
         if param == "rank":
             return len(self.shapeList[0])
-        elif param == "dtype":
+        elif param == "type":
             if isinstance(self.dtype, list):
                 return tuple(self.dtype)
             return self.dtype
@@ -50,6 +50,7 @@ class Test:
             val = str(self.argsDict[param])
             return ",".join(str(val).splitlines())
         else:
+            assert False, f"Argument {param} not found in argsDict for {self.testStr}"
             return None
 
     def setKey(self, keyParams):
@@ -69,7 +70,7 @@ class Test:
         # Create the group key based on arguments that do not define the group
         # Therefore this test will match other tests that have the same arguments
         # that are NOT the group arguments (group arguments like test set number)
-        paramsList = sorted(["shape", "dtype"] + list(self.argsDict.keys()))
+        paramsList = sorted(["shape", "type"] + list(self.argsDict.keys()))
         key = []
         for param in paramsList:
             if param in groupParams:
@@ -145,7 +146,7 @@ class TestOpList:
         # See verif/conformance/README.md for more information on
         # these selection arguments
         self.permuteArgs = _get_selection_info_from_op(
-            op, selectionCriteria, "permutes", ["rank", "dtype"]
+            op, selectionCriteria, "permutes", ["rank", "type"]
         )
         self.paramArgs = _get_selection_info_from_op(
             op, selectionCriteria, "full_params", []

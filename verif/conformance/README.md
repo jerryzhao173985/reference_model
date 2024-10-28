@@ -55,6 +55,6 @@ If "all" is not set, the following selection criteria is used:
 * "permutes" - optional list of parameters whose values are to be permuted, the default is ["rank", "dtype"]
 * "maximum" - optional number - at most "maximum" tests (not including specific tests) will be captured per permuted "permutes" value, effects "full_params" as well
 * "full_params" - optional list of parameter names used to select tests covering a full range of values for these params up to "maximum"
-* "specifics" - optional dictionary of params with lists of values, tests that meet any of these "specifics" will be selected and kept (even using "post_sparsity")
+* "specifics" - optional dictionary of params with lists of values, tests that meet any of these "specifics" will be selected and kept
 * "groups" - optional list of parameters that should be considered as a grouping of tests and treated as one test for "sparsity" and "specifics"
 * "num_errorifs" - optional value of error_if tests to keep per error_if case, the default is 1

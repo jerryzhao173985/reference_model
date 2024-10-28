@@ -418,7 +418,7 @@ def main(argv=None):
         # Fallback to using anything defined in the TosaTestGen list
         selectionCfg = ttg.TOSA_OP_LIST
         # Set up some defaults to create a quick testing selection
-        selectDefault = {"default": {"permutes": ["rank", "dtype"], "maximum": 10}}
+        selectDefault = {"default": {"permutes": ["rank", "type"], "maximum": 10}}
         for opName in selectionCfg:
             if (
                 "selection" not in selectionCfg[opName]
