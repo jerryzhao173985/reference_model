@@ -264,7 +264,7 @@ def main(argv=None):
             if path is None and name == "Bounds":
                 # Bounds can be None - skip it
                 continue
-            if not path.is_file():
+            if path is None or not path.is_file():
                 _print_result(LogColors.RED, f"{name} MISSING FILE {test_name}")
                 print(f"Missing {name} file: {str(path)}")
                 return TestResult.MISSING_FILE

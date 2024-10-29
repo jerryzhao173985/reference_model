@@ -149,6 +149,8 @@ def convert_flatbuffer_file(
     output_type: str, flatc: Path, schema: Path, model_file: Path, output: Path
 ):
     """Convert and/or copy the flatbuffer binary."""
+    assert output_type in OUTPUT_TYPES
+
     if output_type in (OUTPUT_TYPE_JSON, OUTPUT_TYPE_BOTH):
         try:
             fbbin_to_json(flatc, schema, model_file, output)
@@ -170,7 +172,10 @@ def convert_flatbuffer_file(
         # By default return the binary name (if we have created both)
         file_name = model_file.name
 
-    return output / file_name
+    if file_name:
+        return output / file_name
+    else:
+        return None
 
 
 def convert_numpy_file(
