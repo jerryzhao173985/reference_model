@@ -13,6 +13,7 @@
 //    limitations under the License.
 #include "generate.h"
 #include "half.hpp"
+#include "test_utils.h"
 
 #include <doctest.h>
 
@@ -1982,39 +1983,18 @@ TEST_CASE("positive - FP16 FP Special")
     }
 }
 
-template <typename DataType>
+template <typename INT_TYPE>
 void special_test_INT(const std::string tosaName,
                       const size_t tosaElements,
-                      const std::string templateJsonCfg,
                       const std::string opStr,
                       const std::string startIndexStr,
-                      const std::vector<std::pair<DataType, DataType>> expected)
+                      const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
 {
-    std::string jsonCfg = templateJsonCfg;
-    update_json_template(jsonCfg, "_OP_", opStr);
-    update_json_template(jsonCfg, "_START_", startIndexStr);
-
-    std::vector<DataType> buffer(tosaElements);
-    REQUIRE(
-        tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(DataType)));
-    for (size_t idx = 0; idx < expected.size(); ++idx)
-    {
-        std::stringstream msg;
-        msg << "index: " << idx << " expected between: " << expected[idx].first << " and: " << expected[idx].second
-            << ", but got: " << buffer[idx];
-        bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
-
-        REQUIRE_MESSAGE(withinRange, msg.str());
-    }
-}
-
-TEST_CASE("positive - int SPECIAL")
-{
-    std::string templateJsonCfg = R"({
+    std::string jsonCfg = R"({
         "tensors" : {
             "input0" : {
                 "generator": "SPECIAL",
-                "data_type": "INT32",
+                "data_type": "_INT_TYPE_",
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 0,
@@ -2025,7 +2005,7 @@ TEST_CASE("positive - int SPECIAL")
             },
             "input1" : {
                 "generator": "SPECIAL",
-                "data_type": "INT32",
+                "data_type": "_INT_TYPE_",
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 1,
@@ -2037,31 +2017,149 @@ TEST_CASE("positive - int SPECIAL")
         }
     })";
 
+    ;
+    DType dtype = NativeType2Dtype<INT_TYPE>();
+
+    update_json_template(jsonCfg, "_OP_", opStr);
+    update_json_template(jsonCfg, "_START_", startIndexStr);
+    update_json_template(jsonCfg, "_INT_TYPE_", EnumNameDType(dtype));
+
+    std::vector<INT_TYPE> buffer(tosaElements);
+    REQUIRE(
+        tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(INT_TYPE)));
+    for (size_t idx = 0; idx < expected.size(); ++idx)
+    {
+        std::stringstream msg;
+        msg << opStr << " index: " << idx << " expected between: " << expected[idx].first
+            << " and: " << expected[idx].second << ", but got: " << buffer[idx];
+        bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
+
+        REQUIRE_MESSAGE(withinRange, msg.str());
+    }
+}
+
+TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
+{
     const std::string tosaName0 = "input0";
     const std::string tosaName1 = "input1";
     const size_t tosaElements   = 3 * 6 * 4;
 
-    const std::pair<int32_t, int32_t> zero{ 0, 0 };
-    const std::pair<int32_t, int32_t> max{ std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::max() };
-    const std::pair<int32_t, int32_t> lowest{ std::numeric_limits<int32_t>::lowest(),
-                                              std::numeric_limits<int32_t>::lowest() };
-    const std::pair<int32_t, int32_t> random{ std::numeric_limits<int32_t>::lowest(),
-                                              std::numeric_limits<int32_t>::max() };
+    const std::pair<INT_TYPE, INT_TYPE> zero{ 0, 0 };
+    const std::pair<INT_TYPE, INT_TYPE> max{ std::numeric_limits<INT_TYPE>::max(),
+                                             std::numeric_limits<INT_TYPE>::max() };
+    const std::pair<INT_TYPE, INT_TYPE> lowest{ std::numeric_limits<INT_TYPE>::lowest(),
+                                                std::numeric_limits<INT_TYPE>::lowest() };
+    const std::pair<INT_TYPE, INT_TYPE> random{ std::numeric_limits<INT_TYPE>::lowest(),
+                                                std::numeric_limits<INT_TYPE>::max() };
+    // Used for shift operators
+    const int64_t maxShiftVal = sizeof(INT_TYPE) * 8 - 1;
+    const std::pair<INT_TYPE, INT_TYPE> randShift{ 0, maxShiftVal };
+    const std::pair<INT_TYPE, INT_TYPE> maxShift{ maxShiftVal, maxShiftVal };
 
-    SUBCASE("equal, input 0")
+    // Tests only available for int32
+    if constexpr (std::is_same_v<INT_TYPE, int32_t>)
     {
-        const std::vector<std::pair<int32_t, int32_t>> expected = {
-            zero, lowest, zero, zero, random, max, random, lowest, random, zero, max,
-        };
-        special_test_INT<int32_t>(tosaName0, tosaElements, templateJsonCfg, "EQUAL", "1", expected);
+        SUBCASE("equal,greater,greater_equal input 0")
+        {
+            const std::vector<std::string> operators = { "EQUAL", "GREATER", "GREATER_EQUAL" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    zero, lowest, zero, zero, random, max, random, lowest, random, zero, max,
+                };
+                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expected);
+            }
+        }
+
+        SUBCASE("equal,greater,greater_equal input 1")
+        {
+            const std::vector<std::string> operators = { "EQUAL", "GREATER", "GREATER_EQUAL" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    max, zero, lowest, random, zero, random, max, random, lowest, zero, zero, max, zero, lowest,
+                };
+                special_test_INT(tosaName1, tosaElements, op, "1", expected);
+            }
+        }
+
+        SUBCASE("bitwise_and,or,xor input 0")
+        {
+            const std::vector<std::string> operators = { "BITWISE_AND", "BITWISE_OR", "BITWISE_XOR" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max,    zero, lowest, zero,   zero,
+                                                                              random, max,  random, lowest, random,
+                                                                              zero,   max,  zero };
+                special_test_INT(tosaName0, tosaElements, op, "0", expected);
+            }
+        }
+
+        SUBCASE("bitwise_and,or,xor input 1")
+        {
+            const std::vector<std::string> operators = { "BITWISE_AND", "BITWISE_OR", "BITWISE_XOR" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    zero, max, zero, lowest, random, zero, random, max, random, lowest, zero, zero, max, zero, lowest,
+                };
+                special_test_INT(tosaName1, tosaElements, op, "0", expected);
+            }
+        }
+
+        SUBCASE("maximum,minimum input 0")
+        {
+            const std::vector<std::string> operators = { "MAXIMUM", "MINIMUM" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    random, zero, max, zero, lowest, zero, zero, random, max, random, lowest, random, zero,
+                };
+                special_test_INT(tosaName0, tosaElements, op, "9", expected);
+            }
+        }
+
+        SUBCASE("maximum,minimum input 1")
+        {
+            const std::vector<std::string> operators = { "MAXIMUM", "MINIMUM" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    lowest, zero, zero, max, zero, lowest, random, zero, random, max, random, lowest, zero, zero,
+                };
+                special_test_INT(tosaName1, tosaElements, op, "9", expected);
+            }
+        }
     }
 
-    SUBCASE("equal, input 1")
+    // Tests available for int32, int16 and int8
+    if constexpr (std::is_same_v<INT_TYPE, int32_t> || std::is_same_v<INT_TYPE, int16_t> ||
+                  std::is_same_v<INT_TYPE, int8_t>)
     {
-        const std::vector<std::pair<int32_t, int32_t>> expected = {
-            max, zero, lowest, random, zero, random, max, random, lowest, zero, zero, max, zero, lowest,
-        };
-        special_test_INT(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "1", expected);
+        SUBCASE("logical_right_shift,left_shift, input 0")
+        {
+            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero,   zero,   zero,   lowest, lowest,
+                                                                              lowest, random, random, max,    max,
+                                                                              max,    zero,   zero,   zero,   lowest };
+                special_test_INT(tosaName0, tosaElements, op, "3", expected);
+            }
+        }
+
+        SUBCASE("logical_right_shift,left_shift, input 1")
+        {
+            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    randShift, zero, maxShift, randShift, zero, maxShift, zero,      maxShift,
+                    randShift, zero, maxShift, randShift, zero, maxShift, randShift,
+                };
+                special_test_INT(tosaName1, tosaElements, op, "3", expected);
+            }
+        }
     }
 }
 

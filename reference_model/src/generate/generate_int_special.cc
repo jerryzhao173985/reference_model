@@ -17,22 +17,41 @@
 
 namespace
 {
-const TestValues conditionalOpsTestVals{
+const SValue FullRangeRndInteger{ SVE::RndInteger, SVE::Lowest, SVE::Max };
 
-    { SValue(SVE::Max), SValue(SVE::Zero) },          { SValue(SVE::Zero), SValue(SVE::Max) },
-    { SValue(SVE::Lowest), SValue(SVE::Zero) },       { SValue(SVE::Zero), SValue(SVE::Lowest) },
-    { SValue(SVE::Zero), SValue(SVE::RndInteger) },   { SValue(SVE::RndInteger), SValue(SVE::Zero) },
-    { SValue(SVE::Max), SValue(SVE::RndInteger) },    { SValue(SVE::RndInteger), SValue(SVE::Max) },
-    { SValue(SVE::Lowest), SValue(SVE::RndInteger) }, { SValue(SVE::RndInteger), SValue(SVE::Lowest) },
+const TestValues binaryExtremesTestVals{
+
+    { SValue(SVE::Max), SValue(SVE::Zero) },      { SValue(SVE::Zero), SValue(SVE::Max) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero) },   { SValue(SVE::Zero), SValue(SVE::Lowest) },
+    { SValue(SVE::Zero), FullRangeRndInteger },   { FullRangeRndInteger, SValue(SVE::Zero) },
+    { SValue(SVE::Max), FullRangeRndInteger },    { FullRangeRndInteger, SValue(SVE::Max) },
+    { SValue(SVE::Lowest), FullRangeRndInteger }, { FullRangeRndInteger, SValue(SVE::Lowest) },
     { SValue(SVE::Zero), SValue(SVE::Zero) },
+};
+
+const TestValues shiftTestVals{
+
+    { SValue(SVE::Max), SValue(SVE::RndInteger, SVE::Zero, SVE::MaxShift) },
+    { SValue(SVE::Max), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::MaxShift) },
+    { SValue(SVE::Zero), SValue(SVE::RndInteger, SVE::Zero, SVE::MaxShift) },
+    { SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Zero), SValue(SVE::MaxShift) },
+    { SValue(SVE::Lowest), SValue(SVE::RndInteger, SVE::Zero, SVE::MaxShift) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::MaxShift) },
+    { FullRangeRndInteger, SValue(SVE::Zero) },
+    { FullRangeRndInteger, SValue(SVE::MaxShift) },
 };
 
 // Maps operators to the operator-specific list of default values for
 // INT_SPECIAL tests.
 const std::map<Op, TestValues> opTestValues_int = {
-    { Op_EQUAL, conditionalOpsTestVals },
-    { Op_GREATER, conditionalOpsTestVals },
-    { Op_GREATER_EQUAL, conditionalOpsTestVals },
+    { Op_EQUAL, binaryExtremesTestVals },         { Op_GREATER, binaryExtremesTestVals },
+    { Op_GREATER_EQUAL, binaryExtremesTestVals }, { Op_BITWISE_AND, binaryExtremesTestVals },
+    { Op_BITWISE_OR, binaryExtremesTestVals },    { Op_BITWISE_XOR, binaryExtremesTestVals },
+    { Op_MAXIMUM, binaryExtremesTestVals },       { Op_MINIMUM, binaryExtremesTestVals },
+    { Op_LOGICAL_LEFT_SHIFT, shiftTestVals },     { Op_LOGICAL_RIGHT_SHIFT, shiftTestVals },
 };
 
 // Values that will be picked up if the Op is not in opTestValues_int and the

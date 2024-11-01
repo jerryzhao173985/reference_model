@@ -37,7 +37,7 @@ constexpr DType NativeType2Dtype()
     if constexpr (std::is_same<T, uint16_t>::value)
         return DType_UINT16;
 
-    if constexpr (std::is_same<T, uint32_t>::value)
+    if constexpr (std::is_same<T, int32_t>::value)
         return DType_INT32;
 
     if constexpr (std::is_same<T, ct::binary16>::value)
