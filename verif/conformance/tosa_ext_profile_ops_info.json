@@ -865,6 +865,7 @@
     "bitwise_and": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -888,6 +889,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "int32",
@@ -898,6 +900,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -905,6 +908,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -947,6 +951,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int32",
@@ -957,6 +962,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--target-shape",
@@ -964,6 +970,7 @@
                         "1,65538,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -983,6 +990,7 @@
     "bitwise_or": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -1006,6 +1014,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -1016,6 +1025,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -1023,6 +1033,7 @@
                         "1,65537,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -1042,6 +1053,7 @@
     "bitwise_xor": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -1065,6 +1077,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "int32",
@@ -1075,6 +1088,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -1082,6 +1096,7 @@
                         "1,65536,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -4533,6 +4548,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -4543,6 +4559,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -4550,6 +4567,7 @@
                         "1,2,1,65538,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -4703,6 +4721,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int32",
@@ -4713,6 +4732,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--target-shape",
@@ -4720,6 +4740,7 @@
                         "2,1,65530,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -5148,6 +5169,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5157,6 +5179,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -5164,6 +5187,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5303,6 +5327,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5312,6 +5337,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -5319,6 +5345,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",

@@ -1518,29 +1518,16 @@ class TosaTensorValuesGen:
         assert (
             pCount == 2 and cCount == 0
         ), "Op.LOGICAL_LEFT_SHIFT or Op.LOGICAL_RIGHT_SHIFT must have 2 placeholders, 0 consts"
-        values_arr = rng.randTensor(shapeList[0], dtypeList[0])
 
-        if dtypeList[0] == DType.INT32:
-            shift_max = 32
-        elif dtypeList[0] == DType.INT16:
-            shift_max = 16
-        elif dtypeList[0] == DType.INT8:
-            shift_max = 8
-        else:
-            shift_max = 32
-        shift_arr = rng.randTensor(
-            shapeList[1], dtypeList[0], data_range=(0, shift_max)
-        )
+        shift_max = gtu.dtypeWidth(dtypeList[0]) - 1
 
-        tens_ser_list = []
-        tens_ser_list.append(
-            testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], values_arr)
+        argsDict["data_range_list"] = [
+            {"range": rng.dTypeRange(dtypeList[0], high_inclusive=True)},
+            {"range": (0, shift_max)},
+        ]
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
-        tens_ser_list.append(
-            testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], shift_arr)
-        )
-
-        return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
 
     @staticmethod
     def tvgReduceSum(

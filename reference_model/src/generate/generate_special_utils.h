@@ -222,6 +222,7 @@ public:
         BelowLowestINT8,
         BelowLowestINT16,
         BelowLowestINT32,
+        MaxShift,    // Number of bits in datatype minus 1
     };
 
     SpecialValue() = default;
@@ -257,7 +258,7 @@ public:
     }
 
     template <typename DataType>
-    DataType evaluate(RandomGen<DataType> rng) const
+    DataType evaluate(RandomGen<DataType>& rng) const
     {
         // Work out the simple values
         switch (_value)
@@ -286,6 +287,7 @@ public:
             case BelowLowestINT8:
             case BelowLowestINT16:
             case BelowLowestINT32:
+            case MaxShift:
                 return _static_evaluate<DataType>(_value, _negative);
             default:
                 // Handle the Random and unsupported cases below
@@ -434,6 +436,9 @@ private:
                 DataType below_lowest = belowLowest<TOSA_REF_TYPE_INT32, DataType>();
                 rawVal                = below_lowest;
                 break;
+            }
+            case MaxShift: {
+                return static_cast<DataType>(sizeof(DataType) * 8 - 1);
             }
             default:
                 // Assumption that we only get called with a valid enum

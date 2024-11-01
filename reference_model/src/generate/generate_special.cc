@@ -33,8 +33,6 @@ bool generate(const TosaReference::GenerateConfig& cfg,
     const TosaReference::SpecialInfo& fsinfo = cfg.specialInfo;
     uint8_t startIndex                       = fsinfo.startIndex;
 
-    std::vector<DataType> values;
-
     // Unpack the specialGen struct for succintness in the code that follows
     const auto& specialVals = specialGen.specialValues;
     const auto& opTestVals  = specialGen.opValues;
@@ -63,18 +61,12 @@ bool generate(const TosaReference::GenerateConfig& cfg,
         inputIndex = cfg.inputPos;
     }
 
-    auto rng = RandomGen<DataType>(fsinfo.rngSeed);
-    for (const std::vector<SpecialValue>& inputs : vals)
-    {
-        DataType val;
-        val = inputs[inputIndex].evaluate<DataType>(rng);
-        values.push_back(val);
-    }
-
+    auto rng     = RandomGen<DataType>(fsinfo.rngSeed);
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
     for (auto t = 0; t < T; ++t)
     {
-        data[t] = values[(t + startIndex) % values.size()];
+        int valsIndex = (t + startIndex) % vals.size();
+        data[t]       = vals[valsIndex][inputIndex].evaluate<DataType>(rng);
     }
     return true;
 }
