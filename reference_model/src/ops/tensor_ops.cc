@@ -766,36 +766,6 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top, pad_bottom,
                pad_left, pad_right);
 
-    // GEMM-conv2d, left matrix is input, right matrix is weight
-    Eigen::array<Eigen::Index, 2> im2col_input_dims;
-    im2col_input_dims[0] = out_batch * out_height * out_width;
-    im2col_input_dims[1] = f_height * f_width * f_in_channels;
-
-    Eigen::array<Eigen::Index, 2> im2col_weight_dims;
-    im2col_weight_dims[0] = f_height * f_width * f_in_channels;
-    im2col_weight_dims[1] = f_out_channels;
-
-    Eigen::array<Eigen::Index, 2> bias_reshaped_dims;
-    bias_reshaped_dims[0] = 1;
-    bias_reshaped_dims[1] = b_out_channels;
-
-    Eigen::array<Eigen::Index, 4> weight_zp_bcast_dims;
-    weight_zp_bcast_dims[0] = f_height;
-    weight_zp_bcast_dims[1] = f_width;
-    weight_zp_bcast_dims[2] = f_in_channels;
-
-    Eigen::array<Eigen::Index, 2> bias_bcast_dims;
-    bias_bcast_dims[0] = out_batch * out_height * out_width;
-    bias_bcast_dims[1] = (b_out_channels == 1) ? out_channels : 1;
-
-    Eigen::array<Eigen::Index, 4> col2im_output_dims;
-    col2im_output_dims[0] = out_batch;
-    col2im_output_dims[1] = out_height;
-    col2im_output_dims[2] = out_width;
-    col2im_output_dims[3] = out_channels;
-
-    Eigen::array<Eigen::IndexPair<Eigen::Index>, 1> contract_dims = { Eigen::IndexPair<Eigen::Index>(1, 0) };
-
     Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
     pad[0] = std::make_pair(0, 0);
     pad[1] = std::make_pair(pad_top, pad_bottom);
@@ -828,35 +798,51 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     ETensor4<InEigenType> input_padded = input_val.pad(pad);
 
-    // extract_image_patches() output [N, KH, KW, H * W, C]
-    // need to transpose to [N, H * W, KH, KW, C]
-    ETensor5<InEigenType> input_extract_patches =
-        input_padded
-            .extract_image_patches(f_height, f_width, stride_y, stride_x, dilation_y, dilation_x, Eigen::PADDING_VALID)
-            .shuffle(Eigen::array<Eigen::Index, 5>{ 0, 3, 1, 2, 4 });
+    // 1. initialize with bias
+    Eigen::array<Eigen::Index, 4> reshape_dim;
+    reshape_dim.fill(1);
+    reshape_dim[3] = b_out_channels;
 
-    // reshape input to [N * H * W, KH * KW * C]
-    ETensor2<InEigenType> im2col_input = input_extract_patches.reshape(im2col_input_dims);
+    Eigen::array<Eigen::Index, 4> bcast;
+    bcast[0]                  = out_batch;
+    bcast[1]                  = out_height;
+    bcast[2]                  = out_width;
+    bcast[3]                  = (b_out_channels == 1) ? out_channels : 1;
+    this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
-    // transpose and reshape weight from [OC, H, W, IC] to [H * W * IC, OC]
-    ETensor2<WeightEigenType> im2col_weight =
-        weight_val.shuffle(Eigen::array<Eigen::Index, 4>({ 1, 2, 3, 0 })).reshape(im2col_weight_dims);
+    // 2. direct convolution
+    int h_idx, w_idx;
 
-    // don't need to apply bias_multiplier ( * bias_scale and >> bias_shift) since tflite already scale it
-    // and reshaped from [C] to [1, C], and broadcast to [N * H * W, C]
-    ETensor2<OutEigenType> bias_2d =
-        (bias_val.reshape(bias_reshaped_dims).broadcast(bias_bcast_dims)).template cast<OutEigenType>();
+    for (int ob = 0; ob < out_batch; ob++)
+    {
+        for (int oh = 0; oh < out_height; oh++)
+        {
+            for (int ow = 0; ow < out_width; ow++)
+            {
+                for (int oc = 0; oc < out_channels; oc++)
+                {
+                    AccEigenType acc(0.0);
+                    for (int fh = 0; fh < f_height; fh++)
+                    {
+                        h_idx = oh * stride_y + fh * dilation_y;
+                        for (int fw = 0; fw < f_width; fw++)
+                        {
+                            w_idx = ow * stride_x + fw * dilation_x;
+                            for (int ic = 0; ic < in_channels; ic++)
+                            {
+                                acc += (static_cast<AccEigenType>(input_padded(ob, h_idx, w_idx, ic)) *
+                                        static_cast<AccEigenType>(weight_val(oc, fh, fw, ic)));
+                            }
+                        }
+                    }
 
-    // output matrix is [N * H * W, C]
-    ETensor2<OutEigenType> contracted_result = (im2col_input.template cast<AccEigenType>().contract(
-                                                    im2col_weight.template cast<AccEigenType>(), contract_dims))
-                                                   .template cast<OutEigenType>();
-
-    // adding bias
-    ETensor2<OutEigenType> biased_output = contracted_result + bias_2d;
-
-    // reshape back to [N, H, W, C]
-    this->output->getTensor() = biased_output.reshape(col2im_output_dims);
+                    // add bias to accumulated value
+                    OutEigenType bias                         = this->output->getTensor()(ob, oh, ow, oc);
+                    this->output->getTensor()(ob, oh, ow, oc) = bias + static_cast<OutEigenType>(acc);
+                }
+            }
+        }
+    }
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
