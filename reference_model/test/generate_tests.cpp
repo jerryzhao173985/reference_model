@@ -735,6 +735,267 @@ TEST_CASE("positive - INT32 pseudo random")
         }
     }
 }
+
+void pseudo_random_test_int4_check(std::vector<int8_t> buffer, size_t elements, int8_t min, int8_t max)
+{
+    size_t index = 0;
+    for (auto e = buffer.begin(); e < buffer.end(); ++e)
+    {
+        // Check the first value is within range
+        int8_t v0        = (int8_t)(*e << 4) >> 4;
+        bool withinRange = (v0 >= min && v0 <= max);
+        if (!withinRange)
+            printf("IDX[%ld] %d not in (%d -> %d)\n", index, v0, min, max);
+        REQUIRE(withinRange);
+
+        // Check the second value is within range
+        int8_t v1 = *e >> 4;
+        if (index + 1 < elements)
+        {
+            bool withinRange = (v1 >= min && v1 <= max);
+            REQUIRE_MESSAGE(withinRange, "IDX[%ld] %d not in (%d -> %d)\n", index, v1, min, max);
+        }
+        index += 2;
+    }
+}
+
+TEST_CASE("positive - INT4 pseudo random")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "const0" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT4",
+                "input_type": "CONSTANT",
+                "shape" : [ 3, 10 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 13,
+                    "range": [ "-6", "6" ]
+                }
+            },
+            "const1" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT4",
+                "input_type": "CONSTANT",
+                "shape" : [ ],
+                "input_pos": 1,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 14,
+                    "range": [ "1", "7" ]
+                }
+            },
+            "const2" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT4",
+                "input_type": "CONSTANT",
+                "shape" : [ 3, 3, 3 ],
+                "input_pos": 1,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 14,
+                    "range": [ "-7", "-1" ]
+                }
+            },
+            "const3" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT4",
+                "input_type": "CONSTANT",
+                "shape" : [ 2, 4, 4 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 31
+                }
+            }
+        }
+    })";
+
+    const std::string tosaNameP0  = "const0";
+    const size_t tosaElementsP0   = 3 * 10;
+    const size_t tosaPackedSizeP0 = (tosaElementsP0 + 1) / 2;
+    const std::string tosaNameP1  = "const1";
+    const size_t tosaElementsP1   = 1;
+    const size_t tosaPackedSizeP1 = (tosaElementsP1 + 1) / 2;
+    const std::string tosaNameP2  = "const2";
+    const size_t tosaElementsP2   = 3 * 3 * 3;
+    const size_t tosaPackedSizeP2 = (tosaElementsP2 + 1) / 2;
+    const std::string tosaNameP3  = "const3";
+    const size_t tosaElementsP3   = 2 * 4 * 4;
+    const size_t tosaPackedSizeP3 = (tosaElementsP3 + 1) / 2;
+
+    SUBCASE("int4 random - rank 2 - even elements")
+    {
+        std::vector<int8_t> bufferP0(tosaPackedSizeP0);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaPackedSizeP0));
+        pseudo_random_test_int4_check(bufferP0, tosaElementsP0, -6, 6);
+    }
+
+    SUBCASE("int4 random - rank 0 - odd elements")
+    {
+        std::vector<int8_t> bufferP1(tosaPackedSizeP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaPackedSizeP1));
+        pseudo_random_test_int4_check(bufferP1, tosaElementsP1, 1, 7);
+    }
+
+    SUBCASE("int4 random - rank 3 - odd elements")
+    {
+        std::vector<int8_t> bufferP2(tosaPackedSizeP2);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP2.c_str(), (void*)bufferP2.data(), tosaPackedSizeP2));
+        pseudo_random_test_int4_check(bufferP2, tosaElementsP2, -7, -1);
+    }
+
+    SUBCASE("int4 random - no range set")
+    {
+        std::vector<int8_t> bufferP3(tosaPackedSizeP3);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP3.c_str(), (void*)bufferP3.data(), tosaPackedSizeP3));
+        pseudo_random_test_int4_check(bufferP3, tosaElementsP3, -7, 7);
+    }
+}
+
+TEST_CASE("positive - BOOL pseudo random")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "const0" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "BOOL",
+                "input_type": "CONST",
+                "shape" : [ 4, 3 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 10,
+                    "range": [ "0", "1" ]
+                }
+            },
+            "const1" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "BOOL",
+                "input_type": "CONST",
+                "shape" : [ 12, 3 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 30
+                }
+            }
+        }
+    })";
+
+    const std::string tosaNameP0 = "const0";
+    const size_t tosaElementsP0  = 4 * 3;
+    const std::string tosaNameP1 = "const1";
+    const size_t tosaElementsP1  = 12 * 3;
+
+    SUBCASE("BOOL random - range set")
+    {
+        std::vector<int8_t> bufferP0(tosaElementsP0);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaElementsP0));
+        for (auto e = bufferP0.begin(); e < bufferP0.end(); ++e)
+        {
+            // Check the values are within range
+            bool withinRange = (*e >= 0 && *e <= 1);
+            REQUIRE(withinRange);
+        }
+    }
+    SUBCASE("BOOL random - no range set")
+    {
+        std::vector<int8_t> bufferP1(tosaElementsP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaElementsP1));
+        for (auto e = bufferP1.begin(); e < bufferP1.end(); ++e)
+        {
+            // Check the values are within range
+            bool withinRange = (*e >= 0 && *e <= 1);
+            REQUIRE(withinRange);
+        }
+    }
+}
+
+void pseudo_random_test_int48_check(std::vector<int8_t> buffer, size_t elements, int64_t min, int64_t max)
+{
+    int32_t byte_pos  = 0;
+    int64_t value     = 0;
+    uint64_t* val_u64 = reinterpret_cast<uint64_t*>(&value);
+    for (auto e = buffer.begin(); e < buffer.end(); ++e)
+    {
+        uint8_t byte_val = static_cast<uint8_t>(*e);
+        auto shift       = byte_pos * 8;
+        *val_u64 += (static_cast<uint64_t>(byte_val) << shift);
+        byte_pos++;
+        // printf("byte %d: %d / v: %lu -> %ld\n", byte_pos, byte_val, *val_u64, value);
+
+        if (byte_pos == 6)
+        {
+            // Sign extend by shifting up to the top and then shifting back
+            *val_u64 <<= 16;
+            value >>= 16;
+            // Check the values are within range
+            // printf("Final value: %lu -> %ld\n",  *val_u64, value);
+            bool withinRange = (value >= min && value <= max);
+            REQUIRE_MESSAGE(withinRange, "%ld not in (%ld -> %ld)\n", value, min, max);
+
+            byte_pos = 0;
+            value    = 0;
+        }
+    }
+    // Fail if we end up with unused bytes
+    REQUIRE(byte_pos == 0);
+}
+
+TEST_CASE("positive - INT48 pseudo random")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "const0" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT48",
+                "input_type": "CONST",
+                "shape" : [ 10 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 17
+                }
+            },
+            "const1" : {
+                "generator": "PSEUDO_RANDOM",
+                "data_type": "INT48",
+                "input_type": "CONST",
+                "shape" : [ 5, 8, 3 ],
+                "input_pos": 0,
+                "op" : "CONST",
+                "pseudo_random_info": {
+                    "rng_seed": 34,
+                    "range": [ "-1000000", "-5000" ]
+                }
+            }
+        }
+    })";
+
+    const std::string tosaNameP0 = "const0";
+    const size_t tosaElementsP0  = 10;
+    const size_t tosaSizeP0      = tosaElementsP0 * 6;
+    const std::string tosaNameP1 = "const1";
+    const size_t tosaElementsP1  = 5 * 8 * 3;
+    const size_t tosaSizeP1      = tosaElementsP1 * 6;
+
+    SUBCASE("INT48 random - no range set")
+    {
+        std::vector<int8_t> bufferP0(tosaSizeP0);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaSizeP0));
+        pseudo_random_test_int48_check(bufferP0, tosaSizeP0, -(1L << 47), +(1L << 47) - 1);
+    }
+    SUBCASE("INT48 random - negative range set")
+    {
+        std::vector<int8_t> bufferP1(tosaSizeP1);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaSizeP1));
+        pseudo_random_test_int48_check(bufferP1, tosaSizeP1, -1000000L, -5000L);
+    }
+}
+
 void depthwise_conv2d_test_FP16(const std::string tosaName[3],
                                 const size_t tosaElements[3],
                                 const std::string templateJsonCfg,
@@ -1620,7 +1881,7 @@ void special_test_FP16(const std::string tosaName,
     update_json_template(jsonCfg, "_START_", startIndexStr);
 
     std::vector<half_float::half> buffer(tosaElements);
-    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 4));
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
         std::stringstream msg;

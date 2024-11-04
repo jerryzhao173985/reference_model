@@ -3,6 +3,7 @@
 """Calls the data generation library to create the test data."""
 import ctypes as ct
 import json
+import struct
 from pathlib import Path
 
 import numpy as np
@@ -96,8 +97,17 @@ class GenerateLibrary:
             # Create buffer and initialize to zero
             buffer = (ct.c_int16 * size)(0)
             size_bytes = size * 2
-        elif dtype == "INT8":
+        elif dtype == "INT8" or dtype == "BOOL":
             size_bytes = size
+            # Create buffer of bytes and initialize to zero
+            buffer = (ct.c_ubyte * size_bytes)(0)
+        elif dtype == "INT4":
+            # Round up to nearest byte
+            size_bytes = (size + 1) // 2
+            # Create buffer of bytes and initialize to zero
+            buffer = (ct.c_ubyte * size_bytes)(0)
+        elif dtype == "INT48":
+            size_bytes = size * 6
             # Create buffer of bytes and initialize to zero
             buffer = (ct.c_ubyte * size_bytes)(0)
         else:
@@ -123,11 +133,52 @@ class GenerateLibrary:
             arr = np.frombuffer(arr, float8_e5m2).view(np.uint8)
         elif dtype == "INT8":
             arr = np.frombuffer(arr, np.int8)
+        elif dtype == "INT4":
+            # Create an i8 array to hold the unpacked i4 values
+            i8_arr = np.zeros(shape=shape, dtype=np.int8).flatten()
+            i8_idx = 0
+            for value in arr:
+                # Unpack the first i4 value
+                packed_val = np.array(value).astype(dtype=np.int8)
+                i8_arr[i8_idx] = np.int8(packed_val << 4) >> 4
+                if (i8_idx + 1) < i8_arr.size:
+                    # Unpack the second i4 value if there is one
+                    i8_arr[i8_idx + 1] = packed_val >> 4
+                i8_idx += 2
+            arr = i8_arr
+        elif dtype == "INT48":
+            i64_arr = np.zeros(shape=shape, dtype=np.int64).flatten()
+            i8_idx = 0
+            for i64_idx in range(i64_arr.size):
+                # Get 6 bytes of i48 value
+                b = bytearray(arr[i8_idx : i8_idx + 6])
+                # Sign extend to 8 bytes
+                v = 255 if b[5] & 128 else 0
+                b.extend([v, v])
+                # Little-endian conversion to signed i64
+                i64_arr[i64_idx] = struct.unpack("<q", b)[0]
+                i8_idx += 6
+            arr = i64_arr
+        elif dtype == "BOOL":
+            # Convert from bytes back to bool
+            arr = np.frombuffer(arr, bool)
+
         arr = np.reshape(arr, shape)
 
         return arr
 
-    def _data_gen_array(self, json_config: str, tensor_name: str):
+    def _call_data_gen_library(
+        self, json_config: dict, tensor_name: str, buffer, size_bytes: int
+    ):
+        json_bytes = bytes(json.dumps(json_config), "utf8")
+        return self.tgd_generate_data(
+            ct.c_char_p(json_bytes),
+            ct.c_char_p(bytes(tensor_name, "utf8")),
+            ct.cast(buffer, ct.c_void_p),
+            ct.c_size_t(size_bytes),
+        )
+
+    def _data_gen_array(self, json_config: dict, tensor_name: str):
         """Generate the named tensor data and return a numpy array."""
         try:
             tensor = json_config["tensors"][tensor_name]
@@ -139,15 +190,9 @@ class GenerateLibrary:
             )
 
         buffer, size_bytes = self._create_buffer(dtype, shape)
-        buffer_ptr = ct.cast(buffer, ct.c_void_p)
 
-        json_bytes = bytes(json.dumps(json_config), "utf8")
-
-        result = self.tgd_generate_data(
-            ct.c_char_p(json_bytes),
-            ct.c_char_p(bytes(tensor_name, "utf8")),
-            buffer_ptr,
-            ct.c_size_t(size_bytes),
+        result = self._call_data_gen_library(
+            json_config, tensor_name, buffer, size_bytes
         )
         if not result:
             raise GenerateError("Data generate failed")
@@ -156,7 +201,7 @@ class GenerateLibrary:
         return arr
 
     def _data_gen_write(
-        self, test_path: Path, json_config: str, ifm_name: str, ifm_file: str
+        self, test_path: Path, json_config: dict, ifm_name: str, ifm_file: str
     ):
         """Generate the named tensor data and save it in numpy format."""
         arr = self._data_gen_array(json_config, ifm_name)

@@ -278,7 +278,7 @@ int64_t numElementsFromShape(const std::vector<int32_t>& shape)
     return std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
 }
 
-size_t elementSizeFromType(DType type)
+size_t tensorSizeInBytesFromType(int64_t numElements, DType type)
 {
     switch (type)
     {
@@ -287,17 +287,23 @@ size_t elementSizeFromType(DType type)
         case DType::DType_INT8:
         case DType::DType_FP8E4M3:
         case DType::DType_FP8E5M2:
-            return 1;
+            return 1 * numElements;
         case DType::DType_UINT16:
         case DType::DType_INT16:
         case DType::DType_FP16:
         case DType::DType_BF16:
-            return 2;
+            return 2 * numElements;
         case DType::DType_INT32:
         case DType::DType_FP32:
         case DType::DType_SHAPE:
-            return 4;
+            return 4 * numElements;
+        case DType::DType_INT4:
+            // 2x INT4 elements per byte
+            return (numElements + 1) >> 1;
+        case DType::DType_INT48:
+            return 6 * numElements;
         default:
+            FATAL_ERROR("dtype is not supported");
             return 0;
     }
     return 0;

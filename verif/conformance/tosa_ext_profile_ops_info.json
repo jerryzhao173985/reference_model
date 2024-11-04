@@ -2491,6 +2491,34 @@
                         "5"
                     ]
                 ]
+            },
+            "tosa-ext-int4": {
+                "supports_all": [
+                    "tosa-ext-int4"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "9,61",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "3,17",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ]
+                ]
             }
         },
         "selection": {

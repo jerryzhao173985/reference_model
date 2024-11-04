@@ -103,9 +103,12 @@ def dtypeIsSupportedByCompliance(dtype):
 def dtypeIsSupportedByDataGen(dtype):
     """Types supported by the C++ data generation library"""
     supported_types = (
+        DType.INT48,
         DType.INT32,
         DType.INT16,
         DType.INT8,
+        DType.INT4,
+        DType.BOOL,
         DType.FP32,
         DType.FP16,
         DType.BF16,
