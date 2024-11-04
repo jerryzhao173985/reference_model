@@ -436,7 +436,7 @@ int main(int argc, char* argv[])
     imp->name      = ofmName.c_str();
     imp->data_type = mapToTosaDtype(dtype);
     imp->num_dims  = static_cast<int32_t>(shape.size());
-    imp->size      = TosaReference::elementSizeFromType(dtype);
+    imp->size      = TosaReference::tensorSizeInBytesFromType(imp->num_dims, dtype);
     imp->shape     = shape.data();
 
     // Read reference result numpy into a data buffer
@@ -455,7 +455,7 @@ int main(int argc, char* argv[])
     ref->name      = ofmName.c_str();
     ref->data_type = mapToTosaDtype(dtype);
     ref->num_dims  = static_cast<int32_t>(shape.size());
-    ref->size      = TosaReference::elementSizeFromType(dtype);
+    ref->size      = TosaReference::tensorSizeInBytesFromType(ref->num_dims, dtype);
     ref->shape     = shape.data();
 
     tosa_tensor_t* bnd = nullptr;
@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
         bnd->name      = ofmName.c_str();
         bnd->data_type = mapToTosaDtype(dtype);
         bnd->num_dims  = static_cast<int32_t>(shape.size());
-        bnd->size      = TosaReference::elementSizeFromType(dtype);
+        bnd->size      = TosaReference::tensorSizeInBytesFromType(bnd->num_dims, dtype);
         bnd->shape     = shape.data();
     }
 

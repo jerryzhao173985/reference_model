@@ -125,8 +125,8 @@ std::optional<GenerateConfig> parseGenerateConfig(const char* json, const char* 
 /// \brief Extract number of total elements
 int64_t numElementsFromShape(const std::vector<int32_t>& shape);
 
-/// \brief Size in bytes of a given type
-size_t elementSizeFromType(DType type);
+/// \brief Size in bytes of a tensor with the given elements and type
+size_t tensorSizeInBytesFromType(int64_t numElements, DType type);
 
 };    // namespace TosaReference
 

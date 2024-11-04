@@ -11,6 +11,7 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+#include "dtype_limits.h"
 #include "generate.h"
 #include "generate_utils.h"
 #include "half.hpp"
@@ -157,52 +158,85 @@ bool generateFP(const TosaReference::GenerateConfig& cfg, DataType* data, size_t
     return true;
 }
 
-// Random INT generator
-template <typename INT>
+// Integer write value functions
+template <typename DataType, TosaReference::TOSA_REF_TYPE TosaType>
+void writeValue(int64_t value, int64_t index, DataType* data)
+{
+    data[index] = static_cast<DataType>(value);
+}
+
+template <>
+void writeValue<int8_t, TosaReference::TOSA_REF_TYPE_INT4>(int64_t value, int64_t index, int8_t* data)
+{
+    // Packed index
+    const auto byte_idx = index >> 1;
+    // Low or high part of the byte
+    const auto byte_pos = index & 0x1;
+
+    int8_t byte_half0, byte_half1;
+    if (byte_pos == 0)
+    {
+        // overwrite low position
+        byte_half0 = static_cast<int8_t>(value);
+        byte_half1 = data[byte_idx];
+    }
+    else
+    {
+        // overwrite high position
+        byte_half0 = data[byte_idx];
+        byte_half1 = static_cast<int8_t>(value);
+    }
+    data[byte_idx] = (byte_half0 & 0xF) | ((byte_half1 & 0xF) << 4);
+}
+
+template <>
+void writeValue<int8_t, TosaReference::TOSA_REF_TYPE_INT48>(int64_t value, int64_t index, int8_t* data)
+{
+    const auto byte_idx = index * 6;
+    const auto val_u64  = static_cast<uint64_t>(value);
+    for (auto i = 0; i < 6; ++i)
+    {
+        auto shift         = i * 8;
+        data[byte_idx + i] = (val_u64 >> shift) & 0xFF;
+    }
+}
+
+// Random INT64 generator
 class PseudoRandomGeneratorInteger
 {
 public:
-    PseudoRandomGeneratorInteger(uint64_t seed)
-        : _gen(seed)
-    {
-        constexpr auto min = std::numeric_limits<INT>::min();
-        constexpr auto max = std::numeric_limits<INT>::max();
-
-        setDistribution(min, max);
-    }
-
-    PseudoRandomGeneratorInteger(uint64_t seed, INT min, INT max)
+    PseudoRandomGeneratorInteger(uint64_t seed, int64_t min, int64_t max)
         : _gen(seed)
     {
         setDistribution(min, max);
     }
 
-    INT getRandomInteger()
+    int64_t getRandomInteger()
     {
         return _unidis(_gen);
     }
 
-    INT getRandomInteger(INT min, INT max)
+    int64_t getRandomInteger(int64_t min, int64_t max)
     {
-        typename std::uniform_int_distribution<INT>::param_type range(min, max);
+        typename std::uniform_int_distribution<int64_t>::param_type range(min, max);
         return _unidis(_gen, range);
     }
 
 private:
-    void setDistribution(INT min, INT max)
+    void setDistribution(int64_t min, int64_t max)
     {
-        _unidis = std::uniform_int_distribution<INT>(min, max);
+        _unidis = std::uniform_int_distribution<int64_t>(min, max);
     }
 
     std::mt19937_64 _gen;
-    std::uniform_int_distribution<INT> _unidis;
+    std::uniform_int_distribution<int64_t> _unidis;
 };
 
 template <typename DataType>
 bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
 {
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
-    std::unique_ptr<PseudoRandomGeneratorInteger<DataType>> generator;
+    std::unique_ptr<PseudoRandomGeneratorInteger> generator;
 
     if (cfg.shape.size() != 2)
     {
@@ -215,9 +249,13 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
         return false;
     }
 
-    const int32_t min = std::stoi(prinfo.range[0]);
-    const int32_t max = std::stoi(prinfo.range[1]);
-    generator         = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed, min, max);
+    int64_t min = std::stoll(prinfo.range[0]);
+    int64_t max = std::stoll(prinfo.range[1]);
+    if (min > max)
+    {
+        std::swap(min, max);
+    }
+    generator = std::make_unique<PseudoRandomGeneratorInteger>(prinfo.rngSeed, min, max);
 
     // Work out inclusive range
     const auto range = std::abs(max - min) + 1;
@@ -249,35 +287,48 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
     return true;
 }
 
-template <typename DataType>
-bool generateINT(const TosaReference::GenerateConfig& cfg, DataType* data, size_t size)
+template <typename StorageType, TosaReference::TOSA_REF_TYPE TosaType>
+bool generateINT(const TosaReference::GenerateConfig& cfg, StorageType* data, size_t size)
 {
     const TosaReference::PseudoRandomInfo& prinfo = cfg.pseudoRandomInfo;
-    std::unique_ptr<PseudoRandomGeneratorInteger<DataType>> generator;
+    std::unique_ptr<PseudoRandomGeneratorInteger> generator;
 
     const auto T = TosaReference::numElementsFromShape(cfg.shape);
 
+    const int64_t dtypeMin = TosaReference::DtypeLimits<TosaType>::min;
+    const int64_t dtypeMax = TosaReference::DtypeLimits<TosaType>::max;
+    int64_t min, max;
     if (prinfo.range.size() == 2)
     {
-        const int32_t min = std::stoi(prinfo.range[0]);
-        const int32_t max = std::stoi(prinfo.range[1]);
-        generator         = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed, min, max);
+        min = std::stoll(prinfo.range[0]);
+        max = std::stoll(prinfo.range[1]);
+        if (min > max)
+        {
+            std::swap(min, max);
+        }
+        min = std::max(std::min(min, dtypeMax), dtypeMin);
+        max = std::min(std::max(max, dtypeMin), dtypeMax);
     }
     else
     {
-        generator = std::make_unique<PseudoRandomGeneratorInteger<DataType>>(prinfo.rngSeed);
+        min = dtypeMin;
+        max = dtypeMax;
     }
+
+    generator = std::make_unique<PseudoRandomGeneratorInteger>(prinfo.rngSeed, min, max);
 
     const bool comparisonOp =
         (cfg.opType == Op::Op_EQUAL) || (cfg.opType == Op::Op_GREATER_EQUAL) || (cfg.opType == Op::Op_GREATER);
 
     for (auto t = 0; t < T; ++t)
     {
-        data[t] = generator->getRandomInteger();
+        auto value = generator->getRandomInteger();
         // Make sure we make more values match between tensors for comparison
         // operators.
         if (comparisonOp && (t % 4 == 0))
-            data[t] = 0;
+            value = 0;
+
+        writeValue<StorageType, TosaType>(value, t, data);
     }
     return true;
 }
@@ -326,6 +377,10 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
             return generateFP(cfg, outData, size);
         }
+        case DType::DType_INT48: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT48>(cfg, outData, size);
+        }
         case DType::DType_INT32: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
             if (cfg.opType == Op::Op_SCATTER && cfg.inputPos == 1)
@@ -335,16 +390,24 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             }
             else
             {
-                return generateINT(cfg, outData, size);
+                return generateINT<int32_t, TosaReference::TOSA_REF_TYPE_INT32>(cfg, outData, size);
             }
         }
         case DType::DType_INT16: {
             int16_t* outData = reinterpret_cast<int16_t*>(data);
-            return generateINT(cfg, outData, size);
+            return generateINT<int16_t, TosaReference::TOSA_REF_TYPE_INT16>(cfg, outData, size);
         }
         case DType::DType_INT8: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return generateINT(cfg, outData, size);
+            return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT8>(cfg, outData, size);
+        }
+        case DType::DType_INT4: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT4>(cfg, outData, size);
+        }
+        case DType::DType_BOOL: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_BOOL>(cfg, outData, size);
         }
         default:
             WARNING("[Generator][PR] Unsupported type.");

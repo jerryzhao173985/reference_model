@@ -4801,7 +4801,7 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agNone,
             ),
-            "types": TYPE_FIB + [DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
+            "types": TYPE_FIB + [DType.INT4, DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
             "data_gen": PR_FS_DATAGEN,
         },
         "identity": {

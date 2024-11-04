@@ -79,16 +79,26 @@ extern "C"
             return false;
         }
 
+        if (cfg->dataType == DType::DType_UNKNOWN)
+        {
+            WARNING("[Generator] Unsupported data type");
+            return false;
+        }
+
         // Check size
-        const size_t totalBytesNeeded =
-            TosaReference::numElementsFromShape(cfg->shape) * TosaReference::elementSizeFromType(cfg->dataType);
+        size_t totalBytesNeeded =
+            TosaReference::tensorSizeInBytesFromType(TosaReference::numElementsFromShape(cfg->shape), cfg->dataType);
         if (totalBytesNeeded > size)
         {
             WARNING("[Generator] Not enough space in provided buffer.");
             return false;
         }
 
-        // Run generator
-        return generate(cfg.value(), data, size);
+        // Memset the buffer to make sure we have no undefined behaviour
+        // when accessing it for packed values such as INT4
+        memset(data, 0, size);
+
+        // Run generator (but ignore extra buffer that has been passed in)
+        return generate(cfg.value(), data, totalBytesNeeded);
     }
 }    // extern "C"

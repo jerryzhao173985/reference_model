@@ -110,6 +110,20 @@ struct DtypeLimits<TOSA_REF_TYPE_FP8E5M2>
 };
 
 template <>
+struct DtypeLimits<TOSA_REF_TYPE_INT48>
+{
+    static constexpr int64_t lowest       = -(1L << 47);
+    static constexpr int64_t max          = +(1L << 47) - 1;
+    static constexpr int64_t min          = lowest;
+    static constexpr int64_t denorm_min   = 0;
+    static constexpr int64_t infinity     = 0;
+    static constexpr int64_t low_extreme  = lowest;
+    static constexpr int64_t high_extreme = max;
+    static constexpr bool has_infinity    = false;
+    static constexpr bool has_nan         = false;
+};
+
+template <>
 struct DtypeLimits<TOSA_REF_TYPE_INT32>
 {
     static constexpr int32_t lowest       = std::numeric_limits<int32_t>::lowest();
@@ -146,6 +160,20 @@ struct DtypeLimits<TOSA_REF_TYPE_INT8>
     static constexpr int8_t low_extreme  = lowest;
     static constexpr int8_t high_extreme = max;
     static constexpr bool has_infinity   = false;
+};
+
+template <>
+struct DtypeLimits<TOSA_REF_TYPE_INT4>
+{
+    static constexpr int8_t lowest       = -7;
+    static constexpr int8_t max          = +7;
+    static constexpr int8_t min          = lowest;
+    static constexpr int8_t denorm_min   = 0;
+    static constexpr int8_t infinity     = 0;
+    static constexpr int8_t low_extreme  = lowest;
+    static constexpr int8_t high_extreme = max;
+    static constexpr bool has_infinity   = false;
+    static constexpr bool has_nan        = false;
 };
 
 template <>
