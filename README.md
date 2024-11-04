@@ -598,6 +598,35 @@ While still in the virtual environment run:
 pre-commit run --all
 ```
 
+## Handling of FP8/BF16 data types with NumPy and ml_dtypes module in Python
+
+NumPy does not support FP8/BF16 data types natively. `ml_dtypes` module includes functions to convert FP8/BF16 values into a single byte and double bytes, respectively, and the values are handled using NumPy's capabilities to handle byte arrays.
+
+However, NumPy's serialization only recognizes NumPy's built-in data types, a simple deserialization with FP8E5M2 fails, e.g.:
+```
+>>> import numpy as np
+>>> from ml_dtypes import float8_e5m2, float8_e4m3fn, bfloat16
+>>> a = float8_e5m2(1.5)
+>>> np.save("a.npy", a)
+>>> b = np.load("a.npy")
+Traceback (most recent call last):
+...
+TypeError: data type '<f1' not understood
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+...
+ValueError: descr is not a valid dtype descriptor: '<f1'
+```
+The resolution of this issue requires a deeper change to the code in NumPy, so `ml_dtypes` recommends the following workaround: serialize `float8_e5m2` values as `uint8`, and deserialize them as `float8_e5m2`.
+```
+>>> np.save('a.npy', a.view('uint8'))
+>>> np.load('a.npy').view(float8_e5m2)
+>>> array(1.5, dtype='float8_e5m2')
+```
+
 ## License
 
 The *TOSA Reference Model* and TOSA Unit Tests are licensed under Apache-2.0.
