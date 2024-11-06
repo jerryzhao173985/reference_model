@@ -47,7 +47,7 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
             return verifyRelative(ref, imp, cfg.relativeInfo);
         }
         case VerifyMode::FpSpecial: {
-            return verifyFpSpecial(ref, imp);
+            return verifyFpSpecial(ref, refBnd, imp);
         }
         default: {
             WARNING("[Verifier] Unsupported verification mode.");

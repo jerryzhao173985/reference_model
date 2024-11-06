@@ -716,10 +716,10 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int in_width    = this->input->getShape()[2];
     int in_channels = this->input->getShape()[3];
 
-    int f_out_channels = this->weight->getShape()[0];
-    int f_height       = this->weight->getShape()[1];
-    int f_width        = this->weight->getShape()[2];
-    int f_in_channels  = this->weight->getShape()[3];
+    int k_out_channels = this->weight->getShape()[0];
+    int k_height       = this->weight->getShape()[1];
+    int k_width        = this->weight->getShape()[2];
+    int k_in_channels  = this->weight->getShape()[3];
 
     int b_out_channels = this->bias->getShape()[0];
 
@@ -729,9 +729,9 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int out_channels = this->output->getShape()[3];
 
     ERROR_IF(in_batch != out_batch, "OpConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ERROR_IF(f_in_channels != in_channels, "OpConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+    ERROR_IF(k_in_channels != in_channels, "OpConv2d: tensor input channel mismatch %d != %d", k_in_channels,
              in_channels);
-    ERROR_IF(f_out_channels != out_channels, "OpConv2d: tensor output channel mismatch %d != %d", f_out_channels,
+    ERROR_IF(k_out_channels != out_channels, "OpConv2d: tensor output channel mismatch %d != %d", k_out_channels,
              out_channels);
     ERROR_IF(b_out_channels != out_channels && b_out_channels != 1, "OpConv2d: bias channel mismatch %d != %d",
              b_out_channels, out_channels);
@@ -748,9 +748,9 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_y * k_height <= tosa_level.MAX_KERNEL,
                 "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_x * k_width <= tosa_level.MAX_KERNEL,
                 "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
@@ -762,7 +762,7 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     DEBUG_INFO(OP,
                "perform OpConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], "
                "stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
-               in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_out_channels, out_batch,
+               in_batch, in_height, in_width, in_channels, k_height, k_width, k_in_channels, k_out_channels, out_batch,
                out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top, pad_bottom,
                pad_left, pad_right);
 
@@ -811,34 +811,44 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     // 2. direct convolution
-    int h_idx, w_idx;
+    int iy_pad, ix_pad;
 
     for (int ob = 0; ob < out_batch; ob++)
     {
-        for (int oh = 0; oh < out_height; oh++)
+        for (int oy = 0; oy < out_height; oy++)
         {
-            for (int ow = 0; ow < out_width; ow++)
+            for (int ox = 0; ox < out_width; ox++)
             {
                 for (int oc = 0; oc < out_channels; oc++)
                 {
                     AccEigenType acc(0.0);
-                    for (int fh = 0; fh < f_height; fh++)
+                    for (int ky = 0; ky < k_height; ky++)
                     {
-                        h_idx = oh * stride_y + fh * dilation_y;
-                        for (int fw = 0; fw < f_width; fw++)
+                        iy_pad = oy * stride_y + ky * dilation_y;
+                        for (int kx = 0; kx < k_width; kx++)
                         {
-                            w_idx = ow * stride_x + fw * dilation_x;
+                            ix_pad = ox * stride_x + kx * dilation_x;
+
+                            // derive x, y indices into original input tensor
+                            int y         = iy_pad - pad_top;
+                            int x         = ix_pad - pad_left;
+                            bool in_scope = (0 <= x && x < in_width) && (0 <= y && y < in_height);
+                            if (!in_scope && !g_func_config.tosaExtraMultiplies())
+                            {
+                                // no need to do multiply and accumulate
+                                continue;
+                            }
                             for (int ic = 0; ic < in_channels; ic++)
                             {
-                                acc += (static_cast<AccEigenType>(input_padded(ob, h_idx, w_idx, ic)) *
-                                        static_cast<AccEigenType>(weight_val(oc, fh, fw, ic)));
+                                acc += (static_cast<AccEigenType>(input_padded(ob, iy_pad, ix_pad, ic)) *
+                                        static_cast<AccEigenType>(weight_val(oc, ky, kx, ic)));
                             }
                         }
                     }
 
                     // add bias to accumulated value
-                    OutEigenType bias                         = this->output->getTensor()(ob, oh, ow, oc);
-                    this->output->getTensor()(ob, oh, ow, oc) = bias + static_cast<OutEigenType>(acc);
+                    OutEigenType bias                         = this->output->getTensor()(ob, oy, ox, oc);
+                    this->output->getTensor()(ob, oy, ox, oc) = bias + static_cast<OutEigenType>(acc);
                 }
             }
         }
@@ -918,11 +928,11 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int in_width    = this->input->getShape()[3];
     int in_channels = this->input->getShape()[4];
 
-    int f_out_channels = this->weight->getShape()[0];
-    int f_depth        = this->weight->getShape()[1];
-    int f_height       = this->weight->getShape()[2];
-    int f_width        = this->weight->getShape()[3];
-    int f_in_channels  = this->weight->getShape()[4];
+    int k_out_channels = this->weight->getShape()[0];
+    int k_depth        = this->weight->getShape()[1];
+    int k_height       = this->weight->getShape()[2];
+    int k_width        = this->weight->getShape()[3];
+    int k_in_channels  = this->weight->getShape()[4];
 
     int b_out_channels = this->bias->getShape()[0];
 
@@ -933,9 +943,9 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int out_channels = this->output->getShape()[4];
 
     ERROR_IF(in_batch != out_batch, "OpConv3d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ERROR_IF(f_in_channels != in_channels, "OpConv3d: tensor input channel mismatch %d != %d", f_in_channels,
+    ERROR_IF(k_in_channels != in_channels, "OpConv3d: tensor input channel mismatch %d != %d", k_in_channels,
              in_channels);
-    ERROR_IF(f_out_channels != out_channels, "OpConv3d: tensor output channel mismatch %d != %d", f_out_channels,
+    ERROR_IF(k_out_channels != out_channels, "OpConv3d: tensor output channel mismatch %d != %d", k_out_channels,
              out_channels);
     ERROR_IF(b_out_channels != out_channels && b_out_channels != 1, "OpConv3d: bias channel mismatch %d != %d",
              b_out_channels, out_channels);
@@ -957,11 +967,11 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_d * f_depth <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_d * k_depth <= tosa_level.MAX_KERNEL,
                 "dilation_d * KD should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_y * k_height <= tosa_level.MAX_KERNEL,
                 "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_x * k_width <= tosa_level.MAX_KERNEL,
                 "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_d0 <= tosa_level.MAX_KERNEL, "pad_d0 should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_d1 <= tosa_level.MAX_KERNEL, "pad_d1 should be smaller than or equal to MAX_KERNEL");
@@ -977,7 +987,7 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         OP,
         "perform OpConv3d, input.shape=[%d,%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d,%d], output.shape=[%d,%d,%d,%d,%d], "
         "stride=[%d,%d,%d], dilation=[%d,%d,%d], pad=[%d,%d,%d,%d,%d,%d]",
-        in_batch, in_depth, in_height, in_width, in_channels, f_out_channels, f_depth, f_height, f_width, f_in_channels,
+        in_batch, in_depth, in_height, in_width, in_channels, k_out_channels, k_depth, k_height, k_width, k_in_channels,
         out_batch, out_depth, out_height, out_width, out_channels, stride_d, stride_y, stride_x, dilation_d, dilation_y,
         dilation_x, pad_d0, pad_d1, pad_top, pad_bottom, pad_left, pad_right);
 
@@ -1028,39 +1038,52 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
     // 2. direct convolution
-    int d_idx, h_idx, w_idx;
+    int id_pad, iy_pad, ix_pad;
 
     for (int ob = 0; ob < out_batch; ob++)
     {
         for (int od = 0; od < out_depth; od++)
         {
-            for (int oh = 0; oh < out_height; oh++)
+            for (int oy = 0; oy < out_height; oy++)
             {
-                for (int ow = 0; ow < out_width; ow++)
+                for (int ox = 0; ox < out_width; ox++)
                 {
                     for (int oc = 0; oc < out_channels; oc++)
                     {
                         AccEigenType acc(0.0);
-                        for (int fd = 0; fd < f_depth; fd++)
+                        for (int kd = 0; kd < k_depth; kd++)
                         {
-                            d_idx = od * stride_d + fd * dilation_d;
-                            for (int fh = 0; fh < f_height; fh++)
+                            id_pad = od * stride_d + kd * dilation_d;
+                            for (int ky = 0; ky < k_height; ky++)
                             {
-                                h_idx = oh * stride_y + fh * dilation_y;
-                                for (int fw = 0; fw < f_width; fw++)
+                                iy_pad = oy * stride_y + ky * dilation_y;
+                                for (int kx = 0; kx < k_width; kx++)
                                 {
-                                    w_idx = ow * stride_x + fw * dilation_x;
+                                    ix_pad = ox * stride_x + kx * dilation_x;
+
+                                    // derive x, y, d indices into original input tensor
+                                    int d         = id_pad - pad_d0;
+                                    int y         = iy_pad - pad_top;
+                                    int x         = ix_pad - pad_left;
+                                    bool in_scope = (0 <= x && x < in_width) && (0 <= y && y < in_height) &&
+                                                    (0 <= d && d < in_depth);
+                                    if (!in_scope && !g_func_config.tosaExtraMultiplies())
+                                    {
+                                        // no need to do multiply and accumulate
+                                        continue;
+                                    }
+
                                     for (int ic = 0; ic < in_channels; ic++)
                                     {
-                                        acc += ((AccEigenType)input_padded(ob, d_idx, h_idx, w_idx, ic) *
-                                                (AccEigenType)weight_val(oc, fd, fh, fw, ic));
+                                        acc += ((AccEigenType)input_padded(ob, id_pad, iy_pad, ix_pad, ic) *
+                                                (AccEigenType)weight_val(oc, kd, ky, kx, ic));
                                     }
                                 }
                             }
                         }
                         // add bias to accumulated value
-                        OutEigenType bias                             = this->output->getTensor()(ob, od, oh, ow, oc);
-                        this->output->getTensor()(ob, od, oh, ow, oc) = bias + (OutEigenType)acc;
+                        OutEigenType bias                             = this->output->getTensor()(ob, od, oy, ox, oc);
+                        this->output->getTensor()(ob, od, oy, ox, oc) = bias + (OutEigenType)acc;
                     }
                 }
             }
@@ -1140,10 +1163,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int in_width    = this->input->getShape()[2];
     int in_channels = this->input->getShape()[3];
 
-    int f_height      = this->weight->getShape()[0];
-    int f_width       = this->weight->getShape()[1];
-    int f_in_channels = this->weight->getShape()[2];
-    int f_multiplier  = this->weight->getShape()[3];
+    int k_height      = this->weight->getShape()[0];
+    int k_width       = this->weight->getShape()[1];
+    int k_in_channels = this->weight->getShape()[2];
+    int k_multiplier  = this->weight->getShape()[3];
 
     int b_out_channels = this->bias->getShape()[0];
 
@@ -1153,10 +1176,10 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int out_channels = this->output->getShape()[3];
 
     ERROR_IF(in_batch != out_batch, "OpDepthwiseConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ERROR_IF(f_in_channels != in_channels, "OpDepthwiseConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+    ERROR_IF(k_in_channels != in_channels, "OpDepthwiseConv2d: tensor input channel mismatch %d != %d", k_in_channels,
              in_channels);
-    ERROR_IF(in_channels * f_multiplier != out_channels, "OpDepthwiseConv2d: tensor output channel mismatch %d != %d",
-             in_channels * f_multiplier, out_channels);
+    ERROR_IF(in_channels * k_multiplier != out_channels, "OpDepthwiseConv2d: tensor output channel mismatch %d != %d",
+             in_channels * k_multiplier, out_channels);
     ERROR_IF(b_out_channels != out_channels && b_out_channels != 1,
              "OpDepthwiseConv2d: bias channels mismatch %d != %d", b_out_channels, out_channels);
 
@@ -1172,9 +1195,9 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(dilation_y * f_height <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_y * k_height <= tosa_level.MAX_KERNEL,
                 "dilation_y * KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(dilation_x * f_width <= tosa_level.MAX_KERNEL,
+    LEVEL_CHECK(dilation_x * k_width <= tosa_level.MAX_KERNEL,
                 "dilation_x * KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_top <= tosa_level.MAX_KERNEL, "pad_top should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(pad_bottom <= tosa_level.MAX_KERNEL, "pad_bottom should be smaller than or equal to MAX_KERNEL");
@@ -1186,7 +1209,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     DEBUG_INFO(OP,
                "perform OpDepthwiseConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], dilation=[%d,%d], pad=[%d,%d,%d,%d]",
-               in_batch, in_height, in_width, in_channels, f_height, f_width, f_in_channels, f_multiplier, out_batch,
+               in_batch, in_height, in_width, in_channels, k_height, k_width, k_in_channels, k_multiplier, out_batch,
                out_height, out_width, out_channels, stride_y, stride_x, dilation_y, dilation_x, pad_top, pad_bottom,
                pad_left, pad_right);
 
@@ -1228,7 +1251,7 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     // 1. extract_image_patches() output [N, KH, KW, OH * OW, IC]
     ETensor5<InEigenType> input_extract_patches = input_padded.extract_image_patches(
-        f_height, f_width, stride_y, stride_x, dilation_y, dilation_x, Eigen::PADDING_VALID);
+        k_height, k_width, stride_y, stride_x, dilation_y, dilation_x, Eigen::PADDING_VALID);
 
     Eigen::array<Eigen::Index, 4> reshape_dim;
     reshape_dim.fill(1);
@@ -1246,25 +1269,39 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     // 2. direct depthwise convolution
     for (int ob = 0; ob < out_batch; ob++)
     {
-        for (int oh = 0; oh < out_height; oh++)
+        for (int oy = 0; oy < out_height; oy++)
         {
-            for (int ow = 0; ow < out_width; ow++)
+            for (int ox = 0; ox < out_width; ox++)
             {
                 for (int ic = 0; ic < in_channels; ic++)
                 {
-                    for (int cm = 0; cm < f_multiplier; cm++)
+                    for (int km = 0; km < k_multiplier; km++)
                     {
                         AccEigenType acc(0.0);
-                        for (int fh = 0; fh < f_height; fh++)
+                        int iy = oy * stride_y - pad_top;
+                        int ix = ox * stride_x - pad_left;
+                        for (int ky = 0; ky < k_height; ky++)
                         {
-                            for (int fw = 0; fw < f_width; fw++)
+                            for (int kx = 0; kx < k_width; kx++)
                             {
+                                int y         = iy + ky * dilation_y;
+                                int x         = ix + kx * dilation_x;
+                                bool in_scope = (0 <= y && y < in_height) && (0 <= x && x < in_width);
+                                if (!in_scope && !g_func_config.tosaExtraMultiplies())
+                                {
+                                    // no need to do multiply and accumulate
+                                    continue;
+                                }
+                                AccEigenType value(0.0);
+                                if (in_scope)
+                                {
+                                    value = (AccEigenType)input_val(ob, y, x, ic);
+                                }
                                 // Perform multiplication in AccEigenType then cast to OutEigenType
-                                acc += (AccEigenType)input_extract_patches(ob, fh, fw, ow * out_height + oh, ic) *
-                                       (AccEigenType)weight_val(fh, fw, ic, cm);
+                                acc += value * (AccEigenType)weight_val(ky, kx, ic, km);
                             }
                         }
-                        this->output->getTensor()(ob, oh, ow, ic * f_multiplier + cm) += (OutEigenType)acc;
+                        this->output->getTensor()(ob, oy, ox, ic * k_multiplier + km) += (OutEigenType)acc;
                     }
                 }
             }
@@ -1861,6 +1898,10 @@ int OpRFFT2d<Dtype>::eval()
                         {
                             sum_imag += v_ir * a_sin;
                         }
+                        else if (g_func_config.tosaExtraMultiplies())
+                        {
+                            sum_imag += v_ir * 0.0;
+                        }
                     }
                 }
                 this->out_real->getTensor()(n, oy, ox) = sum_real;
@@ -1979,10 +2020,10 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int in_width    = this->input->getShape()[2];
     int in_channels = this->input->getShape()[3];
 
-    int f_out_channels = this->weight->getShape()[0];
-    int f_height       = this->weight->getShape()[1];
-    int f_width        = this->weight->getShape()[2];
-    int f_in_channels  = this->weight->getShape()[3];
+    int k_out_channels = this->weight->getShape()[0];
+    int k_height       = this->weight->getShape()[1];
+    int k_width        = this->weight->getShape()[2];
+    int k_in_channels  = this->weight->getShape()[3];
 
     int b_out_channels = this->bias->getShape()[0];
 
@@ -2000,17 +2041,17 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     int stride_x = this->attribute->stride()[1];
 
     ERROR_IF(in_batch != out_batch, "OpTransposeConv2d: tensor batch mismatch %d != %d", in_batch, out_batch);
-    ERROR_IF(f_in_channels != in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d", f_in_channels,
+    ERROR_IF(k_in_channels != in_channels, "OpTransposeConv2d: tensor input channel mismatch %d != %d", k_in_channels,
              in_channels);
-    ERROR_IF(f_out_channels != out_channels, "OpTransposeConv2d: tensor output channel mismatch %d != %d",
-             f_out_channels, out_channels);
+    ERROR_IF(k_out_channels != out_channels, "OpTransposeConv2d: tensor output channel mismatch %d != %d",
+             k_out_channels, out_channels);
     ERROR_IF(b_out_channels != out_channels && b_out_channels != 1,
              "OpTransposeConv2d: bias channels mismatch %d != %d", b_out_channels, out_channels);
 
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(f_height <= tosa_level.MAX_KERNEL, "KH should be smaller than or equal to MAX_KERNEL");
-    LEVEL_CHECK(f_width <= tosa_level.MAX_KERNEL, "KW should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(k_height <= tosa_level.MAX_KERNEL, "KH should be smaller than or equal to MAX_KERNEL");
+    LEVEL_CHECK(k_width <= tosa_level.MAX_KERNEL, "KW should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(out_pad_top <= tosa_level.MAX_KERNEL, "out_pad_top should be smaller than or equal to MAX_KERNEL");
     LEVEL_CHECK(out_pad_bottom <= tosa_level.MAX_KERNEL,
                 "out_pad_bottom should be smaller than or equal to MAX_KERNEL");
@@ -2022,7 +2063,7 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     DEBUG_INFO(OP,
                "perform OpTransposeConv2d, input.shape=[%d,%d,%d,%d], weight.shape=[%d,%d,%d,%d], "
                "output.shape=[%d,%d,%d,%d], stride=[%d,%d], out_pad=[%d,%d,%d,%d]",
-               in_batch, in_height, in_width, in_channels, f_height, f_width, f_out_channels, f_in_channels, out_batch,
+               in_batch, in_height, in_width, in_channels, k_height, k_width, k_out_channels, k_in_channels, out_batch,
                out_height, out_width, out_channels, stride_y, stride_x, out_pad_top, out_pad_bottom, out_pad_left,
                out_pad_right);
 
@@ -2063,36 +2104,43 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     // initialize with bias
     this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
 
-    int out_x_origin, out_y_origin;
-    int out_x, out_y;
-
     TAcc acc_tensor = this->output->getTensor().template cast<AccEigenType>();
     acc_tensor.setZero();
 
     // reference implementation from: tensorflow/tensorflow/lite/kernels/internal/reference/reference_ops.h
     for (int ob = 0; ob < out_batch; ob++)
     {
-        for (int ih = 0; ih < in_height; ih++)
+        for (int oy = 0; oy < out_height; oy++)
         {
-            for (int iw = 0; iw < in_width; iw++)
+            for (int ox = 0; ox < out_width; ox++)
             {
-                out_x_origin = iw * stride_x + out_pad_left;
-                out_y_origin = ih * stride_y + out_pad_top;
-                for (int ic = 0; ic < in_channels; ic++)
+                int iy = oy - out_pad_top;
+                int ix = ox - out_pad_left;
+                for (int oc = 0; oc < out_channels; oc++)
                 {
-                    for (int fh = 0; fh < f_height; fh++)
+                    for (int ky = 0; ky < k_height; ky++)
                     {
-                        for (int fw = 0; fw < f_width; fw++)
+                        for (int kx = 0; kx < k_width; kx++)
                         {
-                            out_x = out_x_origin + fw;
-                            out_y = out_y_origin + fh;
-                            for (int oc = 0; oc < out_channels; oc++)
+                            int y         = iy - ky;
+                            int x         = ix - kx;
+                            bool in_scope = (0 <= y && y < (in_height * stride_y)) &&
+                                            (0 <= x && x < (in_width * stride_x)) && ((y % stride_y) == 0) &&
+                                            ((x % stride_x) == 0);
+                            if (!in_scope && !g_func_config.tosaExtraMultiplies())
                             {
-                                if ((out_x >= 0 && out_x < out_width) && (out_y >= 0 && out_y < out_height))
+                                // no need to do multiply and accumulate
+                                continue;
+                            }
+
+                            for (int ic = 0; ic < in_channels; ic++)
+                            {
+                                AccEigenType value(0.0);
+                                if (in_scope)
                                 {
-                                    acc_tensor(ob, out_y, out_x, oc) += (AccEigenType)input_val(ob, ih, iw, ic) *
-                                                                        (AccEigenType)weight_val(oc, fh, fw, ic);
+                                    value = (AccEigenType)input_val(ob, y / stride_y, x / stride_x, ic);
                                 }
+                                acc_tensor(ob, oy, ox, oc) += value * (AccEigenType)weight_val(oc, ky, kx, ic);
                             }
                         }
                     }

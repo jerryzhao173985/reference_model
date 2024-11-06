@@ -392,7 +392,7 @@ const std::string getResultFilenamePrefix()
 
 // returns true if test_desc contains a "meta" object containing a "compliance"
 // object which contains "tensors" and one of those has a "mode" whose value is
-// "DOT_PRODUCT" or "ABS_ERROR"
+// "DOT_PRODUCT" or "ABS_ERROR" or "FP_SPECIAL"
 bool isComplianceAbsModeNeeded(json& test_desc)
 {
     if (test_desc.contains("meta") && test_desc["meta"].contains("compliance") &&
@@ -400,7 +400,8 @@ bool isComplianceAbsModeNeeded(json& test_desc)
     {
         for (auto t : test_desc["meta"]["compliance"]["tensors"])
         {
-            if (t.contains("mode") && (t["mode"] == "DOT_PRODUCT" || t["mode"] == "ABS_ERROR"))
+            if (t.contains("mode") &&
+                (t["mode"] == "DOT_PRODUCT" || t["mode"] == "ABS_ERROR" || t["mode"] == "FP_SPECIAL"))
             {
                 return true;
             }
