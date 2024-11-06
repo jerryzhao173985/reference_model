@@ -33,7 +33,24 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
     double err    = 0.0;
     bool is_valid = true;
 
-    if (std::isinf(static_cast<OutType>(bnd * (1 + KS * exp2(-1 - AccPrecision<OutType>::normal_frac)))))
+    if (std::isnan(ref))
+    {
+        // Reference is a NaN on non-padded data, the implementation must match
+        is_valid = std::isnan(imp);
+        if (!is_valid)
+        {
+            WARNING("[Verifier][DP] index %d: ref is NaN, but imp (%.*g) is not.", index, FLT_DIG,
+                    static_cast<double>(imp));
+        }
+        err = 0.0;
+    }
+    else if (std::isnan(bnd))
+    {
+        // No further accuracy requirements for a NaN bound
+        is_valid = true;
+        err      = 0.0;
+    }
+    else if (std::isinf(static_cast<OutType>(bnd * (1 + KS * exp2(-1 - AccPrecision<OutType>::normal_frac)))))
     {
         // dot product can overflow and there is no accuracy limit
         is_valid = true;
@@ -41,6 +58,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
     }
     else if (bnd == 0.0)
     {
+        // All products in the dot product are zero
         is_valid = (ref == 0.0) && (static_cast<double>(imp) == 0.0);
         if (!is_valid)
         {

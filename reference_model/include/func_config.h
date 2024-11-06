@@ -64,6 +64,12 @@ struct func_config_t
     tosa_level_t tosa_level;
     static constexpr tosa_level_t EIGHTK = { 6, 8192, 8192, 256, 64 };
     static constexpr tosa_level_t NONE   = { 0, 0, 0, 0, 0 };
+
+    // returns whether tosa_extra_multiplies is true or not
+    inline bool tosaExtraMultiplies() const
+    {
+        return abs_mode;
+    }
 };
 
 #endif

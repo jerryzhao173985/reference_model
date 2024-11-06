@@ -25,7 +25,7 @@ def isComplianceAbsModeNeeded(testDesc):
         and "tensors" in testDesc["meta"]["compliance"]
     ):
         for _, t in testDesc["meta"]["compliance"]["tensors"].items():
-            if "mode" in t and t["mode"] in ("DOT_PRODUCT", "ABS_ERROR"):
+            if "mode" in t and t["mode"] in ("DOT_PRODUCT", "ABS_ERROR", "FP_SPECIAL"):
                 return True
         return False
 

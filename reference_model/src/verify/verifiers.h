@@ -23,7 +23,7 @@ namespace TosaReference
 /// \brief Perform dot-product based verification
 ///
 /// \param referenceTensor      Reference tensor
-/// \param boundsTensor         Reference tensor when ran on abs(input)
+/// \param boundsTensor         Reference tensor when ran on abs(input) with extra_multiplies
 /// \param implementationTensor Implementation resulting tensor
 /// \param dpInfo               Dot-product verification meta-data
 ///
@@ -88,10 +88,11 @@ bool verifyRelative(const CTensor* referenceTensor,
 /// \brief Perform FP special tests verification
 ///
 /// \param referenceTensor      Reference tensor
+/// \param boundsTensor         Reference tensor when ran on abs(input) with extra_multiplies
 /// \param implementationTensor Implementation resulting tensor
 ///
 /// \return True if compliant else false
-bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementationTensor);
+bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* boundsTensor, const CTensor* implementationTensor);
 
 };    // namespace TosaReference
 

@@ -20,26 +20,28 @@
 namespace
 {
 template <typename Datatype>
-bool compliant(const double& referenceValue, const Datatype& implementationValue)
+bool compliant(const double& referenceValue, const double& boundValue, const Datatype& implementationValue)
 {
     // Compliant when values are zero (maybe different sign)
-    // OR both NaNs
-    // OR have the same finiteness AND the same sign
+    // OR implementation is NaN and either the reference or bound (with extra multiplies) is NaN
+    // OR both are/not NaN AND have the same finiteness AND the same sign
     return (referenceValue == 0.0 && static_cast<double>(implementationValue) == 0.0) ||
-           (std::isnan(referenceValue) && std::isnan(implementationValue)) ||
+           (std::isnan(implementationValue) && (std::isnan(referenceValue) || std::isnan(boundValue))) ||
            (std::isnan(referenceValue) == std::isnan(implementationValue) &&
             std::isfinite(referenceValue) == std::isfinite(implementationValue) &&
             std::signbit(referenceValue) == std::signbit(implementationValue));
 }
 
 template <>
-bool compliant(const double& referenceValue, const half_float::half& implementationValue)
+bool compliant(const double& referenceValue, const double& boundValue, const half_float::half& implementationValue)
 {
     // Compliant when values are zero (maybe different sign)
     // OR both NaNs
+    // OR ref is not NaN but bound value is NaN
     // OR have the same finiteness AND the same sign
     return (referenceValue == 0.0 && implementationValue == 0.0) ||
            (std::isnan(referenceValue) && half_float::isnan(implementationValue)) ||
+           (!std::isnan(referenceValue) && std::isnan(boundValue)) ||
            (std::isnan(referenceValue) == half_float::isnan(implementationValue) &&
             std::isfinite(referenceValue) == half_float::isfinite(implementationValue) &&
             std::signbit(referenceValue) == half_float::signbit(implementationValue));
@@ -47,34 +49,30 @@ bool compliant(const double& referenceValue, const half_float::half& implementat
 
 template <typename Datatype>
 bool verify(const double* refData,
-            const double* refDataEnd,
-            Datatype* impData,
+            const double* refBndData,
+            const Datatype* impData,
             const int64_t elementCount,
             const std::vector<int32_t> refShape)
 {
-    auto pair = std::mismatch(refData, refDataEnd, impData, std::next(impData, elementCount),
-                              [](const double& referenceValue, const Datatype& implementationValue) {
-                                  return compliant(referenceValue, implementationValue);
-                              });
-
-    if (std::get<0>(pair) == refDataEnd)
+    for (int64_t i = 0; i < elementCount; i++)
     {
-        // No mismatch found
-        return true;
+        if (!compliant<Datatype>(refData[i], refBndData[i], impData[i]))
+        {
+            // mismatch found
+            auto pos = TosaReference::indexToPosition(i, refShape);
+            WARNING("[Verfier][FS] Location %s", TosaReference::positionToString(pos).c_str());
+            return false;
+        }
     }
-    else
-    {
-        auto pos = TosaReference::indexToPosition(std::get<0>(pair) - refData, refShape);
-        WARNING("[Verfier][FS] Location %s", TosaReference::positionToString(pos).c_str());
-        return false;
-    }
+    // No mismatch found
+    return true;
 }
 }    // namespace
 
 namespace TosaReference
 {
 
-bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementationTensor)
+bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* boundsTensor, const CTensor* implementationTensor)
 {
     // Validate that tensors are provided
     TOSA_REF_REQUIRE(referenceTensor != nullptr, "[FS] Reference tensor is missing");
@@ -86,9 +84,9 @@ bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementati
     TOSA_REF_REQUIRE(elementCount > 0, "[FS] Invalid shape for reference tensor");
 
     TOSA_REF_REQUIRE(referenceTensor->data_type == tosa_datatype_fp64_t, "[FS] Reference tensor is not fp64");
-    const auto* refData = reinterpret_cast<const double*>(referenceTensor->data);
-    TOSA_REF_REQUIRE(refData != nullptr, "[FS] Missing data for reference");
-    const auto* refDataEnd = std::next(refData, elementCount);
+    const auto* refData    = reinterpret_cast<const double*>(referenceTensor->data);
+    const auto* refBndData = reinterpret_cast<const double*>(boundsTensor->data);
+    TOSA_REF_REQUIRE(refData != nullptr && refBndData != nullptr, "[FS] Missing data for reference");
 
     switch (implementationTensor->data_type)
     {
@@ -96,31 +94,31 @@ bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* implementati
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
-            return verify(refData, refDataEnd, impData, elementCount, refShape);
+            return verify(refData, refBndData, impData, elementCount, refShape);
         }
         case tosa_datatype_fp16_t: {
             const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
-            return verify(refData, refDataEnd, impData, elementCount, refShape);
+            return verify(refData, refBndData, impData, elementCount, refShape);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
-            return verify(refData, refDataEnd, impData, elementCount, refShape);
+            return verify(refData, refBndData, impData, elementCount, refShape);
         }
         case tosa_datatype_fp8e4m3_t: {
             const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
-            return verify(refData, refDataEnd, impData, elementCount, refShape);
+            return verify(refData, refBndData, impData, elementCount, refShape);
         }
         case tosa_datatype_fp8e5m2_t: {
             const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
-            return verify(refData, refDataEnd, impData, elementCount, refShape);
+            return verify(refData, refBndData, impData, elementCount, refShape);
         }
         default:
             WARNING("[Verifier][FS] Data-type not supported.");
