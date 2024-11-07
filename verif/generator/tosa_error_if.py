@@ -88,6 +88,10 @@ class ErrorIf(object):
     WrongAccumulatorType = "WrongAccumulatorType"
     WrongBiasType = "WrongBiasType"
     InputRank1WrongRank = "InputRank1WrongRank"
+    InputUnsignedOutputUnsigned = "InputUnsignedOutputUnsigned"
+    I32OutputInputUnsigned = "I32OutputInputUnsigned"
+    I32InputOutputUnsigned = "I32InputOutputUnsigned"
+    I48InputOutputUnsigned = "I48InputOutputUnsigned"
 
 
 class TosaErrorIfArgGen:
@@ -2791,6 +2795,98 @@ class TosaErrorValidator:
             rank1_shape = kwargs["rank1_shape"]
 
             if len(rank1_shape) != 1:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evInputUnsignedOutputUnsigned(check=False, **kwargs):
+        error_name = ErrorIf.InputUnsignedOutputUnsigned
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "both input_unsigned and output_unsigned set true"
+
+        if check:
+            input_unsigned = kwargs["input_unsigned"]
+            output_unsigned = kwargs["output_unsigned"]
+
+            if input_unsigned and output_unsigned:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evI32OutputInputUnsigned(check=False, **kwargs):
+        error_name = ErrorIf.I32OutputInputUnsigned
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "INT32 output and input_unsigned set true"
+
+        if check:
+            input_dtype = kwargs["input_dtype"]
+            if input_dtype in [DType.INT8, DType.INT16, DType.INT32, DType.INT48]:
+                output_dtype = kwargs["output_dtype"]
+                input_unsigned = kwargs["input_unsigned"]
+
+                if output_dtype == DType.INT32 and input_unsigned:
+                    error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evI32InputOutputUnsigned(check=False, **kwargs):
+        error_name = ErrorIf.I32InputOutputUnsigned
+        param_reqs = {"rank": None, "dtype": [DType.INT32], "shape": None}
+        error_result = False
+        error_reason = "INT32 input and output_unsigned set true"
+
+        if check:
+            output_dtype = kwargs["output_dtype"]
+            if output_dtype in [DType.INT8, DType.INT16, DType.INT32]:
+                input_dtype = kwargs["input_dtype"]
+                output_unsigned = kwargs["output_unsigned"]
+
+                if input_dtype == DType.INT32 and output_unsigned:
+                    error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evI48InputOutputUnsigned(check=False, **kwargs):
+        error_name = ErrorIf.I48InputOutputUnsigned
+        param_reqs = {"rank": None, "dtype": [DType.INT48], "shape": None}
+        error_result = False
+        error_reason = "INT48 input and output_unsigned set true"
+
+        if check:
+            input_dtype = kwargs["input_dtype"]
+            output_unsigned = kwargs["output_unsigned"]
+
+            if input_dtype == DType.INT48 and output_unsigned:
                 error_result = True
 
         info_dict = {

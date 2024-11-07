@@ -3372,6 +3372,18 @@ class TosaArgGen:
             ):
                 continue
 
+            if error_name == ErrorIf.InputUnsignedOutputUnsigned and (
+                inDtype == DType.INT32 or outDtype == DType.INT32
+            ):
+                # Skip if input or output dtype is INT32 to avoid conflicts with the following two error cases
+                continue
+            if error_name == ErrorIf.I32OutputInputUnsigned and outDtype != DType.INT32:
+                continue
+            if error_name == ErrorIf.I32InputOutputUnsigned and inDtype != DType.INT32:
+                continue
+            if error_name == ErrorIf.I48InputOutputUnsigned and inDtype != DType.INT48:
+                continue
+
             for scale32 in [False, True]:
                 if error_name == ErrorIf.ScaleTrue and not scale32:
                     continue
@@ -3478,13 +3490,28 @@ class TosaArgGen:
                         else:
                             output_zp = 0
 
+                        if error_name == ErrorIf.InputUnsignedOutputUnsigned:
+                            input_unsigned = True
+                            output_unsigned = True
+                        elif error_name == ErrorIf.I32OutputInputUnsigned:
+                            input_unsigned = True
+                            output_unsigned = False
+                        elif error_name == ErrorIf.I32InputOutputUnsigned:
+                            input_unsigned = False
+                            output_unsigned = True
+                        elif error_name == ErrorIf.I48InputOutputUnsigned:
+                            input_unsigned = False
+                            output_unsigned = True
+
                         arg_list.append(
                             (
-                                "out{}_sc{}_dr{}_pc{}".format(
+                                "out{}_sc{}_dr{}_pc{}_iu{}_ou{}".format(
                                     testGen.typeStr(outDtype),
                                     int(scale32),
                                     int(double_round),
                                     int(per_channel),
+                                    int(input_unsigned),
+                                    int(output_unsigned),
                                 ),
                                 {
                                     "output_dtype": outDtype,

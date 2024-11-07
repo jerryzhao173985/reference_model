@@ -2250,6 +2250,8 @@ class TosaTestGen:
             output_list=output_list,
             result_tensors=[result_tensor],
             num_operands=num_operands,
+            input_unsigned=input_unsigned,
+            output_unsigned=output_unsigned,
         ):
             return None
 
@@ -5107,6 +5109,10 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
+                TosaErrorValidator.evInputUnsignedOutputUnsigned,
+                TosaErrorValidator.evI32OutputInputUnsigned,
+                TosaErrorValidator.evI32InputOutputUnsigned,
+                TosaErrorValidator.evI48InputOutputUnsigned,
             ),
             "data_gen": RESCALE_DATAGEN,
         },
