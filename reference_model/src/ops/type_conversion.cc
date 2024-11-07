@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,11 +24,6 @@
 using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
-
-using fp16    = ct::cfloat<int16_t, 5, true, true, true>;
-using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
-using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
-using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
@@ -125,6 +120,36 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     if ((!attribute->scale32()) && attribute->double_round())
     {
         printNodeValidationError("OpRescale: Scale set to false but double round set to true");
+        return 1;
+    }
+
+    if (input_unsigned && output_unsigned)
+    {
+        printNodeValidationError("OpRescale: input_unsigned and output_unsigned set to true");
+        return 1;
+    }
+
+    if (OutDtype == TOSA_REF_TYPE_INT32 && input_unsigned)
+    {
+        printNodeValidationError("OpRescale: Output signed int32 and input_unsigned set to true");
+        return 1;
+    }
+
+    if (InDtype == TOSA_REF_TYPE_INT32 && output_unsigned)
+    {
+        printNodeValidationError("OpRescale: Input signed int32 and output_unsigned set to true");
+        return 1;
+    }
+
+    if (InDtype == TOSA_REF_TYPE_INT48 && output_unsigned)
+    {
+        printNodeValidationError("OpRescale: Input signed int48 and output_unsigned set to true");
+        return 1;
+    }
+
+    if (attribute->per_channel() && Rank < 1)
+    {
+        printNodeValidationError("OpRescale: per_channel set to true and rank of input < 1");
         return 1;
     }
 

@@ -7444,7 +7444,9 @@
                     "double_round",
                     "per_channel",
                     "multiplier",
-                    "shift"
+                    "shift",
+                    "input_unsigned",
+                    "output_unsigned"
                 ],
                 "maximum": 2
             }
