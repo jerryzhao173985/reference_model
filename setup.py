@@ -4,6 +4,7 @@
 import multiprocessing
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from setuptools import setup
@@ -34,6 +35,7 @@ class CMakeBuild(build_py):
         print(f"Configuring cmake from build dir '{build_dir}'.")
 
         for generator_flag in generator_flags:
+            print(f"Attempting to configure cmake using generator {generator_flag}")
             try:
                 subprocess.run(
                     cmake_cmd + [generator_flag],
@@ -46,19 +48,41 @@ class CMakeBuild(build_py):
                 )
                 break
             except subprocess.CalledProcessError as e:
+                # Only raise error if fail at last generator attempt.
                 if generator_flag == generator_flags[-1]:
-                    raise RuntimeError(
-                        "Failed configuring cmake with any of the following generator settings: {generator_flags}. Error from last attempt:"
-                    ) from e
+                    error_message = (
+                        f"Failed configuring cmake with any of the following generator settings: {generator_flags}."
+                        + f"\nStdout from last attempt:\n{e.stdout.decode()}"
+                        + f"\nStderr from last attempt:\n{e.stderr.decode()}"
+                        + "\nIf this error is due to the ninja module not being found, try pip uninstalling ninja."
+                    )
+                    raise RuntimeError(error_message) from e
                 else:
                     print(f"Stderr for generator flag: {generator_flag}")
-                    print(e.stderr)
+                    print(e.stderr.decode())
+                    print("Continuing with next generator...")
             except ImportError as e:
-                raise RuntimeError("Failed running cmake as subprocess.") from e
+                # Only raise error if fail at last generator attempt.
+                if generator_flag == generator_flags[-1]:
+                    raise RuntimeError(
+                        "If this error is due to the ninja module not being found, try pip uninstalling ninja."
+                    ) from e
+                else:
+                    print(
+                        f"The python subprocess failed to find a module in your environment for generator {generator_flag}."
+                    )
+                    print(e)
+                    print("Continuing with next generator...")
 
         try:
-            print("Building reference_model.")
-            subprocess.run(build_cmd, cwd=build_dir, check=True, capture_output=True)
+            print("Building reference_model...")
+            subprocess.run(
+                build_cmd,
+                cwd=build_dir,
+                check=True,
+                stdout=sys.stdout,
+                stderr=subprocess.STDOUT,
+            )
         except subprocess.CalledProcessError as e:
             raise RuntimeError("Failed building reference_model.") from e
 
