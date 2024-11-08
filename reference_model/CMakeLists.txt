@@ -304,6 +304,7 @@ install(EXPORT TosaReferenceModelLibTargets
 )
 
 if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
+  set(Python_FIND_VIRTUALENV ONLY)
   find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 
   python_add_library(py_tosa_reference_model MODULE python_bindings/python_bindings.cpp WITH_SOABI)
