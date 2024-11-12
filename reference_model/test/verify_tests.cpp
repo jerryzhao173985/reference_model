@@ -13,6 +13,7 @@
 //    limitations under the License.
 #include "cfloat.h"
 #include "half.hpp"
+#include "test_utils.h"
 #include "tosa_generated.h"
 #include "verify.h"
 
@@ -35,53 +36,6 @@ using namespace tosa;
 
 namespace
 {
-
-// TODO(ITL): NativeType2Dtype could be useful elsewhere, but currently it is
-// hard to find a good place for it. Move it somewhere reasonable later.
-template <typename T>
-constexpr DType NativeType2Dtype()
-{
-    if constexpr (std::is_same<T, bool>::value)
-        return DType_BOOL;
-
-    if constexpr (std::is_same<T, int8_t>::value)
-        return DType_INT8;
-
-    if constexpr (std::is_same<T, uint8_t>::value)
-        return DType_UINT8;
-
-    if constexpr (std::is_same<T, int16_t>::value)
-        return DType_INT16;
-
-    if constexpr (std::is_same<T, uint16_t>::value)
-        return DType_UINT16;
-
-    if constexpr (std::is_same<T, uint32_t>::value)
-        return DType_INT32;
-
-    if constexpr (std::is_same<T, ct::binary16>::value)
-        return DType_FP16;
-
-    if constexpr (std::is_same<T, half_float::half>::value)
-        return DType_FP16;
-
-    if constexpr (std::is_same<T, float>::value)
-        return DType_FP32;
-
-    if constexpr (std::is_same<T, ct::binary32>::value)
-        return DType_FP32;
-
-    if constexpr (std::is_same<T, ct::bfloat16>::value)
-        return DType_BF16;
-
-    if constexpr (std::is_same<T, ct::fp8_e5m2>::value)
-        return DType_FP8E5M2;
-
-    if constexpr (std::is_same<T, ct::fp8_e4m3>::value)
-        return DType_FP8E4M3;
-
-    return DType_UNKNOWN;
-}
 
 // TODO(ITL): DType2tosa_datatype_t could be useful elsewhere, but currently
 // it is hard to find a good place for it. Move it somewhere reasonable later.
