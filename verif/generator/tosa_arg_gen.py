@@ -879,6 +879,9 @@ class TosaTensorValuesGen:
                     if size > 1 and data.size == 1:
                         # Broadcast the data to the correct size
                         data = np.broadcast_to(data, shape)
+                    elif len(shape) == 0:
+                        # Make sure we have a rank 0 tensor
+                        data = data.reshape(shape)
                     assert (
                         data.size == size
                     ), "Fixed data length does not match tensor size"
@@ -1455,7 +1458,7 @@ class TosaTensorValuesGen:
     def tvgMul(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         # Need to supply shift tensor for MUL
         dtypeList[2] = DType.INT8
-        shapeList[2] = [] if error_name != ErrorIf.InputRank0WrongRank else [1]
+        shapeList[2] = [1] if error_name != ErrorIf.InputRank1WrongRank else []
 
         # ERROR_IF or floating point test
         data_range = TosaTensorValuesGen._get_data_range(

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, ARM Limited.
+# Copyright (c) 2021-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import math
@@ -87,7 +87,7 @@ class ErrorIf(object):
     BroadcastShapesMismatch = "BroadcastShapesMismatch"
     WrongAccumulatorType = "WrongAccumulatorType"
     WrongBiasType = "WrongBiasType"
-    InputRank0WrongRank = "InputRank0WrongRank"
+    InputRank1WrongRank = "InputRank1WrongRank"
 
 
 class TosaErrorIfArgGen:
@@ -2779,18 +2779,18 @@ class TosaErrorValidator:
         return info_dict
 
     @staticmethod
-    def evInputRank0WrongRank(check=False, **kwargs):
+    def evInputRank1WrongRank(check=False, **kwargs):
         assert "op" in kwargs
 
-        error_name = ErrorIf.InputRank0WrongRank
+        error_name = ErrorIf.InputRank1WrongRank
         param_reqs = {"rank": None, "dtype": None, "shape": None}
         error_result = False
         error_reason = "Rank not supported for rank 0 input"
 
         if check:
-            rank0_shape = kwargs["rank0_shape"]
+            rank1_shape = kwargs["rank1_shape"]
 
-            if len(rank0_shape) != 0:
+            if len(rank1_shape) != 1:
                 error_result = True
 
         info_dict = {
