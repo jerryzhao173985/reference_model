@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -469,7 +469,7 @@ int OpMul<Rank, InDtype, OutDtype>::checkTensorAttributes()
 {
     auto result = BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes();
 
-    if (result == 0 && this->inputs[2]->getRank() != 0)
+    if (result == 0 && this->inputs[2]->getRank() != 1)
     {
         GraphNode::printNodeValidationError("OpMul: Unexpected shift rank");
         return 1;
@@ -501,8 +501,8 @@ int OpMul<Rank, InDtype, OutDtype>::eval()
         TInt64 tmp_result = ia.binaryExpr(ib, this->mul_fcn);
 
         // Retrieve `shift` value and construct a Eigen tensor instance for it. Shift is stored
-        // as rank-0 tensor in Flatbuffer.
-        auto s0 = dynamic_cast<TosaReference::TensorTemplate<TShiftRank0>*>(this->inputs[2]);
+        // as rank-1 tensor in Flatbuffer.
+        auto s0 = dynamic_cast<TosaReference::TensorTemplate<TShiftRank1>*>(this->inputs[2]);
         ASSERT_MEM(s0);
 
         int shift = s0->getTensor()(0);
@@ -524,7 +524,7 @@ int OpMul<0, TOSA_REF_TYPE_INT32, TOSA_REF_TYPE_INT32>::eval()
     Eigen::Tensor<int64_t, 0> tmp_result = this->a->getTensor().binaryExpr(this->b->getTensor(), this->mul_fcn);
 
     // Retrieve `shift` value.
-    auto s0 = dynamic_cast<TosaReference::TensorTemplate<TShiftRank0>*>(this->inputs[2]);
+    auto s0 = dynamic_cast<TosaReference::TensorTemplate<TShiftRank1>*>(this->inputs[2]);
     ASSERT_MEM(s0);
 
     Eigen::Tensor<int64_t, 0> shift;
@@ -562,11 +562,8 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
             }
             else
             {
-                result                = a;
-                int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::max());
-                int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::min());
-                REQUIRE(result <= i32_max_in_64 && result >= i32_min_in_64, "OpMul: result not in i32 range");
-                return static_cast<InEigenType>(result);
+                // low 32-bits of result for i32_t without shift
+                result = a;
             }
             return static_cast<OutEigenType>(result);
         };
@@ -586,12 +583,9 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_INT8:
         case TOSA_REF_TYPE_INT16:
-            this->fcn = [](InEigenType lhs, InEigenType rhs) -> OutEigenType {
-                OutEigenType raw_output = (OutEigenType)lhs * (OutEigenType)rhs;
-
-                OutEigenType clamped_output = std::min<OutEigenType>(QMax, std::max<OutEigenType>(raw_output, QMin));
-
-                return clamped_output;
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                int64_t result = static_cast<int64_t>(a) * static_cast<int64_t>(b);
+                return static_cast<OutEigenType>(result);
             };
             break;
         default:

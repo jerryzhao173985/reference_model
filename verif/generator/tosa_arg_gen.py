@@ -1410,7 +1410,7 @@ class TosaTensorValuesGen:
     def tvgMul(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         # Need to supply shift tensor for MUL
         dtypeList[2] = DType.INT8
-        shapeList[2] = [] if error_name != ErrorIf.InputRank0WrongRank else [1]
+        shapeList[2] = [1] if error_name != ErrorIf.InputRank1WrongRank else []
 
         # ERROR_IF or floating point test
         data_range = TosaTensorValuesGen._get_data_range(

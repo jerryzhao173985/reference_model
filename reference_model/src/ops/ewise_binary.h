@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -215,7 +215,7 @@ public:
 
     using TIn         = Eigen::Tensor<InEigenType, Rank>;
     using TOut        = Eigen::Tensor<OutEigenType, Rank>;
-    using TShiftRank0 = Eigen::Tensor<ShiftEigenType, 0>;
+    using TShiftRank1 = Eigen::Tensor<ShiftEigenType, 1>;
 
     virtual int checkTensorAttributes();
     int register_fcn();
