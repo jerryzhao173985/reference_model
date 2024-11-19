@@ -24,6 +24,17 @@
 
 using namespace TosaReference;
 
+// TODO(ITL): numeric_limits is not constexpr for cfloat.h types, so the compiler cannot check that
+// we are not in fact ever overflowing here and will raise a warning. Silence the warnings for now,
+// and try to make numeric_limits constexpr in the future, although it's a bit hard without
+// bit_cast which is C++20.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-const-int-float-conversion"
+#pragma clang diagnostic ignored "-Winteger-overflow"
+#pragma clang diagnostic ignored "-Wconstant-conversion"
+#endif
+
 /// \brief Get a value that will overflow (positive) the TosaRefType if DataType allows it.
 template <TOSA_REF_TYPE TosaRefType, typename DataType>
 DataType aboveMax()
@@ -51,6 +62,11 @@ DataType belowLowest()
     else
         return std::numeric_limits<DataType>::lowest();
 }
+
+// Recover the previous settings for diagnostics
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 template <typename DataType>
 class RandomGen
@@ -306,99 +322,131 @@ private:
     DataType _static_evaluate(SpecialValsEnum v, bool negate) const
     {
         // Work out the static value
+        DataType rawVal;
         switch (v)
         {
             case Zero:
-                return negate ? -static_cast<DataType>(0) : static_cast<DataType>(0);
+                rawVal = static_cast<DataType>(0);
+                break;
             case Inf:
-                return negate ? -std::numeric_limits<DataType>::infinity() : std::numeric_limits<DataType>::infinity();
+                rawVal = std::numeric_limits<DataType>::infinity();
+                break;
             case NaN:
-                return std::numeric_limits<DataType>::quiet_NaN();
+                rawVal = std::numeric_limits<DataType>::quiet_NaN();
+                break;
             case Min:
-                return negate ? -std::numeric_limits<DataType>::min() : std::numeric_limits<DataType>::min();
+                rawVal = std::numeric_limits<DataType>::min();
+                break;
             case Max:
-                return negate ? -std::numeric_limits<DataType>::max() : std::numeric_limits<DataType>::max();
+                rawVal = std::numeric_limits<DataType>::max();
+                break;
             case Lowest:
-                return negate ? -std::numeric_limits<DataType>::lowest() : std::numeric_limits<DataType>::lowest();
+                rawVal = std::numeric_limits<DataType>::lowest();
+                break;
             case One:
-                return static_cast<DataType>(negate ? -1 : 1);
+                rawVal = static_cast<DataType>(1);
+                break;
             case Two:
-                return static_cast<DataType>(negate ? -2 : 2);
+                rawVal = static_cast<DataType>(2);
+                break;
             case Ten:
-                return static_cast<DataType>(negate ? -10 : 10);
+                rawVal = static_cast<DataType>(10);
+                break;
             case Euler:
-                return static_cast<DataType>(negate ? -2.71828 : 2.71828);
+                rawVal = static_cast<DataType>(2.71828);
+                break;
             case Pythagoras:
-                return static_cast<DataType>(negate ? -1.41421 : 1.41421);
+                rawVal = static_cast<DataType>(1.41421);
+                break;
             case MinDenorm:
-                if (!std::is_same<DataType, fp8e4m3>::value && !std::is_same<DataType, fp8e5m2>::value)
+                if constexpr (!std::is_same<DataType, fp8e4m3>::value && !std::is_same<DataType, fp8e5m2>::value)
                 {
                     // TODO: Re-enable subnorm testing
                     // Do not test subnormal values for anything but FP8
                     // as they are allowed to be flushed to zero and are
                     // not currently supported by Conformance Testing
-                    return negate ? -static_cast<DataType>(0) : static_cast<DataType>(0);
+                    rawVal = static_cast<DataType>(0);
                 }
                 else
                 {
-                    return negate ? -std::numeric_limits<DataType>::denorm_min()
-                                  : std::numeric_limits<DataType>::denorm_min();
+                    rawVal = std::numeric_limits<DataType>::denorm_min();
                 }
+                break;
             case ULPMax: {
                 DataType max = std::numeric_limits<DataType>::max();
                 DataType ulp = max - nextafter(max, static_cast<DataType>(0));
-                return negate ? -ulp : ulp;
+                rawVal       = ulp;
+                break;
             }
             case AboveMaxINT8: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_INT8, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case AboveMaxINT16: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_INT16, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
 
             case AboveMaxINT32: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_INT32, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
 
             case AboveMaxFP8E4M3: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_FP8E4M3, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case AboveMaxFP8E5M2: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_FP8E5M2, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case AboveMaxBF16: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_BF16, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case AboveMaxFP16: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_FP16, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case AboveMaxFP32: {
                 DataType above_max = aboveMax<TOSA_REF_TYPE_FP32, DataType>();
-                return negate ? -above_max : above_max;
+                rawVal             = above_max;
+                break;
             }
             case BelowLowestINT8: {
                 DataType below_lowest = belowLowest<TOSA_REF_TYPE_INT8, DataType>();
-                return negate ? -below_lowest : below_lowest;
+                rawVal                = below_lowest;
+                break;
             }
             case BelowLowestINT16: {
                 DataType below_lowest = belowLowest<TOSA_REF_TYPE_INT16, DataType>();
-                return negate ? -below_lowest : below_lowest;
+                rawVal                = below_lowest;
+                break;
             }
             case BelowLowestINT32: {
                 DataType below_lowest = belowLowest<TOSA_REF_TYPE_INT32, DataType>();
-                return negate ? -below_lowest : below_lowest;
+                rawVal                = below_lowest;
+                break;
             }
             default:
                 // Assumption that we only get called with a valid enum
-                return static_cast<DataType>(0);
+                rawVal = static_cast<DataType>(0);
         }
+
+        if constexpr (std::is_same_v<DataType, uint8_t> || std::is_same_v<DataType, uint16_t>)
+            return rawVal;
+        else if (!(std::isinf(rawVal)) && (-double(rawVal) > std::numeric_limits<DataType>::max() ||
+                                           -double(rawVal) < std::numeric_limits<DataType>::lowest()))
+            return rawVal;
+        else
+            return negate ? -rawVal : rawVal;
     }
 
     SpecialValsEnum _value;
