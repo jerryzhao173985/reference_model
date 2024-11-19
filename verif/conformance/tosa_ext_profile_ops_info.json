@@ -9391,8 +9391,7 @@
                         "1,24",
                         "--target-rank",
                         "4",
-                        "5",
-                        "6"
+                        "5"
                     ],
                     [
                         "--no-special-tests",
@@ -9403,6 +9402,18 @@
                         "--target-shape",
                         "1,65535,2,1,1",
                         "1,65540,1,2"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp32",
+                        "fp16",
+                        "--fp-values-range",
+                        "-8.0,8.0",
+                        "--tensor-dim-range",
+                        "1,11",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
