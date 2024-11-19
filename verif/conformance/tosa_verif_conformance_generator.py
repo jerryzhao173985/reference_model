@@ -426,8 +426,13 @@ def convert_tests(
     return output_dir
 
 
-def check_op_tests(args, profile, operator, output_dir):
-    """Move test folders than contain files larger than 30MB to new directory."""
+def check_op_tests_size(args, profile, operator, output_dir):
+    """Move test folders than contain files larger than a specified size to new directory."""
+    limit_in_mb = args.large_file_limit
+    if limit_in_mb <= 0:
+        # Nothing to do - no limit set
+        return
+
     destination_dir = str(args.output_dir) + "_large_files"
 
     # Include all tests - both positive and negative
@@ -442,8 +447,8 @@ def check_op_tests(args, profile, operator, output_dir):
         move_dir = False
         test_files = [file for file in tdir.glob("*")]
         for file in test_files:
-            file_size = os.stat(file).st_size / 1024**2
-            if file_size > 30:
+            file_size_in_mb = os.stat(file).st_size / 1024**2
+            if file_size_in_mb > limit_in_mb:
                 move_dir = True
 
         if move_dir:
@@ -620,7 +625,13 @@ def parse_args(argv=None):
     parser.add_argument(
         "--keep-large-files",
         action="store_true",
-        help="Keeps tests that contain files larger than 30MB in output directory",
+        help="[DEPRECATED] All files now kept by default unless --large-file-limit is set",
+    )
+    parser.add_argument(
+        "--large-file-limit",
+        type=int,
+        default=0,
+        help="Size in megabytes that limits conformance data files, tests exceeding this will be moved from output",
     )
     parser.add_argument(
         "--capture-output",
@@ -945,8 +956,8 @@ def main():
                             group=operator_group,
                             tags=tags,
                         )
-                        if not args.keep_large_files:
-                            check_op_tests(args, profile_ext, op, output_dir)
+
+                        check_op_tests_size(args, profile_ext, op, output_dir)
 
             profileExtDone.append(profile_ext)
 
