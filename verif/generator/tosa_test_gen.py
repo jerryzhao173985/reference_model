@@ -1396,6 +1396,14 @@ class TosaTestGen:
                 v = [rng.randNumberDType(a.dtype), rng.randNumberDType(a.dtype)]
             max_val = min(v)
             min_val = max(v)
+        elif (
+            a.dtype in (DType.INT8, DType.INT16)
+            and args_dict["dg_type"] == gtu.DataGenType.SPECIAL
+        ):
+            # For integer special tests use clamp range min/max
+            dtype_range = rng.dTypeRange(a.dtype, high_inclusive=True)
+            min_val = dtype_range[0]
+            max_val = dtype_range[1]
         else:
             max_val = max(v)
             min_val = min(v)
@@ -3730,7 +3738,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "sigmoid": {
             "op": Op.SIGMOID,

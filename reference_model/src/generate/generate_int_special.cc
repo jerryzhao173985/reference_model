@@ -130,8 +130,10 @@ const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTe
 
 // Values that will be picked up if the Op is not in opTestValues_int and the
 // conformance test does not have a specific SpecialTestSet assigned.
-const TestValues defaultTestValues_int{ { SValue(SVE::Zero) }, { SValue(SVE::Lowest) }, { SValue(SVE::Max) },
-                                        { -SValue(SVE::Max) }, { SValue(SVE::One) },    { -SValue(SVE::One) } };
+const TestValues defaultTestValues_int{
+    { SValue(SVE::Zero) }, { SValue(SVE::Lowest) }, { SValue(SVE::Max) },    { -SValue(SVE::Max) },
+    { SValue(SVE::One) },  { -SValue(SVE::One) },   { FullRangeRndInteger },
+};
 
 // Maps SpecialTestSets to the list of values to be used for that test.
 const std::map<SpecialTestSet, TestValues> specialTestValues_int = {};
