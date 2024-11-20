@@ -45,10 +45,7 @@ OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttri
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::~OpRescale()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()

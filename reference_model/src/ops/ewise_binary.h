@@ -151,7 +151,7 @@ public:
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    tosa::TosaNanPropagationAttribute* attribute;
+    std::unique_ptr<tosa::TosaNanPropagationAttribute> attribute;
 };
 
 #define DEF_TEMPLATE_BINARY_OP_NAN(Opname, OPNAME)                                                                     \
@@ -192,7 +192,7 @@ public:
     virtual ~OpArithmeticRightShift();
 
 protected:
-    TosaArithmeticRightShiftAttribute* attribute;
+    std::unique_ptr<TosaArithmeticRightShiftAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>

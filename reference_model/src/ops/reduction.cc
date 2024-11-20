@@ -33,10 +33,7 @@ ReduceNode<Rank, Dtype>::ReduceNode(SubgraphTraverser* sgt_, const Op& op_, Tosa
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 ReduceNode<Rank, Dtype>::~ReduceNode()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int ReduceNode<Rank, Dtype>::checkTensorAttributes()

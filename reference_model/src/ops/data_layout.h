@@ -41,7 +41,7 @@ public:
 protected:
     Eigen::array<int, Rank> reverser;
     std::vector<TosaReference::TensorTemplate<TIn>*> ins;
-    TosaAxisAttribute* attribute;
+    std::unique_ptr<TosaAxisAttribute> attribute;
     TosaReference::TensorTemplate<TOut>* out;
 };
 
@@ -66,7 +66,7 @@ protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TPadding>* padding;
     TosaReference::TensorTemplate<TOut>* out;
-    TosaPadAttribute* attribute;
+    std::unique_ptr<TosaPadAttribute> attribute;
 };
 
 template <int InRank, int OutRank, TOSA_REF_TYPE Dtype>
@@ -108,7 +108,7 @@ public:
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    TosaAxisAttribute* attribute;
+    std::unique_ptr<TosaAxisAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
     Eigen::array<bool, Rank> reverse_array;
@@ -215,7 +215,7 @@ public:
 
 protected:
     Eigen::array<int, Rank> perm_array;
-    TosaTransposeAttribute* attribute;
+    std::unique_ptr<TosaTransposeAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
 };

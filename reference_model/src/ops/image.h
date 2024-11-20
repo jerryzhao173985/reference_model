@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2024, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public:
     using TOut             = Eigen::Tensor<OutEigenType, 4>;
 
 protected:
-    TosaResizeAttribute* attribute;
+    std::unique_ptr<TosaResizeAttribute> attribute;
     ResizeMode mode;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TInShape>* scale;

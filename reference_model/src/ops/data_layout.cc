@@ -32,10 +32,7 @@ OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_, TosaAttributeBase* attr
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpConcat<Rank, Dtype>::~OpConcat()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpConcat<Rank, Dtype>::checkTensorAttributes()
@@ -379,10 +376,7 @@ OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_, TosaAttributeBase* at
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpReverse<Rank, Dtype>::~OpReverse()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReverse<Rank, Dtype>::checkTensorAttributes()
@@ -713,10 +707,7 @@ OpTranspose<Rank, Dtype>::OpTranspose(SubgraphTraverser* sgt_, TosaAttributeBase
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpTranspose<Rank, Dtype>::~OpTranspose()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpTranspose<Rank, Dtype>::checkTensorAttributes()

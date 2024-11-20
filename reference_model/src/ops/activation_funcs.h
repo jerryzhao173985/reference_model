@@ -42,7 +42,7 @@ public:
     virtual int checkTensorAttributes();
 
 protected:
-    TosaClampAttribute* attribute;
+    std::unique_ptr<TosaClampAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>

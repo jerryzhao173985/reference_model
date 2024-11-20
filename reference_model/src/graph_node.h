@@ -128,7 +128,7 @@
 #define INIT_ATTRIBUTE(ATTRIBUTE_NAME)                                                                                 \
     if (auto p = dynamic_cast<Tosa##ATTRIBUTE_NAME##Attribute*>(attribute_))                                           \
     {                                                                                                                  \
-        attribute = new Tosa##ATTRIBUTE_NAME##Attribute(p);                                                            \
+        attribute = std::make_unique<Tosa##ATTRIBUTE_NAME##Attribute>(p);                                              \
         ASSERT_MEM(attribute);                                                                                         \
     }                                                                                                                  \
     else                                                                                                               \
