@@ -213,10 +213,7 @@ int OpArithmeticRightShift<Rank, Dtype>::register_fcn()
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpArithmeticRightShift<Rank, Dtype>::~OpArithmeticRightShift()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpBitwiseAnd<Rank, Dtype>::register_fcn()

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, ARM Limited.
+// Copyright (c) 2020, 2024 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public:
     virtual int eval();
 
 protected:
-    TosaCondIfAttribute* attribute;
+    std::unique_ptr<TosaCondIfAttribute> attribute;
     TosaReference::Tensor0<bool>* cond;
     TosaSerializationBasicBlock* then_block;
     TosaSerializationBasicBlock* else_block;
@@ -62,7 +62,7 @@ public:
     virtual int eval();
 
 protected:
-    TosaWhileLoopAttribute* attribute;
+    std::unique_ptr<TosaWhileLoopAttribute> attribute;
     TosaSerializationBasicBlock* cond_block;
     TosaSerializationBasicBlock* body_block;
 };

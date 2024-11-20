@@ -54,7 +54,7 @@ public:
     }
 
 protected:
-    TosaRescaleAttribute* attribute;
+    std::unique_ptr<TosaRescaleAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
     TosaReference::TensorTemplate<TMultiplierI16>* multiplierI16;

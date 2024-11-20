@@ -25,9 +25,7 @@ using namespace tosa;
 OpCustom::OpCustom(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_CUSTOM, id_)
 {
-    // Init Attribute
-    if (auto p = dynamic_cast<TosaCustomAttribute*>(attribute_))
-        attribute = new TosaCustomAttribute(p);
+    INIT_ATTRIBUTE(Custom);
 }
 
 OpCustom::~OpCustom()

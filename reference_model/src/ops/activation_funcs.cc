@@ -124,10 +124,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpClamp<Rank, Dtype>::~OpClamp()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpSigmoid<Rank, Dtype>::register_fcn()

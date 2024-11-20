@@ -163,10 +163,7 @@ OpCondIf::OpCondIf(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, Tosa
 }
 
 OpCondIf::~OpCondIf()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 int OpCondIf::checkTensorAttributes()
 {
@@ -307,10 +304,7 @@ OpWhileLoop::OpWhileLoop(SubgraphTraverser* sgt_,
 }
 
 OpWhileLoop::~OpWhileLoop()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 int OpWhileLoop::checkTensorAttributes()
 {

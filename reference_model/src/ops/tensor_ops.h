@@ -40,7 +40,7 @@ public:
     using TOut         = Eigen::Tensor<OutEigenType, Rank - 1>;
 
 protected:
-    TosaAxisAttribute* attribute;
+    std::unique_ptr<tosa::TosaAxisAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* input;
     TosaReference::TensorTemplate<TOut>* output;
 };
@@ -67,7 +67,7 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    tosa::TosaPoolAttribute* attribute;
+    std::unique_ptr<tosa::TosaPoolAttribute> attribute;
 
 protected:
     // return a 1D [N] tensor that describes a how many valid elements covered in the input space
@@ -102,7 +102,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TOut>* output;
-    tosa::TosaConvAttribute* attribute;
+    std::unique_ptr<tosa::TosaConvAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -132,7 +132,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TOut>* output;
-    tosa::TosaConvAttribute* attribute;
+    std::unique_ptr<tosa::TosaConvAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -162,7 +162,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TOut>* output;
-    tosa::TosaConvAttribute* attribute;
+    std::unique_ptr<tosa::TosaConvAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
@@ -194,7 +194,7 @@ protected:
     int64_t W;
     int64_t C;
 
-    tosa::TosaMatMulAttribute* attribute;
+    std::unique_ptr<tosa::TosaMatMulAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype>
@@ -215,7 +215,7 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    tosa::TosaPoolAttribute* attribute;
+    std::unique_ptr<tosa::TosaPoolAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype>
@@ -238,7 +238,7 @@ protected:
     TosaReference::TensorTemplate<TIn>* in_imag;
     TosaReference::TensorTemplate<TOut>* out_real;
     TosaReference::TensorTemplate<TOut>* out_imag;
-    tosa::TosaFFTAttribute* attribute;
+    std::unique_ptr<tosa::TosaFFTAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype>
@@ -260,7 +260,7 @@ protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out_real;
     TosaReference::TensorTemplate<TOut>* out_imag;
-    tosa::TosaRFFTAttribute* attribute;
+    std::unique_ptr<tosa::TosaRFFTAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -291,7 +291,7 @@ protected:
     TosaReference::TensorTemplate<TWeight>* weight;
     TosaReference::TensorTemplate<TBias>* bias;
     TosaReference::TensorTemplate<TOut>* output;
-    TosaTransposeConvAttribute* attribute;
+    std::unique_ptr<TosaTransposeConvAttribute> attribute;
 };
 
 };    // namespace TosaReference

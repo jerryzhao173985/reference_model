@@ -149,7 +149,7 @@ public:
     virtual ~OpArithmeticRightShift();
 
 protected:
-    TosaArithmeticRightShiftAttribute* attribute;
+    std::unique_ptr<TosaArithmeticRightShiftAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>

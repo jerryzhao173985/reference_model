@@ -41,7 +41,7 @@ public:
     virtual int register_fcn();
 
 protected:
-    TosaClampAttribute* attribute;
+    std::unique_ptr<TosaClampAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>

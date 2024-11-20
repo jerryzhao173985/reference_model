@@ -294,10 +294,7 @@ OpNegate<Rank, Dtype>::OpNegate(SubgraphTraverser* sgt_, TosaAttributeBase* attr
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpNegate<Rank, Dtype>::~OpNegate()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpNegate<Rank, Dtype>::register_fcn()

@@ -91,7 +91,7 @@ public:
     virtual int register_fcn();
 
 protected:
-    tosa::TosaNegateAttribute* attribute;
+    std::unique_ptr<tosa::TosaNegateAttribute> attribute;
 };
 
 };    // namespace TosaReference

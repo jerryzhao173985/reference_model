@@ -23,7 +23,7 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
+int check_pool2d_attribute(std::unique_ptr<tosa::TosaPoolAttribute>& attribute,
                            std::vector<int32_t> input_shape,
                            std::vector<int32_t> output_shape,
                            std::string& msg)
@@ -113,7 +113,7 @@ int check_pool2d_attribute(tosa::TosaPoolAttribute* attribute,
     return 0;
 }
 
-int check_conv_attribute(tosa::TosaConvAttribute* attribute,
+int check_conv_attribute(std::unique_ptr<tosa::TosaConvAttribute>& attribute,
                          uint32_t conv_dimension,
                          std::vector<int32_t> input_shape,
                          std::vector<int32_t> output_shape,
@@ -324,10 +324,7 @@ OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_, TosaAttributeBase* attr
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 OpArgMax<Rank, Dtype>::~OpArgMax()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpArgMax<Rank, Dtype>::checkTensorAttributes()
@@ -482,10 +479,7 @@ OpAvgPool2d<Dtype, AccDtype>::OpAvgPool2d(SubgraphTraverser* sgt_, TosaAttribute
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
 OpAvgPool2d<Dtype, AccDtype>::~OpAvgPool2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
 int OpAvgPool2d<Dtype, AccDtype>::checkTensorAttributes()
@@ -666,10 +660,7 @@ OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv2d(SubgraphTraverser* 
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::~OpConv2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
@@ -877,10 +868,7 @@ OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv3d(SubgraphTraverser* 
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::~OpConv3d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
@@ -1113,10 +1101,7 @@ OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpDepthwiseConv2d(S
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::~OpDepthwiseConv2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
@@ -1329,10 +1314,7 @@ OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* 
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 OpMatMul<Dtype, OutDtype>::~OpMatMul()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
@@ -1472,10 +1454,7 @@ OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attr
 
 template <TOSA_REF_TYPE Dtype>
 OpMaxPool2d<Dtype>::~OpMaxPool2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE Dtype>
 int OpMaxPool2d<Dtype>::checkTensorAttributes()
@@ -1620,10 +1599,7 @@ OpFFT2d<Dtype>::OpFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, 
 
 template <TOSA_REF_TYPE Dtype>
 OpFFT2d<Dtype>::~OpFFT2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE Dtype>
 int OpFFT2d<Dtype>::checkTensorAttributes()
@@ -1771,10 +1747,7 @@ OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_
 
 template <TOSA_REF_TYPE Dtype>
 OpRFFT2d<Dtype>::~OpRFFT2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE Dtype>
 int OpRFFT2d<Dtype>::checkTensorAttributes()
@@ -1927,10 +1900,7 @@ OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpTransposeConv2d(S
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::~OpTransposeConv2d()
-{
-    if (attribute)
-        delete attribute;
-}
+{}
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
 int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::checkTensorAttributes()
