@@ -2138,6 +2138,9 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
     const std::pair<INT_TYPE, INT_TYPE> nonPositive{ std::numeric_limits<INT_TYPE>::lowest(), 0 };
     const std::pair<INT_TYPE, INT_TYPE> nonNegative{ 0, std::numeric_limits<INT_TYPE>::max() };
 
+    const std::vector<std::pair<INT_TYPE, INT_TYPE>> expectedDefault = { lowest,   max,    minusMax, one,
+                                                                         minusOne, random, zero,     lowest };
+
     // Tests only available for int32
     if constexpr (std::is_same_v<INT_TYPE, int32_t>)
     {
@@ -2323,11 +2326,13 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
                                                          "TILE",   "TRANSPOSE", "GATHER",  "SCATTER" };
             for (const auto& op : operators)
             {
-                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
-                    lowest, max, minusMax, one, minusOne, zero, lowest, max,
-                };
-                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expected);
+                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expectedDefault);
             }
+        }
+
+        SUBCASE("clamp input 0")
+        {
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "CLAMP", "1", expectedDefault);
         }
     }
 }
