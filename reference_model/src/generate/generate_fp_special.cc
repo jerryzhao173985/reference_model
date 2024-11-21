@@ -66,18 +66,16 @@ const TestValues mulTestVals{ { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two
                               { SValue(SVE::NaN), SValue(SVE::RndFloat) },
                               { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
 
-const TestValues powTestVals{ { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Euler) },
-                              { -SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Pythagoras) },
+const TestValues powTestVals{ { SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Euler) },
+                              { SValue(SVE::RndFloat, SVE::Min, SVE::Max), -SValue(SVE::Euler) },
+                              { SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValue(SVE::Pythagoras) },
+                              { SValue(SVE::RndFloat, SVE::Min, SVE::Max), -SValue(SVE::Pythagoras) },
                               { SValue(SVE::Max), SValue(SVE::RndFloat, SVE::Two, SVE::Max) },
-                              { -SValue(SVE::Max), SValue(SVE::RndOddInteger, SVE::One, SVE::Ten) },
-                              { -SValue(SVE::Max), SValue(SVE::RndEvenInteger, SVE::One, SVE::Ten) },
+                              { SValue(SVE::Max), SValue(SVE::RndOddInteger, SVE::One, SVE::Ten) },
+                              { SValue(SVE::Max), SValue(SVE::RndEvenInteger, SVE::One, SVE::Ten) },
                               { SValue(SVE::Zero), SValue(SVE::One) },
-                              { -SValue(SVE::Zero), SValue(SVE::One) },
                               { SValue(SVE::Zero), SValue(SVE::Two) },
-                              { -SValue(SVE::Zero), SValue(SVE::Two) },
-                              /* TODO: Missing infinity tests - need spec clarification */
-                              { SValue(SVE::NaN), SValue(SVE::RndFloat) },
-                              { SValue(SVE::RndFloat), SValue(SVE::NaN) } };
+                              { SValue(SVE::Max), SValue(SVE::Zero) } };
 
 const TestValues minMaxTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) },
                                  { SValue(SVE::Inf), -SValue(SVE::Inf) },

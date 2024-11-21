@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -164,7 +164,7 @@ TF_OP_LIST = {
     },
     "gelu": {
         "operands": (1, 0),
-        "build_fcn": (TBuilder.Gelu, TGen.tgBasic, ArgGen.agNone),
+        "build_fcn": (TBuilder.Gelu, TGen.tgBasicPositive, ArgGen.agNone),
         "types": {
             # Need compiler support for tf.Erf.
             # "tf": TYPE_F,
@@ -283,7 +283,7 @@ TF_OP_LIST = {
     },
     "pow": {
         "operands": (2, 0),
-        "build_fcn": (TBuilder.Pow, TGen.tgBFuzz, ArgGen.agNone),
+        "build_fcn": (TBuilder.Pow, TGen.tgPow, ArgGen.agNone),
         # Technically, integer is supported, but only for positive exponents.
         # Needs a random argument generator.
         "types": TYPE_F,

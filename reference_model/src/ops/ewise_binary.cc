@@ -606,20 +606,26 @@ int OpPow<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(powf(a, b)); };
+            this->fcn = [this](InEigenType x, InEigenType y) -> OutEigenType {
+                REQUIRE(x >= 0, "OpPow: x is less than 0");
+                REQUIRE(x > 0 || y > 0, "OpPow: both x and y are less or equal to 0");
+                REQUIRE(!std::isnan(x) && !std::isnan(y), "OpPow: found NaN");
+                REQUIRE(std::isfinite(x) && std::isfinite(y), "OpPow: found non-finite number");
+                return fpTrunc<OutDtype>(powf(x, y));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
-                // ABS_ERROR bounds return 2*(1+abs(log(abs(a))*b))
-                this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
-                    OutEigenType c = log(a > (InEigenType)0 ? a : (-a)) * b;
-                    return 2 * (1.0 + (c > (OutEigenType)0 ? c : (-c)));
+                // ABS_ERROR bounds return 2*(1+abs(log(abs(x))*y))
+                this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {
+                    OutEigenType z = log(x > (InEigenType)0 ? x : (-x)) * y;
+                    return 2 * (1.0 + (z > (OutEigenType)0 ? z : (-z)));
                 };
             }
             else
             {
-                this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return pow(a, b); };
+                this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType { return pow(x, y); };
             }
             break;
         default:
