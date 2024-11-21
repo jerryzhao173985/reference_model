@@ -124,7 +124,27 @@ class TGen:
         return tf_placeholders, tf_consts
 
     @staticmethod
-    def tgBFuzz(op, shape, dtype, rng, for_tflite_converter=True):
+    def tgPow(
+        op,
+        shape,
+        dtype,
+        rng,
+        for_tflite_converter=True,
+        elem_signedness=ElemSignedness.POSITIVE,
+    ):
+        return TGen.tgBFuzz(
+            op, shape, dtype, rng, for_tflite_converter, elem_signedness
+        )
+
+    @staticmethod
+    def tgBFuzz(
+        op,
+        shape,
+        dtype,
+        rng,
+        for_tflite_converter=True,
+        elem_signedness=ElemSignedness.ALL_RANGE,
+    ):
         # Build random tensor placeholder node args of a given shape, optionally
         # fuzzing the arguments with random 1's to force broadcasting
 
@@ -150,7 +170,10 @@ class TGen:
                 i_shape = shape
 
             tf_placeholders.append(
-                ("placeholder_{}".format(i), TGen.getRand(i_shape, dtype, rng))
+                (
+                    "placeholder_{}".format(i),
+                    TGen.getRand(i_shape, dtype, rng, elem_signedness),
+                )
             )
 
         return tf_placeholders, tf_consts

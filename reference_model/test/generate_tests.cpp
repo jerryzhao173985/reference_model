@@ -2009,28 +2009,28 @@ TEST_CASE("positive - FP16 FP Special")
         }
     })";
 
-    const std::string tosaName0 = "input0";
-    const std::string tosaName1 = "input1";
-    const size_t tosaElements   = 3 * 6 * 4;
-    const half_float::half max  = std::numeric_limits<half_float::half>::max();
-    const half_float::half one  = half_float::half(1.0);
-    const half_float::half two  = half_float::half(2.0);
-    const half_float::half ten  = half_float::half(10.0);
+    const std::string tosaName0       = "input0";
+    const std::string tosaName1       = "input1";
+    const size_t tosaElements         = 3 * 6 * 4;
+    const half_float::half max        = std::numeric_limits<half_float::half>::max();
+    const half_float::half min        = std::numeric_limits<half_float::half>::min();
+    const half_float::half pythagoras = half_float::half(1.41421);
+    const half_float::half two        = half_float::half(2.0);
 
     SUBCASE("pow, input 0")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { max, max },
-                                                                                { -max, -max },
-                                                                                { -max, -max } };
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { min, max },
+                                                                                { min, max },
+                                                                                { max, max } };
         std::vector<valueType> expectedValueType                            = { Float, Float, Float };
         special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
     SUBCASE("pow, input 1")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { two, max },
-                                                                                { one, ten },
-                                                                                { one, ten } };
-        std::vector<valueType> expectedValueType                            = { Float, OddInteger, EvenInteger };
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { pythagoras, pythagoras },
+                                                                                { -pythagoras, -pythagoras },
+                                                                                { two, max } };
+        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
         special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
 }

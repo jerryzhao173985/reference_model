@@ -1698,42 +1698,23 @@ class TosaTensorValuesGen:
         # Different value ranges for each test set for POW
         # Default to test set 0 for FP Special tests as the ranges will be ignored
         test_set = argsDict.get("s", 0)
+
         if test_set == 0:
-            # Positive base with fractional exponent
-            base_range = TosaTensorValuesGen._get_data_range(
-                rng,
-                dtype,
-                TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE,
-                TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE,
-            )
-            exp_range = TosaTensorValuesGen._get_data_range(
-                rng, dtype, TosaTensorValuesGen.TVG_HIGH_VALUE_POW_EXP
-            )
             exp_round = False
         else:
-            # Integer exponent
-            exp_range = TosaTensorValuesGen._get_data_range(
-                rng, dtype, TosaTensorValuesGen.TVG_HIGH_VALUE_POW_EXP
-            )
+            assert test_set == 1
             exp_round = True
-            if test_set == 1:
-                # Positive base
-                base_range = TosaTensorValuesGen._get_data_range(
-                    rng,
-                    dtype,
-                    TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE,
-                    TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE,
-                )
-            else:
-                assert test_set == 2
-                # Negative base
-                # Supply new look up tables with negative values
-                base_range = TosaTensorValuesGen._get_data_range(
-                    rng,
-                    dtype,
-                    {dtype: -TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE[dtype]},
-                    {dtype: -TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE[dtype]},
-                )
+
+        # Positive base with integer exponent
+        base_range = TosaTensorValuesGen._get_data_range(
+            rng,
+            dtype,
+            TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE,
+            TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE,
+        )
+        exp_range = TosaTensorValuesGen._get_data_range(
+            rng, dtype, TosaTensorValuesGen.TVG_HIGH_VALUE_POW_EXP
+        )
 
         data_range_list = (
             {
@@ -2194,7 +2175,7 @@ class TosaArgGen:
             opName,
             shapeList,
             dtype,
-            [("", {"num_test_sets": 3})],
+            [("", {"num_test_sets": 2})],
             error_name,
         )
         # Return list of tuples: (arg_str, args_dict)
