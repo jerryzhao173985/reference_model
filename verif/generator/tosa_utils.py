@@ -63,6 +63,10 @@ class SpecialTestSet(IntEnum):
 
     DEFAULT = 0
     CAST_FP_TO_INT = 1
+    ALL_MAX_VALUES = 2
+    ALL_LOWEST_VALUES = 3
+    ALL_ZEROES = 4
+    ALL_SMALL_VALUES = 5
 
 
 def dtypeWidth(dtype):

@@ -3443,6 +3443,7 @@ class TosaTestGen:
     KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
     KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
 
+    # List of data types and their required test data sets
     PSEUDO_RANDOM_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM,),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
@@ -3486,6 +3487,77 @@ class TosaTestGen:
         DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
         DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
     }
+    DP_FS_IS_DATAGEN = {
+        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT4: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+    }
+
+    # Integer special test sets
+    SPECIAL_TEST_SETS_INT_MAX_LOWEST = (
+        (gtu.SpecialTestSet.ALL_MAX_VALUES,),
+        (gtu.SpecialTestSet.ALL_LOWEST_VALUES,),
+    )
+
+    STS_MAX_LOWEST = {
+        DType.INT16: SPECIAL_TEST_SETS_INT_MAX_LOWEST,
+        DType.INT8: SPECIAL_TEST_SETS_INT_MAX_LOWEST,
+    }
+
+    # Convolution data sets: [input, weights and bias]
+    SPECIAL_TEST_SETS_INT_CONV = (
+        # Minimum possible value is only value
+        (
+            gtu.SpecialTestSet.ALL_MAX_VALUES,
+            gtu.SpecialTestSet.ALL_SMALL_VALUES,
+            gtu.SpecialTestSet.ALL_ZEROES,
+        ),
+        # Maximum possible value is only value
+        (
+            gtu.SpecialTestSet.ALL_LOWEST_VALUES,
+            gtu.SpecialTestSet.ALL_SMALL_VALUES,
+            gtu.SpecialTestSet.ALL_ZEROES,
+        ),
+        # Zero weights avoid overflow
+        (
+            gtu.SpecialTestSet.ALL_MAX_VALUES,
+            gtu.SpecialTestSet.ALL_ZEROES,
+            gtu.SpecialTestSet.ALL_ZEROES,
+        ),
+        # Zero inputs avoid overflow
+        (
+            gtu.SpecialTestSet.ALL_ZEROES,
+            gtu.SpecialTestSet.ALL_MAX_VALUES,
+            gtu.SpecialTestSet.ALL_ZEROES,
+        ),
+    )
+
+    STS_CONVOLUTION = {
+        DType.INT16: SPECIAL_TEST_SETS_INT_CONV,
+        DType.INT8: SPECIAL_TEST_SETS_INT_CONV,
+        DType.INT4: SPECIAL_TEST_SETS_INT_CONV,
+    }
+
+    # Only use last two data sets to avoid overflows
+    STS_TRANSPOSE_CONVOLUTION = {
+        DType.INT16: SPECIAL_TEST_SETS_INT_CONV[2:4],
+        DType.INT8: SPECIAL_TEST_SETS_INT_CONV[2:4],
+        DType.INT4: SPECIAL_TEST_SETS_INT_CONV[2:4],
+    }
+
+    SPECIAL_TEST_SETS_INT_MATMUL = (
+        (gtu.SpecialTestSet.ALL_ZEROES, gtu.SpecialTestSet.ALL_MAX_VALUES),
+    )
+
+    STS_MATMUL = {
+        DType.INT16: SPECIAL_TEST_SETS_INT_MATMUL,
+        DType.INT8: SPECIAL_TEST_SETS_INT_MATMUL,
+    }
 
     # Tensor operator list
     #  'op': op name
@@ -3514,6 +3586,7 @@ class TosaTestGen:
     #    for each value in 'filter'
     #  'allow_multiple_special_tests': (optional) if set to True, multiple special tests are
     #    allowed for each datatype in this operator
+    # 'special_test_sets': (optional) list of special tests per type to be created
     TOSA_OP_LIST = {
         # Tensor operators
         "argmax": {
@@ -3538,7 +3611,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
+            "special_test_sets": STS_MAX_LOWEST,
         },
         "avg_pool2d": {
             "op": Op.AVG_POOL2D,
@@ -3569,7 +3643,8 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_MAX_LOWEST,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "conv2d_TEMPLATE": {
@@ -3579,7 +3654,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_conv2d,
                 TosaTensorGen.tgConv2D,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgConv,
                 TosaArgGen.agConv,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3601,7 +3676,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_CONVOLUTION,
             "broadcastable_bias": True,
             "filter": KERNELS_2D,
             "template": True,
@@ -3614,7 +3690,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_conv3d,
                 TosaTensorGen.tgConv3D,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgConv,
                 TosaArgGen.agConv,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3636,7 +3712,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_CONVOLUTION,
             "filter": KERNELS_3D,
             "template": True,
         },
@@ -3648,7 +3725,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_depthwise_conv2d,
                 TosaTensorGen.tgDepthwiseConv2D,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgConv,
                 TosaArgGen.agConv,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3670,7 +3747,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_CONVOLUTION,
             "filter": KERNELS_2D,
             "template": True,
         },
@@ -3694,7 +3772,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_MATMUL,
         },
         "max_pool2d": {
             "op": Op.MAX_POOL2D,
@@ -3721,7 +3800,8 @@ class TosaTestGen:
                 TosaErrorValidator.evPoolingOutputShapeMismatch,
                 TosaErrorValidator.evPoolingOutputShapeNonInteger,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
+            "special_test_sets": STS_MAX_LOWEST,
         },
         # Templated operator.  Filled in by createDynamicOpLists
         "transpose_conv2d_TEMPLATE": {
@@ -3731,7 +3811,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_transpose_conv2d,
                 TosaTensorGen.tgTransposeConv2D,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgConv,
                 TosaArgGen.agTransposeConv2D,
             ),
             "qgen": TosaQuantGen.qgConv,
@@ -3754,7 +3834,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_TRANSPOSE_CONVOLUTION,
             "filter": KERNELS_2D,
             "template": True,
         },

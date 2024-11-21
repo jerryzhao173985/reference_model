@@ -737,7 +737,7 @@ TEST_CASE("positive - INT32 pseudo random")
     }
 }
 
-void pseudo_random_test_int4_check(std::vector<int8_t> buffer, size_t elements, int8_t min, int8_t max)
+void test_int4_check(std::vector<int8_t> buffer, size_t elements, int8_t min, int8_t max)
 {
     size_t index = 0;
     for (auto e = buffer.begin(); e < buffer.end(); ++e)
@@ -745,26 +745,30 @@ void pseudo_random_test_int4_check(std::vector<int8_t> buffer, size_t elements, 
         // Check the first value is within range
         int8_t v0        = (int8_t)(*e << 4) >> 4;
         bool withinRange = (v0 >= min && v0 <= max);
-        if (!withinRange)
-            printf("IDX[%ld] %d not in (%d -> %d)\n", index, v0, min, max);
-        REQUIRE(withinRange);
+        std::stringstream msg;
+        msg << "Index " << index << " (low half)"
+            << ": " << int32_t(v0) << " not in range (" << int32_t(min) << " -> " << int32_t(max) << ")";
+        REQUIRE_MESSAGE(withinRange, msg.str());
 
         // Check the second value is within range
         int8_t v1 = *e >> 4;
         if (index + 1 < elements)
         {
             bool withinRange = (v1 >= min && v1 <= max);
-            REQUIRE_MESSAGE(withinRange, "IDX[%ld] %d not in (%d -> %d)\n", index, v1, min, max);
+            std::stringstream msg;
+            msg << "Index " << index << " (high half)"
+                << ": " << int32_t(v1) << " not in range (" << int32_t(min) << " -> " << int32_t(max) << ")";
+            REQUIRE_MESSAGE(withinRange, msg.str());
         }
         index += 2;
     }
 }
 
-TEST_CASE("positive - INT4 pseudo random")
+TEST_CASE("positive - INT4")
 {
     std::string jsonCfg = R"({
         "tensors" : {
-            "const0" : {
+            "const0": {
                 "generator": "PSEUDO_RANDOM",
                 "data_type": "INT4",
                 "input_type": "CONSTANT",
@@ -776,7 +780,7 @@ TEST_CASE("positive - INT4 pseudo random")
                     "range": [ "-6", "6" ]
                 }
             },
-            "const1" : {
+            "const1": {
                 "generator": "PSEUDO_RANDOM",
                 "data_type": "INT4",
                 "input_type": "CONSTANT",
@@ -788,7 +792,7 @@ TEST_CASE("positive - INT4 pseudo random")
                     "range": [ "1", "7" ]
                 }
             },
-            "const2" : {
+            "const2": {
                 "generator": "PSEUDO_RANDOM",
                 "data_type": "INT4",
                 "input_type": "CONSTANT",
@@ -800,7 +804,7 @@ TEST_CASE("positive - INT4 pseudo random")
                     "range": [ "-7", "-1" ]
                 }
             },
-            "const3" : {
+            "const3": {
                 "generator": "PSEUDO_RANDOM",
                 "data_type": "INT4",
                 "input_type": "CONSTANT",
@@ -809,6 +813,18 @@ TEST_CASE("positive - INT4 pseudo random")
                 "op" : "CONST",
                 "pseudo_random_info": {
                     "rng_seed": 31
+                }
+            },
+            "input4": {
+                "generator": "SPECIAL",
+                "data_type": "INT4",
+                "input_type": "VARIABLE",
+                "shape": [ 10, 2, 3 ],
+                "input_pos": 1,
+                "op": "CONV2D",
+                "special_info": {
+                    "start_idx": 1,
+                    "special_test_set": "ALL_MAX_VALUES"
                 }
             }
         }
@@ -826,33 +842,43 @@ TEST_CASE("positive - INT4 pseudo random")
     const std::string tosaNameP3  = "const3";
     const size_t tosaElementsP3   = 2 * 4 * 4;
     const size_t tosaPackedSizeP3 = (tosaElementsP3 + 1) / 2;
+    const std::string tosaNameP4  = "input4";
+    const size_t tosaElementsP4   = 10 * 2 * 3;
+    const size_t tosaPackedSizeP4 = (tosaElementsP4 + 1) / 2;
 
     SUBCASE("int4 random - rank 2 - even elements")
     {
         std::vector<int8_t> bufferP0(tosaPackedSizeP0);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaPackedSizeP0));
-        pseudo_random_test_int4_check(bufferP0, tosaElementsP0, -6, 6);
+        test_int4_check(bufferP0, tosaElementsP0, -6, 6);
     }
 
     SUBCASE("int4 random - rank 0 - odd elements")
     {
         std::vector<int8_t> bufferP1(tosaPackedSizeP1);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaPackedSizeP1));
-        pseudo_random_test_int4_check(bufferP1, tosaElementsP1, 1, 7);
+        test_int4_check(bufferP1, tosaElementsP1, 1, 7);
     }
 
     SUBCASE("int4 random - rank 3 - odd elements")
     {
         std::vector<int8_t> bufferP2(tosaPackedSizeP2);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP2.c_str(), (void*)bufferP2.data(), tosaPackedSizeP2));
-        pseudo_random_test_int4_check(bufferP2, tosaElementsP2, -7, -1);
+        test_int4_check(bufferP2, tosaElementsP2, -7, -1);
     }
 
     SUBCASE("int4 random - no range set")
     {
         std::vector<int8_t> bufferP3(tosaPackedSizeP3);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP3.c_str(), (void*)bufferP3.data(), tosaPackedSizeP3));
-        pseudo_random_test_int4_check(bufferP3, tosaElementsP3, -7, 7);
+        test_int4_check(bufferP3, tosaElementsP3, -7, 7);
+    }
+
+    SUBCASE("int4 special - all max values")
+    {
+        std::vector<int8_t> bufferP4(tosaPackedSizeP4);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP4.c_str(), (void*)bufferP4.data(), tosaPackedSizeP4));
+        test_int4_check(bufferP4, tosaElementsP4, 7, 7);
     }
 }
 
@@ -915,14 +941,14 @@ TEST_CASE("positive - BOOL pseudo random")
     }
 }
 
-void pseudo_random_test_int48_check(std::vector<int8_t> buffer, size_t elements, int64_t min, int64_t max)
+void test_int48_check(std::vector<int8_t> buffer, size_t elements, int64_t min, int64_t max)
 {
     int32_t byte_pos  = 0;
     int64_t value     = 0;
     uint64_t* val_u64 = reinterpret_cast<uint64_t*>(&value);
-    for (auto e = buffer.begin(); e < buffer.end(); ++e)
+    for (size_t idx = 0; idx < buffer.size(); ++idx)
     {
-        uint8_t byte_val = static_cast<uint8_t>(*e);
+        uint8_t byte_val = static_cast<uint8_t>(buffer[idx]);
         auto shift       = byte_pos * 8;
         *val_u64 += (static_cast<uint64_t>(byte_val) << shift);
         byte_pos++;
@@ -936,7 +962,10 @@ void pseudo_random_test_int48_check(std::vector<int8_t> buffer, size_t elements,
             // Check the values are within range
             // printf("Final value: %lu -> %ld\n",  *val_u64, value);
             bool withinRange = (value >= min && value <= max);
-            REQUIRE_MESSAGE(withinRange, "%ld not in (%ld -> %ld)\n", value, min, max);
+            std::stringstream msg;
+            msg << "Index " << idx / 6 << " (byte " << idx << ")"
+                << ": " << value << " not in range (" << min << " -> " << max << ")";
+            REQUIRE_MESSAGE(withinRange, msg.str());
 
             byte_pos = 0;
             value    = 0;
@@ -946,7 +975,7 @@ void pseudo_random_test_int48_check(std::vector<int8_t> buffer, size_t elements,
     REQUIRE(byte_pos == 0);
 }
 
-TEST_CASE("positive - INT48 pseudo random")
+TEST_CASE("positive - INT48")
 {
     std::string jsonCfg = R"({
         "tensors" : {
@@ -972,8 +1001,19 @@ TEST_CASE("positive - INT48 pseudo random")
                     "rng_seed": 34,
                     "range": [ "-1000000", "-5000" ]
                 }
-            }
-        }
+            },
+            "input2": {
+                "generator": "SPECIAL",
+                "data_type": "INT48",
+                "input_type": "VARIABLE",
+                "shape": [ 10, 2, 3 ],
+                "input_pos": 1,
+                "op": "CONV2D",
+                "special_info": {
+                    "start_idx": 1,
+                    "special_test_set": "ALL_MAX_VALUES"
+                }
+            }        }
     })";
 
     const std::string tosaNameP0 = "const0";
@@ -982,18 +1022,30 @@ TEST_CASE("positive - INT48 pseudo random")
     const std::string tosaNameP1 = "const1";
     const size_t tosaElementsP1  = 5 * 8 * 3;
     const size_t tosaSizeP1      = tosaElementsP1 * 6;
+    const std::string tosaNameP2 = "input2";
+    const size_t tosaElementsP2  = 10 * 2 * 3;
+    const size_t tosaSizeP2      = tosaElementsP2 * 6;
+
+    const int64_t max    = +(1L << 47) - 1;
+    const int64_t lowest = -(1L << 47);
 
     SUBCASE("INT48 random - no range set")
     {
         std::vector<int8_t> bufferP0(tosaSizeP0);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP0.c_str(), (void*)bufferP0.data(), tosaSizeP0));
-        pseudo_random_test_int48_check(bufferP0, tosaSizeP0, -(1L << 47), +(1L << 47) - 1);
+        test_int48_check(bufferP0, tosaSizeP0, lowest, max);
     }
     SUBCASE("INT48 random - negative range set")
     {
         std::vector<int8_t> bufferP1(tosaSizeP1);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP1.c_str(), (void*)bufferP1.data(), tosaSizeP1));
-        pseudo_random_test_int48_check(bufferP1, tosaSizeP1, -1000000L, -5000L);
+        test_int48_check(bufferP1, tosaSizeP1, -1000000L, -5000L);
+    }
+    SUBCASE("INT48 special - all max values")
+    {
+        std::vector<int8_t> bufferP2(tosaSizeP2);
+        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaNameP2.c_str(), (void*)bufferP2.data(), tosaSizeP2));
+        test_int48_check(bufferP2, tosaSizeP2, max, max);
     }
 }
 
@@ -1988,6 +2040,7 @@ void special_generate_INT(const std::string tosaName,
                           const size_t tosaElements,
                           const std::string opStr,
                           const std::string startIndexStr,
+                          const std::string testSetStr,
                           std::vector<INT_TYPE>& buffer)
 {
     std::string jsonCfg = R"({
@@ -2000,7 +2053,8 @@ void special_generate_INT(const std::string tosaName,
                 "input_pos": 0,
                 "op" : "_OP_",
                 "special_info": {
-                    "start_idx": _START_
+                    "start_idx": _START_,
+                    "special_test_set": "_TEST_SET_"
                 }
             },
             "input1" : {
@@ -2023,6 +2077,7 @@ void special_generate_INT(const std::string tosaName,
     update_json_template(jsonCfg, "_OP_", opStr);
     update_json_template(jsonCfg, "_START_", startIndexStr);
     update_json_template(jsonCfg, "_INT_TYPE_", EnumNameDType(dtype));
+    update_json_template(jsonCfg, "_TEST_SET_", testSetStr);
 
     REQUIRE(
         tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(INT_TYPE)));
@@ -2036,13 +2091,36 @@ void special_test_INT(const std::string tosaName,
                       const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
 {
     std::vector<INT_TYPE> buffer(tosaElements);
-    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, buffer);
+    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, "DEFAULT", buffer);
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
         std::stringstream msg;
-        msg << opStr << " index: " << idx << " expected between: " << expected[idx].first
-            << " and: " << expected[idx].second << ", but got: " << buffer[idx];
+        msg << opStr << " index: " << idx << " expected between: " << int64_t(expected[idx].first)
+            << " and: " << int64_t(expected[idx].second) << ", but got: " << int64_t(buffer[idx]);
         bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
+
+        REQUIRE_MESSAGE(withinRange, msg.str());
+    }
+}
+
+template <typename INT_TYPE>
+void special_test_set_INT(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string opStr,
+                          const std::string startIndexStr,
+                          const std::string testSetStr,
+                          const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
+{
+    std::vector<INT_TYPE> buffer(tosaElements);
+    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, testSetStr, buffer);
+    // Test all values in the buffer match the expected values repeated
+    for (size_t idx = 0; idx < buffer.size(); ++idx)
+    {
+        size_t exidx = idx % expected.size();
+        std::stringstream msg;
+        msg << opStr << exidx << " index: " << idx << " expected between: " << int64_t(expected[exidx].first)
+            << " and: " << int64_t(expected[exidx].second) << ", but got: " << int64_t(buffer[idx]);
+        bool withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
 
         REQUIRE_MESSAGE(withinRange, msg.str());
     }
@@ -2056,11 +2134,11 @@ void special_binary_coverage_INT(const size_t tosaElements, const Op op)
 
     // Generate values in first input
     std::vector<INT_TYPE> input0(tosaElements);
-    special_generate_INT(tosaName0, tosaElements, EnumNameOp(op), "0", input0);
+    special_generate_INT(tosaName0, tosaElements, EnumNameOp(op), "0", "DEFAULT", input0);
 
     // Generate values in second input
     std::vector<INT_TYPE> input1(tosaElements);
-    special_generate_INT(tosaName1, tosaElements, EnumNameOp(op), "0", input1);
+    special_generate_INT(tosaName1, tosaElements, EnumNameOp(op), "0", "DEFAULT", input1);
 
     bool hasMax    = false;
     bool hasLowest = false;
@@ -2130,6 +2208,9 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
     const std::pair<INT_TYPE, INT_TYPE> random{ std::numeric_limits<INT_TYPE>::lowest(),
                                                 std::numeric_limits<INT_TYPE>::max() };
 
+    // Test set
+    const std::pair<INT_TYPE, INT_TYPE> smallValues{ -2, 2 };
+
     // Used for shift operators
     const int64_t maxShiftVal = sizeof(INT_TYPE) * 8 - 1;
     const std::pair<INT_TYPE, INT_TYPE> randShift{ 0, maxShiftVal };
@@ -2138,6 +2219,7 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
     const std::pair<INT_TYPE, INT_TYPE> nonPositive{ std::numeric_limits<INT_TYPE>::lowest(), 0 };
     const std::pair<INT_TYPE, INT_TYPE> nonNegative{ 0, std::numeric_limits<INT_TYPE>::max() };
 
+    // Expected default values set
     const std::vector<std::pair<INT_TYPE, INT_TYPE>> expectedDefault = { lowest,   max,    minusMax, one,
                                                                          minusOne, random, zero,     lowest };
 
@@ -2333,6 +2415,49 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
         SUBCASE("clamp input 0")
         {
             special_test_INT<INT_TYPE>(tosaName0, tosaElements, "CLAMP", "1", expectedDefault);
+        }
+
+        SUBCASE("test set all zeroes")
+        {
+            const std::vector<std::string> operators = { "CONV2D", "CONV3D", "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D",
+                                                         "MATMUL" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_ZEROES", expected);
+            }
+        }
+
+        SUBCASE("test set all max values")
+        {
+            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D", "CONV3D",     "DEPTHWISE_CONV2D",
+                                                         "TRANSPOSE_CONV2D", "MATMUL", "AVG_POOL2D", "MAX_POOL2D" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_MAX_VALUES", expected);
+            }
+        }
+
+        SUBCASE("test set all lowest values")
+        {
+            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D",     "CONV3D",
+                                                         "DEPTHWISE_CONV2D", "AVG_POOL2D", "MAX_POOL2D" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { lowest };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_LOWEST_VALUES", expected);
+            }
+        }
+
+        SUBCASE("test set small values")
+        {
+            const std::vector<std::string> operators = { "CONV2D", "CONV3D", "DEPTHWISE_CONV2D" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { smallValues };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_SMALL_VALUES", expected);
+            }
         }
     }
 }

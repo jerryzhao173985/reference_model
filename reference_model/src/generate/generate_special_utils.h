@@ -232,7 +232,8 @@ public:
         BelowLowestINT8,
         BelowLowestINT16,
         BelowLowestINT32,
-        MaxShift,    // Number of bits in datatype minus 1
+        MaxShift,          // Number of bits in datatype minus 1
+        RndSignInteger,    // From negative number to positive number range
     };
 
     SpecialValue() = default;
@@ -267,7 +268,7 @@ public:
         return *this;
     }
 
-    template <typename DataType>
+    template <TOSA_REF_TYPE TosaRefType, typename DataType>
     DataType evaluate(RandomGen<DataType>& rng) const
     {
         // Work out the simple values
@@ -298,14 +299,14 @@ public:
             case BelowLowestINT16:
             case BelowLowestINT32:
             case MaxShift:
-                return _static_evaluate<DataType>(_value, _negative);
+                return _static_evaluate<TosaRefType, DataType>(_value, _negative);
             default:
                 // Handle the Random and unsupported cases below
                 break;
         }
         // Must be random value, work out positive range
-        auto min = _static_evaluate<DataType>(_rangeMin, false);
-        auto max = _static_evaluate<DataType>(_rangeMax, false);
+        auto min = _static_evaluate<TosaRefType, DataType>(_rangeMin, false);
+        auto max = _static_evaluate<TosaRefType, DataType>(_rangeMax, false);
 
         DataType rnd;
         switch (_value)
@@ -315,6 +316,10 @@ public:
                 break;
             case RndInteger:
                 rnd = rng.getInteger(min, max);
+                break;
+            case RndSignInteger:
+                // Negative min to positive max
+                rnd = rng.getInteger(-min, max);
                 break;
             case RndEvenInteger:
                 rnd = rng.getEvenInteger(min, max);
@@ -330,7 +335,7 @@ public:
     }
 
 private:
-    template <typename DataType>
+    template <TOSA_REF_TYPE TosaRefType, typename DataType>
     DataType _static_evaluate(SpecialValsEnum v, bool negate) const
     {
         // Work out the static value
@@ -341,19 +346,19 @@ private:
                 rawVal = static_cast<DataType>(0);
                 break;
             case Inf:
-                rawVal = std::numeric_limits<DataType>::infinity();
+                rawVal = DtypeLimits<TosaRefType>::infinity;
                 break;
             case NaN:
-                rawVal = std::numeric_limits<DataType>::quiet_NaN();
+                rawVal = DtypeLimits<TosaRefType>::quiet_NaN;
                 break;
             case Min:
-                rawVal = std::numeric_limits<DataType>::min();
+                rawVal = DtypeLimits<TosaRefType>::min;
                 break;
             case Max:
-                rawVal = std::numeric_limits<DataType>::max();
+                rawVal = DtypeLimits<TosaRefType>::max;
                 break;
             case Lowest:
-                rawVal = std::numeric_limits<DataType>::lowest();
+                rawVal = DtypeLimits<TosaRefType>::lowest;
                 break;
             case One:
                 rawVal = static_cast<DataType>(1);
@@ -381,11 +386,11 @@ private:
                 }
                 else
                 {
-                    rawVal = std::numeric_limits<DataType>::denorm_min();
+                    rawVal = DtypeLimits<TosaRefType>::denorm_min;
                 }
                 break;
             case ULPMax: {
-                DataType max = std::numeric_limits<DataType>::max();
+                DataType max = DtypeLimits<TosaRefType>::max;
                 DataType ulp = max - nextafter(max, static_cast<DataType>(0));
                 rawVal       = ulp;
                 break;
@@ -456,12 +461,19 @@ private:
         }
 
         if constexpr (std::is_same_v<DataType, uint8_t> || std::is_same_v<DataType, uint16_t>)
+        {
             return rawVal;
-        else if (!(std::isinf(rawVal)) && (-double(rawVal) > std::numeric_limits<DataType>::max() ||
-                                           -double(rawVal) < std::numeric_limits<DataType>::lowest()))
+        }
+        else if (!(std::isinf(rawVal)) && (-double(rawVal) > DtypeLimits<TosaRefType>::max ||
+                                           -double(rawVal) < DtypeLimits<TosaRefType>::lowest))
+        {
+            // Make sure an integer value does not overflow if negated
             return rawVal;
+        }
         else
+        {
             return negate ? -rawVal : rawVal;
+        }
     }
 
     SpecialValsEnum _value;
