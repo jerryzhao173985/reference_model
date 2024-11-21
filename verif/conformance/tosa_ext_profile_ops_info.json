@@ -317,6 +317,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -336,6 +337,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -600,6 +602,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -619,6 +622,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -721,6 +725,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -729,6 +734,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -837,6 +843,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -2510,6 +2517,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -2522,6 +2530,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -2547,6 +2556,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -2766,6 +2776,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -2778,6 +2789,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -2904,6 +2916,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -3052,6 +3065,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -3064,6 +3078,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -3184,6 +3199,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -4846,6 +4862,7 @@
                 ],
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -4858,6 +4875,7 @@
                         "1,16"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -4983,6 +5001,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -5023,6 +5042,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -5032,6 +5052,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -5142,6 +5163,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -9644,6 +9666,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -9654,6 +9677,7 @@
                         "1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -9782,6 +9806,7 @@
                         "--allow-pooling-and-conv-oversizes"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",

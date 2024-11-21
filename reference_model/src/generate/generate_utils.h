@@ -53,6 +53,10 @@ enum class SpecialTestSet
 {
     Default,
     CastFpToInt,
+    AllMaxValues,
+    AllLowestValues,
+    AllZeroes,
+    AllSmallValues
 };
 
 /// \brief Dot-product generator meta-data
@@ -128,6 +132,10 @@ int64_t numElementsFromShape(const std::vector<int32_t>& shape);
 
 /// \brief Size in bytes of a tensor with the given elements and type
 size_t tensorSizeInBytesFromType(int64_t numElements, DType type);
+
+/// \brief Integer write value functions
+template <typename StorageType, TOSA_REF_TYPE TosaRefType>
+void writeValue(int64_t value, int64_t index, StorageType* data);
 
 };    // namespace TosaReference
 

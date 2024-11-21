@@ -135,8 +135,19 @@ const TestValues defaultTestValues_int{
     { SValue(SVE::One) },  { -SValue(SVE::One) },   { FullRangeRndInteger },
 };
 
+// Single value test sets
+const TestValues allMaxValues    = { { SValue(SVE::Max) } };
+const TestValues allLowestValues = { { SValue(SVE::Lowest) } };
+const TestValues allZeroes       = { { SValue(SVE::Zero) } };
+const TestValues allSmallValues  = { { SValue(SVE::RndSignInteger, SVE::Two, SVE::Two) } };
+
 // Maps SpecialTestSets to the list of values to be used for that test.
-const std::map<SpecialTestSet, TestValues> specialTestValues_int = {};
+const std::map<SpecialTestSet, TestValues> specialTestValues_int = {
+    { SpecialTestSet::AllMaxValues, allMaxValues },
+    { SpecialTestSet::AllLowestValues, allLowestValues },
+    { SpecialTestSet::AllZeroes, allZeroes },
+    { SpecialTestSet::AllSmallValues, allSmallValues }
+};
 
 }    // namespace
 

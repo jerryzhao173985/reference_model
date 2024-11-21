@@ -158,49 +158,6 @@ bool generateFP(const TosaReference::GenerateConfig& cfg, DataType* data, size_t
     return true;
 }
 
-// Integer write value functions
-template <typename DataType, TosaReference::TOSA_REF_TYPE TosaType>
-void writeValue(int64_t value, int64_t index, DataType* data)
-{
-    data[index] = static_cast<DataType>(value);
-}
-
-template <>
-void writeValue<int8_t, TosaReference::TOSA_REF_TYPE_INT4>(int64_t value, int64_t index, int8_t* data)
-{
-    // Packed index
-    const auto byte_idx = index >> 1;
-    // Low or high part of the byte
-    const auto byte_pos = index & 0x1;
-
-    int8_t byte_half0, byte_half1;
-    if (byte_pos == 0)
-    {
-        // overwrite low position
-        byte_half0 = static_cast<int8_t>(value);
-        byte_half1 = data[byte_idx];
-    }
-    else
-    {
-        // overwrite high position
-        byte_half0 = data[byte_idx];
-        byte_half1 = static_cast<int8_t>(value);
-    }
-    data[byte_idx] = (byte_half0 & 0xF) | ((byte_half1 & 0xF) << 4);
-}
-
-template <>
-void writeValue<int8_t, TosaReference::TOSA_REF_TYPE_INT48>(int64_t value, int64_t index, int8_t* data)
-{
-    const auto byte_idx = index * 6;
-    const auto val_u64  = static_cast<uint64_t>(value);
-    for (auto i = 0; i < 6; ++i)
-    {
-        auto shift         = i * 8;
-        data[byte_idx + i] = (val_u64 >> shift) & 0xFF;
-    }
-}
-
 // Random INT64 generator
 class PseudoRandomGeneratorInteger
 {
@@ -328,7 +285,7 @@ bool generateINT(const TosaReference::GenerateConfig& cfg, StorageType* data, si
         if (comparisonOp && (t % 4 == 0))
             value = 0;
 
-        writeValue<StorageType, TosaType>(value, t, data);
+        TosaReference::writeValue<StorageType, TosaType>(value, t, data);
     }
     return true;
 }

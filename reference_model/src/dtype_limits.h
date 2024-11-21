@@ -129,6 +129,7 @@ struct DtypeLimits<TOSA_REF_TYPE_INT48>
     static constexpr int64_t min          = lowest;
     static constexpr int64_t denorm_min   = 0;
     static constexpr int64_t infinity     = 0;
+    static constexpr int64_t quiet_NaN    = 0;
     static constexpr int64_t low_extreme  = lowest;
     static constexpr int64_t high_extreme = max;
     static constexpr bool has_infinity    = false;
@@ -188,6 +189,7 @@ struct DtypeLimits<TOSA_REF_TYPE_INT4>
     static constexpr int8_t min          = lowest;
     static constexpr int8_t denorm_min   = 0;
     static constexpr int8_t infinity     = 0;
+    static constexpr int8_t quiet_NaN    = 0;
     static constexpr int8_t low_extreme  = lowest;
     static constexpr int8_t high_extreme = max;
     static constexpr bool has_infinity   = false;
@@ -207,6 +209,36 @@ struct DtypeLimits<TOSA_REF_TYPE_BOOL>
     static constexpr bool high_extreme = max;
     static constexpr bool has_infinity = false;
     static constexpr bool has_nan      = false;
+};
+
+template <>
+struct DtypeLimits<TOSA_REF_TYPE_UINT16>
+{
+    static constexpr uint16_t lowest       = std::numeric_limits<uint16_t>::lowest();
+    static constexpr uint16_t max          = std::numeric_limits<uint16_t>::max();
+    static constexpr uint16_t min          = std::numeric_limits<uint16_t>::min();
+    static constexpr uint16_t denorm_min   = std::numeric_limits<uint16_t>::denorm_min();
+    static constexpr uint16_t infinity     = std::numeric_limits<uint16_t>::infinity();
+    static constexpr uint16_t quiet_NaN    = std::numeric_limits<uint16_t>::quiet_NaN();
+    static constexpr uint16_t low_extreme  = lowest;
+    static constexpr uint16_t high_extreme = max;
+    static constexpr bool has_infinity     = false;
+    static constexpr bool has_nan          = false;
+};
+
+template <>
+struct DtypeLimits<TOSA_REF_TYPE_UINT8>
+{
+    static constexpr uint8_t lowest       = std::numeric_limits<uint8_t>::lowest();
+    static constexpr uint8_t max          = std::numeric_limits<uint8_t>::max();
+    static constexpr uint8_t min          = std::numeric_limits<uint8_t>::min();
+    static constexpr uint8_t denorm_min   = std::numeric_limits<uint8_t>::denorm_min();
+    static constexpr uint8_t infinity     = std::numeric_limits<uint8_t>::infinity();
+    static constexpr uint8_t quiet_NaN    = std::numeric_limits<uint8_t>::quiet_NaN();
+    static constexpr uint8_t low_extreme  = lowest;
+    static constexpr uint8_t high_extreme = max;
+    static constexpr bool has_infinity    = false;
+    static constexpr bool has_nan         = false;
 };
 
 }    // namespace TosaReference

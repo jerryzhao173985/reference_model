@@ -729,10 +729,16 @@ class TosaTensorValuesGen:
         return None
 
     @staticmethod
-    def _get_special_test_set(opInfo, argsDict):
-        if opInfo["op"] == Op.CAST and not gtu.dtypeIsFloat(argsDict["out_type"]):
-            return gtu.SpecialTestSet.CAST_FP_TO_INT
-        return gtu.SpecialTestSet.DEFAULT
+    def _get_special_test_sets(op, dtype, argsDict):
+        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL and "special_test_sets" in op:
+            test_sets = op["special_test_sets"].get(dtype, None)
+            if test_sets:
+                assert (
+                    "s" in argsDict or len(test_sets) == 1
+                ), "Missing set number to identify test set"
+                set_num = argsDict.get("s", 0)
+                return test_sets[set_num]
+        return None
 
     @staticmethod
     def tvgLazyGenDefault(
@@ -851,11 +857,18 @@ class TosaTensorValuesGen:
         }
         dg_tens_meta = tens_data["tensors"]
 
+        # Retrieve special tests sets from args dict or op list, otherwise use default
+        if "special_test_sets" in argsDict:
+            special_test_sets = argsDict["special_test_sets"]
+        else:
+            special_test_sets = TosaTensorValuesGen._get_special_test_sets(
+                op, dtypeList[0], argsDict
+            )
+            if special_test_sets is None:
+                special_test_sets = [gtu.SpecialTestSet.DEFAULT] * len(shapeList)
+
         special_info = {}
         special_info["start_idx"] = int(rng.randInt())
-        special_info["special_test_set"] = TosaTensorValuesGen._get_special_test_set(
-            op, argsDict
-        ).name
 
         if argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
             broadcastable_inputs = op.get("broadcastable_inputs", 0)
@@ -933,8 +946,9 @@ class TosaTensorValuesGen:
                 tens_meta["full_range_info"] = info
 
             elif dg_type == gtu.DataGenType.SPECIAL:
-                # Each tensor has its own seed
+                # Each tensor has its own seed and special test set
                 special_info_tensor = special_info.copy()
+                special_info_tensor["special_test_set"] = special_test_sets[idx].name
                 special_info_tensor["rng_seed"] = rng.getDataGenSeed(idx)
                 tens_meta["special_info"] = special_info_tensor
 
@@ -990,6 +1004,21 @@ class TosaTensorValuesGen:
                 argsDict["tensor_data"].append(tdata)
 
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, tens_data)
+
+    @staticmethod
+    def tvgConv(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
+            op = testGen.TOSA_OP_LIST[opName]
+            # Use specific data type (such as INT4) to get coverage of special tests
+            dtype = TosaArgGen._convolution_data_gen_type(dtypeList)
+            test_set = TosaTensorValuesGen._get_special_test_sets(op, dtype, argsDict)
+
+            if test_set:
+                argsDict["special_test_sets"] = test_set
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgNegate(
@@ -1712,6 +1741,11 @@ class TosaTensorValuesGen:
         assert data_range is not None
         argsDict["data_range"] = data_range
 
+        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL and not gtu.dtypeIsFloat(
+            argsDict["out_type"]
+        ):
+            argsDict["special_test_sets"] = [gtu.SpecialTestSet.CAST_FP_TO_INT]
+
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
@@ -1843,7 +1877,7 @@ class TosaArgGen:
         # Expand arg list with other data generator types
         new_arg_list = []
         for dg_type in dataGenTypesList:
-            only_one = False  # Check for only one dg type test
+            no_more_special_tests = False  # Check for only one dg type test
             for arg_str, args_dict in arg_list:
                 gen_args_dict = args_dict.copy()
                 # Only create one test by default - no sets of tests
@@ -1887,12 +1921,12 @@ class TosaArgGen:
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [
                         "non_finite_fp_data"
                     ]
-                    # Create only one special test per data type, unless the op
-                    # explicitly marks it allows more than one.
+                    # Create a single set of special test per data type,
+                    # unless the op explicitly marks it requires all of them.
                     allow_multiple_special_tests = op.get(
                         "allow_multiple_special_tests", False
                     )
-                    only_one = not allow_multiple_special_tests
+                    no_more_special_tests = not allow_multiple_special_tests
 
                 elif dg_type == gtu.DataGenType.SPECIAL:
                     if testGen.args.no_special_tests:
@@ -1932,16 +1966,20 @@ class TosaArgGen:
                         gen_args_dict["tags"] = args_dict.get("tags", []) + [
                             "border_case_int_data"
                         ]
-                    # Create only one special test per data type, unless the op
-                    # explicitly marks it requires more than one.
+                    if "special_test_sets" in op:
+                        # Make tests for each special test set (if there are any)
+                        num_test_sets = len(op["special_test_sets"].get(dtype, []))
+
+                    # Create a single set of special test per data type,
+                    # unless the op explicitly marks it requires all of them.
                     allow_multiple_special_tests = op.get(
                         "allow_multiple_special_tests", False
                     )
-                    only_one = not allow_multiple_special_tests
+                    no_more_special_tests = not allow_multiple_special_tests
 
                 gen_args_dict["dg_type"] = dg_type
 
-                if num_test_sets > 0:
+                if num_test_sets > 1:
                     for s in range(0, num_test_sets):
                         set_arg_str = f"{arg_str}_s{s}" if arg_str else f"s{s}"
                         set_args_dict = gen_args_dict.copy()
@@ -1951,7 +1989,7 @@ class TosaArgGen:
                     # Default is a single test
                     new_arg_list.append((arg_str, gen_args_dict))
 
-                if only_one:
+                if no_more_special_tests:
                     # Skip all remaining tests and remove this data generator
                     update_data_gen(testGen, opName, dtype, dg_type)
                     break
@@ -1978,6 +2016,11 @@ class TosaArgGen:
             new_arg_list.append((new_arg_str, new_args_dict))
 
         return new_arg_list
+
+    @staticmethod
+    def _convolution_data_gen_type(dtypes):
+        # Use the INT4 data generator for INT4 weights to include special tests
+        return dtypes[0] if dtypes[1] != DType.INT4 else DType.INT4
 
     @staticmethod
     def agNone(testGen, rng, opName, shapeList, dtype, error_name=None):
@@ -2382,7 +2425,7 @@ class TosaArgGen:
             testGen,
             opName,
             shapeList,
-            dtypes[0],
+            TosaArgGen._convolution_data_gen_type(dtypes),
             arg_list,
             error_name,
         )
@@ -2652,7 +2695,7 @@ class TosaArgGen:
             testGen,
             opName,
             shapeList,
-            dtypes[0],
+            TosaArgGen._convolution_data_gen_type(dtypes),
             arg_list,
             error_name,
         )

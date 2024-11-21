@@ -135,6 +135,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SpecialTestSet,
                              {
                                  { SpecialTestSet::Default, "DEFAULT" },
                                  { SpecialTestSet::CastFpToInt, "CAST_FP_TO_INT" },
+                                 { SpecialTestSet::AllMaxValues, "ALL_MAX_VALUES" },
+                                 { SpecialTestSet::AllLowestValues, "ALL_LOWEST_VALUES" },
+                                 { SpecialTestSet::AllZeroes, "ALL_ZEROES" },
+                                 { SpecialTestSet::AllSmallValues, "ALL_SMALL_VALUES" },
                              })
 
 // NOTE: This assumes it's VARIABLE if the InputType is not recognized
@@ -328,4 +332,55 @@ size_t tensorSizeInBytesFromType(int64_t numElements, DType type)
     }
     return 0;
 }
+
+// Integer write value functions
+template <typename StorageType, TOSA_REF_TYPE TosaRefType>
+void writeValue(int64_t value, int64_t index, StorageType* data)
+{
+    data[index] = static_cast<StorageType>(value);
+}
+
+template <>
+void writeValue<int8_t, TOSA_REF_TYPE_INT4>(int64_t value, int64_t index, int8_t* data)
+{
+    // Packed index
+    const auto byte_idx = index >> 1;
+    // Low or high part of the byte
+    const auto byte_pos = index & 0x1;
+
+    int8_t byte_half0, byte_half1;
+    if (byte_pos == 0)
+    {
+        // overwrite low position
+        byte_half0 = static_cast<int8_t>(value);
+        byte_half1 = data[byte_idx];
+    }
+    else
+    {
+        // overwrite high position
+        byte_half0 = data[byte_idx];
+        byte_half1 = static_cast<int8_t>(value);
+    }
+    data[byte_idx] = (byte_half0 & 0xF) | ((byte_half1 & 0xF) << 4);
+}
+
+template <>
+void writeValue<int8_t, TOSA_REF_TYPE_INT48>(int64_t value, int64_t index, int8_t* data)
+{
+    const auto byte_idx = index * 6;
+    const auto val_u64  = static_cast<uint64_t>(value);
+    for (auto i = 0; i < 6; ++i)
+    {
+        auto shift         = i * 8;
+        data[byte_idx + i] = (val_u64 >> shift) & 0xFF;
+    }
+}
+
+// Instantiate other needed writeValue functions
+template void writeValue<int8_t, TOSA_REF_TYPE_BOOL>(int64_t value, int64_t index, int8_t* data);
+template void writeValue<int8_t, TOSA_REF_TYPE_INT8>(int64_t value, int64_t index, int8_t* data);
+template void writeValue<int16_t, TOSA_REF_TYPE_INT16>(int64_t value, int64_t index, int16_t* data);
+template void writeValue<int32_t, TOSA_REF_TYPE_INT32>(int64_t value, int64_t index, int32_t* data);
+template void writeValue<uint8_t, TOSA_REF_TYPE_UINT8>(int64_t value, int64_t index, uint8_t* data);
+template void writeValue<uint16_t, TOSA_REF_TYPE_UINT16>(int64_t value, int64_t index, uint16_t* data);
 }    // namespace TosaReference
