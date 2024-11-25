@@ -1984,11 +1984,11 @@ TEST_CASE("positive - FP16 FP Special")
 }
 
 template <typename INT_TYPE>
-void special_test_INT(const std::string tosaName,
-                      const size_t tosaElements,
-                      const std::string opStr,
-                      const std::string startIndexStr,
-                      const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
+void special_generate_INT(const std::string tosaName,
+                          const size_t tosaElements,
+                          const std::string opStr,
+                          const std::string startIndexStr,
+                          std::vector<INT_TYPE>& buffer)
 {
     std::string jsonCfg = R"({
         "tensors" : {
@@ -2024,9 +2024,19 @@ void special_test_INT(const std::string tosaName,
     update_json_template(jsonCfg, "_START_", startIndexStr);
     update_json_template(jsonCfg, "_INT_TYPE_", EnumNameDType(dtype));
 
-    std::vector<INT_TYPE> buffer(tosaElements);
     REQUIRE(
         tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(INT_TYPE)));
+}
+
+template <typename INT_TYPE>
+void special_test_INT(const std::string tosaName,
+                      const size_t tosaElements,
+                      const std::string opStr,
+                      const std::string startIndexStr,
+                      const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
+{
+    std::vector<INT_TYPE> buffer(tosaElements);
+    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, buffer);
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
         std::stringstream msg;
@@ -2038,6 +2048,70 @@ void special_test_INT(const std::string tosaName,
     }
 }
 
+template <typename INT_TYPE>
+void special_binary_coverage_INT(const size_t tosaElements, const Op op)
+{
+    const std::string tosaName0 = "input0";
+    const std::string tosaName1 = "input1";
+
+    // Generate values in first input
+    std::vector<INT_TYPE> input0(tosaElements);
+    special_generate_INT(tosaName0, tosaElements, EnumNameOp(op), "0", input0);
+
+    // Generate values in second input
+    std::vector<INT_TYPE> input1(tosaElements);
+    special_generate_INT(tosaName1, tosaElements, EnumNameOp(op), "0", input1);
+
+    bool hasMax    = false;
+    bool hasLowest = false;
+    bool hasZero   = false;
+
+    for (size_t i = 0; i < input0.size(); i++)
+    {
+        // We will assume no shift in the result. Our generation algorithm doesn't know the shift.
+        int64_t in0 = static_cast<int64_t>(input0[i]);
+        int64_t in1 = static_cast<int64_t>(input1[i]);
+        int64_t result;
+
+        switch (op)
+        {
+            case Op_MUL:
+                // NOTE: Ignore shift for our purposes, because we don't know the
+                // shift when we generate the value.
+                // TODO: update once shift starts being taken into consideration
+                result = in0 * in1;
+                break;
+            case Op_ADD:
+                result = in0 + in1;
+                break;
+            case Op_SUB:
+                result = in0 - in1;
+                break;
+            case Op_INTDIV:
+                result = in0 / in1;
+                break;
+            default:
+                result = 0;
+                REQUIRE_MESSAGE(false, "Error in unit test construction: unsupported op");
+        }
+
+        if (result == std::numeric_limits<INT_TYPE>::max())
+            hasMax = true;
+        if (result == std::numeric_limits<INT_TYPE>::lowest())
+            hasLowest = true;
+        if (result == 0)
+            hasZero = true;
+
+        bool withinRange =
+            std::numeric_limits<INT_TYPE>::lowest() <= result && result <= std::numeric_limits<INT_TYPE>::max();
+        REQUIRE(withinRange);
+    }
+
+    CHECK(hasMax);
+    CHECK(hasLowest);
+    CHECK(hasZero);
+}
+
 TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
 {
     const std::string tosaName0 = "input0";
@@ -2045,16 +2119,24 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
     const size_t tosaElements   = 3 * 6 * 4;
 
     const std::pair<INT_TYPE, INT_TYPE> zero{ 0, 0 };
+    const std::pair<INT_TYPE, INT_TYPE> one{ 1, 1 };
+    const std::pair<INT_TYPE, INT_TYPE> minusOne{ -1, -1 };
     const std::pair<INT_TYPE, INT_TYPE> max{ std::numeric_limits<INT_TYPE>::max(),
                                              std::numeric_limits<INT_TYPE>::max() };
+    const std::pair<INT_TYPE, INT_TYPE> minusMax{ -std::numeric_limits<INT_TYPE>::max(),
+                                                  -std::numeric_limits<INT_TYPE>::max() };
     const std::pair<INT_TYPE, INT_TYPE> lowest{ std::numeric_limits<INT_TYPE>::lowest(),
                                                 std::numeric_limits<INT_TYPE>::lowest() };
     const std::pair<INT_TYPE, INT_TYPE> random{ std::numeric_limits<INT_TYPE>::lowest(),
                                                 std::numeric_limits<INT_TYPE>::max() };
+
     // Used for shift operators
     const int64_t maxShiftVal = sizeof(INT_TYPE) * 8 - 1;
     const std::pair<INT_TYPE, INT_TYPE> randShift{ 0, maxShiftVal };
     const std::pair<INT_TYPE, INT_TYPE> maxShift{ maxShiftVal, maxShiftVal };
+
+    const std::pair<INT_TYPE, INT_TYPE> nonPositive{ std::numeric_limits<INT_TYPE>::lowest(), 0 };
+    const std::pair<INT_TYPE, INT_TYPE> nonNegative{ 0, std::numeric_limits<INT_TYPE>::max() };
 
     // Tests only available for int32
     if constexpr (std::is_same_v<INT_TYPE, int32_t>)
@@ -2136,9 +2218,10 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
     if constexpr (std::is_same_v<INT_TYPE, int32_t> || std::is_same_v<INT_TYPE, int16_t> ||
                   std::is_same_v<INT_TYPE, int8_t>)
     {
-        SUBCASE("logical_right_shift,left_shift, input 0")
+        SUBCASE("shifts, input 0")
         {
-            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT" };
+            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT",
+                                                         "ARITHMETIC_RIGHT_SHIFT" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero,   zero,   zero,   lowest, lowest,
@@ -2148,9 +2231,10 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
             }
         }
 
-        SUBCASE("logical_right_shift,left_shift, input 1")
+        SUBCASE("shifts, input 1")
         {
-            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT" };
+            const std::vector<std::string> operators = { "LOGICAL_RIGHT_SHIFT", "LOGICAL_LEFT_SHIFT",
+                                                         "ARITHMETIC_RIGHT_SHIFT" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
@@ -2159,6 +2243,78 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
                 };
                 special_test_INT(tosaName1, tosaElements, op, "3", expected);
             }
+        }
+
+        SUBCASE("mul, coverage")
+        {
+            special_binary_coverage_INT<INT_TYPE>(tosaElements, Op_MUL);
+        }
+
+        SUBCASE("mul, input 0")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                max,      lowest,   lowest, zero,   zero,        zero,        one, one, one, minusOne,
+                minusOne, minusOne, random, random, nonNegative, nonPositive, max, max, max,
+            };
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "MUL", "2", expected);
+        }
+
+        SUBCASE("mul, input 1")
+        {
+            // Using nonPositive for (-max, 0) because overflows will be caught by the coverage subcase
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                minusOne, zero, one,         max,         lowest, random, max,      lowest,
+                random,   max,  nonNegative, nonPositive, zero,   one,    minusOne, minusOne,
+            };
+            special_test_INT<INT_TYPE>(tosaName1, tosaElements, "MUL", "2", expected);
+        }
+
+        SUBCASE("intdiv, coverage")
+        {
+            special_binary_coverage_INT<INT_TYPE>(tosaElements, Op_INTDIV);
+        }
+
+        SUBCASE("add, coverage")
+        {
+            special_binary_coverage_INT<INT_TYPE>(tosaElements, Op_ADD);
+        }
+
+        SUBCASE("add input 0")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                lowest, lowest, lowest,   zero, zero, nonPositive, nonNegative,
+                max,    max,    minusMax, max,  max,  lowest,      lowest,
+            };
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "ADD", "5", expected);
+        }
+
+        SUBCASE("add input 1")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                max, zero, nonNegative, max, lowest, max, lowest, lowest, minusMax, max, zero,
+            };
+            special_test_INT<INT_TYPE>(tosaName1, tosaElements, "ADD", "5", expected);
+        }
+
+        SUBCASE("sub, coverage")
+        {
+            special_binary_coverage_INT<INT_TYPE>(tosaElements, Op_SUB);
+        }
+
+        SUBCASE("sub input 0")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                zero, minusOne, nonNegative, nonPositive, lowest, lowest, lowest, lowest, max, max, max,
+            };
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "SUB", "3", expected);
+        }
+
+        SUBCASE("sub input 1")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                max, lowest, max, lowest, lowest, zero, minusOne, nonPositive, max, zero, nonNegative, max, lowest,
+            };
+            special_test_INT<INT_TYPE>(tosaName1, tosaElements, "SUB", "3", expected);
         }
     }
 }

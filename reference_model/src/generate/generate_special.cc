@@ -66,7 +66,7 @@ bool generate(const TosaReference::GenerateConfig& cfg,
     for (auto t = 0; t < T; ++t)
     {
         int valsIndex = (t + startIndex) % vals.size();
-        data[t]       = vals[valsIndex][inputIndex].evaluate<DataType>(rng);
+        data[t]       = vals[valsIndex].at(inputIndex).evaluate<DataType>(rng);
     }
     return true;
 }

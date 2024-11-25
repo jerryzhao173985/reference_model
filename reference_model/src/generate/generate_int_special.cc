@@ -44,15 +44,89 @@ const TestValues shiftTestVals{
     { FullRangeRndInteger, SValue(SVE::MaxShift) },
 };
 
+const TestValues mulTestVals{
+    { SValue(SVE::Max), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::One) },
+    { SValue(SVE::Max), -SValue(SVE::One) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::One) },
+    { SValue(SVE::Zero), SValue(SVE::Max) },
+    { SValue(SVE::Zero), SValue(SVE::Lowest) },
+    { SValue(SVE::Zero), FullRangeRndInteger },
+    { SValue(SVE::One), SValue(SVE::Max) },
+    { SValue(SVE::One), SValue(SVE::Lowest) },
+    { SValue(SVE::One), FullRangeRndInteger },
+    { -SValue(SVE::One), SValue(SVE::Max) },
+    { -SValue(SVE::One), SValue(SVE::RndInteger, SVE::Zero, SVE::Max) },
+    { -SValue(SVE::One), -SValue(SVE::RndInteger, SVE::Zero, SVE::Max) },
+    { FullRangeRndInteger, SValue(SVE::Zero) },
+    { FullRangeRndInteger, SValue(SVE::One) },
+    // Some verbosity needed to avoid testing `lowest` * -1
+    { SValue(SVE::RndInteger, SVE::Zero, SVE::Max), -SValue(SVE::One) },
+    { -SValue(SVE::RndInteger, SVE::Zero, SVE::Max), -SValue(SVE::One) },
+};
+
+const TestValues addTestVals{
+    { SValue(SVE::Max), SValue(SVE::Lowest) },
+    { SValue(SVE::Max), -SValue(SVE::Max) },
+    { -SValue(SVE::Max), SValue(SVE::Max) },
+    { SValue(SVE::Max), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::RndInteger, SVE::Lowest, SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::Max) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::RndInteger, SVE::Zero, SVE::Max) },
+    { SValue(SVE::Zero), SValue(SVE::Max) },
+    { SValue(SVE::Zero), SValue(SVE::Lowest) },
+    { SValue(SVE::RndInteger, SVE::Lowest, SVE::Zero), SValue(SVE::Max) },
+    { SValue(SVE::RndInteger, SVE::Zero, SVE::Max), SValue(SVE::Lowest) },
+};
+
+const TestValues subTestVals{
+    { SValue(SVE::Max), SValue(SVE::Max) },
+    { SValue(SVE::Max), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::RndInteger, SVE::Zero, SVE::Max) },
+    { SValue(SVE::Zero), SValue(SVE::Max) },
+    { -SValue(SVE::One), SValue(SVE::Lowest) },
+    { SValue(SVE::RndInteger, SVE::Zero, SVE::Max), SValue(SVE::Max) },
+    { SValue(SVE::RndInteger, SVE::Lowest, SVE::Zero), SValue(SVE::Lowest) },
+    { SValue(SVE::Lowest), SValue(SVE::Lowest) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), -SValue(SVE::One) },
+    { SValue(SVE::Lowest), SValue(SVE::RndInteger, SVE::Lowest, SVE::Zero) },
+};
+
+const TestValues intDivTestVals{
+    { SValue(SVE::Zero), SValue(SVE::Max) },
+    { SValue(SVE::Zero), SValue(SVE::Lowest) },
+    { SValue(SVE::Zero), FullRangeRndInteger },
+    { SValue(SVE::Max), SValue(SVE::One) },
+    { SValue(SVE::Max), SValue(SVE::RndInteger, SVE::One, SVE::Max) },
+    { SValue(SVE::Max), -SValue(SVE::RndInteger, SVE::One, SVE::Max) },
+    { SValue(SVE::Lowest), SValue(SVE::RndInteger, SVE::One, SVE::Max) },
+    { SValue(SVE::Lowest), SValue(SVE::One) },
+    // Avoid INTDIV(Lowest, -1) which overflows
+    { -SValue(SVE::Max), -SValue(SVE::RndInteger, SVE::One, SVE::Max) },
+    { FullRangeRndInteger, SValue(SVE::Max) },
+    { FullRangeRndInteger, SValue(SVE::Lowest) },
+};
+
 // Maps operators to the operator-specific list of default values for
 // INT_SPECIAL tests.
-const std::map<Op, TestValues> opTestValues_int = {
-    { Op_EQUAL, binaryExtremesTestVals },         { Op_GREATER, binaryExtremesTestVals },
-    { Op_GREATER_EQUAL, binaryExtremesTestVals }, { Op_BITWISE_AND, binaryExtremesTestVals },
-    { Op_BITWISE_OR, binaryExtremesTestVals },    { Op_BITWISE_XOR, binaryExtremesTestVals },
-    { Op_MAXIMUM, binaryExtremesTestVals },       { Op_MINIMUM, binaryExtremesTestVals },
-    { Op_LOGICAL_LEFT_SHIFT, shiftTestVals },     { Op_LOGICAL_RIGHT_SHIFT, shiftTestVals },
-};
+const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTestVals },
+                                                    { Op_GREATER, binaryExtremesTestVals },
+                                                    { Op_GREATER_EQUAL, binaryExtremesTestVals },
+                                                    { Op_BITWISE_AND, binaryExtremesTestVals },
+                                                    { Op_BITWISE_OR, binaryExtremesTestVals },
+                                                    { Op_BITWISE_XOR, binaryExtremesTestVals },
+                                                    { Op_MAXIMUM, binaryExtremesTestVals },
+                                                    { Op_MINIMUM, binaryExtremesTestVals },
+                                                    { Op_LOGICAL_LEFT_SHIFT, shiftTestVals },
+                                                    { Op_LOGICAL_RIGHT_SHIFT, shiftTestVals },
+                                                    { Op_ARITHMETIC_RIGHT_SHIFT, shiftTestVals },
+                                                    { Op_MUL, mulTestVals },
+                                                    { Op_INTDIV, intDivTestVals },
+                                                    { Op_ADD, addTestVals },
+                                                    { Op_SUB, subTestVals } };
 
 // Values that will be picked up if the Op is not in opTestValues_int and the
 // conformance test does not have a specific SpecialTestSet assigned.

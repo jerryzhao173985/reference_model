@@ -674,16 +674,19 @@ class TosaTensorValuesGen:
             self.dataGenDict = dataGenDict
 
     # Default high value for random numbers
-    TVG_FLOAT_HIGH_VALUE = {
+    TVG_HIGH_VALUE = {
         DType.FP32: (1 << 128) - (1 << (127 - 23)),
         DType.FP16: (1 << 16) - (1 << (15 - 10)),
         DType.BF16: (1 << 128) - (1 << (127 - 7)),
         DType.FP8E4M3: 448,
         DType.FP8E5M2: 57344,
+        DType.INT32: ((1 << 31) - 1),
+        DType.INT16: ((1 << 15) - 1),
+        DType.INT8: ((1 << 7) - 1),
     }
 
     # Default lowest normal values for random numbers
-    TVG_FLOAT_LOW_VALUE = {
+    TVG_LOW_VALUE = {
         DType.FP32: np.exp2(-126),
         DType.FP16: np.exp2(-14),
         DType.BF16: np.exp2(-126),
@@ -701,8 +704,11 @@ class TosaTensorValuesGen:
             high_val = highValueLookup[dtype]
             if lowValueLookup is not None and dtype in lowValueLookup:
                 low_val = lowValueLookup[dtype]
-            else:
+            elif high_val > 0:
                 low_val = -high_val
+            else:
+                # This case should only come up in ERROR_IF tests
+                low_val = high_val - 1
             # Set the values to something that won't produce infinity whilst
             # respecting the default ranges if more/less than the low/high
             # values
@@ -1011,93 +1017,30 @@ class TosaTensorValuesGen:
             )
 
     # Set the ADD/SUB data range to half the largest value to avoid infinities
-    TVG_FLOAT_HIGH_VALUE_ADDSUB = {
-        DType.FP32: (TVG_FLOAT_HIGH_VALUE[DType.FP32] / 2),
-        DType.FP16: (TVG_FLOAT_HIGH_VALUE[DType.FP16] / 2),
-        DType.BF16: (TVG_FLOAT_HIGH_VALUE[DType.BF16] / 2),
-        DType.FP8E4M3: (TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3] / 2),
-        DType.FP8E5M2: (TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2] / 2),
+    TVG_HIGH_VALUE_ADDSUB = {
+        DType.FP32: (TVG_HIGH_VALUE[DType.FP32] / 2),
+        DType.FP16: (TVG_HIGH_VALUE[DType.FP16] / 2),
+        DType.BF16: (TVG_HIGH_VALUE[DType.BF16] / 2),
+        DType.FP8E4M3: (TVG_HIGH_VALUE[DType.FP8E4M3] / 2),
+        DType.FP8E5M2: (TVG_HIGH_VALUE[DType.FP8E5M2] / 2),
+        DType.INT32: (TVG_HIGH_VALUE[DType.INT32] / 2),
+        DType.INT16: (TVG_HIGH_VALUE[DType.INT16] / 2),
+        DType.INT8: (TVG_HIGH_VALUE[DType.INT8] / 2),
     }
 
     @staticmethod
     def tvgAddSub(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        if dtypeList[0] in (DType.INT32, DType.SHAPE) and error_name is None:
-            # Make sure the integer operation does not cause value saturation - where
-            # the number wraps due to limited number of bits to store the answer
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 2 and cCount == 0
-            ), "Op.ADD / Op.SUB must have 2 placeholders, 0 consts"
-            tens_ser_list = []
-            add = op["op"] == Op.ADD
-            data_range = None  # Use default
-            a_arr = rng.randTensor(shapeList[0], dtypeList[0], data_range)
-            b_arr = rng.randTensor(shapeList[1], dtypeList[1], data_range)
-            if add:
-                res_arr = np.add(a_arr, b_arr, dtype=np.int64)
-            else:
-                res_arr = np.subtract(a_arr, b_arr, dtype=np.int64)
+        data_range = TosaTensorValuesGen._get_data_range(
+            rng, dtypeList[0], TosaTensorValuesGen.TVG_HIGH_VALUE_ADDSUB
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
 
-            # Work out the saturation limits
-            max_i32 = (1 << 31) - 1
-            min_i32 = -(1 << 31)
-            max_arr = np.full(shapeList[1], max_i32)
-            min_arr = np.full(shapeList[1], min_i32)
-
-            # Find how much values exceed the maximum/minimums
-            sat_max_arr = np.maximum(res_arr - max_arr, 0)
-            sat_min_arr = np.minimum(res_arr - min_arr, 0)
-
-            if not add:
-                # Swap saturation values and negate values as we need to perform opposite operations
-                sat_max_arr, sat_min_arr = -sat_min_arr, -sat_max_arr
-
-            # Create new array of unsaturated values by clipping values as needed
-            b_unsat_arr = b_arr
-            if (sat_max_arr != 0).any():
-                # Clip values that cause saturation
-                b_unsat_arr = np.subtract(b_unsat_arr, sat_max_arr, dtype=np.int32)
-                # Reduce axes in unsaturated tensor to match original tensor
-                for axis, dim in enumerate(b_arr.shape):
-                    if dim != b_unsat_arr.shape[axis]:
-                        assert (
-                            dim == 1
-                        ), "Op.ADD / SUB dimension must be 1 or matching to be broadcastable"
-                        b_unsat_arr = np.amin(b_unsat_arr, axis=axis, keepdims=True)
-
-            if (sat_min_arr != 0).any():
-                # Clip values that cause saturation
-                b_unsat_arr = np.subtract(b_unsat_arr, sat_min_arr, dtype=np.int32)
-                # Reduce axes in unsaturated tensor to match original tensor
-                for axis, dim in enumerate(b_arr.shape):
-                    if dim != b_unsat_arr.shape[axis]:
-                        assert (
-                            dim == 1
-                        ), "Op.ADD / SUB dimension must be 1 or matching to be broadcastable"
-                        b_unsat_arr = np.amax(b_unsat_arr, axis=axis, keepdims=True)
-
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], a_arr)
-            )
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], b_unsat_arr)
-            )
-
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-        else:
-            # ERROR_IF or floating point test
-            data_range = TosaTensorValuesGen._get_data_range(
-                rng, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_ADDSUB
-            )
-            if data_range:
-                argsDict["data_range"] = data_range
-
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgCondIf(
@@ -1149,9 +1092,9 @@ class TosaTensorValuesGen:
             # Create a range using a higher limit table of high value scaled to iterations
             add_op = True
             assert (
-                dtype in TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE
+                dtype in TosaTensorValuesGen.TVG_HIGH_VALUE
             ), "Unsupported FP type in WHILE_LOOP values gen"
-            high_value = TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype]
+            high_value = TosaTensorValuesGen.TVG_HIGH_VALUE[dtype]
 
             high_value = scale_add_values_to_iterations(iterations, [high_value])[0]
             body_data_range = TosaTensorValuesGen._get_data_range(
@@ -1330,55 +1273,54 @@ class TosaTensorValuesGen:
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
+    # The lowest value causes problems if divided by -1. Only test the lowest
+    # value in the integer special tests.
+    TVG_LOW_VALUE_INTDIV = {
+        DType.INT32: -(1 << 31) + 1,
+        DType.INT16: -(1 << 15) + 1,
+        DType.INT8: -(1 << 7) + 1,
+    }
+
     @staticmethod
     def tvgIntDiv(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        if error_name is None:
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 2 and cCount == 0
-            ), "Op.INTDIV must have 2 placeholders, 0 consts"
-
-            tens_ser_list = []
-
-            # Two invalid cases for Op.INTDIV:
-            # 1. divisor == 0
-            # 2. dividend == -(1<<31) and divisor == -1
-            while True:
-                dividend_arr = rng.randTensor(shapeList[0], dtypeList[0])
-                divisor_arr = rng.randTensor(shapeList[1], dtypeList[1])
-
-                if (divisor_arr == 0).any():
-                    continue
-
-                if (dividend_arr == -(2**31)).any() and (divisor_arr == -1).any():
-                    continue
-
-                break
-
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], dividend_arr)
+        dtype = dtypeList[0]
+        dividend_range = {
+            "range": TosaTensorValuesGen._get_data_range(
+                rng,
+                dtype,
+                TosaTensorValuesGen.TVG_HIGH_VALUE,
+                TosaTensorValuesGen.TVG_LOW_VALUE_INTDIV,
             )
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[1], dtypeList[1], divisor_arr)
-            )
+        }
 
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
+        negative_divisor = rng.choice([True, False])
+        if negative_divisor:
+            # The default of -2 should only come up in ERROR_IF tests
+            low_val = TosaTensorValuesGen.TVG_LOW_VALUE_INTDIV.get(dtype, -2)
+            divisor_range = {"range": (low_val, -1)}
         else:
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+            # The default of 2 should only come up in ERROR_IF tests
+            high_val = TosaTensorValuesGen.TVG_HIGH_VALUE.get(dtype, 2)
+            divisor_range = {"range": (1, high_val)}
+
+        argsDict["data_range_list"] = [dividend_range, divisor_range]
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     # Set the MUL data range to the square root of the largest value
     # to avoid infinities
-    TVG_FLOAT_HIGH_VALUE_MUL = {
-        DType.FP32: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
-        DType.FP16: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
-        DType.BF16: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.BF16]),
-        DType.FP8E4M3: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3]),
-        DType.FP8E5M2: math.sqrt(TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2]),
+    TVG_HIGH_VALUE_MUL = {
+        DType.FP32: math.sqrt(TVG_HIGH_VALUE[DType.FP32]),
+        DType.FP16: math.sqrt(TVG_HIGH_VALUE[DType.FP16]),
+        DType.BF16: math.sqrt(TVG_HIGH_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.sqrt(TVG_HIGH_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.sqrt(TVG_HIGH_VALUE[DType.FP8E5M2]),
+        DType.INT32: math.sqrt(TVG_HIGH_VALUE[DType.INT32]),
+        DType.INT16: math.sqrt(TVG_HIGH_VALUE[DType.INT16]),
+        DType.INT8: math.sqrt(TVG_HIGH_VALUE[DType.INT8]),
     }
 
     @staticmethod
@@ -1387,105 +1329,17 @@ class TosaTensorValuesGen:
         dtypeList[2] = DType.INT8
         shapeList[2] = [] if error_name != ErrorIf.InputRank0WrongRank else [1]
 
-        if error_name is not None or dtypeList[0] in (
-            DType.FP16,
-            DType.BF16,
-            DType.FP32,
-        ):
-            # ERROR_IF or floating point test
-            data_range = TosaTensorValuesGen._get_data_range(
-                rng, dtypeList[0], TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_MUL
-            )
-            if data_range:
-                argsDict["data_range"] = data_range
+        # ERROR_IF or floating point test
+        data_range = TosaTensorValuesGen._get_data_range(
+            rng, dtypeList[0], TosaTensorValuesGen.TVG_HIGH_VALUE_MUL
+        )
+        argsDict["data_range"] = data_range
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
 
-            # Create a new list for the pre-generated data in argsDict["fixed_data"]
-            argsDict["fixed_data"] = [None, None, [argsDict["shift"]]]
-
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
-        else:
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-
-            tens_ser_list = []
-
-            # Make sure multiply result in int32 range
-            if dtypeList[0] == DType.SHAPE:
-                shift = 0
-            else:
-                shift = argsDict["shift"]
-
-            np_type = np.int32
-            if dtypeList[0] == DType.INT8:
-                num_bits = 8
-                np_type = np.int8
-            elif dtypeList[0] == DType.INT16:
-                num_bits = 16
-                np_type = np.int16
-            elif dtypeList[0] in (DType.INT32, DType.SHAPE):
-                num_bits = 32
-                # np_type is not used for DType.SHAPE so leave as np.int32
-            elif error_name == ErrorIf.WrongInputType:
-                num_bits = 8
-            else:
-                raise Exception(
-                    f"OpMul: invalid input dtype {gtu.DTYPE_ATTRIBUTES[dtypeList[0]]['str']}"
-                )
-
-            for idx, shape in enumerate(shapeList[:]):
-                if dtypeList[idx] == DType.SHAPE:
-                    low = testGen.args.tensor_shape_range[0]
-                    high = testGen.args.tensor_shape_range[1]
-                else:
-                    low = -(2 ** (num_bits - 1))
-                    high = (2 ** (num_bits - 1)) - 1
-
-                a_arr = rng.randTensor(
-                    shapeList[0], DType.INT32, data_range=(low, high)
-                )
-                b_arr = rng.randTensor(
-                    shapeList[1], DType.INT32, data_range=(low, high)
-                )
-
-            i = 0
-            while True:
-
-                a_arr_64 = a_arr.astype(np.int64)
-                b_arr_64 = b_arr.astype(np.int64)
-
-                if shift > 0:
-                    rounding = 1 << (shift - 1)
-                    result_arr = ((a_arr_64 * b_arr_64) + rounding) >> shift
-                else:
-                    result_arr = a_arr_64 * b_arr_64
-
-                if (result_arr > -(2**31)).all() and (
-                    result_arr <= ((2**31) - 1)
-                ).all():
-                    break
-
-                i = i + 1
-                a_arr = a_arr // 2
-                b_arr = b_arr // 2
-
-            # MUL with 3 inputs (3rd is shift)
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(
-                    shapeList[0], dtypeList[0], a_arr.astype(np_type)
-                )
-            )
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(
-                    shapeList[1], dtypeList[1], b_arr.astype(np_type)
-                )
-            )
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[2], dtypeList[2], np.int8([shift]))
-            )
-
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgConcat(
@@ -1560,8 +1414,7 @@ class TosaTensorValuesGen:
                 # Limit ranges for (non error & non compliance) tests by using
                 # values that can be summed on any axis to not hit infinity
                 highval_lookup = {
-                    dtype: TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype]
-                    / max(shapeList[0])
+                    dtype: TosaTensorValuesGen.TVG_HIGH_VALUE[dtype] / max(shapeList[0])
                 }
                 data_range = TosaTensorValuesGen._get_data_range(
                     rng, dtype, highval_lookup
@@ -1583,7 +1436,7 @@ class TosaTensorValuesGen:
             # values that can be multiplied on any axis to not hit infinity
             highval_lookup = {
                 dtype: math.pow(
-                    TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype],
+                    TosaTensorValuesGen.TVG_HIGH_VALUE[dtype],
                     1 / max(shapeList[0]),
                 )
             }
@@ -1617,7 +1470,7 @@ class TosaTensorValuesGen:
         data_range = TosaTensorValuesGen._get_data_range(
             rng,
             dtypeList[0],
-            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
+            TosaTensorValuesGen.TVG_HIGH_VALUE,
         )
         if data_range:
             argsDict["data_range"] = data_range
@@ -1640,7 +1493,7 @@ class TosaTensorValuesGen:
         )
 
     # Set the POW exponent high data range
-    TVG_FLOAT_HIGH_VALUE_POW_EXP = {
+    TVG_HIGH_VALUE_POW_EXP = {
         DType.FP32: 10.0,
         DType.FP16: 10.0,
         DType.BF16: 10.0,
@@ -1649,77 +1502,77 @@ class TosaTensorValuesGen:
     }
     # POW highest base value (within a safe margin of error) that can be raised
     # to +ve exponent that doesn't become Infinity
-    TVG_FLOAT_HIGH_VALUE_POW_BASE = {
+    TVG_HIGH_VALUE_POW_BASE = {
         DType.FP32: math.floor(
             math.pow(
-                TVG_FLOAT_HIGH_VALUE[DType.FP32],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP32],
+                TVG_HIGH_VALUE[DType.FP32],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP32],
             )
         ),
         DType.FP16: math.floor(
             math.pow(
-                TVG_FLOAT_HIGH_VALUE[DType.FP16],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP16],
+                TVG_HIGH_VALUE[DType.FP16],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP16],
             )
         ),
         DType.BF16: math.floor(
             math.pow(
-                TVG_FLOAT_HIGH_VALUE[DType.BF16],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+                TVG_HIGH_VALUE[DType.BF16],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.BF16],
             )
         ),
         DType.FP8E4M3: math.floor(
             math.pow(
-                TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
+                TVG_HIGH_VALUE[DType.FP8E4M3],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
             )
         ),
         DType.FP8E5M2: math.floor(
             math.pow(
-                TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
+                TVG_HIGH_VALUE[DType.FP8E5M2],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
             )
         ),
     }
     # POW lowest base value (within a safe margin of error) that can be raised
     # to -ve exponent that doesn't become Infinity
-    TVG_FLOAT_LOW_VALUE_POW_BASE = {
+    TVG_LOW_VALUE_POW_BASE = {
         DType.FP32: math.ceil(
             math.pow(
-                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP32],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP32],
+                1.0 / TVG_HIGH_VALUE[DType.FP32],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP32],
             )
             * 1000
         )
         / 1000,
         DType.FP16: math.ceil(
             math.pow(
-                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP16],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP16],
+                1.0 / TVG_HIGH_VALUE[DType.FP16],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP16],
             )
             * 1000
         )
         / 1000,
         DType.BF16: math.ceil(
             math.pow(
-                1.0 / TVG_FLOAT_HIGH_VALUE[DType.BF16],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.BF16],
+                1.0 / TVG_HIGH_VALUE[DType.BF16],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.BF16],
             )
             * 1000
         )
         / 1000,
         DType.FP8E4M3: math.ceil(
             math.pow(
-                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
+                1.0 / TVG_HIGH_VALUE[DType.FP8E4M3],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP8E4M3],
             )
             * 1000
         )
         / 1000,
         DType.FP8E5M2: math.ceil(
             math.pow(
-                1.0 / TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2],
-                1.0 / TVG_FLOAT_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
+                1.0 / TVG_HIGH_VALUE[DType.FP8E5M2],
+                1.0 / TVG_HIGH_VALUE_POW_EXP[DType.FP8E5M2],
             )
             * 1000
         )
@@ -1741,17 +1594,17 @@ class TosaTensorValuesGen:
             base_range = TosaTensorValuesGen._get_data_range(
                 rng,
                 dtype,
-                TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
-                TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
+                TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE,
+                TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE,
             )
             exp_range = TosaTensorValuesGen._get_data_range(
-                rng, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+                rng, dtype, TosaTensorValuesGen.TVG_HIGH_VALUE_POW_EXP
             )
             exp_round = False
         else:
             # Integer exponent
             exp_range = TosaTensorValuesGen._get_data_range(
-                rng, dtype, TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_EXP
+                rng, dtype, TosaTensorValuesGen.TVG_HIGH_VALUE_POW_EXP
             )
             exp_round = True
             if test_set == 1:
@@ -1759,8 +1612,8 @@ class TosaTensorValuesGen:
                 base_range = TosaTensorValuesGen._get_data_range(
                     rng,
                     dtype,
-                    TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE,
-                    TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE,
+                    TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE,
+                    TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE,
                 )
             else:
                 assert test_set == 2
@@ -1769,8 +1622,8 @@ class TosaTensorValuesGen:
                 base_range = TosaTensorValuesGen._get_data_range(
                     rng,
                     dtype,
-                    {dtype: -TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_POW_BASE[dtype]},
-                    {dtype: -TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_POW_BASE[dtype]},
+                    {dtype: -TosaTensorValuesGen.TVG_LOW_VALUE_POW_BASE[dtype]},
+                    {dtype: -TosaTensorValuesGen.TVG_HIGH_VALUE_POW_BASE[dtype]},
                 )
 
         data_range_list = (
@@ -1796,8 +1649,8 @@ class TosaTensorValuesGen:
         data_range = TosaTensorValuesGen._get_data_range(
             rng,
             dtypeList[0],
-            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE,
-            TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE,
+            TosaTensorValuesGen.TVG_HIGH_VALUE,
+            TosaTensorValuesGen.TVG_LOW_VALUE,
         )
         if data_range:
             argsDict["data_range"] = data_range
@@ -1808,19 +1661,19 @@ class TosaTensorValuesGen:
 
     # Set the EXP data range to the log of the largest to smallest values
     # to avoid infinities or making the result zero
-    TVG_FLOAT_HIGH_VALUE_EXP = {
-        DType.FP32: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP32]),
-        DType.FP16: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP16]),
-        DType.BF16: math.log(TVG_FLOAT_HIGH_VALUE[DType.BF16]),
-        DType.FP8E4M3: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP8E4M3]),
-        DType.FP8E5M2: math.log(TVG_FLOAT_HIGH_VALUE[DType.FP8E5M2]),
+    TVG_HIGH_VALUE_EXP = {
+        DType.FP32: math.log(TVG_HIGH_VALUE[DType.FP32]),
+        DType.FP16: math.log(TVG_HIGH_VALUE[DType.FP16]),
+        DType.BF16: math.log(TVG_HIGH_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.log(TVG_HIGH_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.log(TVG_HIGH_VALUE[DType.FP8E5M2]),
     }
-    TVG_FLOAT_LOW_VALUE_EXP = {
-        DType.FP32: math.log(TVG_FLOAT_LOW_VALUE[DType.FP32]),
-        DType.FP16: math.log(TVG_FLOAT_LOW_VALUE[DType.FP16]),
-        DType.BF16: math.log(TVG_FLOAT_LOW_VALUE[DType.BF16]),
-        DType.FP8E4M3: math.log(TVG_FLOAT_LOW_VALUE[DType.FP8E4M3]),
-        DType.FP8E5M2: math.log(TVG_FLOAT_LOW_VALUE[DType.FP8E5M2]),
+    TVG_LOW_VALUE_EXP = {
+        DType.FP32: math.log(TVG_LOW_VALUE[DType.FP32]),
+        DType.FP16: math.log(TVG_LOW_VALUE[DType.FP16]),
+        DType.BF16: math.log(TVG_LOW_VALUE[DType.BF16]),
+        DType.FP8E4M3: math.log(TVG_LOW_VALUE[DType.FP8E4M3]),
+        DType.FP8E5M2: math.log(TVG_LOW_VALUE[DType.FP8E5M2]),
     }
 
     @staticmethod
@@ -1828,8 +1681,8 @@ class TosaTensorValuesGen:
         data_range = TosaTensorValuesGen._get_data_range(
             rng,
             dtypeList[0],
-            TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE_EXP,
-            TosaTensorValuesGen.TVG_FLOAT_LOW_VALUE_EXP,
+            TosaTensorValuesGen.TVG_HIGH_VALUE_EXP,
+            TosaTensorValuesGen.TVG_LOW_VALUE_EXP,
         )
         if data_range:
             argsDict["data_range"] = data_range

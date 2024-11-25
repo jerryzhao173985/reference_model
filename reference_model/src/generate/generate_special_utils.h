@@ -88,17 +88,28 @@ public:
 
     DataType getInteger(DataType min, DataType max)
     {
-        return _getTnteger(min, max, Any);
+        if constexpr (std::is_integral<DataType>())
+        {
+            auto dis     = std::uniform_int_distribution<int64_t>(static_cast<int64_t>(min), static_cast<int64_t>(max));
+            DataType rnd = static_cast<DataType>(dis(_gen));
+            return rnd;
+        }
+        else
+        {
+            return _getFloatInteger(min, max, Any);
+        }
     }
 
     DataType getEvenInteger(DataType min, DataType max)
     {
-        return _getTnteger(min, max, Even);
+        ASSERT_MSG(!std::is_integral<DataType>(), "Untested usage of getEvenInteger using integral types")
+        return _getFloatInteger(min, max, Even);
     }
 
     DataType getOddInteger(DataType min, DataType max)
     {
-        return _getTnteger(min, max, Odd);
+        ASSERT_MSG(!std::is_integral<DataType>(), "Untested usage of getEvenInteger using integral types")
+        return _getFloatInteger(min, max, Odd);
     }
 
 private:
@@ -140,12 +151,11 @@ private:
         return true;
     }
 
-    DataType _getTnteger(DataType min, DataType max, _integerTypeEnum type)
+    DataType _getFloatInteger(DataType min, DataType max, _integerTypeEnum type)
     {
         // Set min/max to integers
         min = ceil(min);
         max = floor(max);
-
         if (!_rangeOk(min, max))
         {
             switch (type)
