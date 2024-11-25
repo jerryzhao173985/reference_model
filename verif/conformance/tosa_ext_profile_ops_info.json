@@ -159,6 +159,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -168,6 +169,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -175,6 +177,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -659,6 +662,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -670,6 +674,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -677,6 +682,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -4344,6 +4350,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -4353,6 +4360,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -4360,6 +4368,7 @@
                         "1,1,65539,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5487,6 +5496,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5496,6 +5506,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -5523,6 +5534,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -5533,6 +5545,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -5540,6 +5553,7 @@
                         "1,68539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -8773,6 +8787,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",
@@ -8782,6 +8797,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -8789,6 +8805,7 @@
                         "1,65539,1,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",

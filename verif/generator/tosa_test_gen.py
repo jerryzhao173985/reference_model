@@ -92,7 +92,7 @@ class TosaTestGen:
         for dtype in (DType.FP32, DType.FP16, DType.BF16, DType.FP8E4M3, DType.FP8E5M2):
             self.random_dtype_range[dtype] = convertFPRange(
                 args.tensor_fp_value_range,
-                TosaTensorValuesGen.TVG_FLOAT_HIGH_VALUE[dtype],
+                TosaTensorValuesGen.TVG_HIGH_VALUE[dtype],
             )
         self.resetGlobalRNG()
 
@@ -3849,7 +3849,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
@@ -3873,6 +3873,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
             "broadcastable_inputs": 2,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "bitwise_and": {
             "op": Op.BITWISE_AND,
@@ -3959,6 +3960,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
         },
         "logical_and": {
@@ -4135,7 +4137,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
                 TosaErrorValidator.evInputRank0WrongRank,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
@@ -4180,7 +4182,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
