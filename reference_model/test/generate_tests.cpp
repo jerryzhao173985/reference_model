@@ -2316,6 +2316,19 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
             };
             special_test_INT<INT_TYPE>(tosaName1, tosaElements, "SUB", "3", expected);
         }
+
+        SUBCASE("data_layout input 0")
+        {
+            const std::vector<std::string> operators = { "CONCAT", "PAD",       "RESHAPE", "REVERSE", "SLICE",
+                                                         "TILE",   "TRANSPOSE", "GATHER",  "SCATTER" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                    lowest, max, minusMax, one, minusOne, zero, lowest, max,
+                };
+                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expected);
+            }
+        }
     }
 }
 

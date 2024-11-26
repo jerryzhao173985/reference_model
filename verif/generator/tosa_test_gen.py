@@ -4661,7 +4661,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "pad": {
             "op": Op.PAD,
@@ -4684,7 +4684,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "reshape": {
             "op": Op.RESHAPE,
@@ -4704,7 +4704,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "reverse": {
             "op": Op.REVERSE,
@@ -4754,7 +4754,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "tile": {
             "op": Op.TILE,
@@ -4775,7 +4775,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         "transpose": {
             "op": Op.TRANSPOSE,
@@ -4799,7 +4799,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evTensorSizeInputOutputMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
         },
         # Data nodes
         "const": {
@@ -4854,7 +4854,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
                 # gtu.DataGenType.SPECIAL
@@ -4879,7 +4879,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
                 # gtu.DataGenType.SPECIAL

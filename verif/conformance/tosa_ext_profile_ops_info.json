@@ -1745,6 +1745,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -1787,6 +1788,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int32",
@@ -1799,6 +1801,7 @@
                         "1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int32",
@@ -1830,6 +1833,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--target-shape",
@@ -1839,6 +1843,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -5823,6 +5828,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -5860,6 +5866,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -5870,6 +5877,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "int32",
@@ -5879,12 +5887,14 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
                         "1,1,65537,1,2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -5904,6 +5914,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7190,6 +7201,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--target-shape",
@@ -7199,6 +7211,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -7231,6 +7244,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7242,6 +7256,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -7251,6 +7266,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7627,6 +7643,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -7656,6 +7673,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -7663,6 +7681,7 @@
                         "1,65540,1,2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7981,7 +8000,6 @@
                         "64"
                     ],
                     [
-                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -8514,6 +8532,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -8524,6 +8543,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -8556,6 +8576,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -8568,6 +8589,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -8577,6 +8599,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -9139,6 +9162,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -9172,6 +9196,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -9181,6 +9206,7 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "int32",
@@ -9410,15 +9436,6 @@
                     [
                         "--target-dtype",
                         "int8",
-                        "--target-rank",
-                        "1",
-                        "2",
-                        "--num-rand-permutations",
-                        "2"
-                    ],
-                    [
-                        "--target-dtype",
-                        "int8",
                         "int16",
                         "int32",
                         "--target-rank",
@@ -9428,6 +9445,17 @@
                         "2"
                     ],
                     [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "int8",
+                        "--target-rank",
+                        "1",
+                        "2",
+                        "--num-rand-permutations",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -9437,6 +9465,7 @@
                         "1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
