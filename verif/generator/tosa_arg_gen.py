@@ -1765,8 +1765,6 @@ class TosaTensorValuesGen:
     def tvgScatter(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        op = testGen.TOSA_OP_LIST[opName]
-
         K = shapeList[0][1]
         W = shapeList[2][1]
 
@@ -1779,50 +1777,17 @@ class TosaTensorValuesGen:
 
         # Fix the type of the indices tensor
         dtypeList[1] = DType.INT32
+        # Use inclusive values upto index K for indices tensor
+        data_range_list = (
+            {"range": None},
+            {"range": (0, K - 1)},
+            {"range": None},
+        )
+        argsDict["data_range_list"] = data_range_list
 
-        dtype = dtypeList[0]
-        if not gtu.dtypeIsSupportedByDataGen(dtype):
-            # Test unsupported by data generator
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 3 and cCount == 0
-            ), "Op.SCATTER must have 3 placeholders, 0 consts"
-
-            tens_ser_list = []
-            for idx, shape in enumerate(shapeList):
-                dtype = dtypeList[idx]
-                if idx != 1:
-                    arr = rng.randTensor(shape, dtype)
-                    tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
-                else:
-                    # Create the indices array
-                    assert dtype == DType.INT32, "Op.SCATTER unexpected indices type"
-                    arr = []
-                    for n in range(shape[0]):
-                        # Get a shuffled list of output indices (0 to K-1) and
-                        # limit length to W
-                        arr.append(rng.permutation(K)[:W])
-                    indices_arr = np.array(arr, dtype=np.int32)  # (N, W)
-                    # To match old functionality - create indices as CONST
-                    tens_ser_list.append(
-                        testGen.ser.addConst(shape, dtype, indices_arr)
-                    )
-
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-
-        else:
-            # ERROR_IF or floating point test
-            # Use inclusive values upto index K for indices tensor
-            data_range_list = (
-                {"range": None},
-                {"range": (0, K - 1)},
-                {"range": None},
-            )
-            argsDict["data_range_list"] = data_range_list
-
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
 
 class TosaArgGen:
