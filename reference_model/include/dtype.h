@@ -89,7 +89,7 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
 }
 
 // return corresponding TOSA_REF_TYPE for DType
-inline TOSA_REF_TYPE DType2RefType(const DType dtype)
+inline constexpr TOSA_REF_TYPE DType2RefType(const DType dtype)
 {
     switch (dtype)
     {

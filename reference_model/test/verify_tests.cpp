@@ -13,14 +13,12 @@
 //    limitations under the License.
 #include "cfloat.h"
 #include "half.hpp"
-#include "test_utils.h"
 #include "tosa_generated.h"
 #include "verify.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <doctest.h>
 
 #include <array>
 #include <iterator>
@@ -30,6 +28,9 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+
+// Include this last because it redefines REQUIRE
+#include "test_utils.h"
 
 using namespace ct;
 using namespace tosa;

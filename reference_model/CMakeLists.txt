@@ -246,6 +246,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       test/model_runner_tests.cpp
       test/verify_tests.cpp
       test/verify_exe_testing.cpp
+      test/ref_model_tests.cpp
       ${DOCTEST_DIR}/doctest.h
   )
 

@@ -19,11 +19,8 @@
 #include "dtype.h"
 #include "half.hpp"
 
-using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
-using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
-using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
-
-using half = half_float::half;
+using namespace ct;
+using namespace half_float;
 
 namespace TosaReference
 {
@@ -79,46 +76,46 @@ struct DtypeLimits<TOSA_REF_TYPE_FP16>
 template <>
 struct DtypeLimits<TOSA_REF_TYPE_BF16>
 {
-    static constexpr bf16 lowest       = std::numeric_limits<bf16>::lowest();
-    static constexpr bf16 max          = std::numeric_limits<bf16>::max();
-    static constexpr bf16 min          = std::numeric_limits<bf16>::min();
-    static constexpr bf16 denorm_min   = std::numeric_limits<bf16>::denorm_min();
-    static constexpr bf16 infinity     = std::numeric_limits<bf16>::infinity();
-    static constexpr bf16 quiet_NaN    = std::numeric_limits<bf16>::quiet_NaN();
-    static constexpr bf16 low_extreme  = -infinity;
-    static constexpr bf16 high_extreme = infinity;
-    static constexpr bool has_infinity = true;
-    static constexpr bool has_nan      = true;
+    static constexpr bfloat16 lowest       = std::numeric_limits<bfloat16>::lowest();
+    static constexpr bfloat16 max          = std::numeric_limits<bfloat16>::max();
+    static constexpr bfloat16 min          = std::numeric_limits<bfloat16>::min();
+    static constexpr bfloat16 denorm_min   = std::numeric_limits<bfloat16>::denorm_min();
+    static constexpr bfloat16 infinity     = std::numeric_limits<bfloat16>::infinity();
+    static constexpr bfloat16 quiet_NaN    = std::numeric_limits<bfloat16>::quiet_NaN();
+    static constexpr bfloat16 low_extreme  = -infinity;
+    static constexpr bfloat16 high_extreme = infinity;
+    static constexpr bool has_infinity     = true;
+    static constexpr bool has_nan          = true;
 };
 
 template <>
 struct DtypeLimits<TOSA_REF_TYPE_FP8E4M3>
 {
-    static constexpr fp8e4m3 lowest       = std::numeric_limits<fp8e4m3>::lowest();
-    static constexpr fp8e4m3 max          = std::numeric_limits<fp8e4m3>::max();
-    static constexpr fp8e4m3 min          = std::numeric_limits<fp8e4m3>::min();
-    static constexpr fp8e4m3 denorm_min   = std::numeric_limits<fp8e4m3>::denorm_min();
-    static constexpr fp8e4m3 infinity     = std::numeric_limits<fp8e4m3>::infinity();
-    static constexpr fp8e4m3 quiet_NaN    = std::numeric_limits<fp8e4m3>::quiet_NaN();
-    static constexpr fp8e4m3 low_extreme  = lowest;
-    static constexpr fp8e4m3 high_extreme = max;
-    static constexpr bool has_infinity    = false;
-    static constexpr bool has_nan         = true;
+    static constexpr fp8_e4m3 lowest       = std::numeric_limits<fp8_e4m3>::lowest();
+    static constexpr fp8_e4m3 max          = std::numeric_limits<fp8_e4m3>::max();
+    static constexpr fp8_e4m3 min          = std::numeric_limits<fp8_e4m3>::min();
+    static constexpr fp8_e4m3 denorm_min   = std::numeric_limits<fp8_e4m3>::denorm_min();
+    static constexpr fp8_e4m3 infinity     = std::numeric_limits<fp8_e4m3>::infinity();
+    static constexpr fp8_e4m3 quiet_NaN    = std::numeric_limits<fp8_e4m3>::quiet_NaN();
+    static constexpr fp8_e4m3 low_extreme  = lowest;
+    static constexpr fp8_e4m3 high_extreme = max;
+    static constexpr bool has_infinity     = false;
+    static constexpr bool has_nan          = true;
 };
 
 template <>
 struct DtypeLimits<TOSA_REF_TYPE_FP8E5M2>
 {
-    static constexpr fp8e5m2 lowest       = std::numeric_limits<fp8e5m2>::lowest();
-    static constexpr fp8e5m2 max          = std::numeric_limits<fp8e5m2>::max();
-    static constexpr fp8e5m2 min          = std::numeric_limits<fp8e5m2>::min();
-    static constexpr fp8e5m2 denorm_min   = std::numeric_limits<fp8e5m2>::denorm_min();
-    static constexpr fp8e5m2 infinity     = std::numeric_limits<fp8e5m2>::infinity();
-    static constexpr fp8e5m2 quiet_NaN    = std::numeric_limits<fp8e5m2>::quiet_NaN();
-    static constexpr fp8e5m2 low_extreme  = -infinity;
-    static constexpr fp8e5m2 high_extreme = infinity;
-    static constexpr bool has_infinity    = true;
-    static constexpr bool has_nan         = true;
+    static constexpr fp8_e5m2 lowest       = std::numeric_limits<fp8_e5m2>::lowest();
+    static constexpr fp8_e5m2 max          = std::numeric_limits<fp8_e5m2>::max();
+    static constexpr fp8_e5m2 min          = std::numeric_limits<fp8_e5m2>::min();
+    static constexpr fp8_e5m2 denorm_min   = std::numeric_limits<fp8_e5m2>::denorm_min();
+    static constexpr fp8_e5m2 infinity     = std::numeric_limits<fp8_e5m2>::infinity();
+    static constexpr fp8_e5m2 quiet_NaN    = std::numeric_limits<fp8_e5m2>::quiet_NaN();
+    static constexpr fp8_e5m2 low_extreme  = -infinity;
+    static constexpr fp8_e5m2 high_extreme = infinity;
+    static constexpr bool has_infinity     = true;
+    static constexpr bool has_nan          = true;
 };
 
 template <>
