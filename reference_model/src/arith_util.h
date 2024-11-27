@@ -332,22 +332,29 @@ inline bool isIgnoringNan(NanPropagationMode nan_mode)
 template <typename T>
 T compareNan(T a, T b, NanPropagationMode nan_mode)
 {
-    ASSERT_MSG(std::isnan(a) || std::isnan(b), "Call with no NaN operands is illegal");
-    ASSERT_MSG(isPropagatingNan(nan_mode) || isIgnoringNan(nan_mode), "Invalid NaN propagation mode");
-
-    if (isPropagatingNan(nan_mode))
+    constexpr bool is_floating_point = std::is_floating_point<T>::value;
+    if (is_floating_point)
     {
-        return NAN;
+        ASSERT_MSG(std::isnan(a) || std::isnan(b), "Call with no NaN operands is illegal");
+        ASSERT_MSG(isPropagatingNan(nan_mode) || isIgnoringNan(nan_mode), "Invalid NaN propagation mode");
+
+        if (isPropagatingNan(nan_mode))
+        {
+            return NAN;
+        }
+
+        // Non NaN Propagation
+        return std::isnan(a) ? b : a;
     }
 
-    // Non NaN Propagation
-    return std::isnan(a) ? b : a;
+    static_assert(is_floating_point, "Call with integer operands is illegal");
+    return 0;
 }
 
 template <typename T>
 T applyMax(T a, T b, NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
 {
-    if (std::is_floating_point<T>::value)
+    if constexpr (std::is_floating_point<T>::value)
     {
         if (std::isnan(a) || std::isnan(b))
         {
@@ -360,7 +367,7 @@ T applyMax(T a, T b, NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
 template <typename T>
 T applyMin(T a, T b, NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
 {
-    if (std::is_floating_point<T>::value)
+    if constexpr (std::is_floating_point<T>::value)
     {
         if (std::isnan(a) || std::isnan(b))
         {
