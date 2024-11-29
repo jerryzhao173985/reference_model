@@ -4,6 +4,7 @@
 __pycache__/
 build/
 debug-build/
+build-*/
 /conformance/
 conformance_build/
 conformance_large_files/
