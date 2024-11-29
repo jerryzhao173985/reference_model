@@ -16,7 +16,11 @@ cmake_minimum_required (VERSION 3.16)
 
 project(tosa_reference_model LANGUAGES CXX)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/verify verify)
+# The verify directy includes a cmake list that builds the verifier main
+# utility tool only.
+if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE) 
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/verify verify)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

@@ -68,27 +68,6 @@ endif()
 
 include_directories(${BASE_REF_DIR}/reference_model/include)
 
-# Common sources required for verifylibrary, executable and unit tests
-set(CXX_SOURCE
-    ${BASE_REF_DIR}/reference_model/src/func_debug.cc
-    ${BASE_REF_DIR}/reference_model/src/tensor.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_abs_error.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_dot_product.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_entry.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_ulp.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_config.cc
-    ${BASE_REF_DIR}/reference_model/src/generate/generate_utils.cc
-)
-
-set(PUBLIC_INCLUDE_DIRS
-    $<INSTALL_INTERFACE:include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_../../src_DIR}/include>
-)
 set(PRIVATE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
     ${FLATBUFFERS_DIR}/include
@@ -102,16 +81,24 @@ set(PRIVATE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/../../_deps/cxxopts-src/include
 )
 
-
-# Build TOSA Refererence Model executable
-set(CXX_SOURCE_EX ../../src/verify/verify_main.cpp)
-list(APPEND CXX_SOURCE_EX ${CXX_SOURCE})
-
-add_executable(tosa_verify ${CXX_SOURCE_EX})
+add_executable(tosa_verify
+    ${BASE_REF_DIR}/reference_model/src/func_debug.cc
+    ${BASE_REF_DIR}/reference_model/src/tensor.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_abs_error.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_dot_product.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_entry.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_ulp.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cc
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_config.cc
+    ${BASE_REF_DIR}/reference_model/src/generate/generate_utils.cc
+    ../../src/verify/verify_main.cpp
+)
 
 target_include_directories(tosa_verify
-  PUBLIC
-    ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
     ${PRIVATE_INCLUDE_DIRS}
 )
@@ -124,9 +111,3 @@ target_link_libraries(tosa_verify
 )
 
 install(TARGETS tosa_verify DESTINATION bin)
-
-
-
-
-
-
