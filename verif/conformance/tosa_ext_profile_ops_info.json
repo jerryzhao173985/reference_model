@@ -2215,6 +2215,17 @@
                         "--target-shape",
                         "1,1,65537,1,1",
                         "1,65530,1,2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "int16",
+                        "int32",
+                        "bool",
+                        "--tensor-dim-range",
+                        "2,11",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -2312,9 +2323,7 @@
                         "0",
                         "1",
                         "2",
-                        "3",
-                        "--num-rand-permutations",
-                        "2"
+                        "3"
                     ],
                     [
                         "--no-special-tests",
@@ -2326,9 +2335,7 @@
                         "2,20",
                         "--target-rank",
                         "4",
-                        "5",
-                        "--num-rand-permutations",
-                        "2"
+                        "5"
                     ],
                     [
                         "--no-special-tests",
@@ -2339,9 +2346,7 @@
                         "--tensor-dim-range",
                         "1,7",
                         "--target-rank",
-                        "6",
-                        "--num-rand-permutations",
-                        "2"
+                        "6"
                     ]
                 ]
             },
@@ -2363,9 +2368,7 @@
                         "0",
                         "1",
                         "2",
-                        "3",
-                        "--num-rand-permutations",
-                        "2"
+                        "3"
                     ],
                     [
                         "--no-special-tests",
@@ -2377,9 +2380,7 @@
                         "4,15",
                         "--target-rank",
                         "4",
-                        "5",
-                        "--num-rand-permutations",
-                        "2"
+                        "5"
                     ],
                     [
                         "--no-special-tests",
@@ -2390,9 +2391,7 @@
                         "--tensor-dim-range",
                         "2,9",
                         "--target-rank",
-                        "6",
-                        "--num-rand-permutations",
-                        "2"
+                        "6"
                     ]
                 ]
             },
@@ -2419,6 +2418,14 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int48",
+                        "--tensor-dim-range",
+                        "2,9",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -2447,6 +2454,14 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "1,14",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -2533,6 +2548,31 @@
                         "--no-special-tests",
                         "--target-dtype",
                         "int8",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
+            },
+            "tosa-ext-int4": {
+                "supports_all": [
+                    "tosa-ext-int4"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--target-shape",
+                        "2,29,32,8",
+                        "2,15,28,37",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
                         "--tensor-dim-range",
                         "2,5",
                         "--level-8k-sizes"
@@ -2899,6 +2939,31 @@
                     ]
                 ]
             },
+            "tosa-ext-int4": {
+                "supports_all": [
+                    "tosa-ext-int4"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--target-shape",
+                        "3,19,21,3,1",
+                        "2,11,14,7,2",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
+                    ]
+                ]
+            },
             "tosa-ext-int16": {
                 "supports_all": [
                     "tosa-ext-int16"
@@ -3179,6 +3244,31 @@
                         "32,64",
                         "--num-rand-permutations",
                         "2"
+                    ]
+                ]
+            },
+            "tosa-ext-int4": {
+                "supports_all": [
+                    "tosa-ext-int4"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--target-shape",
+                        "2,10,17,5",
+                        "3,9,33,11",
+                        "--tensor-dim-range",
+                        "1,16",
+                        "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
                     ]
                 ]
             },
@@ -4169,9 +4259,10 @@
             "random_const_inputs"
         ],
         "generation": {
-            "tosa-pro-int": {
-                "supports_all": [
-                    "tosa-pro-int"
+            "tosa-pro-int-pro-fp": {
+                "supports_any": [
+                    "tosa-pro-int",
+                    "tosa-pro-fp"
                 ],
                 "no_negative_tests": "true",
                 "generator_args": [
@@ -4207,6 +4298,17 @@
                         "--target-shape",
                         "1,1,65536,1,1",
                         "1,65531,1,2"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int8",
+                        "int16",
+                        "int32",
+                        "bool",
+                        "--tensor-dim-range",
+                        "3,9",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -4290,6 +4392,96 @@
                     ]
                 ]
             },
+            "tosa-ext-fp8e4m3": {
+                "supports_all": [
+                    "tosa-ext-fp8e4m3"
+                ],
+                "no_negative_tests": "true",
+                "from_version": "v0.100.0",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "32,62",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,17",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e4m3",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "1,8",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            },
+            "tosa-ext-fp8e5m2": {
+                "supports_all": [
+                    "tosa-ext-fp8e5m2"
+                ],
+                "no_negative_tests": "true",
+                "from_version": "v0.100.0",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "33,60",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "3,12",
+                        "--target-rank",
+                        "4",
+                        "5"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "fp8e5m2",
+                        "--fp-values-range",
+                        "-max,max",
+                        "--tensor-dim-range",
+                        "2,11",
+                        "--target-rank",
+                        "6"
+                    ]
+                ]
+            },
             "tosa-ext-int16": {
                 "supports_all": [
                     "tosa-ext-int16"
@@ -4315,6 +4507,14 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int48",
+                        "--tensor-dim-range",
+                        "2,10",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             },
@@ -4343,6 +4543,14 @@
                         "--target-rank",
                         "4",
                         "5"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "2,14",
+                        "--target-rank",
+                        "6"
                     ]
                 ]
             }
@@ -9786,6 +9994,31 @@
                         "1,16",
                         "--num-rand-permutations",
                         "2"
+                    ]
+                ]
+            },
+            "tosa-ext-int4": {
+                "supports_all": [
+                    "tosa-ext-int4"
+                ],
+                "no_negative_tests": "true",
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--target-shape",
+                        "2,12,23,3",
+                        "2,18,17,4",
+                        "--tensor-dim-range",
+                        "1,17",
+                        "--allow-pooling-and-conv-oversizes"
+                    ],
+                    [
+                        "--target-dtype",
+                        "int4",
+                        "--tensor-dim-range",
+                        "2,5",
+                        "--level-8k-sizes"
                     ]
                 ]
             },

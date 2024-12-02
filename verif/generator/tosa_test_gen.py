@@ -2959,9 +2959,16 @@ class TosaTestGen:
             cleanDtypeFilter = []
             # Create list of operator dtypes filtered by requested dtypes
             for dtype in dtypes:
-                if dtype in dtypeFilter or (
-                    isinstance(dtype, list) and dtype[0] in dtypeFilter
-                ):
+                if isinstance(dtype, list) or isinstance(dtype, tuple):
+                    # Filter for operations with INT4 as secondary input
+                    if DType.INT4 in dtype:
+                        op_dtype = DType.INT4
+                    else:
+                        op_dtype = dtype[0]
+                else:
+                    op_dtype = dtype
+                if op_dtype in dtypeFilter:
+                    # Add the full dtype from the op
                     cleanDtypeFilter.append(dtype)
         else:
             cleanDtypeFilter = dtypes
@@ -4951,7 +4958,7 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgLazyGenDefault,
                 TosaArgGen.agNone,
             ),
-            "types": TYPE_FIB + [DType.INT4, DType.INT48],
+            "types": TYPE_FIB + [DType.INT4, DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
             "data_gen": PR_FS_DATAGEN,
         },
         # Scatter/Gather
