@@ -103,9 +103,10 @@ int OpClamp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32: {
+            ERROR_IF(std::isnan(min) || std::isnan(max), "OpClamp: min/max cannot be NaN")
             // apply fpTrunc<Dtype> after min/max
-            this->fcn = [min, max, nan_mode](InEigenType a) -> OutEigenType {
-                return fpTrunc<Dtype>(applyClip<InEigenType, InEigenType>(a, min, max, nan_mode));
+            this->fcn = [min, max, this, nan_mode](InEigenType a) -> OutEigenType {
+                return fpTrunc<Dtype>(applyClip<InEigenType, InEigenType>(a, min, max, this->parent_sgt, nan_mode));
             };
         }
         break;
@@ -113,8 +114,8 @@ int OpClamp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_INT8:
         case TOSA_REF_TYPE_INT16: {
             // simply min/max
-            this->fcn = [min, max, nan_mode](InEigenType a) -> OutEigenType {
-                return applyClip<InEigenType, InEigenType>(a, min, max, nan_mode);
+            this->fcn = [min, max, this, nan_mode](InEigenType a) -> OutEigenType {
+                return applyClip<InEigenType, InEigenType>(a, min, max, this->parent_sgt, nan_mode);
             };
         }
         break;

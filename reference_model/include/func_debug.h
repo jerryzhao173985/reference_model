@@ -103,20 +103,24 @@ struct func_debug_t
     }
 #endif
 
-#ifndef REQUIRE
-#define REQUIRE(COND, fmt, ...)                                                                                        \
+#ifndef REQUIRE_SIMPLE
+#define REQUIRE_SIMPLE(sgt, COND, fmt, ...)                                                                            \
     if (!(COND))                                                                                                       \
     {                                                                                                                  \
         fprintf(g_func_debug.func_debug_file, COL_FATAL("REQUIRE() fails AT %s:%d %s(): (%s)\n"), __FILE__, __LINE__,  \
                 __func__, #COND);                                                                                      \
         fprintf(g_func_debug.func_debug_file, COL_FATAL(fmt) "\n", ##__VA_ARGS__);                                     \
-        this->parent_sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                             \
+        sgt->setGraphStatus(GraphStatus::TOSA_UNPREDICTABLE);                                                          \
         if (g_func_config.terminate_early)                                                                             \
         {                                                                                                              \
             fprintf(g_func_debug.func_debug_file, COL_FATAL("Terminated early due to REQUIRE() fails\n"));             \
             exit(0);                                                                                                   \
         }                                                                                                              \
     }
+#endif
+
+#ifndef REQUIRE
+#define REQUIRE(COND, fmt, ...) REQUIRE_SIMPLE(this->parent_sgt, COND, fmt, ##__VA_ARGS__)
 #endif
 
 #ifndef LEVEL_CHECK

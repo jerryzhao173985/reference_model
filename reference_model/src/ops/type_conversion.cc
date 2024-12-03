@@ -336,9 +336,10 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         }
 
                         // Treat the output values as unsigned if `output_unsigned` is true.
-                        int32_t clipped_val = (output_unsigned)
-                                                  ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u)
-                                                  : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s);
+                        int32_t clipped_val =
+                            (output_unsigned)
+                                ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u, this->parent_sgt)
+                                : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s, this->parent_sgt);
 
                         OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
                         return out_val;
@@ -406,8 +407,9 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 }
 
                 // Treat the output values as unsigned if `output_unsigned` is true.
-                int32_t clipped_val = (output_unsigned) ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u)
-                                                        : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s);
+                int32_t clipped_val = (output_unsigned)
+                                          ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u, this->parent_sgt)
+                                          : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s, this->parent_sgt);
 
                 OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
                 return out_val;
