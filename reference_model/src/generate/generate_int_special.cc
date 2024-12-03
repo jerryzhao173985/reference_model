@@ -110,6 +110,12 @@ const TestValues intDivTestVals{
     { FullRangeRndInteger, SValue(SVE::Lowest) },
 };
 
+// Avoid lowest value for int32 as will overflow
+const TestValues absNegateTestVals{
+    { SValue(SVE::Zero) }, { SValue(SVE::Max) },  { -SValue(SVE::Max) },
+    { SValue(SVE::One) },  { -SValue(SVE::One) }, { SValue(SVE::RndSignInteger, SVE::Max, SVE::Max) },
+};
+
 // Maps operators to the operator-specific list of default values for
 // INT_SPECIAL tests.
 const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTestVals },
@@ -126,7 +132,9 @@ const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTe
                                                     { Op_MUL, mulTestVals },
                                                     { Op_INTDIV, intDivTestVals },
                                                     { Op_ADD, addTestVals },
-                                                    { Op_SUB, subTestVals } };
+                                                    { Op_SUB, subTestVals },
+                                                    { Op_ABS, absNegateTestVals },
+                                                    { Op_NEGATE, absNegateTestVals } };
 
 // Values that will be picked up if the Op is not in opTestValues_int and the
 // conformance test does not have a specific SpecialTestSet assigned.

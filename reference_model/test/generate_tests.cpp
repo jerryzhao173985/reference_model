@@ -2067,6 +2067,17 @@ void special_generate_INT(const std::string tosaName,
                 "special_info": {
                     "start_idx": _START_
                 }
+            },
+            "const0": {
+                "generator": "FULL_RANGE",
+                "data_type": "_INT_TYPE_",
+                "input_type": "VARIABLE",
+                "shape" : [ 3, 6, 4 ],
+                "input_pos": 1,
+                "op" : "_OP_",
+                "full_range_info": {
+                    "start_val": _START_
+                }
             }
         }
     })";
@@ -2100,6 +2111,28 @@ void special_test_INT(const std::string tosaName,
         bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
 
         REQUIRE_MESSAGE(withinRange, msg.str());
+    }
+}
+
+template <typename INT_TYPE>
+void full_range_test_INT(const std::string tosaName,
+                         const size_t tosaElements,
+                         const std::string opStr,
+                         const std::string startValueStr,
+                         const INT_TYPE startValue)
+{
+    std::vector<INT_TYPE> buffer(tosaElements);
+    special_generate_INT(tosaName, tosaElements, opStr, startValueStr, "DEFAULT", buffer);
+    // Test all values in the buffer match the expected values repeated
+    INT_TYPE value = startValue;
+    for (size_t idx = 0; idx < buffer.size(); ++idx)
+    {
+        std::stringstream msg;
+        msg << opStr << " index: " << idx << " expected: " << int64_t(value) << ", but got: " << int64_t(buffer[idx]);
+        bool okay = uint64_t(buffer[idx]) == uint64_t(value);
+
+        REQUIRE_MESSAGE(okay, msg.str());
+        value++;
     }
 }
 
@@ -2194,6 +2227,7 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
 {
     const std::string tosaName0 = "input0";
     const std::string tosaName1 = "input1";
+    const std::string tosaName2 = "const0";
     const size_t tosaElements   = 3 * 6 * 4;
 
     const std::pair<INT_TYPE, INT_TYPE> zero{ 0, 0 };
@@ -2295,6 +2329,29 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
                     lowest, zero, zero, max, zero, lowest, random, zero, random, max, random, lowest, zero, zero,
                 };
                 special_test_INT(tosaName1, tosaElements, op, "9", expected);
+            }
+        }
+
+        SUBCASE("default input 0 int32 only")
+        {
+            const std::vector<std::string> operators = { "CLAMP", "BITWISE_NOT", "CLZ" };
+            for (const auto& op : operators)
+            {
+                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expectedDefault);
+            }
+        }
+
+        SUBCASE("negate/abs input 0")
+        {
+            // Range to avoid overflow
+            const std::vector<std::string> operators = { "ABS", "NEGATE" };
+            const std::pair<INT_TYPE, INT_TYPE> randomCapped{ -std::numeric_limits<INT_TYPE>::max(),
+                                                              std::numeric_limits<INT_TYPE>::max() };
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max,          minusMax, one, minusOne,
+                                                                          randomCapped, zero,     max };
+            for (const auto& op : operators)
+            {
+                special_test_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", expected);
             }
         }
     }
@@ -2412,11 +2469,6 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
             }
         }
 
-        SUBCASE("clamp input 0")
-        {
-            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "CLAMP", "1", expectedDefault);
-        }
-
         SUBCASE("test set all zeroes")
         {
             const std::vector<std::string> operators = { "CONV2D", "CONV3D", "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D",
@@ -2457,6 +2509,19 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { smallValues };
                 special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_SMALL_VALUES", expected);
+            }
+        }
+    }
+
+    // Tests available for int16 and int8
+    if constexpr (std::is_same_v<INT_TYPE, int16_t> || std::is_same_v<INT_TYPE, int8_t>)
+    {
+        SUBCASE("unary full range const 0")
+        {
+            const std::vector<std::string> operators = { "ABS", "BITWISE_NOT", "NEGATE" };
+            for (const auto& op : operators)
+            {
+                full_range_test_INT<INT_TYPE>(tosaName2, tosaElements, op, "5", 5);
             }
         }
     }

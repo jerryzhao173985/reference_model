@@ -3462,6 +3462,10 @@ class TosaTestGen:
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
+        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
+        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
+        DType.BOOL: (gtu.DataGenType.PSEUDO_RANDOM,),
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
@@ -4301,7 +4305,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgAbsNegate,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
@@ -4329,6 +4333,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "ceil": {
             "op": Op.CEIL,
@@ -4365,6 +4370,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "cos": {
             "op": Op.COS,
@@ -4459,6 +4465,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": EW_UNARY_DATAGEN,
         },
         "negate": {
             "op": Op.NEGATE,
@@ -4466,7 +4473,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgNegate,
+                TosaTensorValuesGen.tvgAbsNegate,
                 TosaArgGen.agNone,
             ),
             "qgen": TosaQuantGen.qgUnary,

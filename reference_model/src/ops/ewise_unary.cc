@@ -85,8 +85,15 @@ int OpAbs<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_FP32:    // No fpTrunc for FP32 as it is a no-op
         case TOSA_REF_TYPE_FP64:
-        case TOSA_REF_TYPE_INT32:
             this->fcn = [](InEigenType a) -> OutEigenType { return a > (InEigenType)0 ? a : (-a); };
+            break;
+        case TOSA_REF_TYPE_INT32:
+            this->fcn = [this](InEigenType a) -> OutEigenType {
+                int64_t res_in_64     = a > (InEigenType)0 ? a : -static_cast<int64_t>(a);
+                int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+                REQUIRE(res_in_64 <= i32_max_in_64, "OpAbs: result not in acc type range (int32)");
+                return static_cast<OutEigenType>(res_in_64);
+            };
             break;
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:

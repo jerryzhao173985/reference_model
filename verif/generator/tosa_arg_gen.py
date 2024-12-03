@@ -1018,34 +1018,28 @@ class TosaTensorValuesGen:
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
 
+    # The lowest value will overflow for abs/negate int32.
+    # Other integer types for negate will have their values clipped.
+    TVG_LOW_VALUE_ABS_NEGATE = {
+        DType.INT32: -(1 << 31) + 1,
+    }
+
     @staticmethod
-    def tvgNegate(
+    def tvgAbsNegate(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        if dtypeList[0] == DType.INT32 and error_name is None:
-            # Integer test
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 1 and cCount == 0
-            ), "Op.NEGATE must have 1 placeholders, 0 consts"
-            # Must create tensors with values within accumulator (int32) negatable
-            # range
-            max_val = (1 << 31) - 1
-            min_val = -max_val
-            arr = rng.randTensor(
-                shapeList[0], dtypeList[0], data_range=(min_val, (max_val + 1))
-            )
-            tens_ser_list = []
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtypeList[0], arr)
-            )
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-        else:
-            # ERROR_IF or floating point test
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+        dtype = dtypeList[0]
+        data_range = TosaTensorValuesGen._get_data_range(
+            rng,
+            dtype,
+            TosaTensorValuesGen.TVG_HIGH_VALUE,
+            TosaTensorValuesGen.TVG_LOW_VALUE_ABS_NEGATE,
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     # Set the ADD/SUB data range to half the largest value to avoid infinities
     TVG_HIGH_VALUE_ADDSUB = {
