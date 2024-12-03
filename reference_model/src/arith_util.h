@@ -37,6 +37,7 @@
 #include "half.hpp"
 #include "inttypes.h"
 #include "ops/template_types.h"
+#include "subgraph_traverser.h"
 #include <bitset>
 #include <cassert>
 #include <limits>
@@ -379,12 +380,17 @@ T applyMin(T a, T b, NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
 
 // Clip the input value of type T into the range [min, max] of type U, and return the result as type T.
 template <typename T, typename U>
-T applyClip(T value, U min_val, U max_val, NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
+T applyClip(T value,
+            U min_val,
+            U max_val,
+            TosaReference::SubgraphTraverser* sgt,
+            NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
 {
-    assert(min_val <= max_val);
+    assert(sgt != nullptr);
     assert(sizeof(T) == sizeof(U));
+    REQUIRE_SIMPLE(sgt, min_val <= max_val, "min_val is greater than max_val");
     if (std::is_floating_point<U>::value)
-        ASSERT_MSG(!(std::isnan(min_val) || std::isnan(max_val)), "Operand min and max cannot be NaN");
+        REQUIRE_SIMPLE(sgt, !(std::isnan(min_val) || std::isnan(max_val)), "Operand min and max cannot be NaN");
 
     value = applyMax<T>(value, min_val, nan_mode);
 
