@@ -85,6 +85,16 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
             zeroSubnorm(outData, elements);
             break;
         }
+        case DType::DType_INT8: {
+            uint8_t* outBinaryData = reinterpret_cast<uint8_t*>(data);
+            generateBinaryValues(cfg, outBinaryData, elements);
+            break;
+        }
+        case DType::DType_INT16: {
+            uint16_t* outBinaryData = reinterpret_cast<uint16_t*>(data);
+            generateBinaryValues(cfg, outBinaryData, elements);
+            break;
+        }
         default:
             WARNING("[Generator][FR] Unsupported type.");
             return false;
