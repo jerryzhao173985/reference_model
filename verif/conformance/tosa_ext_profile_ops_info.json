@@ -6608,6 +6608,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--target-shape",
@@ -6625,6 +6626,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -6665,6 +6667,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--target-shape",
@@ -6681,6 +6684,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "bool",
                         "--tensor-dim-range",
@@ -6723,6 +6727,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -6739,6 +6744,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -6879,6 +6885,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -6895,6 +6902,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7141,6 +7149,7 @@
                         "4"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--target-shape",
@@ -7157,6 +7166,7 @@
                 "no_negative_tests": "true",
                 "generator_args": [
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int32",
                         "--tensor-dim-range",

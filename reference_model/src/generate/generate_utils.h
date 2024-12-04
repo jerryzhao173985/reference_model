@@ -56,7 +56,11 @@ enum class SpecialTestSet
     AllMaxValues,
     AllLowestValues,
     AllZeroes,
-    AllSmallValues
+    AllSmallValues,
+    FirstMaxThenZeroes,
+    FirstLowestThenZeroes,
+    FirstMaxThenMinusOnes,
+    FirstLowestThenPlusOnes
 };
 
 /// \brief Dot-product generator meta-data

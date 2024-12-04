@@ -67,6 +67,10 @@ class SpecialTestSet(IntEnum):
     ALL_LOWEST_VALUES = 3
     ALL_ZEROES = 4
     ALL_SMALL_VALUES = 5
+    FIRST_MAX_THEN_ZEROES = 6
+    FIRST_LOWEST_THEN_ZEROES = 7
+    FIRST_MAX_THEN_MINUS_ONES = 8
+    FIRST_LOWEST_THEN_PLUS_ONES = 9
 
 
 def dtypeWidth(dtype):

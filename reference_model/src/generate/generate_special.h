@@ -30,6 +30,12 @@ namespace TosaReference
 /// \return True on successful generation
 bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size);
 
+enum class SpecialTestSetMode
+{
+    REPEAT_ALL_VALUES,
+    REPEAT_LAST_VALUE,
+};
+
 /// \brief Configures how to generate special values
 ///
 /// There will be one for floating point datatypes and a different one for
@@ -37,7 +43,7 @@ struct SpecialGenProfile
 {
     std::map<Op, TestValues> opValues;
     TestValues defaultValues;
-    std::map<SpecialTestSet, TestValues> specialValues;
+    std::map<SpecialTestSet, std::pair<TestValues, SpecialTestSetMode>> specialValues;
 };
 
 enum class SpecialConfig

@@ -2035,13 +2035,13 @@ TEST_CASE("positive - FP16 FP Special")
     }
 }
 
-template <typename INT_TYPE>
+template <typename INT_TYPE, typename StorageType>
 void special_generate_INT(const std::string tosaName,
                           const size_t tosaElements,
                           const std::string opStr,
                           const std::string startIndexStr,
                           const std::string testSetStr,
-                          std::vector<INT_TYPE>& buffer)
+                          std::vector<StorageType>& buffer)
 {
     std::string jsonCfg = R"({
         "tensors" : {
@@ -2090,8 +2090,32 @@ void special_generate_INT(const std::string tosaName,
     update_json_template(jsonCfg, "_INT_TYPE_", EnumNameDType(dtype));
     update_json_template(jsonCfg, "_TEST_SET_", testSetStr);
 
-    REQUIRE(
-        tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * sizeof(INT_TYPE)));
+    size_t bytes = tosaElements * sizeof(INT_TYPE);
+
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), bytes));
+}
+
+template <typename INT_TYPE, typename StorageType>
+void special_check_expected_INT(const std::vector<StorageType>& buffer,
+                                const std::vector<std::pair<INT_TYPE, INT_TYPE>>& expected,
+                                const std::string opStr,
+                                const bool repeatExpected)
+{
+    for (size_t idx = 0; idx < buffer.size(); ++idx)
+    {
+        size_t exidx = idx % expected.size();
+        std::stringstream msg;
+        msg << opStr << " index buffer/expected: " << idx << " / " << exidx
+            << " expected between: " << int64_t(expected[exidx].first) << " and: " << int64_t(expected[exidx].second)
+            << ", but got: " << int64_t(buffer[idx]);
+        bool withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
+
+        REQUIRE_MESSAGE(withinRange, msg.str());
+
+        // Have all expected values been checked if not repeated across whole buffer
+        if (!repeatExpected && (exidx + 1 == expected.size()))
+            break;
+    }
 }
 
 template <typename INT_TYPE>
@@ -2102,16 +2126,9 @@ void special_test_INT(const std::string tosaName,
                       const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
 {
     std::vector<INT_TYPE> buffer(tosaElements);
-    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, "DEFAULT", buffer);
-    for (size_t idx = 0; idx < expected.size(); ++idx)
-    {
-        std::stringstream msg;
-        msg << opStr << " index: " << idx << " expected between: " << int64_t(expected[idx].first)
-            << " and: " << int64_t(expected[idx].second) << ", but got: " << int64_t(buffer[idx]);
-        bool withinRange = buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second;
-
-        REQUIRE_MESSAGE(withinRange, msg.str());
-    }
+    special_generate_INT<INT_TYPE, INT_TYPE>(tosaName, tosaElements, opStr, startIndexStr, "DEFAULT", buffer);
+    // Check a single set of expected values is present in the buffer
+    special_check_expected_INT(buffer, expected, opStr, false);
 }
 
 template <typename INT_TYPE>
@@ -2122,7 +2139,7 @@ void full_range_test_INT(const std::string tosaName,
                          const INT_TYPE startValue)
 {
     std::vector<INT_TYPE> buffer(tosaElements);
-    special_generate_INT(tosaName, tosaElements, opStr, startValueStr, "DEFAULT", buffer);
+    special_generate_INT<INT_TYPE, INT_TYPE>(tosaName, tosaElements, opStr, startValueStr, "DEFAULT", buffer);
     // Test all values in the buffer match the expected values repeated
     INT_TYPE value = startValue;
     for (size_t idx = 0; idx < buffer.size(); ++idx)
@@ -2145,18 +2162,24 @@ void special_test_set_INT(const std::string tosaName,
                           const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected)
 {
     std::vector<INT_TYPE> buffer(tosaElements);
-    special_generate_INT(tosaName, tosaElements, opStr, startIndexStr, testSetStr, buffer);
+    special_generate_INT<INT_TYPE, INT_TYPE>(tosaName, tosaElements, opStr, startIndexStr, testSetStr, buffer);
     // Test all values in the buffer match the expected values repeated
-    for (size_t idx = 0; idx < buffer.size(); ++idx)
-    {
-        size_t exidx = idx % expected.size();
-        std::stringstream msg;
-        msg << opStr << exidx << " index: " << idx << " expected between: " << int64_t(expected[exidx].first)
-            << " and: " << int64_t(expected[exidx].second) << ", but got: " << int64_t(buffer[idx]);
-        bool withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
+    special_check_expected_INT(buffer, expected, opStr, true);
+}
 
-        REQUIRE_MESSAGE(withinRange, msg.str());
-    }
+// Special case for vector of bool that is packed in C, so use int8 for the buffer
+template <>
+void special_test_set_INT<bool>(const std::string tosaName,
+                                const size_t tosaElements,
+                                const std::string opStr,
+                                const std::string startIndexStr,
+                                const std::string testSetStr,
+                                const std::vector<std::pair<bool, bool>> expected)
+{
+    std::vector<int8_t> buffer(tosaElements);
+    special_generate_INT<bool, int8_t>(tosaName, tosaElements, opStr, startIndexStr, testSetStr, buffer);
+    // Test all values in the buffer match the expected values repeated
+    special_check_expected_INT(buffer, expected, opStr, true);
 }
 
 template <typename INT_TYPE>
@@ -2167,11 +2190,11 @@ void special_binary_coverage_INT(const size_t tosaElements, const Op op)
 
     // Generate values in first input
     std::vector<INT_TYPE> input0(tosaElements);
-    special_generate_INT(tosaName0, tosaElements, EnumNameOp(op), "0", "DEFAULT", input0);
+    special_generate_INT<INT_TYPE, INT_TYPE>(tosaName0, tosaElements, EnumNameOp(op), "0", "DEFAULT", input0);
 
     // Generate values in second input
     std::vector<INT_TYPE> input1(tosaElements);
-    special_generate_INT(tosaName1, tosaElements, EnumNameOp(op), "0", "DEFAULT", input1);
+    special_generate_INT<INT_TYPE, INT_TYPE>(tosaName1, tosaElements, EnumNameOp(op), "0", "DEFAULT", input1);
 
     bool hasMax    = false;
     bool hasLowest = false;
@@ -2223,7 +2246,7 @@ void special_binary_coverage_INT(const size_t tosaElements, const Op op)
     CHECK(hasZero);
 }
 
-TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
+TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, int32_t)
 {
     const std::string tosaName0 = "input0";
     const std::string tosaName1 = "input1";
@@ -2471,8 +2494,8 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
 
         SUBCASE("test set all zeroes")
         {
-            const std::vector<std::string> operators = { "CONV2D", "CONV3D", "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D",
-                                                         "MATMUL" };
+            const std::vector<std::string> operators = { "CONV2D",           "CONV3D", "DEPTHWISE_CONV2D",
+                                                         "TRANSPOSE_CONV2D", "MATMUL", "REDUCE_SUM" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero };
@@ -2482,8 +2505,10 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
 
         SUBCASE("test set all max values")
         {
-            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D", "CONV3D",     "DEPTHWISE_CONV2D",
-                                                         "TRANSPOSE_CONV2D", "MATMUL", "AVG_POOL2D", "MAX_POOL2D" };
+            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D",           "CONV3D",
+                                                         "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D", "MATMUL",
+                                                         "AVG_POOL2D",       "MAX_POOL2D",       "REDUCE_MIN",
+                                                         "REDUCE_MAX" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max };
@@ -2493,8 +2518,8 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
 
         SUBCASE("test set all lowest values")
         {
-            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D",     "CONV3D",
-                                                         "DEPTHWISE_CONV2D", "AVG_POOL2D", "MAX_POOL2D" };
+            const std::vector<std::string> operators = { "ARGMAX",     "CONV2D",     "CONV3D",     "DEPTHWISE_CONV2D",
+                                                         "AVG_POOL2D", "MAX_POOL2D", "REDUCE_MIN", "REDUCE_MAX" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { lowest };
@@ -2509,6 +2534,106 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, int8_t, int16_t, int32_t)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { smallValues };
                 special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_SMALL_VALUES", expected);
+            }
+        }
+
+        SUBCASE("test set first max then all zeroes")
+        {
+            const std::vector<std::string> operators = { "REDUCE_SUM" };
+            for (const auto& op : operators)
+            {
+                const size_t startIdx = 7;
+                std::vector<std::pair<INT_TYPE, INT_TYPE>> expected;
+                for (size_t element = 0; element < tosaElements; ++element)
+                {
+                    if (element == startIdx)
+                        expected.push_back(max);
+                    else
+                        expected.push_back(zero);
+                }
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, std::to_string(startIdx),
+                                               "FIRST_MAX_THEN_ZEROES", expected);
+            }
+        }
+
+        SUBCASE("test set first min then all zeroes")
+        {
+            const std::vector<std::string> operators = { "REDUCE_SUM" };
+            for (const auto& op : operators)
+            {
+                const size_t startIdx = 7;
+                std::vector<std::pair<INT_TYPE, INT_TYPE>> expected;
+                for (size_t element = 0; element < tosaElements; ++element)
+                {
+                    if (element == startIdx)
+                        expected.push_back(lowest);
+                    else
+                        expected.push_back(zero);
+                }
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, std::to_string(startIdx),
+                                               "FIRST_LOWEST_THEN_ZEROES", expected);
+            }
+        }
+
+        SUBCASE("test set first max then all minus ones")
+        {
+            const std::vector<std::string> operators = { "REDUCE_SUM" };
+            for (const auto& op : operators)
+            {
+                const size_t startIdx = 7;
+                std::vector<std::pair<INT_TYPE, INT_TYPE>> expected;
+                for (size_t element = 0; element < tosaElements; ++element)
+                {
+                    if (element == startIdx)
+                        expected.push_back(max);
+                    else
+                        expected.push_back(minusOne);
+                }
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, std::to_string(startIdx),
+                                               "FIRST_MAX_THEN_MINUS_ONES", expected);
+            }
+        }
+
+        SUBCASE("test set first min then all plus ones")
+        {
+            const std::vector<std::string> operators = { "REDUCE_SUM" };
+            for (const auto& op : operators)
+            {
+                const size_t startIdx = 7;
+                std::vector<std::pair<INT_TYPE, INT_TYPE>> expected;
+                for (size_t element = 0; element < tosaElements; ++element)
+                {
+                    if (element == startIdx)
+                        expected.push_back(lowest);
+                    else
+                        expected.push_back(one);
+                }
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, std::to_string(startIdx),
+                                               "FIRST_LOWEST_THEN_PLUS_ONES", expected);
+            }
+        }
+    }
+
+    // Tests available for int16 and int8
+    if constexpr (std::is_same_v<INT_TYPE, bool>)
+    {
+        SUBCASE("test set all zeroes - bool")
+        {
+            const std::vector<std::string> operators = { "REDUCE_ANY", "REDUCE_ALL" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_ZEROES", expected);
+            }
+        }
+
+        SUBCASE("test set all max values - bool")
+        {
+            const std::vector<std::string> operators = { "REDUCE_ANY", "REDUCE_ALL" };
+            for (const auto& op : operators)
+            {
+                const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max };
+                special_test_set_INT<INT_TYPE>(tosaName0, tosaElements, op, "1", "ALL_MAX_VALUES", expected);
             }
         }
     }
