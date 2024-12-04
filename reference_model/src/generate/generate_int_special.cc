@@ -144,17 +144,25 @@ const TestValues defaultTestValues_int{
 };
 
 // Single value test sets
-const TestValues allMaxValues    = { { SValue(SVE::Max) } };
-const TestValues allLowestValues = { { SValue(SVE::Lowest) } };
-const TestValues allZeroes       = { { SValue(SVE::Zero) } };
-const TestValues allSmallValues  = { { SValue(SVE::RndSignInteger, SVE::Two, SVE::Two) } };
+const TestValues allMaxValues           = { { SValue(SVE::Max) } };
+const TestValues allLowestValues        = { { SValue(SVE::Lowest) } };
+const TestValues allZeroes              = { { SValue(SVE::Zero) } };
+const TestValues allSmallValues         = { { SValue(SVE::RndSignInteger, SVE::Two, SVE::Two) } };
+const TestValues firstMaxThenZero       = { { SValue(SVE::Max) }, { SValue(SVE::Zero) } };
+const TestValues firstLowestThenZero    = { { SValue(SVE::Lowest) }, { SValue(SVE::Zero) } };
+const TestValues firstMaxThenMinusOne   = { { SValue(SVE::Max) }, { -SValue(SVE::One) } };
+const TestValues firstLowestThenPlusOne = { { SValue(SVE::Lowest) }, { SValue(SVE::One) } };
 
 // Maps SpecialTestSets to the list of values to be used for that test.
-const std::map<SpecialTestSet, TestValues> specialTestValues_int = {
-    { SpecialTestSet::AllMaxValues, allMaxValues },
-    { SpecialTestSet::AllLowestValues, allLowestValues },
-    { SpecialTestSet::AllZeroes, allZeroes },
-    { SpecialTestSet::AllSmallValues, allSmallValues }
+const std::map<SpecialTestSet, std::pair<TestValues, SpecialTestSetMode>> specialTestValues_int = {
+    { SpecialTestSet::AllMaxValues, { allMaxValues, SpecialTestSetMode::REPEAT_ALL_VALUES } },
+    { SpecialTestSet::AllLowestValues, { allLowestValues, SpecialTestSetMode::REPEAT_ALL_VALUES } },
+    { SpecialTestSet::AllZeroes, { allZeroes, SpecialTestSetMode::REPEAT_ALL_VALUES } },
+    { SpecialTestSet::AllSmallValues, { allSmallValues, SpecialTestSetMode::REPEAT_ALL_VALUES } },
+    { SpecialTestSet::FirstMaxThenZeroes, { firstMaxThenZero, SpecialTestSetMode::REPEAT_LAST_VALUE } },
+    { SpecialTestSet::FirstLowestThenZeroes, { firstLowestThenZero, SpecialTestSetMode::REPEAT_LAST_VALUE } },
+    { SpecialTestSet::FirstMaxThenMinusOnes, { firstMaxThenMinusOne, SpecialTestSetMode::REPEAT_LAST_VALUE } },
+    { SpecialTestSet::FirstLowestThenPlusOnes, { firstLowestThenPlusOne, SpecialTestSetMode::REPEAT_LAST_VALUE } },
 };
 
 }    // namespace

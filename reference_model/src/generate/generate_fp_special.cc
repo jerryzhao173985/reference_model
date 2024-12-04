@@ -172,7 +172,9 @@ const TestValues defaultTestValues_fp{ { SValue(SVE::Zero) },       { -SValue(SV
                                        { SValue(SVE::NaN) } };
 
 // Maps SpecialTestSets to the list of values to be used for that test.
-const std::map<SpecialTestSet, TestValues> specialTestValues_fp = { { SpecialTestSet::CastFpToInt, castFpToInt } };
+const std::map<SpecialTestSet, std::pair<TestValues, SpecialTestSetMode>> specialTestValues_fp = {
+    { SpecialTestSet::CastFpToInt, { castFpToInt, SpecialTestSetMode::REPEAT_ALL_VALUES } }
+};
 
 }    // namespace
 

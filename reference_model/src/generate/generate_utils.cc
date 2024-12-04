@@ -139,6 +139,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SpecialTestSet,
                                  { SpecialTestSet::AllLowestValues, "ALL_LOWEST_VALUES" },
                                  { SpecialTestSet::AllZeroes, "ALL_ZEROES" },
                                  { SpecialTestSet::AllSmallValues, "ALL_SMALL_VALUES" },
+                                 { SpecialTestSet::FirstMaxThenZeroes, "FIRST_MAX_THEN_ZEROES" },
+                                 { SpecialTestSet::FirstLowestThenZeroes, "FIRST_LOWEST_THEN_ZEROES" },
+                                 { SpecialTestSet::FirstMaxThenMinusOnes, "FIRST_MAX_THEN_MINUS_ONES" },
+                                 { SpecialTestSet::FirstLowestThenPlusOnes, "FIRST_LOWEST_THEN_PLUS_ONES" },
                              })
 
 // NOTE: This assumes it's VARIABLE if the InputType is not recognized

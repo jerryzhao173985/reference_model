@@ -1415,43 +1415,21 @@ class TosaTensorValuesGen:
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         dtype = dtypeList[0]
-        if dtype == DType.INT32:
-            op = testGen.TOSA_OP_LIST[opName]
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 1 and cCount == 0
-            ), "Op.REDUCE_SUM must have 1 placeholders, 0 consts"
-            # Limit values so that the sum cannot exceed the range of an int32 during
-            # summation of any axis
-            range_val = int((1 << 31) / max(shapeList[0]))
-            values_arr = rng.randTensor(
-                shapeList[0], dtype, data_range=(-range_val, range_val)
-            )
-            tens_ser_list = []
-            tens_ser_list.append(
-                testGen.ser.addPlaceholder(shapeList[0], dtype, values_arr)
-            )
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-        else:
-            # ERROR_IF or dot product floating point test
-            if (
-                error_name is None
-                and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT
-            ):
-                # Limit ranges for (non error & non compliance) tests by using
-                # values that can be summed on any axis to not hit infinity
-                highval_lookup = {
-                    dtype: TosaTensorValuesGen.TVG_HIGH_VALUE[dtype] / max(shapeList[0])
-                }
-                data_range = TosaTensorValuesGen._get_data_range(
-                    rng, dtype, highval_lookup
-                )
-                assert data_range is not None
-                argsDict["data_range"] = data_range
 
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+        # Not an ERROR_IF or  dot product floating point test
+        if error_name is None and argsDict["dg_type"] != gtu.ComplianceMode.DOT_PRODUCT:
+            # Limit ranges for (non error & non compliance) tests by using
+            # values that can be summed on any axis to not hit infinity
+            highval_lookup = {
+                dtype: TosaTensorValuesGen.TVG_HIGH_VALUE[dtype] / max(shapeList[0])
+            }
+            data_range = TosaTensorValuesGen._get_data_range(rng, dtype, highval_lookup)
+            assert data_range is not None
+            argsDict["data_range"] = data_range
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgReduceProduct(

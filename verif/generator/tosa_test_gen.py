@@ -3465,6 +3465,9 @@ class TosaTestGen:
         DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
         DType.BOOL: (gtu.DataGenType.PSEUDO_RANDOM,),
     }
+    REDUCE_BOOL_DATAGEN = {
+        DType.BOOL: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+    }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
@@ -3495,6 +3498,7 @@ class TosaTestGen:
         DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
         DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
         DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
         DType.INT4: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
@@ -3507,6 +3511,7 @@ class TosaTestGen:
     )
 
     STS_MAX_LOWEST = {
+        DType.INT32: SPECIAL_TEST_SETS_INT_MAX_LOWEST,
         DType.INT16: SPECIAL_TEST_SETS_INT_MAX_LOWEST,
         DType.INT8: SPECIAL_TEST_SETS_INT_MAX_LOWEST,
     }
@@ -3559,6 +3564,29 @@ class TosaTestGen:
     STS_MATMUL = {
         DType.INT16: SPECIAL_TEST_SETS_INT_MATMUL,
         DType.INT8: SPECIAL_TEST_SETS_INT_MATMUL,
+    }
+
+    SPECIAL_TEST_SETS_BOOL = (
+        # All False
+        (gtu.SpecialTestSet.ALL_ZEROES,),
+        # All True
+        (gtu.SpecialTestSet.ALL_MAX_VALUES,),
+    )
+
+    STS_REDUCE_BOOL = {
+        DType.BOOL: SPECIAL_TEST_SETS_BOOL,
+    }
+
+    SPECIAL_TEST_SETS_REDUCE_SUM = (
+        (gtu.SpecialTestSet.ALL_ZEROES,),
+        (gtu.SpecialTestSet.FIRST_MAX_THEN_ZEROES,),
+        (gtu.SpecialTestSet.FIRST_LOWEST_THEN_ZEROES,),
+        (gtu.SpecialTestSet.FIRST_MAX_THEN_MINUS_ONES,),
+        (gtu.SpecialTestSet.FIRST_LOWEST_THEN_PLUS_ONES,),
+    )
+
+    STS_REDUCE_SUM = {
+        DType.INT32: SPECIAL_TEST_SETS_REDUCE_SUM,
     }
 
     # Tensor operator list
@@ -4672,6 +4700,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": REDUCE_BOOL_DATAGEN,
+            "special_test_sets": STS_REDUCE_BOOL,
         },
         "reduce_any": {
             "op": Op.REDUCE_ANY,
@@ -4693,6 +4723,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": REDUCE_BOOL_DATAGEN,
+            "special_test_sets": STS_REDUCE_BOOL,
         },
         "reduce_max": {
             "op": Op.REDUCE_MAX,
@@ -4714,7 +4746,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
+            "special_test_sets": STS_MAX_LOWEST,
         },
         "reduce_min": {
             "op": Op.REDUCE_MIN,
@@ -4736,7 +4769,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
+            "special_test_sets": STS_MAX_LOWEST,
         },
         "reduce_product": {
             "op": Op.REDUCE_PRODUCT,
@@ -4780,7 +4814,8 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": DP_FS_DATAGEN,
+            "data_gen": DP_FS_IS_DATAGEN,
+            "special_test_sets": STS_REDUCE_SUM,
         },
         # Data layout operators
         "concat": {

@@ -34,6 +34,8 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
     const auto& specialVals = specialGen.specialValues;
     const auto& opTestVals  = specialGen.opValues;
     TestValues vals         = specialGen.defaultValues;
+    // Default mode is to repeat all values in the test values set
+    SpecialTestSetMode mode = SpecialTestSetMode::REPEAT_ALL_VALUES;
 
     size_t inputIndex = 0;
 
@@ -42,7 +44,8 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
         // Use a SpecialTestSet if present in the configuration.
         if (specialVals.find(fsinfo.specialTestSet) != specialVals.end())
         {
-            vals = specialVals.at(fsinfo.specialTestSet);
+            vals = specialVals.at(fsinfo.specialTestSet).first;
+            mode = specialVals.at(fsinfo.specialTestSet).second;
         }
         else
         {
@@ -60,10 +63,30 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
 
     auto rng     = RandomGen<DataType>(fsinfo.rngSeed);
     const auto T = numElementsFromShape(cfg.shape);
-    for (auto t = 0; t < T; ++t)
+    // Make sure start index is within the number of elements
+    // for modes like repeat last value
+    startIndex %= T;
+    for (int64_t t = 0; t < T; ++t)
     {
-        int valsIndex = (t + startIndex) % vals.size();
-        auto value    = vals[valsIndex].at(inputIndex).evaluate<TosaRefType, DataType>(rng);
+        int64_t valsIndex;
+        switch (mode)
+        {
+            case SpecialTestSetMode::REPEAT_LAST_VALUE:
+                // Repeat the last value in the test set
+                valsIndex = t - startIndex;
+                if (valsIndex < 0 || valsIndex >= static_cast<int64_t>(vals.size()))
+                    valsIndex = vals.size() - 1;
+                break;
+            case SpecialTestSetMode::REPEAT_ALL_VALUES:
+                // Repeat all the values in the test set
+                valsIndex = (t + startIndex) % vals.size();
+                break;
+            default:
+                ASSERT_MSG(false, "Unknown test set repeat mode");
+                valsIndex = 0;
+                break;
+        }
+        auto value = vals[valsIndex].at(inputIndex).evaluate<TosaRefType, DataType>(rng);
         if constexpr (std::is_integral<StorageType>())
         {
             // Support for packed formats like INT4 & INT48
@@ -146,6 +169,11 @@ bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size)
             uint16_t* outData = reinterpret_cast<uint16_t*>(data);
             return generate<uint16_t, uint16_t, TOSA_REF_TYPE_UINT16>(cfg, outData, size,
                                                                       getSpecialConfig<SpecialConfig::INT>());
+        }
+        case DType::DType_BOOL: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return generate<int8_t, int8_t, TOSA_REF_TYPE_BOOL>(cfg, outData, size,
+                                                                getSpecialConfig<SpecialConfig::INT>());
         }
         default:
             WARNING("[Generator][S] Unsupported type %d.", cfg.dataType);
