@@ -4568,7 +4568,7 @@ class TosaTestGen:
                 TosaErrorValidator.evDimensionMismatch,
                 TosaErrorValidator.evBroadcastShapesMismatch,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The first input i.e. "Input selector tensor" can't cope with
                 # gtu.DataGenType.SPECIAL
