@@ -20,8 +20,6 @@ Each operator entry contains:
     * lazy_data_gen - data generation just before test run
     * stable_random_gen - more stable method of generation of tests
     * random_const_inputs - random choice of const or input tensor per op
-    * generator_profile_filter - pass the profile and extension
-    info to the test builder to use them as filtering
 * "generation" - dictionary of test generation details - see below
 * "selection" - dictionary of test selection details - see below
 

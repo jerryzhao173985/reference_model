@@ -95,6 +95,9 @@ class Test:
     def isError(self):
         return self.error is not None
 
+    def isSpecialTest(self):
+        return gtu.isSpecialTest(self.argsDict["td_type"])
+
 
 def _get_selection_info_from_op(op, selectionCriteria, item, default):
     # Get selection info from the op
@@ -168,6 +171,7 @@ class TestOpList:
         )
 
         self.tests = []
+        self.special_tests = []
         self.testStrings = set()
         self.shapes = set()
 
@@ -188,28 +192,36 @@ class TestOpList:
             logger.debug(f"Skipping duplicate test: {str(test)}")
             return
 
-        self.tests.append(test)
         self.testStrings.add(str(test))
-
         self.shapes.add(test.getArg("shape"))
 
-        # Work out the permutation key for this test
-        permute = test.setKey(self.permuteArgs)
-        # Set up the group key for the test (for pulling out groups during selection)
-        test.setGroupKey(self.groupArgs)
+        # We create two tests lists:
+        # 1) all the special tests that will always be selected
+        # 2) all the other tests that are permuted and selected via the criteria
+        if test.isSpecialTest():
+            # Special test we keep to one side from the normal list of tests
+            self.special_tests.append(test)
+        else:
+            # Normal test list
+            self.tests.append(test)
 
-        if permute not in self.permutes:
-            # New permutation
-            self.permutes.add(permute)
-            # Set up area to record the selected tests
-            self.testsPerPermute[permute] = []
-            if self.paramArgs:
-                # Set up area to record the unique test params found
-                self.paramsPerPermute[permute] = {}
-                for param in self.paramArgs:
-                    self.paramsPerPermute[permute][param] = set()
-            # Set up copy of the specific test args for selecting these
-            self.specificsPerPermute[permute] = copy.deepcopy(self.specificArgs)
+            # Work out the permutation key for this test
+            permute = test.setKey(self.permuteArgs)
+            # Set up the group key for the test (for pulling out groups during selection)
+            test.setGroupKey(self.groupArgs)
+
+            if permute not in self.permutes:
+                # New permutation
+                self.permutes.add(permute)
+                # Set up area to record the selected tests
+                self.testsPerPermute[permute] = []
+                if self.paramArgs:
+                    # Set up area to record the unique test params found
+                    self.paramsPerPermute[permute] = {}
+                    for param in self.paramArgs:
+                        self.paramsPerPermute[permute][param] = set()
+                # Set up copy of the specific test args for selecting these
+                self.specificsPerPermute[permute] = copy.deepcopy(self.specificArgs)
 
     def _init_select(self):
         # Can only perform the selection process once as it alters the permute
@@ -296,9 +308,11 @@ class TestOpList:
 
             self._init_select()
 
-        # Now create the full list of selected tests per permute
         selection = []
+        # Add any special tests
+        selection.extend(self.special_tests)
 
+        # Now create the full list of selected tests per permute
         for permute, tests in self.testsPerPermute.items():
             selection.extend(tests)
 

@@ -3411,65 +3411,99 @@ class TosaTestGen:
 
     # List of data types and their required test data sets
     PSEUDO_RANDOM_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM,),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM,),
-        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM,),
-        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM,),
-        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM,),
+        DType.FP32: (gtu.TestDataType.PSEUDO_RANDOM,),
+        DType.BF16: (gtu.TestDataType.PSEUDO_RANDOM,),
+        DType.FP8E4M3: (gtu.TestDataType.PSEUDO_RANDOM,),
+        DType.FP8E5M2: (gtu.TestDataType.PSEUDO_RANDOM,),
     }
     DOT_PRODUCT_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.DOT_PRODUCT,),
-        DType.FP32: (gtu.DataGenType.DOT_PRODUCT,),
-        DType.BF16: (gtu.DataGenType.DOT_PRODUCT,),
-        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT,),
-        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT,),
+        DType.FP16: (gtu.TestDataType.DOT_PRODUCT,),
+        DType.FP32: (gtu.TestDataType.DOT_PRODUCT,),
+        DType.BF16: (gtu.TestDataType.DOT_PRODUCT,),
+        DType.FP8E4M3: (gtu.TestDataType.DOT_PRODUCT,),
+        DType.FP8E5M2: (gtu.TestDataType.DOT_PRODUCT,),
     }
     EW_UNARY_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.FULL_RANGE),
-        DType.BOOL: (gtu.DataGenType.PSEUDO_RANDOM,),
+        DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
+        DType.FP32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.BF16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
+        DType.INT32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
+        DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
+        DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM,),
     }
     REDUCE_BOOL_DATAGEN = {
-        DType.BOOL: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+    }
+    PR_DYN_DATAGEN = {
+        DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
+        DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
     }
     PR_FS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.BF16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP8E4M3: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP8E5M2: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
     }
     PR_FS_IS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.BF16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.BF16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP8E4M3: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.FP8E5M2: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+    }
+    DG_RANDOM_SPECIAL_DYNAMIC = (
+        gtu.TestDataType.PSEUDO_RANDOM,
+        gtu.TestDataType.SPECIAL,
+        gtu.TestDataType.DYNAMIC_CTC,
+    )
+    PR_FS_IS_DYN_DATAGEN = {
+        DType.FP16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.FP32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.BF16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.FP8E4M3: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.FP8E5M2: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT8: DG_RANDOM_SPECIAL_DYNAMIC,
     }
     DP_FS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
+        DType.FP16: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP32: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.BF16: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP8E4M3: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP8E5M2: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
     }
     DP_FS_IS_DATAGEN = {
-        DType.FP16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP32: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.BF16: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP8E4M3: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.FP8E5M2: (gtu.DataGenType.DOT_PRODUCT, gtu.DataGenType.SPECIAL),
-        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT4: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.FP16: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP32: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.BF16: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP8E4M3: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.FP8E5M2: (gtu.TestDataType.DOT_PRODUCT, gtu.TestDataType.SPECIAL),
+        DType.INT32: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+        DType.INT4: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
+    }
+    DG_PRODUCT_SPECIAL_DYNAMIC = (
+        gtu.TestDataType.DOT_PRODUCT,
+        gtu.TestDataType.SPECIAL,
+        gtu.TestDataType.DYNAMIC_CTC,
+    )
+    DP_FS_IS_DYN_DATAGEN = {
+        DType.FP16: DG_PRODUCT_SPECIAL_DYNAMIC,
+        DType.FP32: DG_PRODUCT_SPECIAL_DYNAMIC,
+        DType.BF16: DG_PRODUCT_SPECIAL_DYNAMIC,
+        DType.FP8E4M3: DG_PRODUCT_SPECIAL_DYNAMIC,
+        DType.FP8E5M2: DG_PRODUCT_SPECIAL_DYNAMIC,
+        DType.INT16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT8: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT4: DG_RANDOM_SPECIAL_DYNAMIC,
     }
 
     # Integer special test sets
@@ -3560,6 +3594,7 @@ class TosaTestGen:
     # Tensor operator list
     #  'op': op name
     #  'operands': tuple of (placeholder, const) operands
+    #  'ctc_positions': indexes of compile time constants
     #  'rank': (optional) restricts rank to tuple inclusive of (min, max),
     #    if not specified, defaults to (0, gtu.MAX_TENSOR_RANK)
     #  'build_fcn': tuple of the function to (build_operator(), TensorGen function, ArgGen enum)
@@ -3569,9 +3604,9 @@ class TosaTestGen:
     #    each of the inputs in the operator.
     #  'invalid_test_validators': tuple of functions to be used for validating the tests
     #  'error_if_validators': tuple of functions to be used for validating ERROR_IF tests
-    #  'data_gen': list of DataGenTypes to be used
-    #  'data_gen_override': (optional) maps input names to alternative DataGenTypes. Used when
-    #    different inputs in the operator require different DataGenTypes.
+    #  'data_gen': list of TestDataTypes to be used
+    #  'data_gen_override': (optional) maps input names to alternative TestDataTypes. Used when
+    #    different inputs in the operator require different TestDataTypes.
     #  'compliance': (optional) sets some extra information for compliance. E.g. the number of ULPs
     #    of error allowed in implementations.
     #  'broadcastable_bias': (optional) if set to True, the "bias" input of this operation will be
@@ -3648,6 +3683,7 @@ class TosaTestGen:
         "conv2d_TEMPLATE": {
             "op": Op.CONV2D,
             "operands": (1, 4),
+            "ctc_positions": (3, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_conv2d,
@@ -3674,7 +3710,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_IS_DATAGEN,
+            "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
             "broadcastable_bias": True,
             "filter": KERNELS_2D,
@@ -3684,6 +3720,7 @@ class TosaTestGen:
         "conv3d_TEMPLATE": {
             "op": Op.CONV3D,
             "operands": (1, 4),
+            "ctc_positions": (3, 4),
             "rank": (5, 5),
             "build_fcn": (
                 build_conv3d,
@@ -3710,7 +3747,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_IS_DATAGEN,
+            "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
             "filter": KERNELS_3D,
             "template": True,
@@ -3719,6 +3756,7 @@ class TosaTestGen:
         "depthwise_conv2d_TEMPLATE": {
             "op": Op.DEPTHWISE_CONV2D,
             "operands": (1, 4),
+            "ctc_positions": (3, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_depthwise_conv2d,
@@ -3745,7 +3783,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_IS_DATAGEN,
+            "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
             "filter": KERNELS_2D,
             "template": True,
@@ -3815,6 +3853,7 @@ class TosaTestGen:
         "transpose_conv2d_TEMPLATE": {
             "op": Op.TRANSPOSE_CONV2D,
             "operands": (1, 4),
+            "ctc_positions": (3, 4),
             "rank": (4, 4),
             "build_fcn": (
                 build_transpose_conv2d,
@@ -3842,7 +3881,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
             ),
-            "data_gen": DP_FS_IS_DATAGEN,
+            "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_TRANSPOSE_CONVOLUTION,
             "filter": KERNELS_2D,
             "template": True,
@@ -4215,7 +4254,8 @@ class TosaTestGen:
         },
         "mul": {
             "op": Op.MUL,
-            "operands": (3, 0),
+            "operands": (2, 1),
+            "ctc_positions": (2,),
             "build_fcn": (
                 build_mul,
                 TosaTensorGen.tgMul,
@@ -4233,7 +4273,7 @@ class TosaTestGen:
                 TosaErrorValidator.evBroadcastShapesMismatch,
                 TosaErrorValidator.evInputRank0WrongRank,
             ),
-            "data_gen": PR_FS_IS_DATAGEN,
+            "data_gen": PR_FS_IS_DYN_DATAGEN,
             "broadcastable_inputs": 2,
             "compliance": {"ulp": 0.5},
         },
@@ -4287,7 +4327,8 @@ class TosaTestGen:
             # Use the automatic generation functions to create the input array
             # but create the table tensor in the build function, as it may be
             # a different type from the input
-            "operands": (2, 0),
+            "operands": (1, 1),
+            "ctc_positions": (1,),
             "build_fcn": (
                 build_table,
                 TosaTensorGen.tgBasic,
@@ -4301,6 +4342,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": PR_DYN_DATAGEN,
         },
         # Elementwise Unary operators
         "abs": {
@@ -4575,8 +4617,8 @@ class TosaTestGen:
             "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The first input i.e. "Input selector tensor" can't cope with
-                # gtu.DataGenType.SPECIAL
-                "operand0": gtu.DataGenType.PSEUDO_RANDOM,
+                # gtu.TestDataType.SPECIAL
+                "operand0": gtu.TestDataType.PSEUDO_RANDOM,
             },
             "broadcastable_inputs": 3,
         },
@@ -5002,8 +5044,8 @@ class TosaTestGen:
             "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
-                # gtu.DataGenType.SPECIAL
-                "operand1": gtu.DataGenType.PSEUDO_RANDOM,
+                # gtu.TestDataType.SPECIAL
+                "operand1": gtu.TestDataType.PSEUDO_RANDOM,
             },
         },
         "scatter": {
@@ -5027,8 +5069,8 @@ class TosaTestGen:
             "data_gen": PR_FS_IS_DATAGEN,
             "data_gen_override": {
                 # The second input i.e. "2D index tensor" can't cope with
-                # gtu.DataGenType.SPECIAL
-                "operand1": gtu.DataGenType.PSEUDO_RANDOM,
+                # gtu.TestDataType.SPECIAL
+                "operand1": gtu.TestDataType.PSEUDO_RANDOM,
             },
         },
         # Image operations
