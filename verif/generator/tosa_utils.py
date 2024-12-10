@@ -264,7 +264,9 @@ def get_wrong_output_type(op_name, rng, input_dtype):
             )
     else:
         # Assume all types but the input type are incorrect
-        incorrect_types = list(usableDTypes(excludes=(input_dtype,)))
+        # And exclude FP8E5M2 as this is treated differently by the serializer
+        excludes = (input_dtype, DType.FP8E5M2)
+        incorrect_types = list(usableDTypes(excludes=excludes))
     return rng.choice(a=incorrect_types)
 
 
