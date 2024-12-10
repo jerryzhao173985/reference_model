@@ -37,7 +37,7 @@ DTYPE_ATTRIBUTES = {
 
 
 class ComplianceMode(IntEnum):
-    """Compliance mode types."""
+    """Compliance mode types - matching TOSA verify library supported modes."""
 
     EXACT = 0
     DOT_PRODUCT = 1
@@ -48,8 +48,19 @@ class ComplianceMode(IntEnum):
     RELATIVE = 6
 
 
+class TestDataType(IntEnum):
+    """Internal types of Test Data to test."""
+
+    PSEUDO_RANDOM = 0
+    DOT_PRODUCT = 1
+    FULL_RANGE = 2
+    SPECIAL = 3
+    FIXED_DATA = 4
+    DYNAMIC_CTC = 5
+
+
 class DataGenType(IntEnum):
-    """Data generator types."""
+    """Data generator types - matching TOSA generator library supported types."""
 
     PSEUDO_RANDOM = 0
     DOT_PRODUCT = 1
@@ -58,8 +69,17 @@ class DataGenType(IntEnum):
     FIXED_DATA = 4
 
 
+TESTDATA_TO_DATAGEN_TYPE = {
+    TestDataType.PSEUDO_RANDOM: DataGenType.PSEUDO_RANDOM,
+    TestDataType.DOT_PRODUCT: DataGenType.DOT_PRODUCT,
+    TestDataType.FULL_RANGE: DataGenType.FULL_RANGE,
+    TestDataType.SPECIAL: DataGenType.SPECIAL,
+    TestDataType.FIXED_DATA: DataGenType.FIXED_DATA,
+}
+
+
 class SpecialTestSet(IntEnum):
-    """Special test values for SPECIAL tests"""
+    """Special test values for SPECIAL tests - supported by TOSA generator library."""
 
     DEFAULT = 0
     CAST_FP_TO_INT = 1
@@ -71,6 +91,11 @@ class SpecialTestSet(IntEnum):
     FIRST_LOWEST_THEN_ZEROES = 7
     FIRST_MAX_THEN_MINUS_ONES = 8
     FIRST_LOWEST_THEN_PLUS_ONES = 9
+
+
+def isSpecialTest(td_type):
+    """Test data type check for a special test type."""
+    return td_type not in (TestDataType.PSEUDO_RANDOM, TestDataType.DOT_PRODUCT)
 
 
 def dtypeWidth(dtype):

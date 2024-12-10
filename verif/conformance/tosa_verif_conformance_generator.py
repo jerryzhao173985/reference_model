@@ -165,15 +165,14 @@ def build_op_tests(
         ]
     )
 
-    if "generator_profile_filter" in supports:
-        # Add extra profile/extension info to allow test filtering
-        build_cmd_base.append("--profile")
-        build_cmd_base.extend(args.profile)
-        build_cmd_base.append("--extension")
-        if len(args.extension) == 0:
-            build_cmd_base.append(PROFILES_EXTENSIONS_NONE)
-        else:
-            build_cmd_base.extend(args.extension)
+    # Add extra profile/extension info to allow test filtering
+    build_cmd_base.append("--profile")
+    build_cmd_base.extend(args.profile)
+    build_cmd_base.append("--extension")
+    if len(args.extension) == 0:
+        build_cmd_base.append(PROFILES_EXTENSIONS_NONE)
+    else:
+        build_cmd_base.extend(args.extension)
 
     build_cmds_list = []
 

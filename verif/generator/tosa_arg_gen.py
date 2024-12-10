@@ -769,6 +769,10 @@ class TosaTensorValuesGen:
             if dtypeList[idx] == DType.SHAPE:
                 # Shapes must always be CONST_SHAPEs
                 return False
+            if idx in op.get("ctc_positions", []):
+                # Compile time constant - should be constant unless testing for
+                # dynamic extension
+                return argsDict["td_type"] == gtu.TestDataType.DYNAMIC_CTC
 
             # Determine if the tensor is constant or variable (a placeholder)
             if testGen.args.random_const_inputs:
@@ -933,7 +937,9 @@ class TosaTensorValuesGen:
 
             operand_idx_str = "operand" + str(idx)
             dg_override = op.get("data_gen_override", {})
-            dg_type = dg_override.get(operand_idx_str, dg_type)
+            if operand_idx_str in dg_override:
+                td_type = dg_override[operand_idx_str]
+                dg_type = gtu.TESTDATA_TO_DATAGEN_TYPE[td_type]
 
             tens_meta["generator"] = gtu.DataGenType(dg_type).name
             tens_meta["data_type"] = gtu.DTYPE_ATTRIBUTES[dtype]["json"]
@@ -995,8 +1001,8 @@ class TosaTensorValuesGen:
                 tens_meta["special_info"] = special_info_tensor
 
             else:
-                # TODO - other data gen type
-                assert False, "TODO: support other data gen types"
+                # Unsupported data gen type
+                assert False, "Unsupported data gen type"
 
             # Using the finished generate config meta data - generate the data if
             # needed and assign a tensor name from the serializer
@@ -1878,7 +1884,7 @@ class TosaArgGen:
 
     @staticmethod
     def _add_data_generators(testGen, opName, shapeList, dtype, arg_list, error_name):
-        """Add extra tests for each type of data generator for this op."""
+        """Add extra tests for each type of test data for this op."""
         op = testGen.TOSA_OP_LIST[opName]
 
         if (
@@ -1886,12 +1892,12 @@ class TosaArgGen:
             and "data_gen" in op
             and gtu.dtypeIsSupportedByDataGen(dtype)
         ):
-            dataGenTypesList = op["data_gen"].get(
-                dtype, (gtu.DataGenType.PSEUDO_RANDOM,)
+            testDataTypesList = op["data_gen"].get(
+                dtype, (gtu.TestDataType.PSEUDO_RANDOM,)
             )
         else:
             # Error test or No data generator types listed - assume random
-            dataGenTypesList = (gtu.DataGenType.PSEUDO_RANDOM,)
+            testDataTypesList = (gtu.TestDataType.PSEUDO_RANDOM,)
 
         def check_min_size(opName, shape, min_size, reason):
             # Check tensor size meets minimum requirements
@@ -1916,13 +1922,49 @@ class TosaArgGen:
 
         # Expand arg list with other data generator types
         new_arg_list = []
-        for dg_type in dataGenTypesList:
-            no_more_special_tests = False  # Check for only one dg type test
+        for td_type in testDataTypesList:
+            # Setting this to True will cause the current test
+            # data generator to be removed from the op/dtype so
+            # it won't produce more tests of that type
+            no_more_special_tests = False
+
             for arg_str, args_dict in arg_list:
                 gen_args_dict = args_dict.copy()
                 # Only create one test by default - no sets of tests
                 num_test_sets = 0
 
+                # Check the test data we need to generate for extra tests
+                if td_type == gtu.TestDataType.DYNAMIC_CTC:
+                    if testGen.args.no_special_tests:
+                        continue
+                    if TosaProfiles.TosaExtDynamic not in testGen.args.extension:
+                        # No tests for EXT_DYNAMIC requested
+                        continue
+
+                    # Create dynamic inputs tests for shapes of rank 2 or above
+                    # otherwise in CTS this will default to rank 0
+                    if len(shapeList[0]) <= 1:
+                        continue
+                    arg_str = f"{arg_str}_dyn" if arg_str else "dyn"
+                    gen_args_dict["tags"] = args_dict.get("tags", []) + [
+                        "tosa-ext-dynamic"
+                    ]
+                    no_more_special_tests = True
+
+                    # Fallback to using initial tests data generator for the
+                    # actual data (there must be more than just DYNAMIC_CTC)
+                    assert (
+                        testDataTypesList[0] != gtu.TestDataType.DYNAMIC_CTC
+                    ), f"No other data gen types to fallback on {testDataTypesList}"
+                    dg_type = gtu.TESTDATA_TO_DATAGEN_TYPE[testDataTypesList[0]]
+
+                else:
+                    # Nothing special about this test data, just use
+                    # the equivalent data generator type
+                    dg_type = gtu.TESTDATA_TO_DATAGEN_TYPE[td_type]
+
+                # From here we set up the data generator library details
+                # for each test
                 if dg_type == gtu.DataGenType.PSEUDO_RANDOM:
                     if error_name is None:
                         num_test_sets = args_dict.get("num_test_sets", 0)
@@ -1966,7 +2008,8 @@ class TosaArgGen:
                     allow_multiple_special_tests = op.get(
                         "allow_multiple_special_tests", False
                     )
-                    no_more_special_tests = not allow_multiple_special_tests
+                    if not allow_multiple_special_tests:
+                        no_more_special_tests = True
 
                 elif dg_type == gtu.DataGenType.SPECIAL:
                     if testGen.args.no_special_tests:
@@ -2015,10 +2058,14 @@ class TosaArgGen:
                     allow_multiple_special_tests = op.get(
                         "allow_multiple_special_tests", False
                     )
-                    no_more_special_tests = not allow_multiple_special_tests
+                    if not allow_multiple_special_tests:
+                        no_more_special_tests = True
+
+                else:
+                    raise Exception("Unsupported data generator type to add tests for")
 
                 gen_args_dict["dg_type"] = dg_type
-
+                gen_args_dict["td_type"] = td_type
                 if num_test_sets > 1:
                     for s in range(0, num_test_sets):
                         set_arg_str = f"{arg_str}_s{s}" if arg_str else f"s{s}"
@@ -2031,7 +2078,7 @@ class TosaArgGen:
 
                 if no_more_special_tests:
                     # Skip all remaining tests and remove this data generator
-                    update_data_gen(testGen, opName, dtype, dg_type)
+                    update_data_gen(testGen, opName, dtype, td_type)
                     break
 
         return new_arg_list

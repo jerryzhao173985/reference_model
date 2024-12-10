@@ -1134,8 +1134,7 @@
         "support_for": [
             "lazy_data_gen",
             "stable_random_gen",
-            "random_const_inputs",
-            "generator_profile_filter"
+            "random_const_inputs"
         ],
         "generation": {
             "input_int_or_bool": {
@@ -9228,6 +9227,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -9237,6 +9237,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -9244,6 +9245,7 @@
                         "1,65537,1,1,3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--tensor-dim-range",
@@ -9271,6 +9273,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
@@ -9280,6 +9283,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
