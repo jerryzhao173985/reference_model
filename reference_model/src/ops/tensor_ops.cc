@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -1312,15 +1312,9 @@ template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 OpMatMul<Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_MATMUL, id_)
 {
-    setRequiredOperands(2, 1);
+    setRequiredOperands(4, 1);
     setRequiredRank(3, 3);
-
-    INIT_ATTRIBUTE(MatMul);
 }
-
-template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
-OpMatMul<Dtype, OutDtype>::~OpMatMul()
-{}
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE OutDtype>
 int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
@@ -1328,7 +1322,8 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(outputs[0]))
     {
         return 1;
     }
@@ -1338,6 +1333,8 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
 
     a      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     b      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[1]);
+    a_zp   = dynamic_cast<TosaReference::TensorTemplate<TZeroPoint>*>(inputs[2]);
+    b_zp   = dynamic_cast<TosaReference::TensorTemplate<TZeroPoint>*>(inputs[3]);
     output = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(a && b && output);
@@ -1378,10 +1375,19 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     }
     W = b->getShape()[2];
 
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->a_zp() != 0,
-             "OpMatMul: A zeropoint must be zero for non int8_t data");
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->b_zp() != 0,
-             "OpMatMul: B zeropoint must be zero for non int8_t data");
+    // Check zero point shape
+    if (a_zp->getShape()[0] != 1)
+    {
+        printNodeValidationError("OpMatMul operator a_zp.shape[0] should be 1");
+        return 1;
+    }
+
+    if (b_zp->getShape()[0] != 1)
+    {
+        printNodeValidationError("OpMatMul operator b_zp.shape[0] should be 1");
+        return 1;
+    }
+    W = b->getShape()[2];
 
     return 0;
 }
@@ -1392,12 +1398,18 @@ int OpMatMul<Dtype, OutDtype>::eval()
     typedef Eigen::Tensor<int, 1>::DimensionPair DimPair;
     Eigen::array<DimPair, 1> dims{ { DimPair(1, 0) } };
 
-    TIn a_val = this->a->getTensor();
-    TIn b_val = this->b->getTensor();
+    TIn a_val             = this->a->getTensor();
+    TIn b_val             = this->b->getTensor();
+    const TZeroPoint a_zp = this->a_zp->getTensor();
+    const TZeroPoint b_zp = this->b_zp->getTensor();
+
+    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && a_zp(0) != 0, "OpMatMul: A zeropoint must be zero for non int8_t data");
+    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && b_zp(0) != 0, "OpMatMul: B zeropoint must be zero for non int8_t data");
+
     if (Dtype == TOSA_REF_TYPE_INT8)
     {
-        a_val = a_val - (InEigenType)attribute->a_zp();
-        b_val = b_val - (InEigenType)attribute->b_zp();
+        a_val = a_val - (InEigenType)a_zp(0);
+        b_val = b_val - (InEigenType)b_zp(0);
     }
 
     if (g_func_config.abs_mode)

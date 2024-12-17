@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -176,7 +176,6 @@ class OpMatMul : public GraphNode
 {
 public:
     OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
-    virtual ~OpMatMul();
 
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
@@ -187,6 +186,7 @@ public:
     using TIn                        = Eigen::Tensor<InEigenType, 3>;
     using TOut                       = Eigen::Tensor<OutEigenType, 3>;
     using TInRank2                   = Eigen::Tensor<InEigenType, 2>;
+    using TZeroPoint                 = Eigen::Tensor<InEigenType, 1>;
     using TAccRank2                  = Eigen::Tensor<AccEigenType, 2>;
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;
@@ -194,13 +194,13 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* a;
     TosaReference::TensorTemplate<TIn>* b;
+    TosaReference::TensorTemplate<TZeroPoint>* a_zp;
+    TosaReference::TensorTemplate<TZeroPoint>* b_zp;
     TosaReference::TensorTemplate<TOut>* output;
     int64_t N;
     int64_t H;
     int64_t W;
     int64_t C;
-
-    std::unique_ptr<tosa::TosaMatMulAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype>
