@@ -2025,8 +2025,8 @@ void special_test_FP16(const std::string tosaName,
         }
         else
         {
-            const bool signMatches = std::signbit(buffer[idx]) == std::signbit(expected[idx].first) ||
-                                     std::signbit(buffer[idx]) == std::signbit(expected[idx].second);
+            const bool signMatches = std::signbit(double(buffer[idx])) == std::signbit(double(expected[idx].first)) ||
+                                     std::signbit(double(buffer[idx])) == std::signbit(double(expected[idx].second));
             const bool valueInRange  = (buffer[idx] >= expected[idx].first && buffer[idx] <= expected[idx].second);
             const bool correctOutput = signMatches && valueInRange;
             REQUIRE_MESSAGE(correctOutput, msg.str());

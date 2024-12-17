@@ -273,7 +273,7 @@ bool tosaCheckFloatBound(
     // Both must be NaNs to be correct
     if (std::isnan(referenceValue))
     {
-        if (std::isnan(testValue))
+        if (std::isnan(double(testValue)))
         {
             resultDifference = 0.0;
             return true;
@@ -333,7 +333,7 @@ bool tosaCheckFloatBound(
     {
         withinBound = true;
     }
-    else if (std::isnan(testValue))
+    else if (std::isnan(double(testValue)))
     {
         // Case where ref is NaN was handled at the beginning of the function.
         // Note because `ref` is made to be >= 0, there is no point in also

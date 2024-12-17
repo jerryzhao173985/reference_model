@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
 template <typename OutDtype>
 bool exact_fp(const double& referenceValue, const OutDtype& implementationValue)
 {
-    return std::isnan(referenceValue) ? std::isnan(implementationValue) : (referenceValue == implementationValue);
+    return std::isnan(referenceValue) ? std::isnan(double(implementationValue))
+                                      : (referenceValue == implementationValue);
 }
 
 template <typename OutDtype>

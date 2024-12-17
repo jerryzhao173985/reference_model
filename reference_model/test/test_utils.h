@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -198,7 +198,7 @@ void compareOutputSpecial(std::vector<T>& tensor1, std::vector<T>& tensor2)
     {
         T t1_i = tensor1[i];
         T t2_i = tensor2[i];
-        if (std::isfinite(t1_i) && std::isfinite(t2_i))
+        if (std::isfinite(double(t1_i)) && std::isfinite(double(t2_i)))
         {
             INFO("index ", i);
             CHECK(t1_i == t2_i);
@@ -207,13 +207,13 @@ void compareOutputSpecial(std::vector<T>& tensor1, std::vector<T>& tensor2)
         {
             INFO("index", i);
 
-            CHECK(std::isnan(t1_i) == std::isnan(t2_i));
+            CHECK(std::isnan(double(t1_i)) == std::isnan(double(t2_i)));
             // Do not check sign for NaNs
-            if (std::isnan(t1_i) && std::isnan(t2_i))
+            if (std::isnan(double(t1_i)) && std::isnan(double(t2_i)))
                 continue;
 
-            CHECK(std::isinf(t1_i) == std::isinf(t2_i));
-            CHECK(std::signbit(t1_i) == std::signbit(t2_i));
+            CHECK(std::isinf(double(t1_i)) == std::isinf(double(t2_i)));
+            CHECK(std::signbit(double(t1_i)) == std::signbit(double(t2_i)));
         }
     }
 }
