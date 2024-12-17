@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -1314,15 +1314,9 @@ OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::OpMatMul(SubgraphTraverser* sgt_,
                                                        uint64_t id_)
     : GraphNode(sgt_, Op_MATMUL, id_)
 {
-    setRequiredOperands(2, 1);
+    setRequiredOperands(4, 1);
     setRequiredRank(3, 3);
-
-    INIT_ATTRIBUTE(MatMul);
 }
-
-template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
-OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::~OpMatMul()
-{}
 
 template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
 int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::checkTensorAttributes()
@@ -1330,7 +1324,8 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(outputs[0]))
+    if (validateRequiredRank(inputs[0]) || validateRequiredRank(inputs[1]) || validateRequiredRank(inputs[2], 1, 1) ||
+        validateRequiredRank(inputs[3], 1, 1) || validateRequiredRank(outputs[0]))
     {
         return 1;
     }
@@ -1338,8 +1333,10 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::checkTensorAttributes()
     ERROR_IF(outputs[0]->getDtype() != OutDtype,
              "OpMatMul: Output data type not supported for this configuration of operator");
 
-    a      = dynamic_cast<TosaReference::TensorTemplate<TInput1>*>(inputs[0]);
-    b      = dynamic_cast<TosaReference::TensorTemplate<TInput2>*>(inputs[1]);
+    a      = dynamic_cast<TosaReference::TensorTemplate<TInputA>*>(inputs[0]);
+    b      = dynamic_cast<TosaReference::TensorTemplate<TInputB>*>(inputs[1]);
+    a_zp   = dynamic_cast<TosaReference::TensorTemplate<TZeroPointA>*>(inputs[2]);
+    b_zp   = dynamic_cast<TosaReference::TensorTemplate<TZeroPointB>*>(inputs[3]);
     output = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(a && b && output);
@@ -1380,10 +1377,19 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::checkTensorAttributes()
     }
     W = b->getShape()[2];
 
-    ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && attribute->a_zp() != 0,
-             "OpMatMul: A zeropoint must be zero for non int8_t data");
-    ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && attribute->b_zp() != 0,
-             "OpMatMul: B zeropoint must be zero for non int8_t data");
+    // Check zero point shape
+    if (a_zp->getShape()[0] != 1)
+    {
+        printNodeValidationError("OpMatMul operator a_zp.shape[0] should be 1");
+        return 1;
+    }
+
+    if (b_zp->getShape()[0] != 1)
+    {
+        printNodeValidationError("OpMatMul operator b_zp.shape[0] should be 1");
+        return 1;
+    }
+    W = b->getShape()[2];
 
     return 0;
 }
@@ -1394,15 +1400,23 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::eval()
     typedef Eigen::Tensor<int, 1>::DimensionPair DimPair;
     Eigen::array<DimPair, 1> dims{ { DimPair(1, 0) } };
 
-    TInput1 a_val = this->a->getTensor();
-    TInput2 b_val = this->b->getTensor();
+    TInputA a_val          = this->a->getTensor();
+    TInputB b_val          = this->b->getTensor();
+    const TZeroPointA a_zp = this->a_zp->getTensor();
+    const TZeroPointA b_zp = this->b_zp->getTensor();
+
+    ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && a_zp(0) != 0,
+             "OpMatMul: A zeropoint must be zero for non int8_t data");
+    ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && b_zp(0) != 0,
+             "OpMatMul: B zeropoint must be zero for non int8_t data");
+
     if (Input1Dtype == TOSA_REF_TYPE_INT8)
     {
-        a_val = a_val - (Input1EigenType)attribute->a_zp();
+        a_val = a_val - (InputAEigenType)a_zp(0);
     }
     if (Input2Dtype == TOSA_REF_TYPE_INT8)
     {
-        b_val = b_val - (Input2EigenType)attribute->b_zp();
+        b_val = b_val - (InputBEigenType)b_zp(0);
     }
 
     if (g_func_config.abs_mode)

@@ -1264,15 +1264,15 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 2
-        a, b = inputs
+        assert len(inputs) == 4
+        a, b, zp_a, zp_b = inputs
         accum_dtype = args_dict["acc_type"]
         result_tensor = OutputShaper.matmulOp(
             self.ser, rng, a, b, accum_dtype, error_name
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, b.name]
+        input_list = [a.name, b.name, zp_a.name, zp_b.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1300,10 +1300,7 @@ class TosaTestGen:
         ):
             return None
 
-        attr = ts.TosaSerializerAttribute()
-        attr.MatMulAttribute(qinfo[0], qinfo[1])
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -3730,25 +3727,25 @@ class TosaTestGen:
         },
         "matmul": {
             "op": Op.MATMUL,
-            "operands": (2, 0),
+            "operands": (2, 2),
             "rank": (3, 3),
             "build_fcn": (
                 build_matmul,
                 TosaTensorGen.tgMatmul,
-                TosaTensorValuesGen.tvgLazyGenDefault,
-                TosaArgGen.agMatMul,
+                TosaTensorValuesGen.tvgMatmul,
+                TosaArgGen.agMatmul,
             ),
             "qgen": TosaQuantGen.qgMatmul,
             "types": [
-                [DType.INT8, DType.INT8],
-                [DType.FP16, DType.FP16],
-                [DType.FP32, DType.FP32],
-                [DType.BF16, DType.BF16],
-                [DType.FP8E4M3, DType.FP8E4M3],
-                [DType.FP8E5M2, DType.FP8E5M2],
-                [DType.FP8E4M3, DType.FP8E5M2],
-                [DType.FP8E5M2, DType.FP8E4M3],
-                [DType.INT16, DType.INT16],
+                [DType.INT8, DType.INT8, DType.INT8, DType.INT8],
+                [DType.FP16, DType.FP16, DType.FP16, DType.FP16],
+                [DType.FP32, DType.FP32, DType.FP32, DType.FP32],
+                [DType.BF16, DType.BF16, DType.BF16, DType.BF16],
+                [DType.FP8E4M3, DType.FP8E4M3, DType.FP8E4M3, DType.FP8E4M3],
+                [DType.FP8E5M2, DType.FP8E5M2, DType.FP8E5M2, DType.FP8E5M2],
+                [DType.FP8E4M3, DType.FP8E5M2, DType.FP8E4M3, DType.FP8E4M3],
+                [DType.FP8E5M2, DType.FP8E4M3, DType.FP8E5M2, DType.FP8E5M2],
+                [DType.INT16, DType.INT16, DType.INT16, DType.INT16],
             ],
             "error_if_validators": (
                 TosaErrorValidator.evInputZeroPointNotZero,

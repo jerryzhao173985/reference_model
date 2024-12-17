@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -171,39 +171,40 @@ protected:
     std::unique_ptr<tosa::TosaConvAttribute> attribute;
 };
 
-template <TOSA_REF_TYPE Input1Dtype, TOSA_REF_TYPE Input2Dtype, TOSA_REF_TYPE OutDtype>
+template <TOSA_REF_TYPE InputADtype, TOSA_REF_TYPE InputBDtype, TOSA_REF_TYPE OutDtype>
 class OpMatMul : public GraphNode
 {
 public:
     OpMatMul(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
-    virtual ~OpMatMul();
 
     virtual int checkTensorAttributes() final;
     virtual int eval() final;
 
-    using Input1EigenType            = typename GetEigenType<Input1Dtype>::type;
-    using Input2EigenType            = typename GetEigenType<Input2Dtype>::type;
+    using InputAEigenType            = typename GetEigenType<InputADtype>::type;
+    using InputBEigenType            = typename GetEigenType<InputBDtype>::type;
     using AccEigenType               = typename GetAccEigenType<OutDtype>::type;    // Note: different from GetEigenType
     using OutEigenType               = typename GetEigenType<OutDtype>::type;
-    using TInput1                    = Eigen::Tensor<Input1EigenType, 3>;
-    using TInput2                    = Eigen::Tensor<Input2EigenType, 3>;
+    using TInputA                    = Eigen::Tensor<InputAEigenType, 3>;
+    using TInputB                    = Eigen::Tensor<InputBEigenType, 3>;
+    using TZeroPointA                = Eigen::Tensor<InputBEigenType, 1>;
+    using TZeroPointB                = Eigen::Tensor<InputBEigenType, 1>;
     using TOut                       = Eigen::Tensor<OutEigenType, 3>;
-    using TInput1Rank2               = Eigen::Tensor<Input1EigenType, 2>;
-    using TInput2Rank2               = Eigen::Tensor<Input2EigenType, 2>;
+    using TInput1Rank2               = Eigen::Tensor<InputAEigenType, 2>;
+    using TInput2Rank2               = Eigen::Tensor<InputBEigenType, 2>;
     using TAccRank2                  = Eigen::Tensor<AccEigenType, 2>;
     static constexpr int64_t AccQMin = GetQMin<OutDtype>::value;
     static constexpr int64_t AccQMax = GetQMax<OutDtype>::value;
 
 protected:
-    TosaReference::TensorTemplate<TInput1>* a;
-    TosaReference::TensorTemplate<TInput2>* b;
+    TosaReference::TensorTemplate<TInputA>* a;
+    TosaReference::TensorTemplate<TInputB>* b;
+    TosaReference::TensorTemplate<TZeroPointA>* a_zp;
+    TosaReference::TensorTemplate<TZeroPointB>* b_zp;
     TosaReference::TensorTemplate<TOut>* output;
     int64_t N;
     int64_t H;
     int64_t W;
     int64_t C;
-
-    std::unique_ptr<tosa::TosaMatMulAttribute> attribute;
 };
 
 template <TOSA_REF_TYPE Dtype>

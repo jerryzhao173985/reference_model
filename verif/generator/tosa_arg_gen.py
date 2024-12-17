@@ -566,7 +566,7 @@ class TosaTensorGen:
 
         if error_name != ErrorIf.WrongRank:
             assert rank == 3
-        assert pl == 2 and const == 0
+        assert pl == 2 and const == 2
 
         a_shape = testGen.makeShape(rng, rank)
 
@@ -587,7 +587,8 @@ class TosaTensorGen:
             b_oc = 1
 
         b_shape = np.asarray([a_shape[0], a_shape[2], b_oc])
-        return [a_shape, b_shape]
+        # [1] for zero point inputs
+        return [a_shape, b_shape, [1], [1]]
 
     @staticmethod
     def tgConcat(testGen, rng, op, rank, error_name=None):
@@ -1098,6 +1099,27 @@ class TosaTensorValuesGen:
             None,
             argsDict["input_zp"],
             argsDict["weight_zp"],
+        ]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
+    def tvgMatmul(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        qinfo = TosaQuantGen.qgMatmul(rng, None, None, dtypeList, error_name)
+
+        argsDict["a_zp"] = np.int32([qinfo[0]])
+        argsDict["b_zp"] = np.int32([qinfo[1]])
+
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [
+            None,
+            None,
+            argsDict["a_zp"],
+            argsDict["b_zp"],
         ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
@@ -2613,7 +2635,7 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMatMul(testGen, rng, opName, shapeList, dtypes, error_name=None):
+    def agMatmul(testGen, rng, opName, shapeList, dtypes, error_name=None):
         if isinstance(dtypes, (list, tuple)):
             dtype = dtypes[0]
         else:
