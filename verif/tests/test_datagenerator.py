@@ -72,6 +72,9 @@ def test_generate_lib_built():
         ("INT32", GEN_PR, (-20, -1)),
         ("INT8", GEN_PR, (120, 127)),
         ("INT8", GEN_PR, (-128, -120)),
+        ("INT16", GEN_PR, (-32768, -32760)),
+        ("UINT8", GEN_PR, (250, 255)),
+        ("UINT16", GEN_PR, (65530, 65535)),
     ],
 )
 def test_datagen_lib(data_type, gen_type, data_range):

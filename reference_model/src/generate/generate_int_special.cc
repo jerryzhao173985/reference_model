@@ -116,6 +116,19 @@ const TestValues absNegateTestVals{
     { SValue(SVE::One) },  { -SValue(SVE::One) }, { SValue(SVE::RndSignInteger, SVE::Max, SVE::Max) },
 };
 
+// Rescale input tensors are input, multiplier, shift
+// NOTE: With scale of 62, all integer types INT8 to INT48 cannot exceed value constraints
+const TestValues rescaleTestVals{
+    { -SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Two) },           // Min value, min multiplier, min shift
+    { -SValue(SVE::Two), SValue(SVE::Max), SValue(SVE::Two) },            // Min value, max multiplier, min shift
+    { SValue(SVE::One), SValue(SVE::Zero), SValue(SVE::Two) },            // Max value, min multiplier, min shift
+    { SValue(SVE::One), SValue(SVE::Max), SValue(SVE::Two) },             // Max value, max multiplier, min shift
+    { SValue(SVE::Lowest), SValue(SVE::Zero), SValue(SVE::SixtyTwo) },    // Min value, min multiplier, max shift
+    { SValue(SVE::Lowest), SValue(SVE::Max), SValue(SVE::SixtyTwo) },     // Min value, max multiplier, max shift
+    { SValue(SVE::Max), SValue(SVE::Zero), SValue(SVE::SixtyTwo) },       // Max value, min multiplier, max shift
+    { SValue(SVE::Max), SValue(SVE::Max), SValue(SVE::SixtyTwo) },        // Max value, max multiplier, max shift
+};
+
 // Maps operators to the operator-specific list of default values for
 // INT_SPECIAL tests.
 const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTestVals },
@@ -134,7 +147,8 @@ const std::map<Op, TestValues> opTestValues_int = { { Op_EQUAL, binaryExtremesTe
                                                     { Op_ADD, addTestVals },
                                                     { Op_SUB, subTestVals },
                                                     { Op_ABS, absNegateTestVals },
-                                                    { Op_NEGATE, absNegateTestVals } };
+                                                    { Op_NEGATE, absNegateTestVals },
+                                                    { Op_RESCALE, rescaleTestVals } };
 
 // Values that will be picked up if the Op is not in opTestValues_int and the
 // conformance test does not have a specific SpecialTestSet assigned.

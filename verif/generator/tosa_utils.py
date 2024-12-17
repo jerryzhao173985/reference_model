@@ -148,6 +148,8 @@ def dtypeIsSupportedByDataGen(dtype):
         DType.FP8E4M3,
         DType.FP8E5M2,
         DType.SHAPE,
+        DType.UINT16,
+        DType.UINT8,
     )
     if isinstance(dtype, list) or isinstance(dtype, tuple):
         return all(dt in supported_types for dt in dtype)

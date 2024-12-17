@@ -737,13 +737,18 @@ class TosaTensorValuesGen:
                 min(high_val, type_range[1]),
             )
             if data_range[0] > data_range[1]:
-                # Invalid data range from low to high created due to user
-                # constraints revert to using internal ranges as they are
-                # known to work
-                logger.info(
-                    f"Using safe data range ({low_val} to {high_val}) instead of supplied ({type_range[0]} to {type_range[1]})"
-                )
-                data_range = (low_val, high_val)
+                if gtu.dtypeIsFloat(dtype):
+                    # Constraints on floating type range caused this state,
+                    # fallback to asked for range - overriding command line
+                    logger.info(
+                        f"Using safe data range ({low_val} to {high_val}) instead of supplied ({type_range[0]} to {type_range[1]})"
+                    )
+                    data_range = (low_val, high_val)
+                else:
+                    # Invalid integer data range calculated
+                    raise Exception(
+                        f"_get_data_range: Bad integer data range calculated ({data_range[0]} to {data_range[1]}) from (max({low_val}, {type_range[0]}) to min({high_val}, {type_range[1]}))"
+                    )
             return data_range
         return None
 
@@ -1313,6 +1318,7 @@ class TosaTensorValuesGen:
         multiplier_arr = argsDict["multiplier"]
         shift_arr = argsDict["shift"]
 
+        # Set up the data types and shapes of the multipler and shift tensors
         if scale32:
             dtypeList[1] = DType.INT32
         else:
@@ -1320,8 +1326,27 @@ class TosaTensorValuesGen:
         shapeList[1] = [len(multiplier_arr)]
         dtypeList[2] = DType.INT8
         shapeList[2] = [len(shift_arr)]
-        # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, multiplier_arr, shift_arr]
+
+        if argsDict["dg_type"] != gtu.DataGenType.SPECIAL:
+            # When creating normal tests we need to set up the data and ranges
+            # Set up the pre-generated data in argsDict["fixed_data"]
+            argsDict["fixed_data"] = [None, multiplier_arr, shift_arr]
+
+            # Work out the valid value range that won't saturate
+            # Using the apply_scale32 value check that happens after subtracting
+            # the input zp, this will limit the values to a valid range
+            # REQUIRE(value >= (-1 << (shift - 1)) && value < (1 << (shift - 1)));
+            min_shift = min(shift_arr)
+            input_zp = argsDict["input_zp"]
+            max_value = (1 << (min_shift - 1)) + input_zp - 1
+            min_value = (-1 << (min_shift - 1)) + input_zp
+            dtype = dtypeList[0]
+            highval_lookup = {dtype: max_value}
+            lowval_lookup = {dtype: min_value}
+            data_range = TosaTensorValuesGen._get_data_range(
+                rng, dtype, highval_lookup, lowval_lookup
+            )
+            argsDict["data_range"] = data_range
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -2038,6 +2063,32 @@ class TosaArgGen:
                             # Change shape list in place to propagate changes
                             for idx in range(broadcastable_inputs):
                                 shapeList[idx] = broadcasted_shape
+
+                    if op["op"] == Op.RESCALE:
+                        if (
+                            not gen_args_dict["per_channel"]
+                            or not gen_args_dict["scale"]
+                        ):
+                            # Only support special testing of per_channel to simplify
+                            # special values tested, and scale32 to test value range
+                            continue
+
+                        # Flatten shape to only have channels to simplify special data
+                        # Example: 3x4x2 -> 1x1x24
+                        nc = gtu.product(shapeList[0])
+                        new_shape = [1] * len(shapeList[0])
+                        new_shape[-1] = nc
+                        new_shape_list = deepcopy(shapeList)
+                        new_shape_list[0] = np.asarray(new_shape)
+                        gen_args_dict["shapelist_override"] = new_shape_list
+                        gen_args_dict["multiplier"] = np.int32(np.zeros(shape=[nc]))
+                        gen_args_dict["shift"] = np.int32(np.zeros(shape=[nc]))
+
+                        # Override the chosen zero points to simplify the testing
+                        # TODO - When these become inputs we can define these values as
+                        # TODO - part of the special tests
+                        gen_args_dict["input_zp"] = 0
+                        gen_args_dict["output_zp"] = 0
 
                     if gtu.dtypeIsFloat(dtype):
                         arg_str = f"{arg_str}_fs" if arg_str else "fs"
@@ -3127,7 +3178,9 @@ class TosaArgGen:
             # Pick some potentially correct output type for incorrect input type
             dtypeList = [DType.BOOL, DType.INT8, DType.INT16, DType.FP32]
         else:
-            raise Exception("Unexpected input dtype: {}".format(inDtype))
+            raise Exception(
+                "OpCast: Unexpected input dtype - {}".format(testGen.typeStr(inDtype))
+            )
 
         for dtype in dtypeList:
             arg_list.append(
@@ -3272,6 +3325,47 @@ class TosaArgGen:
                                 scale_arr[i], scale32
                             )
 
+                        input_unsigned = False
+                        output_unsigned = False
+
+                        if inDtype == DType.INT8:
+                            input_zp = rng.randInt(-128, 128)
+                        elif inDtype == DType.UINT8:
+                            input_zp = rng.randInt(0, 256)
+                            input_unsigned = True
+                        elif error_name in [
+                            ErrorIf.InputZeroPointNotZero,
+                            ErrorIf.U16InputZeroPointNotValid,
+                        ]:
+                            input_zp = rng.randInt(-128, 128)
+                            if input_zp == 0:
+                                input_zp = input_zp + rng.integers(1, 10)
+                        elif inDtype == DType.UINT16:
+                            # Must come after ErrorIf.U16InputZeroPointNotValid check
+                            input_zp = rng.choice([0, 32768])
+                            input_unsigned = True
+                        else:
+                            input_zp = 0
+
+                        if outDtype == DType.INT8:
+                            output_zp = rng.randInt(-128, 128)
+                        elif outDtype == DType.UINT8:
+                            output_zp = rng.randInt(0, 256)
+                            output_unsigned = True
+                        elif error_name in [
+                            ErrorIf.OutputZeroPointNotZero,
+                            ErrorIf.U16OutputZeroPointNotValid,
+                        ]:
+                            output_zp = rng.randInt(-128, 128)
+                            if output_zp == 0:
+                                output_zp = output_zp + rng.integers(1, 10)
+                        elif outDtype == DType.UINT16:
+                            # Must come after ErrorIf.U16OutputZeroPointNotValid check
+                            output_zp = rng.choice([0, 32768])
+                            output_unsigned = True
+                        else:
+                            output_zp = 0
+
                         arg_list.append(
                             (
                                 "out{}_sc{}_dr{}_pc{}".format(
@@ -3287,6 +3381,10 @@ class TosaArgGen:
                                     "per_channel": per_channel,
                                     "multiplier": multiplier_arr,
                                     "shift": shift_arr,
+                                    "input_zp": input_zp,
+                                    "input_unsigned": input_unsigned,
+                                    "output_zp": output_zp,
+                                    "output_unsigned": output_unsigned,
                                 },
                             )
                         )

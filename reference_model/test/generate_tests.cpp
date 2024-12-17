@@ -2105,9 +2105,9 @@ void special_check_expected_INT(const std::vector<StorageType>& buffer,
     {
         size_t exidx = idx % expected.size();
         std::stringstream msg;
-        msg << opStr << " index buffer/expected: " << idx << " / " << exidx
-            << " expected between: " << int64_t(expected[exidx].first) << " and: " << int64_t(expected[exidx].second)
-            << ", but got: " << int64_t(buffer[idx]);
+        msg << opStr << " index buffer/expected: [" << idx << "] / [" << exidx
+            << "] expected value between: " << int64_t(expected[exidx].first)
+            << " and: " << int64_t(expected[exidx].second) << ", but got: " << int64_t(buffer[idx]);
         bool withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
 
         REQUIRE_MESSAGE(withinRange, msg.str());
@@ -2145,7 +2145,7 @@ void full_range_test_INT(const std::string tosaName,
     for (size_t idx = 0; idx < buffer.size(); ++idx)
     {
         std::stringstream msg;
-        msg << opStr << " index: " << idx << " expected: " << int64_t(value) << ", but got: " << int64_t(buffer[idx]);
+        msg << opStr << " index: [" << idx << "] expected: " << int64_t(value) << ", but got: " << int64_t(buffer[idx]);
         bool okay = uint64_t(buffer[idx]) == uint64_t(value);
 
         REQUIRE_MESSAGE(okay, msg.str());
@@ -2246,7 +2246,7 @@ void special_binary_coverage_INT(const size_t tosaElements, const Op op)
     CHECK(hasZero);
 }
 
-TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, int32_t)
+TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, int32_t, uint8_t, uint16_t)
 {
     const std::string tosaName0 = "input0";
     const std::string tosaName1 = "input1";
@@ -2256,6 +2256,7 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
     const std::pair<INT_TYPE, INT_TYPE> zero{ 0, 0 };
     const std::pair<INT_TYPE, INT_TYPE> one{ 1, 1 };
     const std::pair<INT_TYPE, INT_TYPE> minusOne{ -1, -1 };
+    const std::pair<INT_TYPE, INT_TYPE> minusTwo{ -2, -2 };
     const std::pair<INT_TYPE, INT_TYPE> max{ std::numeric_limits<INT_TYPE>::max(),
                                              std::numeric_limits<INT_TYPE>::max() };
     const std::pair<INT_TYPE, INT_TYPE> minusMax{ -std::numeric_limits<INT_TYPE>::max(),
@@ -2492,6 +2493,13 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
             }
         }
 
+        SUBCASE("rescale, input 0")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { minusTwo, minusTwo, one, one,
+                                                                          lowest,   lowest,   max, max };
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "RESCALE", "0", expected);
+        }
+
         SUBCASE("test set all zeroes")
         {
             const std::vector<std::string> operators = { "CONV2D",           "CONV3D", "DEPTHWISE_CONV2D",
@@ -2648,6 +2656,18 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
             {
                 full_range_test_INT<INT_TYPE>(tosaName2, tosaElements, op, "5", 5);
             }
+        }
+    }
+
+    // Tests available for uint16 and uint8
+    if constexpr (std::is_same_v<INT_TYPE, uint16_t> || std::is_same_v<INT_TYPE, uint8_t>)
+    {
+        SUBCASE("rescale, input 0")
+        {
+            const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = {
+                zero, zero, one, one, lowest, lowest, max, max
+            };
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "RESCALE", "0", expected);
         }
     }
 }

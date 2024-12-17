@@ -2219,107 +2219,14 @@ class TosaTestGen:
         scale32 = args_dict["scale"]
         double_round = args_dict["double_round"]
         per_channel = args_dict["per_channel"]
-        shift_arr = args_dict["shift"]
-        multiplier_arr = args_dict["multiplier"]
+        input_zp = args_dict["input_zp"]
+        input_unsigned = args_dict["input_unsigned"]
+        output_zp = args_dict["output_zp"]
+        output_unsigned = args_dict["output_unsigned"]
 
         result_tensor = OutputShaper.typeConversionOp(
             self.ser, rng, val, out_dtype, error_name
         )
-
-        if per_channel:
-            nc = val.shape[-1]
-        else:
-            nc = 1
-
-        in_type_width = gtu.dtypeWidth(val.dtype)
-        out_type_width = gtu.dtypeWidth(out_dtype)
-
-        input_unsigned = False
-        output_unsigned = False
-
-        if val.dtype == DType.INT8:
-            input_zp = rng.randInt(-128, 128)
-            in_type_width += 1
-        elif val.dtype == DType.UINT8:
-            input_zp = rng.randInt(0, 256)
-            in_type_width += 1
-            input_unsigned = True
-        elif error_name in [
-            ErrorIf.InputZeroPointNotZero,
-            ErrorIf.U16InputZeroPointNotValid,
-        ]:
-            input_zp = rng.randInt(-128, 128)
-            if input_zp == 0:
-                input_zp = input_zp + rng.integers(1, 10)
-            in_type_width += 1
-        elif val.dtype == DType.UINT16:
-            # Must come after ErrorIf.U16InputZeroPointNotValid check
-            input_zp = rng.choice([0, 32768])
-            in_type_width += 1
-            input_unsigned = True
-        else:
-            input_zp = 0
-
-        if out_dtype == DType.INT8:
-            output_zp = rng.randInt(-128, 128)
-            out_type_width += 1
-        elif out_dtype == DType.UINT8:
-            output_zp = rng.randInt(0, 256)
-            out_type_width += 1
-            output_unsigned = True
-        elif error_name in [
-            ErrorIf.OutputZeroPointNotZero,
-            ErrorIf.U16OutputZeroPointNotValid,
-        ]:
-            output_zp = rng.randInt(-128, 128)
-            if output_zp == 0:
-                output_zp = output_zp + rng.integers(1, 10)
-            out_type_width += 1
-        elif out_dtype == DType.UINT16:
-            # Must come after ErrorIf.U16OutputZeroPointNotValid check
-            output_zp = rng.choice([0, 32768])
-            out_type_width += 1
-            output_unsigned = True
-        else:
-            output_zp = 0
-
-        min_shift_value_arr = np.int64(np.zeros(shape=[nc]))
-        max_shift_value_arr = np.int64(np.zeros(shape=[nc]))
-
-        for i in range(nc):
-            min_shift_value_arr[i] = -1 << (shift_arr[i] - 1)
-            max_shift_value_arr[i] = (1 << (shift_arr[i] - 1)) - 1
-
-        logger.debug(
-            f"build_rescale: multiplier={multiplier_arr} shift={shift_arr} inzp={input_zp} outzp={output_zp}"
-        )
-        if scale32 and error_name is None:
-            # Make sure random values are within apply_scale_32 specification
-            # REQUIRES(value >= (-1<<(shift-1)) && value < (1<<(shift-1))
-            assert val.placeholderFilename
-            values = np.load(
-                os.path.join(self.basePath, self.testPath, val.placeholderFilename)
-            )
-            val_adj = np.subtract(values, input_zp, dtype=np.int64)
-            val_adj = np.maximum(val_adj, min_shift_value_arr, dtype=np.int64)
-            val_adj = np.minimum(val_adj, max_shift_value_arr, dtype=np.int64)
-            val_adj = np.add(val_adj, input_zp, dtype=np.int64)
-            # Check we can safely convert to the expected dtype
-            assert (
-                val_adj.all() >= np.iinfo(values.dtype).min
-                and val_adj.all() <= np.iinfo(values.dtype).max
-            )
-
-            # Force casting to output datatype
-            val_adj = val_adj.astype(values.dtype, casting="unsafe")
-
-            if not np.all(np.array_equal(values, val_adj)):
-                # Values changed so overwrite file with new values
-                np.save(
-                    os.path.join(self.basePath, self.testPath, val.placeholderFilename),
-                    val_adj,
-                    False,
-                )
 
         # Invalidate Input/Output list for error if checks.
         input_list = [val.name, multiplier_val.name, shift_val.name]
@@ -3081,6 +2988,12 @@ class TosaTestGen:
                         )
 
                         for argStr, args in argList:
+                            if "shapelist_override" in args:
+                                # Override shapelist with unfixed shapeList
+                                testShapes = args["shapelist_override"]
+                            else:
+                                testShapes = shapeList
+                            shapeStr = self.shapeStr(testShapes[0])
                             # Create the test name string - for example: add_1x2x3_i32
                             if testType == "positive":
                                 name_parts = [opName, shapeStr, typeStr]
@@ -3098,7 +3011,7 @@ class TosaTestGen:
                             testStr = "_".join(name_parts)
 
                             testList.append(
-                                (opName, testStr, t, error_name, shapeList, args)
+                                (opName, testStr, t, error_name, testShapes, args)
                             )
             if error_name is not None:
                 # Check the last test is of the error we wanted
@@ -3441,6 +3354,14 @@ class TosaTestGen:
     PR_DYN_DATAGEN = {
         DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
         DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
+    }
+    RESCALE_DATAGEN = {
+        DType.INT48: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.UINT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.UINT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
@@ -5162,6 +5083,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            "data_gen": RESCALE_DATAGEN,
         },
         # Custom
         # Not implemented.

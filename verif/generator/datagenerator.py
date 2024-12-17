@@ -97,7 +97,11 @@ class GenerateLibrary:
             # Create buffer and initialize to zero
             buffer = (ct.c_int16 * size)(0)
             size_bytes = size * 2
-        elif dtype == "INT8" or dtype == "BOOL":
+        elif dtype == "UINT16":
+            # Create buffer and initialize to zero
+            buffer = (ct.c_uint16 * size)(0)
+            size_bytes = size * 2
+        elif dtype in ("INT8", "BOOL", "UINT8"):
             size_bytes = size
             # Create buffer of bytes and initialize to zero
             buffer = (ct.c_ubyte * size_bytes)(0)
