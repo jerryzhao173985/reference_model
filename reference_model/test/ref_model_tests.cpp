@@ -123,6 +123,58 @@ void testArgmaxFpSpecial(bool propagate)
     compareOutput<int32_t>(expectedOut, actualOut);
 }
 
+void testConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, int8_t inZp, int8_t weightZp)
+{
+    RefModelTestBuilder tb{};
+    constexpr DType inDtype     = DType_INT8;
+    constexpr DType weightDtype = DType_INT8;
+    constexpr DType outDtype    = DType_INT32;
+
+    const int HEIGHT = 2;
+    const int WIDTH  = 2;
+
+    REQUIRE_MESSAGE(inVals.size() == HEIGHT * WIDTH,
+                    "Unit test construction error: testConv2dOverflow assumes the inVals has ", HEIGHT * WIDTH,
+                    " elements");
+    REQUIRE_MESSAGE(weightVals.size() == HEIGHT * WIDTH,
+                    "Unit test construction error: testConv2dOverflow assumes the weightVals has ", HEIGHT * WIDTH,
+                    " elements");
+
+    tb.addInput({ 1, HEIGHT, WIDTH, 1 }, inDtype);
+    tb.addInput({ 1, HEIGHT, WIDTH, 1 }, weightDtype);
+    tb.addInput({ 1 }, outDtype);    // bias
+    tb.addInput({ 1 }, inDtype);
+    tb.addInput({ 1 }, weightDtype);
+    tb.addOutput({ 1, 1, 1, 1 }, outDtype);
+
+    TosaAttributeBase* attr = new TosaConvAttribute({ 0, 0, 0, 0 }, { 2, 2 }, { 1, 1 }, true, DType_INT32);
+    tb.addOp(Op_CONV2D, Attribute_ConvAttribute, attr);
+
+    tb.initializeRunner();
+
+    int32_t expectedOutVal = 0;
+    for (int i = 0; i < inVals.size(); i++)
+    {
+        expectedOutVal += (static_cast<int32_t>(inVals[i]) - static_cast<int32_t>(inZp)) *
+                          (static_cast<int32_t>(weightVals[i]) - static_cast<int32_t>(weightZp));
+    }
+    std::vector<int32_t> expectedOut = { expectedOutVal };
+
+    std::vector<int8_t> inZpVals     = { inZp };
+    std::vector<int8_t> weightZpVals = { weightZp };
+    std::vector<int32_t> biasVals    = { 0 };
+    tb.setInput(inVals);
+    tb.setInput(weightVals);
+    tb.setInput(biasVals);
+    tb.setInput(inZpVals);
+    tb.setInput(weightZpVals);
+
+    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
+    std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
+
+    compareOutput<int32_t>(expectedOut, actualOut);
+}
+
 TEST_SUITE("reference_model")
 {
     TEST_CASE("CAST FP SPECIAL")
@@ -217,6 +269,55 @@ TEST_SUITE("reference_model")
         SUBCASE("ignore")
         {
             testArgmaxFpSpecial<IN_TYPE>(false);
+        }
+    }
+
+    TEST_CASE("CONV2D zero point avoids overflow")
+    {
+        SUBCASE("input negative overflow")
+        {
+            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals     = { 126, -126, -120, 0 };
+            std::vector<int8_t> weightVals = { 2, 1, 4, -7 };
+            const int8_t inZp              = 4;
+            const int8_t weightZp          = 15;
+
+            testConv2d(inVals, weightVals, inZp, weightZp);
+        }
+
+        SUBCASE("input positive overflow")
+        {
+            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals     = { 122, -7, -120, 121 };
+            std::vector<int8_t> weightVals = { 2, 1, 4, -7 };
+            const int8_t inZp              = -10;
+            const int8_t weightZp          = -5;
+            testConv2d(inVals, weightVals, inZp, weightZp);
+        }
+
+        SUBCASE("weight negative overflow")
+        {
+            INFO("This test is meant to catch cases where the weight zero point is subtracted from the weight value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals     = { 3, -12, 5, 70 };
+            std::vector<int8_t> weightVals = { -120, -12, 0, -7 };
+            const int8_t inZp              = 55;
+            const int8_t weightZp          = 15;
+
+            testConv2d(inVals, weightVals, inZp, weightZp);
+        }
+
+        SUBCASE("weight positive overflow")
+        {
+            INFO("This test is meant to catch cases where the weight zero point is subtracted from the weight value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals     = { -5, 65, -1, 32 };
+            std::vector<int8_t> weightVals = { -2, 125, 4, -1 };
+            const int8_t inZp              = -10;
+            const int8_t weightZp          = -5;
+            testConv2d(inVals, weightVals, inZp, weightZp);
         }
     }
 }    // TEST_SUITE("reference_model")

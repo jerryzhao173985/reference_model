@@ -758,29 +758,9 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     pad[2] = std::make_pair(pad_left, pad_right);
     pad[3] = std::make_pair(0, 0);
 
-    TIn input_val        = this->input->getTensor();
-    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
-    if (InDtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val = input_val - input_zp;
-    }
-    else
-    {
-        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
-    }
-
-    TWeight weight_val        = this->weight->getTensor();
-    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
-    if (WeightDtype == TOSA_REF_TYPE_INT8)
-    {
-        weight_val = weight_val - weight_zp;
-    }
-    else
-    {
-        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
-    }
-
-    TBias bias_val = this->bias->getTensor();
+    TIn input_val      = this->input->getTensor();
+    TWeight weight_val = this->weight->getTensor();
+    TBias bias_val     = this->bias->getTensor();
 
     if (g_func_config.abs_mode)
     {
@@ -796,7 +776,14 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         }
     }
 
-    ETensor4<InEigenType> input_padded = input_val.pad(pad);
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    ERROR_IF(input_zp != 0 && InDtype != TOSA_REF_TYPE_INT8, "Input zero point must be zero for non int8_t data");
+
+    ETensor4<InEigenType> input_padded;
+    input_padded = input_val.pad(pad, input_zp);
+
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    ERROR_IF(weight_zp != 0 && WeightDtype != TOSA_REF_TYPE_INT8, "Weight zero point must be zero for non int8_t data");
 
     // 1. initialize with bias
     Eigen::array<Eigen::Index, 4> reshape_dim;
@@ -840,8 +827,14 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                             }
                             for (int ic = 0; ic < in_channels; ic++)
                             {
-                                acc += (static_cast<AccEigenType>(input_padded(ob, iy_pad, ix_pad, ic)) *
-                                        static_cast<AccEigenType>(weight_val(oc, ky, kx, ic)));
+                                AccEigenType input_padded_scalar =
+                                    static_cast<AccEigenType>(input_padded(ob, iy_pad, ix_pad, ic)) -
+                                    static_cast<AccEigenType>(input_zp);
+
+                                AccEigenType weight_val_scalar = static_cast<AccEigenType>(weight_val(oc, ky, kx, ic)) -
+                                                                 static_cast<AccEigenType>(weight_zp);
+
+                                acc += (input_padded_scalar * weight_val_scalar);
                             }
                         }
                     }
@@ -856,8 +849,8 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
-        this->output->getTensor() = this->output->getTensor().cwiseMax((OutEigenType)AccQMin);
-        this->output->getTensor() = this->output->getTensor().cwiseMin((OutEigenType)AccQMax);
+        this->output->getTensor() = this->output->getTensor().cwiseMax(static_cast<OutEigenType>(AccQMin));
+        this->output->getTensor() = this->output->getTensor().cwiseMin(static_cast<OutEigenType>(AccQMax));
     }
 
     return GraphNode::eval();
@@ -991,29 +984,9 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     pad[3] = std::make_pair(pad_left, pad_right);
     pad[4] = std::make_pair(0, 0);
 
-    TIn input_val        = this->input->getTensor();
-    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
-    if (InDtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val = input_val - input_zp;
-    }
-    else
-    {
-        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
-    }
-
-    TWeight weight_val        = this->weight->getTensor();
-    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
-    if (WeightDtype == TOSA_REF_TYPE_INT8)
-    {
-        weight_val = weight_val - weight_zp;
-    }
-    else
-    {
-        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
-    }
-
-    TBias bias_val = this->bias->getTensor();
+    TIn input_val      = this->input->getTensor();
+    TWeight weight_val = this->weight->getTensor();
+    TBias bias_val     = this->bias->getTensor();
 
     if (g_func_config.abs_mode)
     {
@@ -1029,7 +1002,14 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         }
     }
 
-    ETensor5<InEigenType> input_padded = input_val.pad(pad);
+    InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
+    ERROR_IF(input_zp != 0 && InDtype != TOSA_REF_TYPE_INT8, "Input zero point must be zero for non int8_t data");
+
+    ETensor5<InEigenType> input_padded;
+    input_padded = input_val.pad(pad, input_zp);
+
+    WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
+    ERROR_IF(weight_zp != 0 && WeightDtype != TOSA_REF_TYPE_INT8, "Weight zero point must be zero for non int8_t data");
 
     // 1. initialize with bias
     Eigen::array<Eigen::Index, 5> reshape_dim;
@@ -1046,6 +1026,8 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     // 2. direct convolution
     int id_pad, iy_pad, ix_pad;
+    AccEigenType input_padded_scalar;
+    AccEigenType weight_val_scalar;
 
     for (int ob = 0; ob < out_batch; ob++)
     {
@@ -1082,15 +1064,21 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
                                     for (int ic = 0; ic < in_channels; ic++)
                                     {
-                                        acc += ((AccEigenType)input_padded(ob, id_pad, iy_pad, ix_pad, ic) *
-                                                (AccEigenType)weight_val(oc, kd, ky, kx, ic));
+                                        input_padded_scalar =
+                                            static_cast<AccEigenType>(input_padded(ob, id_pad, iy_pad, ix_pad, ic)) -
+                                            static_cast<AccEigenType>(input_zp);
+
+                                        weight_val_scalar = static_cast<AccEigenType>(weight_val(oc, kd, ky, kx, ic)) -
+                                                            static_cast<AccEigenType>(weight_zp);
+
+                                        acc += (input_padded_scalar * weight_val_scalar);
                                     }
                                 }
                             }
                         }
                         // add bias to accumulated value
                         OutEigenType bias                             = this->output->getTensor()(ob, od, oy, ox, oc);
-                        this->output->getTensor()(ob, od, oy, ox, oc) = bias + (OutEigenType)acc;
+                        this->output->getTensor()(ob, od, oy, ox, oc) = bias + static_cast<OutEigenType>(acc);
                     }
                 }
             }
@@ -1099,8 +1087,8 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
-        this->output->getTensor() = this->output->getTensor().cwiseMax((OutEigenType)AccQMin);
-        this->output->getTensor() = this->output->getTensor().cwiseMin((OutEigenType)AccQMax);
+        this->output->getTensor() = this->output->getTensor().cwiseMax(static_cast<OutEigenType>(AccQMin));
+        this->output->getTensor() = this->output->getTensor().cwiseMin(static_cast<OutEigenType>(AccQMax));
     }
 
     return GraphNode::eval();
@@ -1221,25 +1209,11 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     TIn input_val        = this->input->getTensor();
     InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
-    if (InDtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val = input_val - input_zp;
-    }
-    else
-    {
-        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
-    }
+    ERROR_IF(InDtype != TOSA_REF_TYPE_INT8 && input_zp != 0, "Input zero point must be zero for non int8_t data");
 
     TWeight weight_val        = this->weight->getTensor();
     WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
-    if (WeightDtype == TOSA_REF_TYPE_INT8)
-    {
-        weight_val = weight_val - weight_zp;
-    }
-    else
-    {
-        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
-    }
+    ERROR_IF(WeightDtype != TOSA_REF_TYPE_INT8 && weight_zp != 0, "Weight zero point must be zero for non int8_t data");
 
     TBias bias_val = this->bias->getTensor();
 
@@ -1306,16 +1280,19 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                                     // no need to do multiply and accumulate
                                     continue;
                                 }
-                                AccEigenType value(0.0);
+                                AccEigenType input_scalar(0.0);
                                 if (in_scope)
                                 {
-                                    value = (AccEigenType)input_val(ob, y, x, ic);
+                                    input_scalar = static_cast<AccEigenType>(input_val(ob, y, x, ic)) -
+                                                   static_cast<AccEigenType>(input_zp);
                                 }
                                 // Perform multiplication in AccEigenType then cast to OutEigenType
-                                acc += value * (AccEigenType)weight_val(ky, kx, ic, km);
+                                AccEigenType weight_scalar = static_cast<AccEigenType>(weight_val(ky, kx, ic, km)) -
+                                                             static_cast<AccEigenType>(weight_zp);
+                                acc += input_scalar * weight_scalar;
                             }
                         }
-                        this->output->getTensor()(ob, oy, ox, ic * k_multiplier + km) += (OutEigenType)acc;
+                        this->output->getTensor()(ob, oy, ox, ic * k_multiplier + km) += static_cast<OutEigenType>(acc);
                     }
                 }
             }
@@ -1324,8 +1301,8 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
-        this->output->getTensor() = this->output->getTensor().cwiseMax((OutEigenType)AccQMin);
-        this->output->getTensor() = this->output->getTensor().cwiseMin((OutEigenType)AccQMax);
+        this->output->getTensor() = this->output->getTensor().cwiseMax(static_cast<OutEigenType>(AccQMin));
+        this->output->getTensor() = this->output->getTensor().cwiseMin(static_cast<OutEigenType>(AccQMax));
     }
 
     return GraphNode::eval();
@@ -2074,25 +2051,11 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     TIn input_val        = this->input->getTensor();
     InEigenType input_zp = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3])->getTensor()(0);
-    if (InDtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val = input_val - input_zp;
-    }
-    else
-    {
-        ERROR_IF(input_zp != 0, "Input zero point must be zero for non int8_t data");
-    }
+    ERROR_IF(InDtype != TOSA_REF_TYPE_INT8 && input_zp != 0, "Input zero point must be zero for non int8_t data");
 
     TWeight weight_val        = this->weight->getTensor();
     WeightEigenType weight_zp = dynamic_cast<TosaReference::TensorTemplate<TWeightZp>*>(inputs[4])->getTensor()(0);
-    if (WeightDtype == TOSA_REF_TYPE_INT8)
-    {
-        weight_val = weight_val - weight_zp;
-    }
-    else
-    {
-        ERROR_IF(weight_zp != 0, "Weight zero point must be zero for non int8_t data");
-    }
+    ERROR_IF(WeightDtype != TOSA_REF_TYPE_INT8 && weight_zp != 0, "Weight zero point must be zero for non int8_t data");
 
     TBias bias_val = this->bias->getTensor();
 
@@ -2154,12 +2117,16 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
                             for (int ic = 0; ic < in_channels; ic++)
                             {
-                                AccEigenType value(0.0);
+                                AccEigenType input_scalar(0.0);
                                 if (in_scope)
                                 {
-                                    value = (AccEigenType)input_val(ob, y / stride_y, x / stride_x, ic);
+                                    input_scalar =
+                                        static_cast<AccEigenType>(input_val(ob, y / stride_y, x / stride_x, ic)) -
+                                        static_cast<AccEigenType>(input_zp);
                                 }
-                                acc_tensor(ob, oy, ox, oc) += value * (AccEigenType)weight_val(oc, ky, kx, ic);
+                                AccEigenType weight_scalar = static_cast<AccEigenType>(weight_val(oc, ky, kx, ic)) -
+                                                             static_cast<AccEigenType>(weight_zp);
+                                acc_tensor(ob, oy, ox, oc) += input_scalar * weight_scalar;
                             }
                         }
                     }
@@ -2172,8 +2139,8 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
-        this->output->getTensor() = this->output->getTensor().cwiseMax((OutEigenType)AccQMin);
-        this->output->getTensor() = this->output->getTensor().cwiseMin((OutEigenType)AccQMax);
+        this->output->getTensor() = this->output->getTensor().cwiseMax(static_cast<OutEigenType>(AccQMin));
+        this->output->getTensor() = this->output->getTensor().cwiseMin(static_cast<OutEigenType>(AccQMax));
     }
 
     return GraphNode::eval();
