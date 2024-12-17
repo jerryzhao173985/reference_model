@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -24,17 +24,33 @@
 #include <sys/wait.h>
 #endif
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 //Test ToDo List
 // - test for different data types
 // - test with bnd result file
 
 std::string getVerifyFileLocation()
 {
-    // Linux specific function to get exe path to tosa_verify
     char res[PATH_MAX];
-    ssize_t count        = readlink("/proc/self/exe", res, PATH_MAX);
+#if defined(__linux__)
+    // Linux specific function to get exe path to tosa_verify
+    ssize_t count = readlink("/proc/self/exe", res, PATH_MAX);
+#elif defined(__APPLE__)
+    // macOS equivalent to retrieve the executable path
+    uint32_t count = PATH_MAX;
+    if (_NSGetExecutablePath(res, &count) < 0)
+    {
+        throw std::runtime_error("Could not retrieve executable path");
+    }
+#else
+#error Unknown OS
+#endif
     std::string exe_path = std::string(res, (count > 0) ? count : 0);
-    int adjust           = std::string("/unit_tests").length();
+
+    int adjust = std::string("/unit_tests").length();
     return exe_path.substr(0, exe_path.length() - adjust) + "/verify/tosa_verify";
 }
 // Helper function to create a mock file with specific content
