@@ -234,6 +234,7 @@ public:
         BelowLowestINT32,
         MaxShift,          // Number of bits in datatype minus 1
         RndSignInteger,    // From negative number to positive number range
+        SixtyTwo,
     };
 
     SpecialValue() = default;
@@ -299,6 +300,7 @@ public:
             case BelowLowestINT16:
             case BelowLowestINT32:
             case MaxShift:
+            case SixtyTwo:
                 return _static_evaluate<TosaRefType, DataType>(_value, _negative);
             default:
                 // Handle the Random and unsupported cases below
@@ -368,6 +370,9 @@ private:
                 break;
             case Ten:
                 rawVal = static_cast<DataType>(10);
+                break;
+            case SixtyTwo:
+                rawVal = static_cast<DataType>(62);
                 break;
             case Euler:
                 rawVal = static_cast<DataType>(2.71828);
@@ -462,7 +467,8 @@ private:
 
         if constexpr (std::is_same_v<DataType, uint8_t> || std::is_same_v<DataType, uint16_t>)
         {
-            return rawVal;
+            // No negative values allowed in unsigned, return 0 instead
+            return negate ? static_cast<DataType>(0) : rawVal;
         }
         else if (!(std::isinf(rawVal)) && (-double(rawVal) > DtypeLimits<TosaRefType>::max ||
                                            -double(rawVal) < DtypeLimits<TosaRefType>::lowest))

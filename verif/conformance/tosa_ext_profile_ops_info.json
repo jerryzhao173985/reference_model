@@ -7343,6 +7343,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7356,6 +7357,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -7363,6 +7365,7 @@
                         "1,65539,1,1"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7394,6 +7397,7 @@
                         "3"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int48",
                         "--tensor-dim-range",
@@ -7403,6 +7407,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int48",
                         "--tensor-dim-range",
@@ -7417,6 +7422,7 @@
             "default": {
                 "permutes": [
                     "rank",
+                    "type",
                     "output_dtype"
                 ],
                 "full_params": [
@@ -7426,7 +7432,7 @@
                     "multiplier",
                     "shift"
                 ],
-                "maximum": 4
+                "maximum": 2
             }
         }
     },
