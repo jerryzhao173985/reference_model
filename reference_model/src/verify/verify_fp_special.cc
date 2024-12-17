@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ bool compliant(const double& referenceValue, const double& boundValue, const Dat
     // OR implementation is NaN and either the reference or bound (with extra multiplies) is NaN
     // OR both are/not NaN AND have the same finiteness AND the same sign
     return (referenceValue == 0.0 && static_cast<double>(implementationValue) == 0.0) ||
-           (std::isnan(implementationValue) && (std::isnan(referenceValue) || std::isnan(boundValue))) ||
-           (std::isnan(referenceValue) == std::isnan(implementationValue) &&
-            std::isfinite(referenceValue) == std::isfinite(implementationValue) &&
-            std::signbit(referenceValue) == std::signbit(implementationValue));
+           (std::isnan(double(implementationValue)) && (std::isnan(referenceValue) || std::isnan(boundValue))) ||
+           (std::isnan(referenceValue) == std::isnan(double(implementationValue)) &&
+            std::isfinite(referenceValue) == std::isfinite(double(implementationValue)) &&
+            std::signbit(referenceValue) == std::signbit(double(implementationValue)));
 }
 
 template <>

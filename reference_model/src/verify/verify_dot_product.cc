@@ -36,7 +36,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
     if (std::isnan(ref))
     {
         // Reference is a NaN on non-padded data, the implementation must match
-        is_valid = std::isnan(imp);
+        is_valid = std::isnan(double(imp));
         if (!is_valid)
         {
             WARNING("[Verifier][DP] index %d: ref is NaN, but imp (%.*g) is not.", index, FLT_DIG,
