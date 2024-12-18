@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 import logging
@@ -3514,6 +3514,17 @@ class TosaTestGen:
         DType.INT32: SPECIAL_TEST_SETS_REDUCE_SUM,
     }
 
+    SPECIAL_TEST_SETS_INT_RESIZE = (
+        (gtu.SpecialTestSet.ALL_ZEROES,),
+        (gtu.SpecialTestSet.ALL_MAX_VALUES,),
+        (gtu.SpecialTestSet.ALL_LOWEST_VALUES,),
+    )
+
+    STS_RESIZE = {
+        DType.INT8: SPECIAL_TEST_SETS_INT_RESIZE,
+        DType.INT16: SPECIAL_TEST_SETS_INT_RESIZE,
+    }
+
     # Tensor operator list
     #  'op': op name
     #  'operands': tuple of (placeholder, const) operands
@@ -5020,8 +5031,9 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeMismatch,
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "compliance": {"relative": 0.006, "ulp_bound": 20.0},
+            "special_test_sets": STS_RESIZE,
         },
         # Type conversion
         "cast": {
@@ -5050,7 +5062,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_FS_DATAGEN,
+            "data_gen": PR_FS_IS_DATAGEN,
             "compliance": {"ulp": 0.5},
             "allow_multiple_special_tests": True,
         },

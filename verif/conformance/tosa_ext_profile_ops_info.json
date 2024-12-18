@@ -1151,12 +1151,24 @@
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
-                        "0",
-                        "1",
-                        "2",
                         "3"
                     ],
                     [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "int8",
+                        "int16",
+                        "int32",
+                        "bool",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2"
+                    ],
+                    [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "int32",
@@ -1168,6 +1180,7 @@
                         "5"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -1175,6 +1188,7 @@
                         "1,65538,1,2"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "int16",
@@ -7775,6 +7789,7 @@
                         "int8"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--target-shape",
@@ -7783,6 +7798,7 @@
                         "9500"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int8",
                         "--level-8k-sizes",
@@ -7864,6 +7880,7 @@
                         "int16"
                     ],
                     [
+                        "--no-special-tests",
                         "--target-dtype",
                         "int16",
                         "--level-8k-sizes",

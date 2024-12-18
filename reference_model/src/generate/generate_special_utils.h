@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -235,6 +235,8 @@ public:
         MaxShift,          // Number of bits in datatype minus 1
         RndSignInteger,    // From negative number to positive number range
         SixtyTwo,
+        Half,
+        ThreeHalves,
     };
 
     SpecialValue() = default;
@@ -301,6 +303,8 @@ public:
             case BelowLowestINT32:
             case MaxShift:
             case SixtyTwo:
+            case Half:
+            case ThreeHalves:
                 return _static_evaluate<TosaRefType, DataType>(_value, _negative);
             default:
                 // Handle the Random and unsupported cases below
@@ -362,8 +366,14 @@ private:
             case Lowest:
                 rawVal = DtypeLimits<TosaRefType>::lowest;
                 break;
+            case Half:
+                rawVal = static_cast<DataType>(0.5);
+                break;
             case One:
                 rawVal = static_cast<DataType>(1);
+                break;
+            case ThreeHalves:
+                rawVal = static_cast<DataType>(1.5);
                 break;
             case Two:
                 rawVal = static_cast<DataType>(2);
