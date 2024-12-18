@@ -266,14 +266,14 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       ${DOCTEST_DIR}
     )
 
-  # GCC-8.3 requires explicit linking against stdc++fs
+  # GCC-8 and below require explicit linking against stdc++fs
   set(is_gnu "$<CXX_COMPILER_ID:GNU>")
-  set(is_8_3 "$<VERSION_EQUAL:$<CXX_COMPILER_VERSION>,8.3>")
-  set(is_gnu_8_3 "$<AND:${is_gnu},${is_8_3}>")
+  set(is_8_or_below "$<VERSION_LESS:$<CXX_COMPILER_VERSION>,9.0.0>")
+  set(is_gnu_8_or_below "$<AND:${is_gnu},${is_8_or_below}>")
   target_link_libraries(unit_tests
     PRIVATE
       ${SERIALIZATION_LIB}
-      "$<${is_gnu_8_3}:stdc++fs>"
+      "$<${is_gnu_8_or_below}:stdc++fs>"
   )
 endif()
 
