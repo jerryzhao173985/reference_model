@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ enum class SpecialTestSet
     FirstMaxThenZeroes,
     FirstLowestThenZeroes,
     FirstMaxThenMinusOnes,
-    FirstLowestThenPlusOnes
+    FirstLowestThenPlusOnes,
 };
 
 /// \brief Dot-product generator meta-data

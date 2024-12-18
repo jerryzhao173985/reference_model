@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -2493,6 +2493,11 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
             }
         }
 
+        SUBCASE("cast input 0")
+        {
+            special_test_INT<INT_TYPE>(tosaName0, tosaElements, "CAST", "1", expectedDefault);
+        }
+
         SUBCASE("rescale, input 0")
         {
             const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { minusTwo, minusTwo, one, one,
@@ -2502,8 +2507,9 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
 
         SUBCASE("test set all zeroes")
         {
-            const std::vector<std::string> operators = { "CONV2D",           "CONV3D", "DEPTHWISE_CONV2D",
-                                                         "TRANSPOSE_CONV2D", "MATMUL", "REDUCE_SUM" };
+            const std::vector<std::string> operators = {
+                "CONV2D", "CONV3D", "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D", "MATMUL", "REDUCE_SUM", "RESIZE"
+            };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { zero };
@@ -2513,10 +2519,11 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
 
         SUBCASE("test set all max values")
         {
-            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D",           "CONV3D",
-                                                         "DEPTHWISE_CONV2D", "TRANSPOSE_CONV2D", "MATMUL",
-                                                         "AVG_POOL2D",       "MAX_POOL2D",       "REDUCE_MIN",
-                                                         "REDUCE_MAX" };
+            const std::vector<std::string> operators = {
+                "ARGMAX",           "CONV2D",     "CONV3D",     "DEPTHWISE_CONV2D",
+                "TRANSPOSE_CONV2D", "MATMUL",     "AVG_POOL2D", "MAX_POOL2D",
+                "REDUCE_MIN",       "REDUCE_MAX", "RESIZE"
+            };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { max };
@@ -2526,8 +2533,9 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
 
         SUBCASE("test set all lowest values")
         {
-            const std::vector<std::string> operators = { "ARGMAX",     "CONV2D",     "CONV3D",     "DEPTHWISE_CONV2D",
-                                                         "AVG_POOL2D", "MAX_POOL2D", "REDUCE_MIN", "REDUCE_MAX" };
+            const std::vector<std::string> operators = { "ARGMAX",           "CONV2D",     "CONV3D",
+                                                         "DEPTHWISE_CONV2D", "AVG_POOL2D", "MAX_POOL2D",
+                                                         "REDUCE_MIN",       "REDUCE_MAX", "RESIZE" };
             for (const auto& op : operators)
             {
                 const std::vector<std::pair<INT_TYPE, INT_TYPE>> expected = { lowest };

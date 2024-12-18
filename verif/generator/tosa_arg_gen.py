@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, ARM Limited.
+# Copyright (c) 2021-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import itertools
 import logging
@@ -1814,10 +1814,11 @@ class TosaTensorValuesGen:
         assert data_range is not None
         argsDict["data_range"] = data_range
 
-        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL and not gtu.dtypeIsFloat(
-            argsDict["out_type"]
-        ):
-            argsDict["special_test_sets"] = [gtu.SpecialTestSet.CAST_FP_TO_INT]
+        if argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
+            in_float = gtu.dtypeIsFloat(in_dtype)
+            out_float = gtu.dtypeIsFloat(out_dtype)
+            if in_float and not out_float:
+                argsDict["special_test_sets"] = [gtu.SpecialTestSet.CAST_FP_TO_INT]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
