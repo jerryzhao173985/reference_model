@@ -327,6 +327,13 @@ class TosaTensorGen:
         )
 
     @staticmethod
+    def tgNegate(testGen, rng, op, rank, error_name=None):
+        shape_list = TosaTensorGen._get_basic_shapes(testGen, rng, 1, rank, error_name)
+        shape_list.append([1])  # Input zero point
+        shape_list.append([1])  # Output zero point
+        return shape_list
+
+    @staticmethod
     def tgMul(testGen, rng, op, rank, error_name=None):
         # Get broadcast shapes for the first 2 inputs as the 3rd is shift
         shape_list = TosaTensorGen._get_broadcast_shapes(
@@ -1089,7 +1096,22 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def tvgAbsNegate(
+    def tvgAbs(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+        dtype = dtypeList[0]
+        data_range = TosaTensorValuesGen._get_data_range(
+            rng,
+            dtype,
+            TosaTensorValuesGen.TVG_HIGH_VALUE,
+            TosaTensorValuesGen.TVG_LOW_VALUE_ABS_NEGATE,
+        )
+        if data_range:
+            argsDict["data_range"] = data_range
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
+    def tvgNegate(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
         dtype = dtypeList[0]
@@ -1101,6 +1123,18 @@ class TosaTensorValuesGen:
         )
         if data_range:
             argsDict["data_range"] = data_range
+
+        qinfo = TosaQuantGen.qgUnary(rng, None, None, dtype, error_name)
+        argsDict["input_zp"] = np.int32([qinfo[0]])
+        argsDict["output_zp"] = np.int32([qinfo[1]])
+
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [
+            None,
+            argsDict["input_zp"],
+            argsDict["output_zp"],
+        ]
+
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
         )
