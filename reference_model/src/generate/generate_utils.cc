@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -375,6 +375,13 @@ void writeValue<int8_t, TOSA_REF_TYPE_INT48>(int64_t value, int64_t index, int8_
         auto shift         = i * 8;
         data[byte_idx + i] = (val_u64 >> shift) & 0xFF;
     }
+}
+
+template <>
+void writeValue<int8_t, TOSA_REF_TYPE_BOOL>(int64_t value, int64_t index, int8_t* data)
+{
+    // Make sure we truncate the values to valid boolean values
+    data[index] = static_cast<bool>(value);
 }
 
 // Instantiate other needed writeValue functions

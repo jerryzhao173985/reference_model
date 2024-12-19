@@ -18,6 +18,7 @@
 #include <doctest.h>
 
 #include <array>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -36,10 +37,32 @@ void update_json_template(std::string& str, const std::string& find, const std::
 }
 
 template <typename T>
+std::string numbers_to_string(const std::vector<T> numbers)
+{
+    std::stringstream numstr;
+    for (size_t idx = 0; idx < numbers.size(); ++idx)
+    {
+        if constexpr (std::is_same_v<T, int8_t>)
+        {
+            numstr << static_cast<int32_t>(numbers[idx]);
+        }
+        else
+        {
+            numstr << numbers[idx];
+        }
+        if (idx < numbers.size() - 1)
+        {
+            numstr << ", ";
+        }
+    }
+    return numstr.str();
+}
+
+template <typename T>
 void check_value(bool match, T result, T expected, uint32_t idx)
 {
     std::stringstream msg;
-    msg << "index: " << idx << " expected: 0x" << std::hex << expected << " got: 0x" << result;
+    msg << "index: " << idx << " expected: 0x" << std::hex << uint32_t(expected) << " got: 0x" << uint32_t(result);
     if (match)
     {
         REQUIRE_MESSAGE(expected == result, msg.str());
@@ -50,39 +73,93 @@ void check_value(bool match, T result, T expected, uint32_t idx)
     }
 }
 
+// Bit exact checker function - binary uint32 "expected" vector
 template <typename T>
 void check_output(const std::vector<T>& results, const std::vector<uint32_t>& expected)
 {
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        check_value(true, *(uint32_t*)&results[idx], expected[idx], idx);
+        if constexpr (sizeof(T) == 4)
+        {
+            uint32_t r;
+            std::memcpy(&r, &results[idx], sizeof(T));
+            check_value(true, *(uint32_t*)&results[idx], expected[idx], idx);
+        }
+        else
+        {
+            REQUIRE_MESSAGE(false, "INTERNAL ERROR: Types not supported by check_output()");
+        }
     }
 }
 
+// Bit exact checker function - binary uint16 "expected" vector
 template <typename T>
 void check_output(const std::vector<T>& results, const std::vector<uint16_t>& expected)
 {
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        check_value(true, *(uint16_t*)&results[idx], expected[idx], idx);
+        if constexpr (sizeof(T) == 2)
+        {
+            uint16_t r;
+            std::memcpy(&r, &results[idx], sizeof(T));
+            check_value(true, r, expected[idx], idx);
+        }
+        else
+        {
+            REQUIRE_MESSAGE(false, "INTERNAL ERROR: Types not supported by check_output()");
+        }
     }
 }
 
+// Bit exact checker function
 template <typename T>
 void check_output(const std::vector<T>& results, const std::vector<T>& expected)
 {
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        check_value(true, *(uint32_t*)&results[idx], *(uint32_t*)&expected[idx], idx);
+        if constexpr (sizeof(T) == 4)
+        {
+            uint32_t r, e;
+            std::memcpy(&r, &results[idx], sizeof(T));
+            std::memcpy(&e, &expected[idx], sizeof(T));
+            check_value(true, r, e, idx);
+        }
+        else if constexpr (sizeof(T) == 2)
+        {
+            uint16_t r, e;
+            std::memcpy(&r, &results[idx], sizeof(T));
+            std::memcpy(&e, &expected[idx], sizeof(T));
+            check_value(true, r, e, idx);
+        }
+        else if constexpr (sizeof(T) == 1)
+        {
+            // Don't need to perform memcpy to avoid undefined behaviour as char type
+            check_value(true, *(uint8_t*)&results[idx], *(uint8_t*)&expected[idx], idx);
+        }
+        else
+        {
+            REQUIRE_MESSAGE(false, "INTERNAL ERROR: Types not supported by check_output()");
+        }
     }
 }
 
+// Difference (bit exact) checker function
 template <typename T>
 void check_not_output(const std::vector<T>& results, const std::vector<T>& expected)
 {
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        check_value(false, *(uint32_t*)&results[idx], *(uint32_t*)&expected[idx], idx);
+        if constexpr (sizeof(T) == 4)
+        {
+            uint32_t r, e;
+            std::memcpy(&r, &results[idx], sizeof(T));
+            std::memcpy(&e, &expected[idx], sizeof(T));
+            check_value(false, r, e, idx);
+        }
+        else
+        {
+            REQUIRE_MESSAGE(false, "INTERNAL ERROR: Types not supported by check_not_output()");
+        }
     }
 }
 
@@ -2680,54 +2757,79 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
     }
 }
 
-TEST_CASE("positive - Fixed Data")
+template <typename TYPE, typename StorageType>
+void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t> shape)
 {
     std::string jsonCfg = R"({
         "tensors" : {
             "fixed0" : {
                 "generator": "FIXED_DATA",
-                "data_type": "INT8",
+                "data_type": "_TYPE_",
                 "input_type": "VARIABLE",
-                "shape" : [ 3, 3 ],
+                "shape" : [ _SHAPE_ ],
                 "input_pos": 0,
                 "op" : "ADD",
                 "fixed_data_info": {
-                    "data": [ 9, 8, 7, 6, 5, 4, 3, 2, 1 ]
-                }
-            },
-            "fixed1" : {
-                "generator": "FIXED_DATA",
-                "data_type": "FP16",
-                "input_type": "VARIABLE",
-                "shape" : [ 9 ],
-                "input_pos": 1,
-                "op" : "ADD",
-                "fixed_data_info": {
-                    "data": [ 7 ]
+                    "data": [ _DATA_ ]
                 }
             }
         }
     })";
 
-    const std::string tosaName0 = "fixed0";
-    const std::string tosaName1 = "fixed1";
-    const size_t tosaElements   = 3 * 3;
+    DType dtype = NativeType2Dtype<TYPE>();
+    update_json_template(jsonCfg, "_TYPE_", EnumNameDType(dtype));
+    update_json_template(jsonCfg, "_SHAPE_", numbers_to_string(shape));
+    update_json_template(jsonCfg, "_DATA_", numbers_to_string(values));
 
-    SUBCASE("add, INT8 with all data")
+    auto elements = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+    std::vector<StorageType> expected(elements);
+    for (size_t idx = 0; idx < expected.size(); ++idx)
     {
-        std::vector<int8_t> expected = { 9, 8, 7, 6, 5, 4, 3, 2, 1 };
-        std::vector<int8_t> buffer(tosaElements);
-        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName0.c_str(), (void*)buffer.data(), tosaElements));
-        check_output(buffer, expected);
+        size_t vidx   = idx % values.size();
+        expected[idx] = static_cast<TYPE>(values[vidx]);
     }
-    SUBCASE("add, FP16 with broadcast data")
+
+    std::vector<StorageType> buffer(elements);
+    size_t bytes = elements * sizeof(StorageType);
+
+    REQUIRE(tgd_generate_data(jsonCfg.c_str(), "fixed0", (void*)buffer.data(), bytes));
+    check_output<StorageType>(buffer, expected);
+}
+
+TEST_CASE_TEMPLATE("positive - Fixed Data", TYPE, bool, int8_t, int16_t, int32_t, half_float::half, float)
+{
+    // Testing of fixed data into high-level storage types
+
+    if constexpr (std::is_same_v<TYPE, bool>)
     {
-        const half_float::half vh      = half_float::half(7.0);
-        const uint16_t v               = *(uint16_t*)&vh;
-        std::vector<uint16_t> expected = { v, v, v, v, v, v, v, v, v };
-        std::vector<half_float::half> buffer(tosaElements);
-        REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName1.c_str(), (void*)buffer.data(), tosaElements * 2));
-        check_output(buffer, expected);
+        // bool vectors are stored as bit masks, so special handling needed
+        SUBCASE("add with all data")
+        {
+            const std::vector<int8_t> values = { 9, 8, 7, 6, 0, -4, -3, -2, -1 };
+            const std::vector<int32_t> shape = { 3, 3 };
+            fixed_data_test<TYPE, int8_t>(values, shape);
+        }
+        SUBCASE("add with broadcast data")
+        {
+            const std::vector<int8_t> values = { 7 };
+            const std::vector<int32_t> shape = { 9 };
+            fixed_data_test<TYPE, int8_t>(values, shape);
+        }
+    }
+    else
+    {
+        SUBCASE("add with all data")
+        {
+            const std::vector<int8_t> values = { 9, 8, 7, 6, 0, -4, -3, -2, -1 };
+            const std::vector<int32_t> shape = { 3, 3 };
+            fixed_data_test<TYPE, TYPE>(values, shape);
+        }
+        SUBCASE("add with broadcast data")
+        {
+            const std::vector<int8_t> values = { 7 };
+            const std::vector<int32_t> shape = { 9 };
+            fixed_data_test<TYPE, TYPE>(values, shape);
+        }
     }
 }
 
