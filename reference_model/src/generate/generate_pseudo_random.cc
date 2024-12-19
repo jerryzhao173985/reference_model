@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -338,6 +338,8 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             int8_t* outData = reinterpret_cast<int8_t*>(data);
             return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT48>(cfg, outData, size);
         }
+        case DType::DType_SHAPE:
+            [[fallthrough]];
         case DType::DType_INT32: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
             if (cfg.opType == Op::Op_SCATTER && cfg.inputPos == 1)
@@ -375,7 +377,7 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             return generateINT<uint16_t, TosaReference::TOSA_REF_TYPE_UINT16>(cfg, outData, size);
         }
         default:
-            WARNING("[Generator][PR] Unsupported type.");
+            WARNING("[Generator][PR] Unsupported type %s.", EnumNameDType(cfg.dataType));
             return false;
     }
 }

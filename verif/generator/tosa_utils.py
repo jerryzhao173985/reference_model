@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024, ARM Limited.
+# Copyright (c) 2021-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import struct
 from enum import IntEnum
@@ -109,52 +109,6 @@ def dtypeWidth(dtype):
 def dtypeIsFloat(dtype):
     """Is floating point data type"""
     return dtype in (DType.BF16, DType.FP16, DType.FP32, DType.FP8E4M3, DType.FP8E5M2)
-
-
-def dtypeIsSupportedByCompliance(dtype):
-    """Types supported by the C++ verification library."""
-    if isinstance(dtype, list) or isinstance(dtype, tuple):
-        dtype = dtype[0]
-    return dtype in (
-        DType.INT32,
-        DType.INT16,
-        DType.INT48,
-        DType.UINT16,
-        DType.UINT8,
-        DType.INT4,
-        DType.BOOL,
-        DType.INT8,
-        DType.FP32,
-        DType.FP16,
-        DType.BF16,
-        DType.FP8E4M3,
-        DType.FP8E5M2,
-        DType.SHAPE,
-    )
-
-
-def dtypeIsSupportedByDataGen(dtype):
-    """Types supported by the C++ data generation library"""
-    supported_types = (
-        DType.INT48,
-        DType.INT32,
-        DType.INT16,
-        DType.INT8,
-        DType.INT4,
-        DType.BOOL,
-        DType.FP32,
-        DType.FP16,
-        DType.BF16,
-        DType.FP8E4M3,
-        DType.FP8E5M2,
-        DType.SHAPE,
-        DType.UINT16,
-        DType.UINT8,
-    )
-    if isinstance(dtype, list) or isinstance(dtype, tuple):
-        return all(dt in supported_types for dt in dtype)
-
-    return dtype in supported_types
 
 
 def valueToName(item, value):

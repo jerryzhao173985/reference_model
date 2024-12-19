@@ -241,12 +241,8 @@ class TosaTestGen:
     def tensorComplianceMetaData(
         self, op, inputType, argsDict, outputTensor, errorName
     ):
-        if (
-            errorName
-            or not gtu.dtypeIsSupportedByCompliance(outputTensor.dtype)
-            or (not gtu.dtypeIsSupportedByCompliance(inputType))
-        ):
-            # No compliance for error tests or unsupported types currently
+        if errorName:
+            # No compliance for error tests
             return None
 
         # Create compliance meta data for expected output tensor

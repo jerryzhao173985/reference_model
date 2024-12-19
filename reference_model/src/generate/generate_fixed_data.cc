@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -25,10 +25,13 @@ using namespace TosaReference;
 
 namespace
 {
-template <typename StorageType, DType DataType>
-bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, StorageType* outData, bool broadcastMode)
+template <typename StorageType, TOSA_REF_TYPE TosaRefType>
+bool copyFixedDataFP(const int64_t elements,
+                     const std::vector<int32_t> inData,
+                     StorageType* outData,
+                     bool broadcastMode)
 {
-    // Copy the input int32 data and cast it to the required output type
+    // Copy the input int32 data and cast it to the required float type
 
     if (broadcastMode)
     {
@@ -47,26 +50,26 @@ bool copyFixedData(const int64_t elements, const std::vector<int32_t> inData, St
     return true;
 }
 
-template <>
-bool copyFixedData<int8_t, DType_INT4>(const int64_t elements,
-                                       const std::vector<int32_t> inData,
-                                       int8_t* outData,
-                                       bool broadcastMode)
+template <typename StorageType, TOSA_REF_TYPE TosaRefType>
+bool copyFixedDataINT(const int64_t elements,
+                      const std::vector<int32_t> inData,
+                      StorageType* outData,
+                      bool broadcastMode)
 {
-    // Copy the input int32 data and cast it to the required output type
+    // Copy the input int32 data and write it out as the required integer value
 
     if (broadcastMode)
     {
         for (auto t = 0; t < elements; t++)
         {
-            writeValue<int8_t, TOSA_REF_TYPE_INT4>(static_cast<int64_t>(inData[0]), t, outData);
+            writeValue<StorageType, TosaRefType>(static_cast<int64_t>(inData[0]), t, outData);
         }
     }
     else
     {
         for (auto t = 0; t < elements; t++)
         {
-            writeValue<int8_t, TOSA_REF_TYPE_INT4>(static_cast<int64_t>(inData[t]), t, outData);
+            writeValue<StorageType, TosaRefType>(static_cast<int64_t>(inData[t]), t, outData);
         }
     }
     return true;
@@ -99,45 +102,51 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
 
     switch (cfg.dataType)
     {
-        case DType_SHAPE: {
-            int32_t* outData = reinterpret_cast<int32_t*>(data);
-            return copyFixedData<int32_t, DType_SHAPE>(T, inData, outData, broadcastMode);
+        case DType_INT48: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return copyFixedDataINT<int8_t, TOSA_REF_TYPE_INT48>(T, inData, outData, broadcastMode);
         }
+        case DType_SHAPE:
+            [[fallthrough]];
         case DType_INT32: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
-            return copyFixedData<int32_t, DType_INT32>(T, inData, outData, broadcastMode);
+            return copyFixedDataINT<int32_t, TOSA_REF_TYPE_INT32>(T, inData, outData, broadcastMode);
         }
         case DType_INT16: {
             int16_t* outData = reinterpret_cast<int16_t*>(data);
-            return copyFixedData<int16_t, DType_INT16>(T, inData, outData, broadcastMode);
+            return copyFixedDataINT<int16_t, TOSA_REF_TYPE_INT16>(T, inData, outData, broadcastMode);
         }
         case DType_INT8: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return copyFixedData<int8_t, DType_INT8>(T, inData, outData, broadcastMode);
+            return copyFixedDataINT<int8_t, TOSA_REF_TYPE_INT8>(T, inData, outData, broadcastMode);
         }
         case DType_INT4: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return copyFixedData<int8_t, DType_INT4>(T, inData, outData, broadcastMode);
+            return copyFixedDataINT<int8_t, TOSA_REF_TYPE_INT4>(T, inData, outData, broadcastMode);
+        }
+        case DType_BOOL: {
+            int8_t* outData = reinterpret_cast<int8_t*>(data);
+            return copyFixedDataINT<int8_t, TOSA_REF_TYPE_BOOL>(T, inData, outData, broadcastMode);
         }
         case DType_FP16: {
             half_float::half* outData = reinterpret_cast<half_float::half*>(data);
-            return copyFixedData<half_float::half, DType_FP16>(T, inData, outData, broadcastMode);
+            return copyFixedDataFP<half_float::half, TOSA_REF_TYPE_FP16>(T, inData, outData, broadcastMode);
         }
         case DType_FP32: {
             float* outData = reinterpret_cast<float*>(data);
-            return copyFixedData<float, DType_FP32>(T, inData, outData, broadcastMode);
+            return copyFixedDataFP<float, TOSA_REF_TYPE_FP32>(T, inData, outData, broadcastMode);
         }
         case DType_BF16: {
             bf16* outData = reinterpret_cast<bf16*>(data);
-            return copyFixedData<bf16, DType_BF16>(T, inData, outData, broadcastMode);
+            return copyFixedDataFP<bf16, TOSA_REF_TYPE_BF16>(T, inData, outData, broadcastMode);
         }
         case DType_FP8E4M3: {
             fp8e4m3* outData = reinterpret_cast<fp8e4m3*>(data);
-            return copyFixedData<fp8e4m3, DType_FP8E4M3>(T, inData, outData, broadcastMode);
+            return copyFixedDataFP<fp8e4m3, TOSA_REF_TYPE_FP8E4M3>(T, inData, outData, broadcastMode);
         }
         case DType_FP8E5M2: {
             fp8e5m2* outData = reinterpret_cast<fp8e5m2*>(data);
-            return copyFixedData<fp8e5m2, DType_FP8E5M2>(T, inData, outData, broadcastMode);
+            return copyFixedDataFP<fp8e5m2, TOSA_REF_TYPE_FP8E5M2>(T, inData, outData, broadcastMode);
         }
         default:
             WARNING("[Generator][FD] Unsupported type %s.", EnumNameDType(cfg.dataType));

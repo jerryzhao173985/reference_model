@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
             break;
         }
         default:
-            WARNING("[Generator][FR] Unsupported type.");
+            WARNING("[Generator][FR] Unsupported type %s.", EnumNameDType(cfg.dataType));
             return false;
     }
 

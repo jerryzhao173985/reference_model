@@ -861,52 +861,6 @@ class TosaTensorValuesGen:
             shapeList
         ), "Fixed data list must match shapes list"
 
-        if (
-            error_name is not None
-            or "data_gen" not in op
-            or not gtu.dtypeIsSupportedByDataGen(dtypeList)
-        ):
-            # Fall back to internal data gen when dealing with unsupported types or ops
-            for idx, info in enumerate(zip(shapeList, dtypeList)):
-                data_range, round_mode = get_data_range(idx)
-                shape, dtype = info
-                if data_range is not None and not gtu.dtypeIsFloat(dtype):
-                    # Change from inclusive to exclusive range
-                    data_range = (data_range[0], data_range[1] + 1)
-
-                if fixed_data_tensors[idx] is not None:
-                    size = gtu.product(shape)
-                    data = np.array(fixed_data_tensors[idx])
-                    if size > 1 and data.size == 1:
-                        # Broadcast the data to the correct size
-                        data = np.broadcast_to(data, shape)
-                    elif len(shape) == 0:
-                        # Make sure we have a rank 0 tensor
-                        data = data.reshape(shape)
-                    assert (
-                        data.size == size
-                    ), "Fixed data length does not match tensor size"
-
-                    arr = convert_to_target_type(dtype, data)
-                else:
-                    arr = rng.randTensor(shape, dtype, data_range)
-                if round_mode:
-                    arr = np.round(arr)
-
-                if serialize_data:
-                    if tensor_is_variable(pCount, idx):
-                        tens_ser_list.append(
-                            testGen.ser.addPlaceholder(shape, dtype, arr)
-                        )
-                    else:
-                        tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
-                else:
-                    # We will do the serialization later
-                    argsDict["tensor_data"].append(
-                        {"dtype": dtype, "shape": shape, "data": arr}
-                    )
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-
         # Create data generator meta-data
         tens_data = {
             "version": "0.1",
@@ -1885,46 +1839,20 @@ class TosaTensorValuesGen:
     def tvgGather(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        op = testGen.TOSA_OP_LIST[opName]
-        K = shapeList[0][1]
-
         # Fix the type of the indices tensor
         dtypeList[1] = DType.INT32
 
-        dtype = dtypeList[0]
-        if not gtu.dtypeIsSupportedByDataGen(dtype):
-            # Test unsupported by data generator
-            pCount, cCount = op["operands"]
-            assert (
-                pCount == 2 and cCount == 0
-            ), "Op.GATHER must have 2 placeholders, 0 consts"
+        # Use inclusive values upto index K for indices tensor
+        K = shapeList[0][1]
+        data_range_list = (
+            {"range": None},
+            {"range": (0, K - 1)},
+        )
+        argsDict["data_range_list"] = data_range_list
 
-            tens_ser_list = []
-            for idx, shape in enumerate(shapeList):
-                dtype = dtypeList[idx]
-                if idx != 1:
-                    arr = rng.randTensor(shape, dtype)
-                    tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtype, arr))
-                else:
-                    # Limit data range of indices tensor upto K (exclusive)
-                    arr = rng.randTensor(shape, dtype, (0, K))
-                    # To match old functionality - create indices as CONST
-                    tens_ser_list.append(testGen.ser.addConst(shape, dtype, arr))
-
-            return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
-
-        else:
-            # ERROR_IF or floating point test
-            # Use inclusive values upto index K for indices tensor
-            data_range_list = (
-                {"range": None},
-                {"range": (0, K - 1)},
-            )
-            argsDict["data_range_list"] = data_range_list
-
-            return TosaTensorValuesGen.tvgLazyGenDefault(
-                testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
-            )
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgScatter(
@@ -1972,11 +1900,9 @@ class TosaArgGen:
         """Add extra tests for each type of test data for this op."""
         op = testGen.TOSA_OP_LIST[opName]
 
-        if (
-            error_name is None
-            and "data_gen" in op
-            and gtu.dtypeIsSupportedByDataGen(dtype)
-        ):
+        # Get list of test data generators we need to add for this op
+        if "data_gen" in op and error_name is None:
+            # Get list based on data type
             testDataTypesList = op["data_gen"].get(
                 dtype, (gtu.TestDataType.PSEUDO_RANDOM,)
             )
