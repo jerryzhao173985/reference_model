@@ -1559,12 +1559,63 @@ class TosaTensorValuesGen:
 
     @staticmethod
     def tvgTable(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
+        # Reference generation functions from specification
+        def tanh_reference(value, max_value):
+            v = math.exp(-2.0 * value)
+            v = (1.0 - v) / (1.0 + v)
+            return round(max_value * v)
+
+        def sigmoid_reference(value, max_value):
+            v = value / 16.0
+            v = 1.0 / (1.0 + math.exp(-v))
+            return round(max_value * v)
+
+        def erf_reference(value, max_value):
+            v = value / 64.0
+            v = math.erf(v)
+            return round(max_value * v)
+
+        # Table generation function from specification
+        def generate_lookup_table(size, dtype_range, reference_func):
+            assert size in (256, 513)
+            start_val = -size // 2
+            # Calculate the table values using the theoretical full range
+            # of the integer type (e.g. -128 to 128) and then clip it
+            # afterwards to the allowed range (e.g. -128 to 127)
+            max_val = abs(dtype_range[0])
+            table = []
+            for idx in range(size):
+                value = start_val + idx
+                result = reference_func(value, max_val)
+                # Apply clipping
+                result = max(result, dtype_range[0])
+                result = min(result, dtype_range[1])
+                table.append(result)
+            return table
+
         # Use supported type for table data on ERROR_IF
-        dtypeList[1] = (
+        table_dtype = (
             dtypeList[0] if error_name != ErrorIf.WrongInputType else DType.INT8
         )
+        dtypeList[1] = table_dtype
 
-        table_values = argsDict["table"]
+        if argsDict["dg_type"] == gtu.DataGenType.FULL_RANGE:
+            # Create op specific table from spec
+            test_set = argsDict["s"]
+            size = 256 if table_dtype == DType.INT8 else 513
+            dtype_range = rng.dTypeRange(table_dtype, high_inclusive=True)
+            if test_set == 0:
+                ref_func = erf_reference
+            elif test_set == 1:
+                ref_func = sigmoid_reference
+            else:
+                assert test_set == 2
+                ref_func = tanh_reference
+            table_values = generate_lookup_table(size, dtype_range, ref_func)
+        else:
+            # Use randomly generated table
+            table_values = argsDict["table"]
+
         shapeList[1] = [len(table_values)]
         argsDict["fixed_data"] = [None, table_values]
 
@@ -2010,6 +2061,10 @@ class TosaArgGen:
                         "full range of",
                     ):
                         continue
+                    if op["op"] == Op.TABLE:
+                        # We have 3 special test cases for TABLE - see tvgTable
+                        num_test_sets = 3
+
                     # Large enough tensor data size for full range, add full test
                     arg_str = f"{arg_str}_full" if arg_str else "full"
                     gen_args_dict["tags"] = args_dict.get("tags", []) + [

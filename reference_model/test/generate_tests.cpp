@@ -2657,9 +2657,9 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
     // Tests available for int16 and int8
     if constexpr (std::is_same_v<INT_TYPE, int16_t> || std::is_same_v<INT_TYPE, int8_t>)
     {
-        SUBCASE("unary full range const 0")
+        SUBCASE("unary & table full range const 0")
         {
-            const std::vector<std::string> operators = { "ABS", "BITWISE_NOT", "NEGATE" };
+            const std::vector<std::string> operators = { "ABS", "BITWISE_NOT", "NEGATE", "TABLE" };
             for (const auto& op : operators)
             {
                 full_range_test_INT<INT_TYPE>(tosaName2, tosaElements, op, "5", 5);

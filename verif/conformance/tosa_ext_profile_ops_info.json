@@ -9288,7 +9288,7 @@
                         "--target-dtype",
                         "int16",
                         "--tensor-dim-range",
-                        "16,64",
+                        "41,64",
                         "--target-rank",
                         "0",
                         "1",

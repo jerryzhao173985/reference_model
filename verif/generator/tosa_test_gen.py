@@ -3349,9 +3349,17 @@ class TosaTestGen:
     REDUCE_BOOL_DATAGEN = {
         DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
     }
-    PR_DYN_DATAGEN = {
-        DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
-        DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.DYNAMIC_CTC),
+    TABLE_DATAGEN = {
+        DType.INT16: (
+            gtu.DataGenType.PSEUDO_RANDOM,
+            gtu.DataGenType.FULL_RANGE,
+            gtu.TestDataType.DYNAMIC_CTC,
+        ),
+        DType.INT8: (
+            gtu.DataGenType.PSEUDO_RANDOM,
+            gtu.DataGenType.FULL_RANGE,
+            gtu.TestDataType.DYNAMIC_CTC,
+        ),
     }
     RESCALE_DATAGEN = {
         DType.INT48: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
@@ -4274,7 +4282,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": PR_DYN_DATAGEN,
+            "data_gen": TABLE_DATAGEN,
         },
         # Elementwise Unary operators
         "abs": {
