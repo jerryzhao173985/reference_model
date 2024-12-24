@@ -1,4 +1,4 @@
-# Copyright (c) 2024, ARM Limited.
+# Copyright (c) 2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import hashlib
 import logging
@@ -152,7 +152,7 @@ class TosaRandomGenerator(np.random.Generator):
             elif dtype == DType.FP8E4M3:
                 return f_tensor.astype(float8_e4m3fn)
             elif dtype == DType.FP8E5M2:
-                return f_tensor.astype(float8_e5m2).view(np.uint8)
+                return f_tensor.astype(float8_e5m2)
             else:
                 return np.float32(f_tensor)
         else:
