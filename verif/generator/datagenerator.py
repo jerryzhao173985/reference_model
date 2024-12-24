@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2024, ARM Limited.
+# Copyright (c) 2023-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Calls the data generation library to create the test data."""
 import ctypes as ct
@@ -134,7 +134,7 @@ class GenerateLibrary:
             arr = np.frombuffer(arr, float8_e4m3fn)
         elif dtype == "FP8E5M2":
             # Convert from bytes back to FP8E5M2
-            arr = np.frombuffer(arr, float8_e5m2).view(np.uint8)
+            arr = np.frombuffer(arr, float8_e5m2)
         elif dtype == "INT8":
             arr = np.frombuffer(arr, np.int8)
         elif dtype == "INT4":
