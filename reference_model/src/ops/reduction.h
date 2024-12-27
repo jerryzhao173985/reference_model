@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ class ReduceNode : public GraphNode
 public:
     ReduceNode(SubgraphTraverser* sgt_, const Op& nodeType, TosaAttributeBase* attribute_, const uint64_t id_);
     virtual ~ReduceNode();
+    virtual int axis() = 0;
     virtual int checkTensorAttributes();
     virtual int eval() = 0;
 
@@ -41,26 +42,6 @@ protected:
     Eigen::array<int, 1> dims;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
-    std::unique_ptr<TosaAxisAttribute> attribute;
-};
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-class ReduceNanNode : public ReduceNode<Rank, Dtype>
-{
-public:
-    ReduceNanNode(SubgraphTraverser* sgt_, const Op& nodeType, TosaAttributeBase* attribute_, const uint64_t id_)
-        : ReduceNode<Rank, Dtype>(sgt_, nodeType, attribute_, id_)
-    {}
-    virtual ~ReduceNanNode()
-    {}
-    // Check the NaN propagation mode as well.
-    virtual int checkTensorAttributes();
-    virtual int eval() = 0;
-
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -69,8 +50,17 @@ class OpReduceAll : public ReduceNode<Rank, Dtype>
 public:
     OpReduceAll(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_ALL, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceAll);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceAllAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -79,28 +69,57 @@ class OpReduceAny : public ReduceNode<Rank, Dtype>
 public:
     OpReduceAny(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_ALL, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceAny);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceAnyAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-class OpReduceMax : public ReduceNanNode<Rank, Dtype>
+class OpReduceMax : public ReduceNode<Rank, Dtype>
 {
 public:
     OpReduceMax(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : ReduceNanNode<Rank, Dtype>(sgt_, Op_REDUCE_MAX, attribute_, id_)
-    {}
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MAX, attribute_, id_)
+    {
+        INIT_ATTRIBUTE(ReduceMax);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
+    virtual int checkTensorAttributes();
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceMaxAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
-class OpReduceMin : public ReduceNanNode<Rank, Dtype>
+class OpReduceMin : public ReduceNode<Rank, Dtype>
 {
 public:
     OpReduceMin(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
-        : ReduceNanNode<Rank, Dtype>(sgt_, Op_REDUCE_MIN, attribute_, id_)
-    {}
+        : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_MIN, attribute_, id_)
+    {
+        INIT_ATTRIBUTE(ReduceMin);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
+    virtual int checkTensorAttributes();
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceMinAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -109,8 +128,17 @@ class OpReduceProduct : public ReduceNode<Rank, Dtype>
 public:
     OpReduceProduct(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_PRODUCT, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceProduct);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceProductAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -119,8 +147,17 @@ class OpReduceProductDouble : public ReduceNode<Rank, Dtype>
 public:
     OpReduceProductDouble(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_PRODUCT, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceProduct);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceProductAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -129,8 +166,17 @@ class OpReduceSum : public ReduceNode<Rank, Dtype>
 public:
     OpReduceSum(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceSum);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceSumAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -139,8 +185,17 @@ class OpReduceSumInt : public ReduceNode<Rank, Dtype>
 public:
     OpReduceSumInt(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceSum);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceSumAttribute> attribute;
 };
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -149,8 +204,17 @@ class OpReduceSumDouble : public ReduceNode<Rank, Dtype>
 public:
     OpReduceSumDouble(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
         : ReduceNode<Rank, Dtype>(sgt_, Op_REDUCE_SUM, attribute_, id_)
-    {}
+    {
+        INIT_ATTRIBUTE(ReduceSum);
+    }
+    virtual int axis()
+    {
+        return attribute->axis();
+    }
     virtual int eval();
+
+protected:
+    std::unique_ptr<TosaReduceSumAttribute> attribute;
 };
 
 };    // namespace TosaReference

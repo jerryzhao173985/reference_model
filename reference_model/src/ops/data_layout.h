@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public:
 protected:
     Eigen::array<int, Rank> reverser;
     std::vector<TosaReference::TensorTemplate<TIn>*> ins;
-    std::unique_ptr<TosaAxisAttribute> attribute;
+    std::unique_ptr<TosaConcatAttribute> attribute;
     TosaReference::TensorTemplate<TOut>* out;
 };
 
@@ -108,7 +108,7 @@ public:
     using TOut         = Eigen::Tensor<OutEigenType, Rank>;
 
 protected:
-    std::unique_ptr<TosaAxisAttribute> attribute;
+    std::unique_ptr<TosaReverseAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
     Eigen::array<bool, Rank> reverse_array;

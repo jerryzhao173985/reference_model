@@ -92,5 +92,5 @@ node {
   }
 }
 versions {
-  producer: 1707
+  producer: 2019
 }

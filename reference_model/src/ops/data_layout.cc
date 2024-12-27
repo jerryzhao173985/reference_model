@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ OpConcat<Rank, Dtype>::OpConcat(SubgraphTraverser* sgt_, TosaAttributeBase* attr
     setRequiredOperands(-1, 1);
     setRequiredRank(1);
 
-    INIT_ATTRIBUTE(Axis);
+    INIT_ATTRIBUTE(Concat);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -371,7 +371,7 @@ OpReverse<Rank, Dtype>::OpReverse(SubgraphTraverser* sgt_, TosaAttributeBase* at
     setRequiredOperands(1, 1);
     setRequiredRank(1);
 
-    INIT_ATTRIBUTE(Axis);
+    INIT_ATTRIBUTE(Reverse);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>

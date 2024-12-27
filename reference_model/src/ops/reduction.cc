@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ ReduceNode<Rank, Dtype>::ReduceNode(SubgraphTraverser* sgt_, const Op& op_, Tosa
 {
     setRequiredOperands(1, 1);
     setRequiredRank(1);
-
-    INIT_ATTRIBUTE(Axis);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -50,7 +48,7 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (attribute->axis() < 0 || attribute->axis() >= inputs[0]->getRank())
+    if (axis() < 0 || axis() >= inputs[0]->getRank())
     {
         printNodeValidationError("ReduceOp: axis must between [0, input_rank - 1]");
         return 1;
@@ -62,7 +60,7 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (outputs[0]->getShape()[attribute->axis()] != 1)
+    if (outputs[0]->getShape()[axis()] != 1)
     {
         printNodeValidationError("ReduceOp: Output tensor shape[axis] needs to be 1.");
         return 1;
@@ -77,22 +75,8 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    dims[0] = this->attribute->axis();
+    dims[0] = axis();
 
-    return 0;
-}
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-int ReduceNanNode<Rank, Dtype>::checkTensorAttributes()
-{
-    if (ReduceNode<Rank, Dtype>::checkTensorAttributes())
-    {
-        return 1;
-    }
-    if (GraphNode::validateNanMode(this->attribute->nan_mode()))
-    {
-        return 1;
-    }
     return 0;
 }
 
@@ -196,6 +180,20 @@ int OpReduceAny<Rank, Dtype>::eval()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+int OpReduceMax<Rank, Dtype>::checkTensorAttributes()
+{
+    if (ReduceNode<Rank, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceMax<Rank, Dtype>::eval()
 {
     if constexpr (Dtype == TOSA_REF_TYPE_BF16 || Dtype == TOSA_REF_TYPE_FP16 || Dtype == TOSA_REF_TYPE_FP32)
@@ -220,6 +218,20 @@ int OpReduceMax<Rank, Dtype>::eval()
     }
 
     return GraphNode::eval();
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
+int OpReduceMin<Rank, Dtype>::checkTensorAttributes()
+{
+    if (ReduceNode<Rank, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 ARM Limited.
+// Copyright (c) 2024-2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -34,7 +34,8 @@ void testCastFpSpecial()
     tb.addInput({ TEST_VALUES }, inDtype);
     tb.addOutput({ TEST_VALUES }, outDtype);
 
-    tb.addOp(Op_CAST, Attribute_NONE, nullptr);
+    TosaCastAttribute attr{};
+    tb.addOp(Op_CAST, Attribute_CastAttribute, &attr);
 
     tb.initializeRunner();
 
@@ -84,9 +85,8 @@ void testArgmaxFpSpecial(bool propagate)
     tb.addInput({ TEST_ROWS, TEST_COLUMNS }, inDtype);
     tb.addOutput({ TEST_COLUMNS }, DType_INT32);
 
-    TosaAttributeBase* attr =
-        new TosaAxisAttribute(/* axis */ 0, propagate ? NanPropagationMode_PROPAGATE : NanPropagationMode_IGNORE);
-    tb.addOp(Op_ARGMAX, Attribute_AxisAttribute, attr);
+    TosaArgMaxAttribute attr{ /* axis */ 0, propagate ? NanPropagationMode_PROPAGATE : NanPropagationMode_IGNORE };
+    tb.addOp(Op_ARGMAX, Attribute_ArgMaxAttribute, &attr);
 
     tb.initializeRunner();
 
@@ -147,8 +147,8 @@ void testConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, in
     tb.addInput({ 1 }, weightDtype);
     tb.addOutput({ 1, 1, 1, 1 }, outDtype);
 
-    TosaAttributeBase* attr = new TosaConvAttribute({ 0, 0, 0, 0 }, { 2, 2 }, { 1, 1 }, true, DType_INT32);
-    tb.addOp(Op_CONV2D, Attribute_ConvAttribute, attr);
+    TosaAttributeBase* attr = new TosaConv2dAttribute({ 0, 0, 0, 0 }, { 2, 2 }, { 1, 1 }, true, DType_INT32);
+    tb.addOp(Op_CONV2D, Attribute_Conv2dAttribute, attr);
 
     tb.initializeRunner();
 

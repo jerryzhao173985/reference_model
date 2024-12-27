@@ -20,5 +20,5 @@
     "variable_output_0.npy",
     "variable_output_1.npy"
   ],
-  "expected_failure": false
+  "ignored_failure": false
 }
