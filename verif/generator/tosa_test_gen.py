@@ -418,10 +418,12 @@ class TosaTestGen:
         ):
             return None
 
-        attr = None
+        attr = ts.TosaSerializerAttribute()
         if op["op"] == Op.NEGATE:
-            attr = ts.TosaSerializerAttribute()
             attr.NegateAttribute(qinfo[0], qinfo[1])
+        else:
+            # other ops have empty attributes
+            attr.setAttribute(op["op"])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -462,13 +464,15 @@ class TosaTestGen:
         ):
             return None
 
-        if gtu.has_nan_mode_by_enum(op["op"]):
+        attr = ts.TosaSerializerAttribute()
+        if op["op"] in [Op.MAXIMUM, Op.MINIMUM]:
             nan_mode = gtu.get_nan_node(args_dict)
-            attr = ts.TosaSerializerAttribute()
-            attr.NanPropagationAttribute(nan_mode)
-            self.ser.addOperator(op["op"], input_list, output_list, attr)
+            attr.setAttribute(op["op"], nan_mode)
         else:
-            self.ser.addOperator(op["op"], input_list, output_list)
+            # other ops have empty attributes
+            attr.setAttribute(op["op"])
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -578,7 +582,9 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.MulAttribute()
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -625,7 +631,9 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.TableAttribute()
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -675,11 +683,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(
-            op["op"],
-            input_list,
-            output_list,
-        )
+        attr = ts.TosaSerializerAttribute()
+        attr.SelectAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
         )
@@ -728,11 +735,7 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(
-            op["op"],
-            input_list,
-            output_list,
-        )
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -779,7 +782,7 @@ class TosaTestGen:
             else NanPropagationMode.UNKNOWN
         )
         attr = ts.TosaSerializerAttribute()
-        attr.AxisAttribute(axis, nan_mode)
+        attr.ArgMaxAttribute(axis, nan_mode)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -855,15 +858,16 @@ class TosaTestGen:
         if qinfo is None:
             qinfo = [0, 0]
 
-        nan_mode = (
-            gtu.get_nan_node(args_dict)
-            if gtu.has_nan_mode_by_enum(op["op"])
-            else NanPropagationMode.UNKNOWN
-        )
         attr = ts.TosaSerializerAttribute()
-        attr.PoolAttribute(
-            kernel, stride, pad, qinfo[0], qinfo[1], accum_dtype, nan_mode
-        )
+        if op["op"] == Op.AVG_POOL2D:
+            attr.AvgPool2dAttribute(
+                kernel, stride, pad, qinfo[0], qinfo[1], accum_dtype
+            )
+        elif op["op"] == Op.MAX_POOL2D:
+            nan_mode = gtu.get_nan_node(args_dict)
+            attr.MaxPool2dAttribute(kernel, stride, pad, nan_mode)
+        else:
+            assert False, "Unhandled op: {}".format(op["op"])
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -960,7 +964,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
+        attr.Conv2dAttribute(padding, strides, dilations, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1057,7 +1061,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
+        attr.Conv3dAttribute(padding, strides, dilations, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1144,7 +1148,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.TransposeConvAttribute(out_pad, strides, local_bound, accum_dtype)
+        attr.TransposeConv2dAttribute(out_pad, strides, local_bound, accum_dtype)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1240,7 +1244,9 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.ConvAttribute(padding, strides, dilations, local_bound, accum_dtype)
+        attr.DepthwiseConv2dAttribute(
+            padding, strides, dilations, local_bound, accum_dtype
+        )
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1338,13 +1344,12 @@ class TosaTestGen:
         ):
             return None
 
-        nan_mode = (
-            gtu.get_nan_node(args_dict)
-            if gtu.has_nan_mode_by_enum(op["op"])
-            else NanPropagationMode.UNKNOWN
-        )
         attr = ts.TosaSerializerAttribute()
-        attr.AxisAttribute(axis, nan_mode)
+        if op["op"] in [Op.REDUCE_MAX, Op.REDUCE_MIN]:
+            nan_mode = gtu.get_nan_node(args_dict)
+            attr.setAttribute(op["op"], axis, nan_mode)
+        else:
+            attr.setAttribute(op["op"], axis)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1420,11 +1425,7 @@ class TosaTestGen:
         ):
             return None
 
-        nan_mode = (
-            gtu.get_nan_node(args_dict)
-            if gtu.has_nan_mode_by_enum(op["op"])
-            else NanPropagationMode.UNKNOWN
-        )
+        nan_mode = gtu.get_nan_node(args_dict)
         attr = ts.TosaSerializerAttribute()
         min_val_as_bytes = ts.TosaSerializer.convertDataToUint8Vec(a.dtype, [min_val])
         max_val_as_bytes = ts.TosaSerializer.convertDataToUint8Vec(a.dtype, [max_val])
@@ -1544,11 +1545,9 @@ class TosaTestGen:
         ):
             return None
 
-        if op["op"] == Op.CONCAT:
-            attr = ts.TosaSerializerAttribute()
-            attr.AxisAttribute(axis, NanPropagationMode.UNKNOWN)
-        else:
-            attr = None
+        attr = ts.TosaSerializerAttribute()
+        attr.ConcatAttribute(axis)
+
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
@@ -1629,58 +1628,6 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def build_dim(
-        self,
-        rng,
-        op,
-        inputs,
-        args_dict,
-        validator_fcns=None,
-        error_name=None,
-        qinfo=None,
-    ):
-        assert len(inputs) == 1
-        a = inputs[0]
-        axis = args_dict["axis"]
-        result_tensor = OutputShaper.dimOp(self.ser, rng, a, axis, error_name)
-
-        # Invalidate Input/Output list for error if checks.
-        input_list = [a.name]
-        output_list = [result_tensor.name]
-        pCount, cCount = op["operands"]
-        num_operands = pCount + cCount
-        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
-            rng, error_name, input_list, output_list
-        )
-
-        if not TosaErrorValidator.evValidateErrorIfs(
-            self.ser,
-            validator_fcns,
-            error_name,
-            op=op,
-            axis=axis,
-            input_shape=a.shape,
-            input_dtype=a.dtype,
-            output_shape=result_tensor.shape,
-            output_dtype=result_tensor.dtype,
-            result_tensors=[result_tensor],
-            input_list=input_list,
-            output_list=output_list,
-            num_operands=num_operands,
-        ):
-            return None
-
-        attr = ts.TosaSerializerAttribute()
-        attr.AxisAttribute(axis, NanPropagationMode.UNKNOWN)
-
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
-
-        compliance = self.tensorComplianceMetaData(
-            op, a.dtype, args_dict, result_tensor, error_name
-        )
-
-        return TosaTestGen.BuildInfo(result_tensor, compliance)
-
     def build_reshape(
         self,
         rng,
@@ -1722,7 +1669,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.ReshapeAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -1772,7 +1722,7 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        attr.AxisAttribute(axis, NanPropagationMode.UNKNOWN)
+        attr.ReverseAttribute(axis)
 
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
@@ -1883,7 +1833,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.SliceAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -1935,7 +1888,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.TileAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -1985,7 +1941,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.GatherAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, values.dtype, args_dict, result_tensor, error_name
@@ -2034,7 +1993,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.ScatterAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, values_in.dtype, args_dict, result_tensor, error_name
@@ -2186,7 +2148,10 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list)
+        attr = ts.TosaSerializerAttribute()
+        attr.CastAttribute()
+
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
             op, val.dtype, args_dict, result_tensor, error_name
@@ -2467,6 +2432,7 @@ class TosaTestGen:
                 self.ser.addInputTensor(a)
                 self.ser.addInputTensor(b)
                 tens = self.ser.addOutput(a.shape, a.dtype)
+
             self.ser.addOperator(block_op["op"], [a.name, b.name], [tens.name])
 
         if not TosaErrorValidator.evValidateErrorIfs(
@@ -2526,10 +2492,13 @@ class TosaTestGen:
         attr = ts.TosaSerializerAttribute()
         attr.WhileLoopAttribute(cond_block, body_block)
 
+        body_op_attr = ts.TosaSerializerAttribute()
         if const_body_tens.dtype in (DType.FP32, DType.BF16, DType.FP16, DType.INT32):
             body_op = Op.ADD
+            body_op_attr.AddAttribute()
         elif const_body_tens.dtype in (DType.INT16, DType.INT8):
             body_op = Op.LOGICAL_RIGHT_SHIFT
+            body_op_attr.LogicalRightShiftAttribute()
         else:
             assert (
                 False
@@ -2604,10 +2573,13 @@ class TosaTestGen:
         out_cond_tens = self.ser.addOutput(cond_shape, cond_type)
 
         # Check for end of loop - when the iter_tens reaches zero
+        greater_attr = ts.TosaSerializerAttribute()
+        greater_attr.GreaterAttribute()
         self.ser.addOperator(
             Op.GREATER,
             [pl_iter_tens.name, const_iterchk_tens.name],
             [out_cond_tens.name],
+            greater_attr,
         )
 
         # BODY block (input: const_body_tens, pl_body_tens, pl_iter_tens, output: const_body_tens, pl_body_tens, pl_iter_tens)
@@ -2640,11 +2612,19 @@ class TosaTestGen:
             )
 
         self.ser.addOperator(
-            body_op, [pl_body_tens.name, const_body_tens.name], [out_body_int.name]
+            body_op,
+            [pl_body_tens.name, const_body_tens.name],
+            [out_body_int.name],
+            body_op_attr,
         )
         # Decrement iteration value
+        sub_attr = ts.TosaSerializerAttribute()
+        sub_attr.SubAttribute()
         self.ser.addOperator(
-            Op.SUB, [pl_iter_tens.name, const_itersub_tens.name], [out_cond_int.name]
+            Op.SUB,
+            [pl_iter_tens.name, const_itersub_tens.name],
+            [out_cond_int.name],
+            sub_attr,
         )
         self.ser.addOutputTensor(out_cond_int)
         self.ser.addOutputTensor(const_body_tens)
@@ -2716,7 +2696,7 @@ class TosaTestGen:
         local_bound = False
 
         attr = ts.TosaSerializerAttribute()
-        attr.FFTAttribute(inverse, local_bound)
+        attr.FFT2dAttribute(inverse, local_bound)
 
         self.ser.addOperator(op["op"], input_names, output_names, attr)
 
@@ -2776,7 +2756,7 @@ class TosaTestGen:
         local_bound = False
 
         attr = ts.TosaSerializerAttribute()
-        attr.RFFTAttribute(local_bound)
+        attr.RFFT2dAttribute(local_bound)
 
         self.ser.addOperator(op["op"], input_names, output_names, attr)
 

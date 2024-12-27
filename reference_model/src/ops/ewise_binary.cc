@@ -35,10 +35,6 @@ BinaryNodeBase<Rank, InDtype, OutDtype>::BinaryNodeBase(SubgraphTraverser* sgt_,
 }
 
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-BinaryNodeBase<Rank, InDtype, OutDtype>::~BinaryNodeBase()
-{}
-
-template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes()
 {
     // Check Tosa Level
@@ -145,26 +141,6 @@ int BinaryNode<0, InDtype, OutDtype>::eval()
     return GraphNode::eval();
 }
 
-template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-int BinaryNanNode<Rank, InDtype, OutDtype>::checkTensorAttributes()
-{
-    if (BinaryNodeBase<Rank, InDtype, OutDtype>::checkTensorAttributes())
-    {
-        return 1;
-    }
-    if (GraphNode::validateNanMode(attribute->nan_mode()))
-    {
-        return 1;
-    }
-    return 0;
-}
-
-template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-int BinaryNanNode<Rank, InDtype, OutDtype>::eval()
-{
-    return BinaryNode<Rank, InDtype, OutDtype>::eval();
-}
-
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpAdd<Rank, Dtype>::register_fcn()
 {
@@ -230,10 +206,6 @@ int OpArithmeticRightShift<Rank, Dtype>::register_fcn()
 
     return 0;
 }
-
-template <int Rank, TOSA_REF_TYPE Dtype>
-OpArithmeticRightShift<Rank, Dtype>::~OpArithmeticRightShift()
-{}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpBitwiseAnd<Rank, Dtype>::register_fcn()
@@ -442,6 +414,20 @@ int OpMaximum<Rank, Dtype>::register_fcn()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+int OpMaximum<Rank, Dtype>::checkTensorAttributes()
+{
+    if (BinaryNodeBase<Rank, Dtype, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpMinimum<Rank, Dtype>::register_fcn()
 {
     auto nan_mode = this->attribute->nan_mode();
@@ -460,6 +446,20 @@ int OpMinimum<Rank, Dtype>::register_fcn()
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
     }
 
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
+int OpMinimum<Rank, Dtype>::checkTensorAttributes()
+{
+    if (BinaryNodeBase<Rank, Dtype, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+    if (GraphNode::validateNanMode(attribute->nan_mode()))
+    {
+        return 1;
+    }
     return 0;
 }
 
@@ -667,10 +667,6 @@ OpTable<Rank, InDtype>::OpTable(SubgraphTraverser* sgt_, TosaAttributeBase* attr
     setRequiredOperands(2, 1);
     setRequiredRank(0, 6);
 }
-
-template <int Rank, TOSA_REF_TYPE InDtype>
-OpTable<Rank, InDtype>::~OpTable()
-{}
 
 template <int Rank, TOSA_REF_TYPE InDtype>
 int OpTable<Rank, InDtype>::checkTensorAttributes()

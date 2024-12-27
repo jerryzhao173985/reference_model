@@ -43,7 +43,6 @@ class BinaryNodeBase : public GraphNode
 {
 public:
     BinaryNodeBase(SubgraphTraverser* sgt_, const Op& nodeType, const uint64_t id_);
-    virtual ~BinaryNodeBase();
 
     virtual int checkTensorAttributes();
     virtual int eval()         = 0;
@@ -131,50 +130,43 @@ DEF_TEMPLATE_BINARY_OP_DEFAULT(Sub, SUB)
 
 #undef DEF_TEMPLATE_BINARY_OP_DEFAULT
 
-template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
-class BinaryNanNode : public BinaryNode<Rank, InDtype, OutDtype>
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpMaximum : public BinaryNode<Rank, Dtype, Dtype>
 {
 public:
-    BinaryNanNode(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, const Op& op_, const uint64_t id_)
-        : BinaryNode<Rank, InDtype, OutDtype>(sgt_, op_, id_)
+    OpMaximum(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_MAXIMUM, id_)
     {
-        INIT_ATTRIBUTE(NanPropagation);
+        INIT_ATTRIBUTE(Maximum);
+        register_fcn();
     }
-    virtual ~BinaryNanNode()
-    {}
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
     virtual int checkTensorAttributes();
-    virtual int eval();
-
-    using InEigenType  = typename GetEigenType<InDtype>::type;
-    using OutEigenType = typename GetEigenType<OutDtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, Rank>;
-    using TOut         = Eigen::Tensor<OutEigenType, Rank>;
+    virtual int register_fcn();
 
 protected:
-    std::unique_ptr<tosa::TosaNanPropagationAttribute> attribute;
+    std::unique_ptr<TosaMaximumAttribute> attribute;
 };
 
-#define DEF_TEMPLATE_BINARY_OP_NAN(Opname, OPNAME)                                                                     \
-    template <int Rank, TOSA_REF_TYPE Dtype>                                                                           \
-    class Op##Opname : public BinaryNanNode<Rank, Dtype, Dtype>                                                        \
-    {                                                                                                                  \
-    public:                                                                                                            \
-        Op##Opname(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)                               \
-            : BinaryNanNode<Rank, Dtype, Dtype>(sgt_, attribute_, Op_##OPNAME, id_)                                    \
-        {                                                                                                              \
-            register_fcn();                                                                                            \
-        }                                                                                                              \
-        static constexpr TOSA_REF_TYPE InDtype  = Dtype;                                                               \
-        static constexpr TOSA_REF_TYPE OutDtype = Dtype;                                                               \
-        using InEigenType                       = typename GetEigenType<InDtype>::type;                                \
-        using OutEigenType                      = typename GetEigenType<OutDtype>::type;                               \
-        virtual int register_fcn();                                                                                    \
-    };
+template <int Rank, TOSA_REF_TYPE Dtype>
+class OpMinimum : public BinaryNode<Rank, Dtype, Dtype>
+{
+public:
+    OpMinimum(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
+        : BinaryNode<Rank, Dtype, Dtype>(sgt_, Op_MINIMUM, id_)
+    {
+        INIT_ATTRIBUTE(Minimum);
+        register_fcn();
+    }
+    using InEigenType  = typename GetEigenType<Dtype>::type;
+    using OutEigenType = typename GetEigenType<Dtype>::type;
+    virtual int checkTensorAttributes();
+    virtual int register_fcn();
 
-DEF_TEMPLATE_BINARY_OP_NAN(Maximum, MAXIMUM)
-DEF_TEMPLATE_BINARY_OP_NAN(Minimum, MINIMUM)
-
-#undef DEF_TEMPLATE_BINARY_OP_NAN
+protected:
+    std::unique_ptr<TosaMinimumAttribute> attribute;
+};
 
 template <int Rank, TOSA_REF_TYPE Dtype>
 class OpArithmeticRightShift : public BinaryNode<Rank, Dtype, Dtype>
@@ -189,7 +181,6 @@ public:
     using InEigenType  = typename GetEigenType<Dtype>::type;
     using OutEigenType = typename GetEigenType<Dtype>::type;
     virtual int register_fcn();
-    virtual ~OpArithmeticRightShift();
 
 protected:
     std::unique_ptr<TosaArithmeticRightShiftAttribute> attribute;
@@ -231,7 +222,6 @@ class OpTable : public GraphNode
 {
 public:
     OpTable(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
-    virtual ~OpTable();
 
     virtual int checkTensorAttributes();
     virtual int eval();

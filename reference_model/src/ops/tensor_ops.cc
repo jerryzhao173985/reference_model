@@ -23,7 +23,8 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
-int check_pool2d_attribute(std::unique_ptr<tosa::TosaPoolAttribute>& attribute,
+template <typename ATTR>
+int check_pool2d_attribute(std::unique_ptr<ATTR>& attribute,
                            std::vector<int32_t> input_shape,
                            std::vector<int32_t> output_shape,
                            std::string& msg)
@@ -113,7 +114,8 @@ int check_pool2d_attribute(std::unique_ptr<tosa::TosaPoolAttribute>& attribute,
     return 0;
 }
 
-int check_conv_attribute(std::unique_ptr<tosa::TosaConvAttribute>& attribute,
+template <typename ATTR>
+int check_conv_attribute(std::unique_ptr<ATTR>& attribute,
                          uint32_t conv_dimension,
                          std::vector<int32_t> input_shape,
                          std::vector<int32_t> output_shape,
@@ -308,7 +310,7 @@ OpArgMax<Rank, Dtype>::OpArgMax(SubgraphTraverser* sgt_, TosaAttributeBase* attr
     setRequiredOperands(1, 1);
     setRequiredRank(1);
 
-    INIT_ATTRIBUTE(Axis);
+    INIT_ATTRIBUTE(ArgMax);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -473,7 +475,7 @@ OpAvgPool2d<Dtype, AccDtype>::OpAvgPool2d(SubgraphTraverser* sgt_, TosaAttribute
     setRequiredOperands(1, 1);
     setRequiredRank(4, 4);
 
-    INIT_ATTRIBUTE(Pool);
+    INIT_ATTRIBUTE(AvgPool2d);
 }
 
 template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
@@ -654,7 +656,7 @@ OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv2d(SubgraphTraverser* 
     setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
-    INIT_ATTRIBUTE(Conv);
+    INIT_ATTRIBUTE(Conv2d);
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -865,7 +867,7 @@ OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::OpConv3d(SubgraphTraverser* 
     setRequiredOperands(5, 1);
     setRequiredRank(5, 5);
 
-    INIT_ATTRIBUTE(Conv);
+    INIT_ATTRIBUTE(Conv3d);
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -1103,7 +1105,7 @@ OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpDepthwiseConv2d(S
     setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
-    INIT_ATTRIBUTE(Conv);
+    INIT_ATTRIBUTE(DepthwiseConv2d);
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
@@ -1474,7 +1476,7 @@ OpMaxPool2d<Dtype>::OpMaxPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attr
     setRequiredOperands(1, 1);
     setRequiredRank(4, 4);
 
-    INIT_ATTRIBUTE(Pool);
+    INIT_ATTRIBUTE(MaxPool2d);
 }
 
 template <TOSA_REF_TYPE Dtype>
@@ -1623,7 +1625,7 @@ OpFFT2d<Dtype>::OpFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, 
     setRequiredOperands(2, 2);
     setRequiredRank(3, 3);
 
-    INIT_ATTRIBUTE(FFT);
+    INIT_ATTRIBUTE(FFT2d);
 }
 
 template <TOSA_REF_TYPE Dtype>
@@ -1771,7 +1773,7 @@ OpRFFT2d<Dtype>::OpRFFT2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_
     setRequiredOperands(1, 2);
     setRequiredRank(3, 3);
 
-    INIT_ATTRIBUTE(RFFT);
+    INIT_ATTRIBUTE(RFFT2d);
 }
 
 template <TOSA_REF_TYPE Dtype>
@@ -1924,7 +1926,7 @@ OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::OpTransposeConv2d(S
     setRequiredOperands(5, 1);
     setRequiredRank(4, 4);
 
-    INIT_ATTRIBUTE(TransposeConv);
+    INIT_ATTRIBUTE(TransposeConv2d);
 }
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE WeightDtype, TOSA_REF_TYPE AccDtype, TOSA_REF_TYPE OutDtype>
