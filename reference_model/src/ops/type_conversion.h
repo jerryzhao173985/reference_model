@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ public:
     using TMultiplierI16 = Eigen::Tensor<I16EigenType, 1>;
     using TMultiplierI32 = Eigen::Tensor<I32EigenType, 1>;
     using TShift         = Eigen::Tensor<I8EigenType, 1>;
+    using TInZp          = Eigen::Tensor<InEigenType, 1>;
+    using TOutZp         = Eigen::Tensor<OutEigenType, 1>;
 
     bool isI8(TOSA_REF_TYPE Dtype)
     {
@@ -53,6 +55,16 @@ public:
         return Dtype == TOSA_REF_TYPE_INT16 || Dtype == TOSA_REF_TYPE_UINT16;
     }
 
+    bool isI32(TOSA_REF_TYPE Dtype)
+    {
+        return Dtype == TOSA_REF_TYPE_INT32;
+    }
+
+    bool isI48(TOSA_REF_TYPE Dtype)
+    {
+        return Dtype == TOSA_REF_TYPE_INT48;
+    }
+
 protected:
     std::unique_ptr<TosaRescaleAttribute> attribute;
     TosaReference::TensorTemplate<TIn>* in;
@@ -60,6 +72,8 @@ protected:
     TosaReference::TensorTemplate<TMultiplierI16>* multiplierI16;
     TosaReference::TensorTemplate<TMultiplierI32>* multiplierI32;
     TosaReference::TensorTemplate<TShift>* shift;
+    TosaReference::TensorTemplate<TInZp>* in_zp;
+    TosaReference::TensorTemplate<TOutZp>* out_zp;
 
     // The maximum value when interpreting OutDtype as a signed value
     int32_t QMax_s;

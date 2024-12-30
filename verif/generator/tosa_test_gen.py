@@ -2233,17 +2233,15 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 3
-        val = inputs[0]
-        multiplier_val = inputs[1]
-        shift_val = inputs[2]
+        assert len(inputs) == 5
+        val, multiplier_val, shift_val, input_zp, output_zp = inputs
         out_dtype = args_dict["output_dtype"]
         scale32 = args_dict["scale"]
         rounding_mode = args_dict["rounding_mode"]
         per_channel = args_dict["per_channel"]
-        input_zp = args_dict["input_zp"]
+        input_zp_value = args_dict["input_zp"]
         input_unsigned = args_dict["input_unsigned"]
-        output_zp = args_dict["output_zp"]
+        output_zp_value = args_dict["output_zp"]
         output_unsigned = args_dict["output_unsigned"]
 
         result_tensor = OutputShaper.typeConversionOp(
@@ -2251,7 +2249,13 @@ class TosaTestGen:
         )
 
         # Invalidate Input/Output list for error if checks.
-        input_list = [val.name, multiplier_val.name, shift_val.name]
+        input_list = [
+            val.name,
+            multiplier_val.name,
+            shift_val.name,
+            input_zp.name,
+            output_zp.name,
+        ]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -2259,7 +2263,7 @@ class TosaTestGen:
             rng, error_name, input_list, output_list
         )
 
-        qinfo = (input_zp, output_zp)
+        qinfo = (input_zp_value, output_zp_value)
         if not TosaErrorValidator.evValidateErrorIfs(
             self.ser,
             validator_fcns,
@@ -2282,8 +2286,6 @@ class TosaTestGen:
 
         attr = ts.TosaSerializerAttribute()
         attr.RescaleAttribute(
-            input_zp,
-            output_zp,
             scale32,
             rounding_mode,
             per_channel,
@@ -5153,8 +5155,8 @@ class TosaTestGen:
         },
         "rescale": {
             "op": Op.RESCALE,
-            "operands": (1, 2),
-            "ctc_positions": (1, 2),
+            "operands": (1, 4),
+            "ctc_positions": (1, 2, 3, 4),
             "build_fcn": (
                 build_rescale,
                 TosaTensorGen.tgBasic,
