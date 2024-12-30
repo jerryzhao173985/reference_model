@@ -1335,6 +1335,11 @@ class TosaTensorValuesGen:
         multiplier_arr = argsDict["multiplier"]
         shift_arr = argsDict["shift"]
         input_unsigned = argsDict["input_unsigned"]
+        output_unsigned = argsDict["output_unsigned"]
+        input_zp = argsDict["input_zp"]
+        output_zp = argsDict["output_zp"]
+        input_dtype = dtypeList[0]
+        output_dtype = argsDict["output_dtype"]
 
         # Set up the data types and shapes of the multipler and shift tensors
         if scale32:
@@ -1345,17 +1350,39 @@ class TosaTensorValuesGen:
         dtypeList[2] = DType.INT8
         shapeList[2] = [len(shift_arr)]
 
+        def get_signless_data(dtype, data, unsigned):
+            # Switch to signless type and data
+            if dtype == DType.INT8 and unsigned:
+                signless_data = np.int8([data])
+            elif dtype == DType.INT16 and unsigned:
+                signless_data = np.int16([data])
+            else:
+                # Doesn't matter about INT48 as it must be 0 and this is used as fixed
+                # data - so will be turned in "0" character in JSON meta data
+                signless_data = np.int32([data])
+            return signless_data
+
         if argsDict["dg_type"] != gtu.DataGenType.SPECIAL:
             # When creating normal tests we need to set up the data and ranges
-            # Set up the pre-generated data in argsDict["fixed_data"]
-            argsDict["fixed_data"] = [None, multiplier_arr, shift_arr]
+            # Set up the pre-generated data as "fixed_data"
+
+            # NOTE: For SPECIAL tests we control the input, multiplier, shift data
+            # and zero points to create special boundary test conditions in the
+            # generate library
+
+            argsDict["fixed_data"] = [
+                None,
+                multiplier_arr,
+                shift_arr,
+                get_signless_data(input_dtype, input_zp, input_unsigned),
+                get_signless_data(output_dtype, output_zp, output_unsigned),
+            ]
 
             # Work out the valid value range that won't saturate
             # Using the apply_scale32 value check that happens after subtracting
             # the input zp, this will limit the values to a valid range
             # REQUIRE(value >= (-1 << (shift - 1)) && value < (1 << (shift - 1)));
             min_shift = min(shift_arr)
-            input_zp = argsDict["input_zp"]
             max_value = (1 << (min_shift - 1)) + input_zp - 1
             min_value = (-1 << (min_shift - 1)) + input_zp
             dtype = dtypeList[0]
@@ -1370,8 +1397,20 @@ class TosaTensorValuesGen:
             )
             argsDict["data_range"] = data_range
 
+        # Set the zero-point shapes/data types
+        shapeList[3] = [1]
+        dtypeList[3] = input_dtype
+        shapeList[4] = [1]
+        dtypeList[4] = output_dtype
+
         # Set up which tensors are unsigned for data generation
-        argsDict["unsigned_tensors"] = [input_unsigned, False, False]
+        argsDict["unsigned_tensors"] = [
+            input_unsigned,
+            False,
+            False,
+            input_unsigned,
+            output_unsigned,
+        ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -2117,12 +2156,6 @@ class TosaArgGen:
                         gen_args_dict["shapelist_override"] = new_shape_list
                         gen_args_dict["multiplier"] = np.int32(np.zeros(shape=[nc]))
                         gen_args_dict["shift"] = np.int32(np.zeros(shape=[nc]))
-
-                        # Override the chosen zero points to simplify the testing
-                        # TODO - When these become inputs we can define these values as
-                        # TODO - part of the special tests
-                        gen_args_dict["input_zp"] = 0
-                        gen_args_dict["output_zp"] = 0
 
                     if gtu.dtypeIsFloat(dtype):
                         arg_str = f"{arg_str}_fs" if arg_str else "fs"

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -119,14 +119,15 @@ const TestValues absNegateTestVals{
 // Rescale input tensors are input, multiplier, shift
 // NOTE: With scale of 62, all integer types INT8 to INT48 cannot exceed value constraints
 const TestValues rescaleTestVals{
-    { -SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Two) },           // Min value, min multiplier, min shift
-    { -SValue(SVE::Two), SValue(SVE::Max), SValue(SVE::Two) },            // Min value, max multiplier, min shift
-    { SValue(SVE::One), SValue(SVE::Zero), SValue(SVE::Two) },            // Max value, min multiplier, min shift
-    { SValue(SVE::One), SValue(SVE::Max), SValue(SVE::Two) },             // Max value, max multiplier, min shift
-    { SValue(SVE::Lowest), SValue(SVE::Zero), SValue(SVE::SixtyTwo) },    // Min value, min multiplier, max shift
-    { SValue(SVE::Lowest), SValue(SVE::Max), SValue(SVE::SixtyTwo) },     // Min value, max multiplier, max shift
-    { SValue(SVE::Max), SValue(SVE::Zero), SValue(SVE::SixtyTwo) },       // Max value, min multiplier, max shift
-    { SValue(SVE::Max), SValue(SVE::Max), SValue(SVE::SixtyTwo) },        // Max value, max multiplier, max shift
+    // Min value, min multiplier, min shift, input_zp, output_zp
+    { -SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { -SValue(SVE::Two), SValue(SVE::Max), SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::One), SValue(SVE::Zero), SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::One), SValue(SVE::Max), SValue(SVE::Two), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::Zero), SValue(SVE::SixtyTwo), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Lowest), SValue(SVE::Max), SValue(SVE::SixtyTwo), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::Zero), SValue(SVE::SixtyTwo), SValue(SVE::Zero), SValue(SVE::Zero) },
+    { SValue(SVE::Max), SValue(SVE::Max), SValue(SVE::SixtyTwo), SValue(SVE::Zero), SValue(SVE::Zero) },
 };
 
 // Maps operators to the operator-specific list of default values for

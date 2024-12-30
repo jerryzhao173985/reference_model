@@ -29,7 +29,8 @@ template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESCALE, id_)
 {
-    setRequiredOperands(3, 1);
+    setRequiredOperands(5, 1);
+    setRequiredRank(0, 6);
     INIT_ATTRIBUTE(Rescale);
 
     QMax_s = getSignedMaximum<OutDtype>();
@@ -52,6 +53,11 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
+    if (validateRequiredRank(inputs[0]) && validateRequiredRank(inputs[1], 1, 1) &&
+        validateRequiredRank(inputs[2], 1, 1) && validateRequiredRank(inputs[3], 1, 1) &&
+        validateRequiredRank(inputs[4], 1, 1) && validateRequiredRank(outputs[0]))
+        return 1;
+
     // output and input must be the same rank and size
     if (inputs[0]->matchRankSize(*outputs[0]))
     {
@@ -61,13 +67,16 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-
     ASSERT_MEM(in && out);
 
     multiplierI32 = dynamic_cast<TosaReference::TensorTemplate<TMultiplierI32>*>(inputs[1]);
     multiplierI16 = dynamic_cast<TosaReference::TensorTemplate<TMultiplierI16>*>(inputs[1]);
     shift         = dynamic_cast<TosaReference::TensorTemplate<TShift>*>(inputs[2]);
     ASSERT_MEM(shift);
+
+    in_zp  = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[3]);
+    out_zp = dynamic_cast<TosaReference::TensorTemplate<TOutZp>*>(inputs[4]);
+    ASSERT_MEM(in_zp && out_zp);
 
     if (attribute->scale32())
     {
@@ -78,11 +87,12 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         ASSERT_MEM(multiplierI16);
     }
 
-    auto input_zp        = attribute->input_zp();
-    auto output_zp       = attribute->output_zp();
-    auto input_unsigned  = attribute->input_unsigned();
-    auto output_unsigned = attribute->output_unsigned();
-    auto rounding_mode   = attribute->rounding_mode();
+    const bool input_unsigned  = attribute->input_unsigned();
+    const bool output_unsigned = attribute->output_unsigned();
+    const bool scale32         = attribute->scale32();
+    const bool per_channel     = attribute->per_channel();
+    const int in_rank          = inputs[0]->getRank();
+    const auto rounding_mode   = attribute->rounding_mode();
 
     if (rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND)
     {
@@ -90,41 +100,13 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    // Note that how rescale op interprets signedness of the tensor depends on
-    // the value of input_unsigned and output_unsigned attributes, and doesn't
-    // care about the type of tensor itself.
-
-    if (!isI8(InDtype) && (!isI16(InDtype) || input_unsigned == false) && (input_zp != 0))
-    {
-        printNodeValidationError("OpRescale: Input TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
-        return 1;
-    }
-
-    if (!isI8(OutDtype) && (!isI16(OutDtype) || output_unsigned == false) && (output_zp != 0))
-    {
-        printNodeValidationError("OpRescale: Output TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
-        return 1;
-    }
-
-    if (isI16(InDtype) && (input_unsigned == true) && (input_zp != 0) && (input_zp != 32768))
-    {
-        printNodeValidationError("OpRescale: Input unsigned int16 and zero point not 0 or 32768");
-        return 1;
-    }
-
-    if (isI16(OutDtype) && (output_unsigned == true) && (output_zp != 0) && (output_zp != 32768))
-    {
-        printNodeValidationError("OpRescale: Output unsigned int16 and zero point not 0 or 32768");
-        return 1;
-    }
-
-    if (attribute->scale32() && (InDtype == TOSA_REF_TYPE_INT48))
+    if (scale32 && (InDtype == TOSA_REF_TYPE_INT48))
     {
         printNodeValidationError("OpRescale: Scale set to true but input type is INT48");
         return 1;
     }
 
-    if ((!attribute->scale32()) && (rounding_mode == RoundingMode_DOUBLE_ROUND))
+    if (!scale32 && (rounding_mode == RoundingMode_DOUBLE_ROUND))
     {
         printNodeValidationError("OpRescale: Scale set to false but rounding mode set to double round");
         return 1;
@@ -136,25 +118,25 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (OutDtype == TOSA_REF_TYPE_INT32 && input_unsigned)
+    if (isI32(OutDtype) && input_unsigned)
     {
         printNodeValidationError("OpRescale: Output signed int32 and input_unsigned set to true");
         return 1;
     }
 
-    if (InDtype == TOSA_REF_TYPE_INT32 && output_unsigned)
+    if (isI32(InDtype) && output_unsigned)
     {
         printNodeValidationError("OpRescale: Input signed int32 and output_unsigned set to true");
         return 1;
     }
 
-    if (InDtype == TOSA_REF_TYPE_INT48 && output_unsigned)
+    if (isI48(InDtype) && output_unsigned)
     {
         printNodeValidationError("OpRescale: Input signed int48 and output_unsigned set to true");
         return 1;
     }
 
-    if (attribute->per_channel() && Rank < 1)
+    if (per_channel && in_rank < 1)
     {
         printNodeValidationError("OpRescale: per_channel set to true and rank of input < 1");
         return 1;
@@ -193,16 +175,74 @@ static int64_t sign_extend(uint16_t val)
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::eval()
 {
-    int32_t input_zp  = attribute->input_zp();
-    int32_t output_zp = attribute->output_zp();
+    const InEigenType input_zp   = this->in_zp->getTensor()(0);
+    const OutEigenType output_zp = this->out_zp->getTensor()(0);
     std::vector<int32_t> multiplier;
     std::vector<int32_t> shift;
-    bool scale32         = attribute->scale32();
-    auto rounding_mode   = attribute->rounding_mode();
-    bool double_round    = (rounding_mode == RoundingMode_DOUBLE_ROUND);
-    bool per_channel     = attribute->per_channel();
-    bool input_unsigned  = attribute->input_unsigned();
-    bool output_unsigned = attribute->output_unsigned();
+    const bool scale32       = attribute->scale32();
+    const auto rounding_mode = attribute->rounding_mode();
+    const bool double_round  = (rounding_mode == RoundingMode_DOUBLE_ROUND);
+    const bool per_channel   = attribute->per_channel();
+
+    // Note that how rescale op interprets signedness of the tensor depends on
+    // the value of input_unsigned and output_unsigned attributes, and doesn't
+    // care about the type of tensor itself.
+    const bool input_unsigned  = attribute->input_unsigned();
+    const bool output_unsigned = attribute->output_unsigned();
+
+    auto value_extend64 = [=](InEigenType val, bool unsigned_val) -> int64_t {
+        int64_t val_extended;
+        switch (GetNumBits<InDtype>::value)
+        {
+            case 8:
+                val_extended = (unsigned_val) ? zero_extend(static_cast<int8_t>(val))
+                                              : sign_extend(static_cast<uint8_t>(val & 0xFF));
+                break;
+            case 16:
+                val_extended = (unsigned_val) ? zero_extend(static_cast<int16_t>(val))
+                                              : sign_extend(static_cast<uint16_t>(val & 0xFFFF));
+                break;
+            case 32:
+                val_extended = (unsigned_val) ? zero_extend(static_cast<int32_t>(val))
+                                              : static_cast<int64_t>(static_cast<int32_t>(val & 0xFFFFFFFF));
+                break;
+            case 48:
+                if (unsigned_val)
+                {
+                    val_extended = static_cast<int64_t>(val) & 0x0000FFFFFFFFFFFF;
+                }
+                else
+                {
+                    // sign extend i48 to i64
+                    val_extended = static_cast<int64_t>(val);
+                    if (val_extended & 0x800000000000)
+                    {
+                        // in_val contains negative i48, sign extend to i64
+                        val_extended |= 0xFFFF000000000000;
+                    }
+                }
+                break;
+            default:
+                val_extended = static_cast<int64_t>(val);
+                break;
+        }
+        return val_extended;
+    };
+
+    int64_t output_zp_extended = value_extend64(output_zp, output_unsigned);
+    int64_t input_zp_extended  = value_extend64(input_zp, input_unsigned);
+
+    // uint16 values can have zero_point 0 or 32768
+    // int8/uint8 can have zero point within their valid range
+    // No other types can have zero point != 0
+    ERROR_IF(!isI8(InDtype) && !(isI16(InDtype) && input_unsigned) && (input_zp_extended != 0),
+             "OpRescale: Input TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
+    ERROR_IF(!isI8(OutDtype) && !(isI16(OutDtype) && output_unsigned) && (output_zp_extended != 0),
+             "OpRescale: Output TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
+    ERROR_IF(isI16(InDtype) && input_unsigned && (input_zp_extended != 0) && (input_zp_extended != 32768),
+             "OpRescale: Input unsigned int16 and zero point (%ld) not 0 or 32768", input_zp_extended);
+    ERROR_IF(isI16(OutDtype) && output_unsigned && (output_zp_extended != 0) && (output_zp_extended != 32768),
+             "OpRescale: Output unsigned int16 and zero point (%ld) not 0 or 32768", output_zp_extended);
 
     // reshape [d0, d1, ..., dn] into [d0 * d1 ..., dn]
     Eigen::array<Eigen::Index, 2> shape_2d;
@@ -245,70 +285,6 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         shift.push_back(static_cast<int32_t>(shift_val(i)));
     }
 
-    auto get_input_zp_shifted = [=](InEigenType in_val) -> int64_t {
-        int64_t input_zp_shifted;
-        if (input_unsigned)
-        {
-            int64_t in_val64;
-            int64_t in_zp64;
-            switch (GetNumBits<InDtype>::value)
-            {
-                case 8:
-                    in_val64 = zero_extend(static_cast<int8_t>(in_val));
-                    in_zp64  = zero_extend(static_cast<int8_t>(input_zp));
-                    break;
-                case 16:
-                    in_val64 = zero_extend(static_cast<int16_t>(in_val));
-                    in_zp64  = zero_extend(static_cast<int16_t>(input_zp));
-                    break;
-                case 32:
-                    in_val64 = zero_extend(static_cast<int32_t>(in_val));
-                    in_zp64  = zero_extend(static_cast<int32_t>(input_zp));
-                    break;
-                case 48:
-                    in_val64 = static_cast<int64_t>(in_val) & 0x0000FFFFFFFFFFFF;
-                    in_zp64  = static_cast<int64_t>(input_zp) & 0x0000FFFFFFFFFFFF;
-                    break;
-                default:
-                    in_val64 = static_cast<int64_t>(in_val);
-                    in_zp64  = static_cast<int64_t>(input_zp);
-                    break;
-            }
-            input_zp_shifted = in_val64 - in_zp64;
-        }
-        else
-        {
-            int64_t in_val64;
-            int64_t in_zp64 = static_cast<int64_t>(input_zp);
-            switch (GetNumBits<InDtype>::value)
-            {
-                case 8:
-                    in_val64 = sign_extend(static_cast<uint8_t>(in_val & 0xFF));
-                    break;
-                case 16:
-                    in_val64 = sign_extend(static_cast<uint16_t>(in_val & 0xFFFF));
-                    break;
-                case 32:
-                    in_val64 = static_cast<int64_t>(static_cast<int32_t>(in_val & 0xFFFFFFFF));
-                    break;
-                case 48:
-                    // sign extend i48 to i64
-                    in_val64 = static_cast<int64_t>(in_val);
-                    if (in_val64 & 0x800000000000)
-                    {
-                        // in_val contains negative i48, sign extend to i64
-                        in_val64 |= 0xFFFF000000000000;
-                    }
-                    break;
-                default:
-                    in_val64 = static_cast<int64_t>(in_val);
-                    break;
-            }
-            input_zp_shifted = in_val64 - in_zp64;
-        }
-        return input_zp_shifted;
-    };
-
     if (per_channel)
     {
         ETensor2<InEigenType> curr_channel_slice_prescaled;
@@ -326,7 +302,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 channel_shift                = shift[i];
                 curr_channel_slice_postscaled =
                     curr_channel_slice_prescaled.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                        int64_t input_zp_shifted = get_input_zp_shifted(in_val);
+                        int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
 
                         int32_t scaled;
                         if (scale32)
@@ -336,26 +312,6 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         else
                             scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
                                                                               channel_shift);
-                        int64_t output_zp_extended;
-                        if (output_unsigned)
-                        {
-                            switch (GetNumBits<OutDtype>::value)
-                            {
-                                case 8:
-                                    output_zp_extended = zero_extend(static_cast<int8_t>(output_zp));
-                                    break;
-                                case 16:
-                                    output_zp_extended = zero_extend(static_cast<int16_t>(output_zp));
-                                    break;
-                                default:
-                                    output_zp_extended = static_cast<int64_t>(output_zp);
-                                    break;
-                            }
-                        }
-                        else
-                        {
-                            output_zp_extended = static_cast<int64_t>(output_zp);
-                        }
 
                         int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
                         int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
@@ -364,7 +320,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
                         {
                             std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
-                                               std::to_string(output_zp) + "] not in i32 range";
+                                               std::to_string(output_zp_extended) + "] not in i32 range";
                             throw desc;
                         }
 
@@ -396,7 +352,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         try
         {
             output_2d = input_reshaped.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                int64_t input_zp_shifted = get_input_zp_shifted(in_val);
+                int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
 
                 int32_t scaled;
                 if (scale32)
@@ -406,26 +362,6 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                     scaled =
                         TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
 
-                int64_t output_zp_extended;
-                if (output_unsigned)
-                {
-                    switch (GetNumBits<OutDtype>::value)
-                    {
-                        case 8:
-                            output_zp_extended = zero_extend(static_cast<int8_t>(output_zp));
-                            break;
-                        case 16:
-                            output_zp_extended = zero_extend(static_cast<int16_t>(output_zp));
-                            break;
-                        default:
-                            output_zp_extended = static_cast<int64_t>(output_zp);
-                            break;
-                    }
-                }
-                else
-                {
-                    output_zp_extended = static_cast<int64_t>(output_zp);
-                }
                 int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
                 int64_t i32_max_in_64 = IsSignedInt<OutDtype>()
                                             ? static_cast<int64_t>(std::numeric_limits<int32_t>::max())
@@ -435,7 +371,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
                 {
                     std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
-                                       std::to_string(output_zp) + "] not in i32 range";
+                                       std::to_string(output_zp_extended) + "] not in i32 range";
                     throw desc;
                 }
 
