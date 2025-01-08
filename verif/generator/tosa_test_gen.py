@@ -3297,6 +3297,12 @@ class TosaTestGen:
     KERNELS_2D = [[1, 1], [2, 2], [3, 3], [5, 5], [3, 1], [1, 3]]
     KERNELS_3D = [[1, 1, 1], [2, 1, 1], [1, 2, 1], [1, 1, 2]]
 
+    DG_RANDOM_SPECIAL_DYNAMIC = (
+        gtu.TestDataType.PSEUDO_RANDOM,
+        gtu.TestDataType.SPECIAL,
+        gtu.TestDataType.DYNAMIC_CTC,
+    )
+
     # List of data types and their required test data sets
     PSEUDO_RANDOM_DATAGEN = {
         DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM,),
@@ -3304,13 +3310,6 @@ class TosaTestGen:
         DType.BF16: (gtu.TestDataType.PSEUDO_RANDOM,),
         DType.FP8E4M3: (gtu.TestDataType.PSEUDO_RANDOM,),
         DType.FP8E5M2: (gtu.TestDataType.PSEUDO_RANDOM,),
-    }
-    DOT_PRODUCT_DATAGEN = {
-        DType.FP16: (gtu.TestDataType.DOT_PRODUCT,),
-        DType.FP32: (gtu.TestDataType.DOT_PRODUCT,),
-        DType.BF16: (gtu.TestDataType.DOT_PRODUCT,),
-        DType.FP8E4M3: (gtu.TestDataType.DOT_PRODUCT,),
-        DType.FP8E5M2: (gtu.TestDataType.DOT_PRODUCT,),
     }
     EW_UNARY_DATAGEN = {
         DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
@@ -3337,12 +3336,12 @@ class TosaTestGen:
         ),
     }
     RESCALE_DATAGEN = {
-        DType.INT48: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT32: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.INT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.UINT16: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
-        DType.UINT8: (gtu.DataGenType.PSEUDO_RANDOM, gtu.DataGenType.SPECIAL),
+        DType.INT48: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT8: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.UINT16: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.UINT8: DG_RANDOM_SPECIAL_DYNAMIC,
     }
     PR_FS_DATAGEN = {
         DType.FP16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
@@ -3361,11 +3360,6 @@ class TosaTestGen:
         DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
         DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
     }
-    DG_RANDOM_SPECIAL_DYNAMIC = (
-        gtu.TestDataType.PSEUDO_RANDOM,
-        gtu.TestDataType.SPECIAL,
-        gtu.TestDataType.DYNAMIC_CTC,
-    )
     PR_FS_IS_DYN_DATAGEN = {
         DType.FP16: DG_RANDOM_SPECIAL_DYNAMIC,
         DType.FP32: DG_RANDOM_SPECIAL_DYNAMIC,
@@ -3509,7 +3503,9 @@ class TosaTestGen:
     # Tensor operator list
     #  'op': op name
     #  'operands': tuple of (placeholder, const) operands
-    #  'ctc_positions': indexes of compile time constants
+    #  'ctc_positions': tuple of indexes (zero offset) of compile time constants (CTC) in the
+    #    list of operands for EXT-DYNAMIC extension tests - NOTE: Some ops only have shape_t
+    #    CTC inputs and need to be tested later when more than CONST_SHAPE is available
     #  'rank': (optional) restricts rank to tuple inclusive of (min, max),
     #    if not specified, defaults to (0, gtu.MAX_TENSOR_RANK)
     #  'build_fcn': tuple of the function to (build_operator(), TensorGen function, ArgGen enum)
@@ -3565,6 +3561,7 @@ class TosaTestGen:
         "avg_pool2d": {
             "op": Op.AVG_POOL2D,
             "operands": (1, 0),
+            # TODO add ctc_positions and enable EXT-DYNAMIC tests
             "rank": (4, 4),
             "build_fcn": (
                 build_pool2d,
@@ -3706,6 +3703,7 @@ class TosaTestGen:
         "matmul": {
             "op": Op.MATMUL,
             "operands": (2, 2),
+            "ctc_positions": (2, 3),
             "rank": (3, 3),
             "build_fcn": (
                 build_matmul,
@@ -3733,7 +3731,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": DP_FS_IS_DATAGEN,
+            "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_MATMUL,
         },
         "max_pool2d": {
@@ -4431,6 +4429,7 @@ class TosaTestGen:
         "negate": {
             "op": Op.NEGATE,
             "operands": (1, 0),
+            # TODO add ctc_positions and enable EXT-DYNAMIC tests
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
@@ -4767,7 +4766,9 @@ class TosaTestGen:
         },
         "pad": {
             "op": Op.PAD,
-            "operands": (2, 0),
+            "operands": (1, 1),
+            # TODO update ctc_positions and enable EXT-DYNAMIC tests
+            "ctc_positions": (1,),
             "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_pad,
@@ -4790,7 +4791,8 @@ class TosaTestGen:
         },
         "reshape": {
             "op": Op.RESHAPE,
-            "operands": (2, 0),
+            "operands": (1, 1),
+            "ctc_positions": (1,),
             "rank": (0, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_reshape,
@@ -4806,6 +4808,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
+            # TODO Enable EXT-DYNAMIC tests for shape_t - see ctc_positions note
             "data_gen": PR_FS_IS_DATAGEN,
         },
         "reverse": {
@@ -4830,7 +4833,8 @@ class TosaTestGen:
         },
         "slice": {
             "op": Op.SLICE,
-            "operands": (3, 0),
+            "operands": (1, 2),
+            "ctc_positions": (1, 2),
             "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_slice,
@@ -4856,11 +4860,13 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
             ),
+            # TODO Enable EXT-DYNAMIC tests for shape_t - see ctc_positions note
             "data_gen": PR_FS_IS_DATAGEN,
         },
         "tile": {
             "op": Op.TILE,
-            "operands": (2, 0),
+            "operands": (1, 1),
+            "ctc_positions": (1,),
             "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_tile,
@@ -4877,6 +4883,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
+            # TODO Enable EXT-DYNAMIC tests for shape_t - see ctc_positions note
             "data_gen": PR_FS_IS_DATAGEN,
         },
         "transpose": {
@@ -4991,7 +4998,8 @@ class TosaTestGen:
         # Image operations
         "resize": {
             "op": Op.RESIZE,
-            "operands": (4, 0),
+            "operands": (1, 3),
+            "ctc_positions": (1, 2, 3),
             "rank": (4, 4),
             "build_fcn": (
                 build_resize,
@@ -5022,7 +5030,7 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeMismatch,
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
-            "data_gen": PR_FS_IS_DATAGEN,
+            "data_gen": PR_FS_IS_DYN_DATAGEN,
             "compliance": {"relative": 0.006, "ulp_bound": 20.0},
             "special_test_sets": STS_RESIZE,
         },
@@ -5059,7 +5067,8 @@ class TosaTestGen:
         },
         "rescale": {
             "op": Op.RESCALE,
-            "operands": (3, 0),
+            "operands": (1, 2),
+            "ctc_positions": (1, 2),
             "build_fcn": (
                 build_rescale,
                 TosaTensorGen.tgBasic,

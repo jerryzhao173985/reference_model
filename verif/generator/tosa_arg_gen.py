@@ -773,6 +773,7 @@ class TosaTensorValuesGen:
         def tensor_is_variable(pCount, idx):
             if dtypeList[idx] == DType.SHAPE:
                 # Shapes must always be CONST_SHAPEs
+                # TODO Remove this when shape_t can be supported as other than CONST
                 return False
             if idx in op.get("ctc_positions", []):
                 # Compile time constant - should be constant unless testing for
@@ -2055,12 +2056,12 @@ class TosaArgGen:
                                 shapeList[idx] = broadcasted_shape
 
                     if op["op"] == Op.RESCALE:
-                        if (
-                            not gen_args_dict["per_channel"]
-                            or not gen_args_dict["scale"]
+                        if not gen_args_dict["per_channel"] or (
+                            not gen_args_dict["scale"] and dtype != DType.INT48
                         ):
                             # Only support special testing of per_channel to simplify
-                            # special values tested, and scale32 to test value range
+                            # special values tested, and scale32 (for all but INT48)
+                            # to test value range
                             continue
 
                         # Flatten shape to only have channels to simplify special data
