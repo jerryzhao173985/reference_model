@@ -274,7 +274,7 @@ class TosaTestGen:
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
                 "s": argsDict["s"],
-                "ks": ksb,
+                "ksb": ksb,
             }
         elif "ulp" in op_compliance:
             mode = gtu.ComplianceMode.ULP

@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace
 {
 // Generic element validation function
 template <typename OutType>
-std::optional<double> validateElement(size_t index, double ref, double bnd, OutType imp, size_t KS)
+std::optional<double> validateElement(size_t index, double ref, double bnd, OutType imp, int32_t absBound)
 {
     double err    = 0.0;
     bool is_valid = true;
@@ -50,7 +50,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
         is_valid = true;
         err      = 0.0;
     }
-    else if (std::isinf(static_cast<OutType>(bnd * (1 + KS * exp2(-1 - AccPrecision<OutType>::normal_frac)))))
+    else if (std::isinf(static_cast<OutType>(bnd * (1 + absBound * exp2(-1 - AccPrecision<OutType>::normal_frac)))))
     {
         // dot product can overflow and there is no accuracy limit
         is_valid = true;
@@ -74,10 +74,12 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
             std::max(bnd * exp2(-1 - AccPrecision<OutType>::normal_frac), AccPrecision<OutType>::normal_min);
         const double imp_fp64 = static_cast<double>(imp);
         err                   = (imp_fp64 - ref) / out_err_bnd;
-        is_valid              = std::abs(err) <= KS;
+        // Check the absolute error
+        is_valid = std::abs(err) <= absBound;
         if (!is_valid)
         {
-            WARNING("[Verifier][DP] index %d: out_err (abs(%.*g)) is not within KS (%d).", index, DBL_DIG, err, KS);
+            WARNING("[Verifier][DP] index %d: out_err (abs(%.*g)) is not within ABS_BOUND (%d).", index, DBL_DIG, err,
+                    absBound);
         }
     }
 
@@ -95,17 +97,21 @@ bool validateDataDP(const double* referenceData,
     const size_t T = static_cast<size_t>(numElements(shape));
     TOSA_REF_REQUIRE(T > 0, "[DP] Invalid shape for reference tensor");
 
-    const int32_t S = cfg.setNumber;
-    // NOTE: KS in the compliance config MUST have already been updated to (KS + 1) if the bias
-    // tensor is non-zero
-    const int32_t KS = cfg.kernelSize;
+    const int32_t S   = cfg.setNumber;
+    const int32_t ksb = cfg.kernelSizeBound;
+
+    // Maximum allowed absolute error when NaN or overflow is not present
+    const int32_t absBound = 2 * ksb;
+
+    // Maximum allowed variance across the entire output tensor
+    const double varianceErrorBound = 4 * 0.4 * ksb;
 
     double out_err_sum   = 0.0;
     double out_err_sumsq = 0.0;
 
     for (size_t i = 0; i < T; ++i)
     {
-        auto out_err = validateElement<OutType>(i, referenceData[i], boundsData[i], implementationData[i], KS);
+        auto out_err = validateElement<OutType>(i, referenceData[i], boundsData[i], implementationData[i], absBound);
         if (!out_err)
         {
             auto pos = indexToPosition(i, shape);
@@ -118,13 +124,15 @@ bool validateDataDP(const double* referenceData,
 
     if (S >= 3 && S <= 5)
     {
-        const double max_bias = 2 * sqrt(KS * T);
+        // The factor 10 allows for up to a 4 sigma difference of the error sum around the
+        // expected error sum assuming errors are normally distributed.
+        const double max_bias = sqrt(10 * varianceErrorBound * T);
         // Check error bias magnitude for data sets S which are not positive biased
         TOSA_REF_REQUIRE(std::abs(out_err_sum) <= max_bias, "[DP] Bias magnitude (abs(%.*g)) is out of range (%.*g)",
                          DBL_DIG, out_err_sum, DBL_DIG, max_bias);
     }
     // Check error variance magnitude
-    const double max_error = 0.4 * KS * T;
+    const double max_error = varianceErrorBound * T;
     TOSA_REF_REQUIRE(out_err_sumsq <= max_error, "[DP] Error variance magnitude (%.*g) is out of range (%.*g)", DBL_DIG,
                      out_err_sumsq, DBL_DIG, max_error);
     return true;
