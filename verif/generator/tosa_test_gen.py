@@ -2175,7 +2175,7 @@ class TosaTestGen:
         shift_val = inputs[2]
         out_dtype = args_dict["output_dtype"]
         scale32 = args_dict["scale"]
-        double_round = args_dict["double_round"]
+        rounding_mode = args_dict["rounding_mode"]
         per_channel = args_dict["per_channel"]
         input_zp = args_dict["input_zp"]
         input_unsigned = args_dict["input_unsigned"]
@@ -2206,7 +2206,7 @@ class TosaTestGen:
             input_shape=val.shape,
             qinfo=qinfo,
             scale32=scale32,
-            double_round=double_round,
+            rounding_mode=rounding_mode,
             input_list=input_list,
             output_list=output_list,
             result_tensors=[result_tensor],
@@ -2221,7 +2221,7 @@ class TosaTestGen:
             input_zp,
             output_zp,
             scale32,
-            double_round,
+            rounding_mode,
             per_channel,
             input_unsigned,
             output_unsigned,

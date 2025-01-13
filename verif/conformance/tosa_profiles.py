@@ -1,4 +1,4 @@
-# Copyright (c) 2024, ARM Limited.
+# Copyright (c) 2024-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -14,6 +14,7 @@ class TosaProfiles:
     TosaExtVariable = "tosa-ext-variable"
     TosaExtShape = "tosa-ext-shape"
     TosaExtDynamic = "tosa-ext-dynamic"
+    TosaExtDoubleRound = "tosa-ext-doubleround"
 
     @staticmethod
     def profiles():
@@ -31,6 +32,7 @@ class TosaProfiles:
             TosaProfiles.TosaExtVariable,
             TosaProfiles.TosaExtShape,
             TosaProfiles.TosaExtDynamic,
+            TosaProfiles.TosaExtDoubleRound,
         ]
 
     @staticmethod

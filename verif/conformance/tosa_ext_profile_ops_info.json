@@ -7441,7 +7441,7 @@
                 ],
                 "full_params": [
                     "scale",
-                    "double_round",
+                    "rounding_mode",
                     "per_channel",
                     "multiplier",
                     "shift",

@@ -8,6 +8,7 @@ import numpy as np
 from tosa.DType import DType
 from tosa.Op import Op
 from tosa.ResizeMode import ResizeMode
+from tosa.RoundingMode import RoundingMode
 
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_build_tests")
@@ -1882,7 +1883,7 @@ class TosaErrorValidator:
 
         if check:
             scale32 = kwargs["scale32"]
-            double_round = kwargs["double_round"]
+            double_round = kwargs["rounding_mode"] == RoundingMode.DOUBLE_ROUND
             if not scale32 and double_round:
                 error_result = True
 
