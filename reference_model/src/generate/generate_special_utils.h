@@ -15,6 +15,7 @@
 #ifndef GENERATE_SPECIAL_UTILS_H_
 #define GENERATE_SPECIAL_UTILS_H_
 
+#include "cfloat.h"
 #include "dtype_limits.h"
 #include "generate_utils.h"
 #include "half.hpp"
@@ -44,7 +45,7 @@ DataType aboveMax()
     // If we can't fit that value in DataType, then we just return the maximum
     // finite value.
     if (double(std::numeric_limits<DataType>::max()) >= double(DtypeLimits<TosaRefType>::max) * 2)
-        return static_cast<DataType>(DtypeLimits<TosaRefType>::max) * static_cast<DataType>(2);
+        return ct::compat::cast<DataType>(DtypeLimits<TosaRefType>::max) * static_cast<DataType>(2);
     else
         return std::numeric_limits<DataType>::max();
 }

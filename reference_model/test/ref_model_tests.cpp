@@ -39,11 +39,12 @@ void testCastFpSpecial()
 
     tb.initializeRunner();
 
-    const IN_FP_TYPE in_nan       = DtypeLimits<inReftype>::quiet_NaN;
-    const IN_FP_TYPE in_inf       = DtypeLimits<inReftype>::has_infinity ? DtypeLimits<inReftype>::infinity : in_nan;
-    const IN_FP_TYPE in_above_max = (double(DtypeLimits<inReftype>::max) > double(DtypeLimits<outReftype>::max) * 2)
-                                        ? IN_FP_TYPE(IN_FP_TYPE(DtypeLimits<outReftype>::max) * IN_FP_TYPE(2))
-                                        : in_inf;
+    const IN_FP_TYPE in_nan = DtypeLimits<inReftype>::quiet_NaN;
+    const IN_FP_TYPE in_inf = DtypeLimits<inReftype>::has_infinity ? DtypeLimits<inReftype>::infinity : in_nan;
+    const IN_FP_TYPE in_above_max =
+        (double(DtypeLimits<inReftype>::max) > double(DtypeLimits<outReftype>::max) * 2)
+            ? ct::compat::cast<IN_FP_TYPE>(ct::compat::cast<IN_FP_TYPE>(DtypeLimits<outReftype>::max) * IN_FP_TYPE(2))
+            : in_inf;
 
     std::vector<IN_FP_TYPE> inVals = {
         in_inf,
