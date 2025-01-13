@@ -1,5 +1,5 @@
  {
-    "$comment": "Copyright (c) 2023-2024, ARM Limited.",
+    "$comment": "Copyright (c) 2023-2025, ARM Limited.",
     "$comment": "SPDX-License-Identifier: Apache-2.0",
     "$id": "compliance-config.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -60,15 +60,15 @@
                                     "description": "test set 0 to 5 or -1 for other data",
                                     "type": "integer"
                                 },
-                                "ks": {
-                                    "description": "kernel size for this dot product operation",
+                                "ksb": {
+                                    "description": "kernel size bounds for this dot product operation",
                                     "type": "integer"
                                 }
                             },
                             "additionalProperties": false,
                             "required": [
                                 "s",
-                                "ks"
+                                "ksb"
                             ]
                         },
                         "abs_error_info": {

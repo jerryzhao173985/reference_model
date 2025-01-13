@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ struct DotProductVerifyInfo
     DotProductVerifyInfo() = default;
 
     int32_t setNumber;
-    int32_t kernelSize;
+    int32_t kernelSizeBound;
 };
 
 /// \brief reduce-product verification meta-data

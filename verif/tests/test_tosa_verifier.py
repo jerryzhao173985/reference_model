@@ -1,5 +1,5 @@
 """Tests for the python interface to the verifier library."""
-# Copyright (c) 2023, ARM Limited.
+# Copyright (c) 2023-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
 
@@ -43,7 +43,7 @@ JSON_COMPLIANCE_DOT_PRODUCT = {
         "output1": {
             "mode": "DOT_PRODUCT",
             "data_type": "FP32",
-            "dot_product_info": {"ks": 1000, "s": 0},
+            "dot_product_info": {"ksb": 1000, "s": 0},
         }
     },
 }

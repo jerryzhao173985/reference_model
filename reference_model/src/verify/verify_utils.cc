@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
 void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 {
     j.at("s").get_to(dotProductInfo.setNumber);
-    j.at("ks").get_to(dotProductInfo.kernelSize);
+    j.at("ksb").get_to(dotProductInfo.kernelSizeBound);
 }
 
 void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceInfo)
@@ -111,8 +111,8 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     {
         j.at("ulp_info").get_to(cfg.ulpInfo);
     }
-    cfg.dotProductInfo.setNumber  = 0;
-    cfg.dotProductInfo.kernelSize = 0;
+    cfg.dotProductInfo.setNumber       = 0;
+    cfg.dotProductInfo.kernelSizeBound = 0;
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);
