@@ -17,6 +17,7 @@ from tosa.DType import DType
 from tosa.NanPropagationMode import NanPropagationMode
 from tosa.Op import Op
 from tosa.ResizeMode import ResizeMode
+from tosa.RoundingMode import RoundingMode
 
 # DTypeNames, DType, Op and ResizeMode are convenience variables to the
 # flatc-generated types that should be enums, but aren't
@@ -3284,8 +3285,16 @@ class TosaArgGen:
                     continue
                 elif error_name == ErrorIf.ScaleNotTrue and scale32:
                     continue
-                for double_round in [False, True]:
-                    if error_name == ErrorIf.ScaleNotTrue and not double_round:
+
+                rounding_modes = [RoundingMode.SINGLE_ROUND]
+                if TosaProfiles.TosaExtDoubleRound in testGen.args.extension:
+                    rounding_modes.append(RoundingMode.DOUBLE_ROUND)
+
+                for rounding_mode in rounding_modes:
+                    if (
+                        error_name == ErrorIf.ScaleNotTrue
+                        and not rounding_mode == RoundingMode.DOUBLE_ROUND
+                    ):
                         continue
                     # Per_channel is only valid with rank > 0
                     pc_options = (False, True) if len(shapeList[0]) > 0 else (False,)
@@ -3299,11 +3308,11 @@ class TosaArgGen:
                             # Illegal condition.  Must be scale32=False
                             continue
                         if (
-                            double_round
+                            rounding_mode == RoundingMode.DOUBLE_ROUND
                             and not scale32
                             and error_name != ErrorIf.ScaleNotTrue
                         ):
-                            # Illegal condition.  ERROR_IF(!scale32 && double_round)
+                            # Illegal condition.  ERROR_IF(!scale32 && DOUBLE_ROUND)
                             continue
 
                         if per_channel:
@@ -3399,12 +3408,15 @@ class TosaArgGen:
                             input_unsigned = False
                             output_unsigned = True
 
+                        roundStr = (
+                            "S" if rounding_mode == RoundingMode.SINGLE_ROUND else "D"
+                        )
                         arg_list.append(
                             (
-                                "out{}_sc{}_dr{}_pc{}_iu{}_ou{}".format(
+                                "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
                                     testGen.typeStr(outDtype),
                                     int(scale32),
-                                    int(double_round),
+                                    roundStr,
                                     int(per_channel),
                                     int(input_unsigned),
                                     int(output_unsigned),
@@ -3412,7 +3424,7 @@ class TosaArgGen:
                                 {
                                     "output_dtype": outDtype,
                                     "scale": scale32,
-                                    "double_round": double_round,
+                                    "rounding_mode": rounding_mode,
                                     "per_channel": per_channel,
                                     "multiplier": multiplier_arr,
                                     "shift": shift_arr,

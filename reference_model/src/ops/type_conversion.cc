@@ -82,6 +82,13 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     auto output_zp       = attribute->output_zp();
     auto input_unsigned  = attribute->input_unsigned();
     auto output_unsigned = attribute->output_unsigned();
+    auto rounding_mode   = attribute->rounding_mode();
+
+    if (rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND)
+    {
+        printNodeValidationError("OpRescale: Unsupported rounding mode");
+        return 1;
+    }
 
     // Note that how rescale op interprets signedness of the tensor depends on
     // the value of input_unsigned and output_unsigned attributes, and doesn't
@@ -117,9 +124,9 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
-    if ((!attribute->scale32()) && attribute->double_round())
+    if ((!attribute->scale32()) && (rounding_mode == RoundingMode_DOUBLE_ROUND))
     {
-        printNodeValidationError("OpRescale: Scale set to false but double round set to true");
+        printNodeValidationError("OpRescale: Scale set to false but rounding mode set to double round");
         return 1;
     }
 
@@ -191,7 +198,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     std::vector<int32_t> multiplier;
     std::vector<int32_t> shift;
     bool scale32         = attribute->scale32();
-    bool double_round    = attribute->double_round();
+    auto rounding_mode   = attribute->rounding_mode();
+    bool double_round    = (rounding_mode == RoundingMode_DOUBLE_ROUND);
     bool per_channel     = attribute->per_channel();
     bool input_unsigned  = attribute->input_unsigned();
     bool output_unsigned = attribute->output_unsigned();
