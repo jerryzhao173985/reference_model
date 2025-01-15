@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024, ARM Limited.
+# Copyright (c) 2021-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Build conformance tests.
 
@@ -208,13 +208,13 @@ def build_op_tests(
             build_cmd_neg_test.extend(["--target-dtype", arg])
         build_cmds_list.append(build_cmd_neg_test)
 
-    logger.info(f"Creating {operator} tests in {len(build_cmds_list)} batch(es)")
+    logger.info(f"Processing {operator} tests in {len(build_cmds_list)} batch(es)")
     error = False
     for i, cmd in enumerate(build_cmds_list):
         try:
             raw_stdout, _ = _run_sh_command(args, args.ref_model_path.parent, cmd)
             logger.info(
-                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} created successfully"
+                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} completed successfully"
             )
 
             if args.tests_list_file is not None:
@@ -764,21 +764,22 @@ def main():
     logging.getLogger("test_select").setLevel(loglevel)
     logging.getLogger("convert2conformance").setLevel(loglevel)
 
-    print(f"Output directory: {args.output_dir}")
-
     if args.random_seed != DEFAULT_SEED:
         logger.warning(
             "Random test seed changed from default, tests will not match official conformance"
         )
 
-    args.build_dir = args.build_dir.resolve()
-    logger.debug(f"Creating build directory: {args.build_dir}")
-    args.build_dir.mkdir(parents=True, exist_ok=True)
-
     if args.tests_list_file is not None:
         # Try creating tests list file
         with args.tests_list_file.open("w") as fd:
             fd.write("")
+        action = "Listing"
+    else:
+        print(f"Output directory: {args.output_dir}")
+        args.build_dir = args.build_dir.resolve()
+        logger.debug(f"Creating build directory: {args.build_dir}")
+        args.build_dir.mkdir(parents=True, exist_ok=True)
+        action = "Creating"
 
     profileExtList = args.profile + args.extension
     profileExtDone = []
@@ -787,7 +788,7 @@ def main():
         for profile_ext in profileExtList:
             # Operator unit tests
             if args.unit_tests in ("operator",):
-                logger.debug("Creating OPERATOR unit tests")
+                logger.debug(f"{action} OPERATOR unit tests")
                 if args.param_config is None:
                     # Use default config
                     config = PROFILE_OPS_INFO["operator_test_params"]
@@ -811,7 +812,7 @@ def main():
                     operators = list(test_params.keys())
 
                 print(
-                    f"Creating conformance tests for TOSA {profile_ext} profile/extension"
+                    f"{action} conformance tests for TOSA {profile_ext} profile/extension"
                 )
 
                 for op in operators:

@@ -11,6 +11,7 @@ from pathlib import Path
 import generator.tosa_utils as gtu
 import numpy as np
 import serializer.tosa_serializer as ts
+from conformance.tosa_profiles import TosaProfiles
 from generator.datagenerator import GenerateLibrary
 from generator.tosa_arg_gen import TosaArgGen
 from generator.tosa_arg_gen import TosaQuantGen
@@ -95,6 +96,12 @@ class TosaTestGen:
                 TosaTensorValuesGen.TVG_HIGH_VALUE[dtype],
             )
         self.resetGlobalRNG()
+
+        # Work out if we are producing all tests - this will effect ERROR_IF test
+        # creation checking which we can only do when all tests are being created
+        all_profiles = all(p in args.profile for p in TosaProfiles.profiles())
+        all_extensions = all(e in args.extension for e in TosaProfiles.extensions())
+        self.all_tests_mode = all_profiles and all_extensions
 
     def resetGlobalRNG(self):
         self.global_rng = TosaRandomGenerator(self.random_seed, self.random_dtype_range)
@@ -3048,15 +3055,20 @@ class TosaTestGen:
             if error_name is not None:
                 # Check the last test is of the error we wanted
                 if len(testList) == 0 or testList[-1][3] != error_name:
-                    if self.args.level8k:
-                        logger.info(f"Missing {error_name} tests due to level8k mode")
-                    else:
-                        logger.error(f"ERROR: Failed to create any {error_name} tests")
-                        logger.debug(
-                            "Last test created: {}".format(
-                                testList[-1] if testList else None
+                    if self.all_tests_mode:
+                        if self.args.level8k:
+                            logger.info(
+                                f"Missing {error_name} tests due to level8k mode"
                             )
-                        )
+                        else:
+                            logger.error(
+                                f"ERROR: Failed to create any {error_name} tests"
+                            )
+                            logger.debug(
+                                "Last test created: {}".format(
+                                    testList[-1] if testList else None
+                                )
+                            )
                 else:
                     # Successfully created at least one ERRROR_IF test
                     num_error_types_created += 1
@@ -3080,7 +3092,11 @@ class TosaTestGen:
                         clean_testList.append(test)
                 testList = clean_testList
         else:
-            if num_error_types_created is not None and not self.args.level8k:
+            if (
+                num_error_types_created is not None
+                and not self.args.level8k
+                and self.all_tests_mode
+            ):
                 remaining_error_types = (
                     len(error_if_validators) - num_error_types_created
                 )
