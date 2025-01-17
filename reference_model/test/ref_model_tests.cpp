@@ -306,6 +306,7 @@ void testTransposeConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weigh
 
     compareOutput<int32_t>(expectedOut, actualOut);
 }
+
 void testConv3d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, int8_t inZp, int8_t weightZp)
 {
     RefModelTestBuilder tb{};
@@ -353,6 +354,66 @@ void testConv3d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, in
     tb.setInput(biasVals);
     tb.setInput(inZpVals);
     tb.setInput(weightZpVals);
+
+    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
+    std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
+
+    compareOutput<int32_t>(expectedOut, actualOut);
+}
+
+void testMatMul(std::vector<int8_t>& aVals, std::vector<int8_t>& bVals, int8_t aZp, int8_t bZp)
+{
+    RefModelTestBuilder tb{};
+    constexpr DType aDtype   = DType_INT8;
+    constexpr DType bDtype   = DType_INT8;
+    constexpr DType aZpDtype = DType_INT8;
+    constexpr DType bZpDtype = DType_INT8;
+    constexpr DType outDtype = DType_INT32;
+
+    const int H = 2;
+    const int C = 2;
+    const int W = 2;
+
+    REQUIRE_MESSAGE(aVals.size() == H * C, "Unit test construction error: testMatMulOverflow assumes the aVals has ",
+                    H * C, " elements");
+    REQUIRE_MESSAGE(bVals.size() == C * W, "Unit test construction error: testMatMulOverflow assumes the bVals has ",
+                    C * W, " elements");
+
+    tb.addInput({ 1, H, C }, aDtype);
+    tb.addInput({ 1, C, W }, bDtype);
+    tb.addInput({ 1 }, aZpDtype);
+    tb.addInput({ 1 }, bZpDtype);
+    tb.addOutput({ 1, H, W }, outDtype);
+
+    TosaAttributeBase* attr = new TosaMatMulAttribute();
+    tb.addOp(Op_MATMUL, Attribute_MatMulAttribute, attr);
+
+    tb.initializeRunner();
+
+    std::vector<int32_t> expectedOutVal(H * W, 0);
+
+    for (int row = 0; row < H; ++row)
+    {
+        for (int col = 0; col < W; ++col)
+        {
+            int32_t dotProduct = 0;
+            for (int k = 0; k < C; ++k)
+            {
+                int32_t aValue = static_cast<int32_t>(aVals[row * C + k]) - static_cast<int32_t>(aZp);
+                int32_t bValue = static_cast<int32_t>(bVals[k * W + col]) - static_cast<int32_t>(bZp);
+                dotProduct += aValue * bValue;
+            }
+            expectedOutVal[row * W + col] = dotProduct;
+        }
+    }
+    std::vector<int32_t> expectedOut = { expectedOutVal };
+
+    std::vector<int8_t> aZpVals = { aZp };
+    std::vector<int8_t> bZpVals = { bZp };
+    tb.setInput(aVals);
+    tb.setInput(bVals);
+    tb.setInput(aZpVals);
+    tb.setInput(bZpVals);
 
     REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
     std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
@@ -457,7 +518,7 @@ TEST_SUITE("reference_model")
         }
     }
 
-    TEST_CASE("CONV2D and DEPTHWISE_CONV2 zero point avoids overflow")
+    TEST_CASE("CONV2D, DEPTHWISE_CONV2D, TRANSPOSE_CONV2D and MATMUL zero point avoids overflow")
     {
         SUBCASE("input negative overflow")
         {
@@ -471,6 +532,7 @@ TEST_SUITE("reference_model")
             testConv2d(inVals, weightVals, inZp, weightZp);
             testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
             testTransposeConv2d(inVals, weightVals, inZp, weightZp);
+            testMatMul(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("input positive overflow")
@@ -481,9 +543,11 @@ TEST_SUITE("reference_model")
             std::vector<int8_t> weightVals = { 2, 1, 4, -7 };
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
+
             testConv2d(inVals, weightVals, inZp, weightZp);
             testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
             testTransposeConv2d(inVals, weightVals, inZp, weightZp);
+            testMatMul(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("weight negative overflow")
@@ -498,6 +562,7 @@ TEST_SUITE("reference_model")
             testConv2d(inVals, weightVals, inZp, weightZp);
             testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
             testTransposeConv2d(inVals, weightVals, inZp, weightZp);
+            testMatMul(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("weight positive overflow")
@@ -508,9 +573,11 @@ TEST_SUITE("reference_model")
             std::vector<int8_t> weightVals = { -2, 125, 4, -1 };
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
+
             testConv2d(inVals, weightVals, inZp, weightZp);
             testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
             testTransposeConv2d(inVals, weightVals, inZp, weightZp);
+            testMatMul(inVals, weightVals, inZp, weightZp);
         }
     }
 
@@ -536,6 +603,7 @@ TEST_SUITE("reference_model")
             std::vector<int8_t> weightVals = { 2, 1, 4, -7, 3, -2, 5, -6 };
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
+
             testConv3d(inVals, weightVals, inZp, weightZp);
         }
 
@@ -559,7 +627,9 @@ TEST_SUITE("reference_model")
             std::vector<int8_t> weightVals = { -2, 125, 4, -1, -20, 30, 60, 120 };
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
+
             testConv3d(inVals, weightVals, inZp, weightZp);
         }
     }
+
 }    // TEST_SUITE("reference_model")

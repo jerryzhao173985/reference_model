@@ -1402,24 +1402,13 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::eval()
     typedef Eigen::Tensor<int, 1>::DimensionPair DimPair;
     Eigen::array<DimPair, 1> dims{ { DimPair(1, 0) } };
 
-    TInputA a_val          = this->a->getTensor();
-    TInputB b_val          = this->b->getTensor();
-    const TZeroPointA a_zp = this->a_zp->getTensor();
-    const TZeroPointA b_zp = this->b_zp->getTensor();
+    TInputA a_val           = this->a->getTensor();
+    TInputB b_val           = this->b->getTensor();
+    const AccEigenType a_zp = static_cast<AccEigenType>(this->a_zp->getTensor()(0));
+    const AccEigenType b_zp = static_cast<AccEigenType>(this->b_zp->getTensor()(0));
 
-    ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && a_zp(0) != 0,
-             "OpMatMul: A zeropoint must be zero for non int8_t data");
-    ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && b_zp(0) != 0,
-             "OpMatMul: B zeropoint must be zero for non int8_t data");
-
-    if (Input1Dtype == TOSA_REF_TYPE_INT8)
-    {
-        a_val = a_val - (InputAEigenType)a_zp(0);
-    }
-    if (Input2Dtype == TOSA_REF_TYPE_INT8)
-    {
-        b_val = b_val - (InputBEigenType)b_zp(0);
-    }
+    ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && a_zp != 0, "OpMatMul: A zeropoint must be zero for non int8_t data");
+    ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && b_zp != 0, "OpMatMul: B zeropoint must be zero for non int8_t data");
 
     if (g_func_config.abs_mode)
     {
@@ -1444,18 +1433,28 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::eval()
         a_begin_array[0] = i;
         b_begin_array[0] = i;
 
-        TInput1Rank2 a_rank2_val = a_val.slice(a_begin_array, a_size_array).reshape(a_rank2_shape);
-        TInput2Rank2 b_rank2_val = b_val.slice(b_begin_array, b_size_array).reshape(b_rank2_shape);
-        TAccRank2 output_rank2_val =
-            a_rank2_val.template cast<AccEigenType>().contract(b_rank2_val.template cast<AccEigenType>(), dims);
-        TOut output_rank3_val = output_rank2_val.reshape(output_rank3_shape).template cast<OutEigenType>();
+        const TInput1Rank2 a_rank2_val = a_val.slice(a_begin_array, a_size_array).reshape(a_rank2_shape);
+        TAccRank2 a_rank2_val_acc      = a_rank2_val.template cast<AccEigenType>();
+        const TInput2Rank2 b_rank2_val = b_val.slice(b_begin_array, b_size_array).reshape(b_rank2_shape);
+        TAccRank2 b_rank2_val_acc      = b_rank2_val.template cast<AccEigenType>();
+        if constexpr (Input1Dtype == TOSA_REF_TYPE_INT8)
+        {
+            a_rank2_val_acc = a_rank2_val_acc - a_zp;
+        }
+        if constexpr (Input2Dtype == TOSA_REF_TYPE_INT8)
+        {
+            b_rank2_val_acc = b_rank2_val_acc - b_zp;
+        }
+
+        TAccRank2 output_rank2_val_acc = a_rank2_val_acc.contract(b_rank2_val_acc, dims);
+        TOut output_rank3_val_acc      = output_rank2_val_acc.reshape(output_rank3_shape).template cast<OutEigenType>();
         if (i == 0)
         {
-            this->output->getTensor() = output_rank3_val;
+            this->output->getTensor() = output_rank3_val_acc;
         }
         else
         {
-            TOut temp                 = this->output->getTensor().concatenate(output_rank3_val, 0);
+            TOut temp                 = this->output->getTensor().concatenate(output_rank3_val_acc, 0);
             this->output->getTensor() = temp;
         }
     }
