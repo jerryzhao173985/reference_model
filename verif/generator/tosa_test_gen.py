@@ -1033,12 +1033,6 @@ class TosaTestGen:
             error_name,
         )
 
-        if qinfo is None:
-            qinfo = [
-                args_dict["input_zp"][0],
-                args_dict["weight_zp"][0],
-            ]
-
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
             excludes = []
@@ -1130,12 +1124,6 @@ class TosaTestGen:
             error_name,
         )
 
-        if qinfo is None:
-            qinfo = [
-                args_dict["input_zp"][0],
-                args_dict["weight_zp"][0],
-            ]
-
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
             excludes = []
@@ -1217,12 +1205,6 @@ class TosaTestGen:
         result_tensor = OutputShaper.transposeConv2DOp(
             self.ser, rng, ifm, filter, accum_dtype, strides, out_pad, error_name
         )
-
-        if qinfo is None:
-            qinfo = [
-                args_dict["input_zp"][0],
-                args_dict["weight_zp"][0],
-            ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
@@ -1312,12 +1294,6 @@ class TosaTestGen:
             dilations,
             error_name,
         )
-
-        if qinfo is None:
-            qinfo = [
-                args_dict["input_zp"][0],
-                args_dict["weight_zp"][0],
-            ]
 
         # Set an invalid bias type for WrongBiasType ErrorIf check
         if error_name == ErrorIf.WrongBiasType:
@@ -3225,6 +3201,8 @@ class TosaTestGen:
         assert isinstance(
             argsDict, dict
         ), f"{opName} is not using new tvg/build_fcn interface"
+
+        argsDict["qinfo"] = qinfo
 
         # New interface with args info in dictionary
         assert "dg_type" in argsDict
