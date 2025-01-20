@@ -1630,34 +1630,16 @@ class TosaTestGen:
         error_name=None,
         qinfo=None,
     ):
-        assert len(inputs) == 2
+        assert len(inputs) == 3
         a = inputs[0]
         pad_input = inputs[1]
+        pad_const_input = inputs[2]
         padding = args_dict["pad"]
-        pad_const_int = args_dict["pad_const_int"]
-        pad_const_float = args_dict["pad_const_fp"]
 
         result_tensor = OutputShaper.padOp(self.ser, rng, a, padding, error_name)
 
-        # get pad_const_val_as_bytes from either pad_const_float or pad_const_int
-        if gtu.dtypeIsFloat(a.dtype):
-            pad_const_val_as_bytes = ts.TosaSerializer.convertDataToUint8Vec(
-                a.dtype, [pad_const_float]
-            )
-        else:
-            pad_const_val_as_bytes = ts.TosaSerializer.convertDataToUint8Vec(
-                a.dtype, [pad_const_int]
-            )
-
-        # align to 8 bytes
-        while (len(pad_const_val_as_bytes) % 8) != 0:
-            pad_const_val_as_bytes.append(0)
-
-        attr = ts.TosaSerializerAttribute()
-        attr.PadAttribute(self.ser.builder, pad_const_val_as_bytes)
-
         # Invalidate Input/Output list for error if checks.
-        input_list = [a.name, pad_input.name]
+        input_list = [a.name, pad_input.name, pad_const_input.name]
         output_list = [result_tensor.name]
         pCount, cCount = op["operands"]
         num_operands = pCount + cCount
@@ -1684,7 +1666,7 @@ class TosaTestGen:
         ):
             return None
 
-        self.ser.addOperator(op["op"], input_list, output_list, attr)
+        self.ser.addOperator(op["op"], input_list, output_list)
 
         compliance = self.tensorComplianceMetaData(
             op, a.dtype, args_dict, result_tensor, error_name
@@ -3408,6 +3390,17 @@ class TosaTestGen:
         DType.INT16: DG_RANDOM_FULL_DYNAMIC,
         DType.INT8: DG_RANDOM_FULL_DYNAMIC,
     }
+    PAD_DATAGEN = {
+        DType.FP16: DG_RANDOM_FULL_DYNAMIC,
+        DType.FP32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.BF16: DG_RANDOM_FULL_DYNAMIC,
+        DType.INT32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT16: DG_RANDOM_FULL_DYNAMIC,
+        DType.INT8: DG_RANDOM_FULL_DYNAMIC,
+        DType.FP8E4M3: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.FP8E5M2: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.BOOL: DG_RANDOM_SPECIAL_DYNAMIC,
+    }
     REDUCE_BOOL_DATAGEN = {
         DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
     }
@@ -4844,9 +4837,8 @@ class TosaTestGen:
         },
         "pad": {
             "op": Op.PAD,
-            "operands": (1, 1),
-            # TODO update ctc_positions and enable EXT-DYNAMIC tests
-            "ctc_positions": (1,),
+            "operands": (1, 2),
+            "ctc_positions": (1, 2),
             "rank": (1, gtu.MAX_TENSOR_RANK),
             "build_fcn": (
                 build_pad,
@@ -4865,7 +4857,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
             ),
-            "data_gen": PR_FS_IS_DATAGEN,
+            "data_gen": PAD_DATAGEN,
         },
         "reshape": {
             "op": Op.RESHAPE,
@@ -4886,7 +4878,6 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            # TODO Enable EXT-DYNAMIC tests for shape_t - see ctc_positions note
             "data_gen": PR_FS_IS_DATAGEN,
         },
         "reverse": {

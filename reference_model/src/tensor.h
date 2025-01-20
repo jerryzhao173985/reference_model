@@ -108,6 +108,12 @@ public:
         return shape;
     }
 
+    uint32_t getDimSize(size_t dim) const
+    {
+        assert(dim < this->shape.size() && "Invalid dimension to getDimSize()");
+        return this->shape[dim];
+    }
+
     void setDimSize(size_t dim, uint32_t new_size)
     {
         this->shape[dim] = new_size;
