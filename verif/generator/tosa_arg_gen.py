@@ -1092,7 +1092,7 @@ class TosaTensorValuesGen:
             if test_set:
                 argsDict["special_test_sets"] = test_set
 
-        qinfo = TosaQuantGen.qgConv(rng, None, None, dtypeList, error_name)
+        qinfo = argsDict["qinfo"]
 
         # Ensure new output type has correct qinfo
         input_dtype = dtypeList[0]
@@ -1106,16 +1106,13 @@ class TosaTensorValuesGen:
                 TosaQuantGen.getZeroPoint(rng, None, weight_dtype),
             ]
 
-        argsDict["input_zp"] = np.int32([qinfo[0]])
-        argsDict["weight_zp"] = np.int32([qinfo[1]])
-
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [
             None,
             None,
             None,
-            argsDict["input_zp"],
-            argsDict["weight_zp"],
+            np.int32([qinfo[0]]),
+            np.int32([qinfo[1]]),
         ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
@@ -1126,17 +1123,14 @@ class TosaTensorValuesGen:
     def tvgMatmul(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        qinfo = TosaQuantGen.qgMatmul(rng, None, None, dtypeList, error_name)
-
-        argsDict["a_zp"] = np.int32([qinfo[0]])
-        argsDict["b_zp"] = np.int32([qinfo[1]])
+        qinfo = argsDict["qinfo"]
 
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [
             None,
             None,
-            argsDict["a_zp"],
-            argsDict["b_zp"],
+            np.int32([qinfo[0]]),
+            np.int32([qinfo[1]]),
         ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
