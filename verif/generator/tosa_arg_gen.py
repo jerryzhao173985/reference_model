@@ -1422,10 +1422,21 @@ class TosaTensorValuesGen:
     def tvgPad(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         # argsDict["pad"] is 2D array, need to flatten it to get list of values
         pad_values = argsDict["pad"].flatten()
+
+        # get pad_const_val_as_bytes from either pad_const_float or pad_const_int
+        pad_const_int = argsDict["pad_const_int"]
+        pad_const_float = argsDict["pad_const_fp"]
+        pad_const_val = [pad_const_int]  # Default
+
+        if gtu.dtypeIsFloat(dtypeList[2]):
+            pad_const_val = [pad_const_float]
+
         dtypeList[1] = DType.SHAPE
         shapeList[1] = [len(pad_values)]
+        shapeList[2] = [1]  # pad_const is rank-1 tensor
+
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
-        argsDict["fixed_data"] = [None, pad_values]
+        argsDict["fixed_data"] = [None, pad_values, pad_const_val]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name

@@ -113,10 +113,8 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 OpPad<Rank, Dtype>::OpPad(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_PAD, id_)
 {
-    setRequiredOperands(2, 1);
+    setRequiredOperands(3, 1);
     setRequiredRank(1);
-
-    INIT_ATTRIBUTE(Pad);
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
@@ -141,10 +139,23 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
     ERROR_IF(inputs[0]->matchRank(*outputs[0]), "OpPad: input and output must have same ranks");
     ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpPad: input and output must have same element types");
 
-    in      = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    padding = dynamic_cast<TosaReference::TensorTemplate<TPadding>*>(inputs[1]);
-    out     = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
-    ASSERT_MEM(in && out);
+    in        = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    padding   = dynamic_cast<TosaReference::TensorTemplate<TPadding>*>(inputs[1]);
+    pad_const = dynamic_cast<TosaReference::TensorTemplate<TPadConst>*>(inputs[2]);
+    out       = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    ASSERT_MEM(in && padding && pad_const && out);
+
+    if (this->pad_const->checkRequiredRank(/*min*/ 1, /*max*/ 1) != 0)
+    {
+        ASSERT_MSG(false, "Only rank-1 tensor allowed for pad_const")
+        return 1;
+    }
+
+    if (this->pad_const->getDimSize(/*dimen*/ 0) != 1)
+    {
+        ASSERT_MSG(false, "Only size-1 tensor allowed for pad_const")
+        return 1;
+    }
 
     return 0;
 }
@@ -152,97 +163,6 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
 template <int Rank, TOSA_REF_TYPE Dtype>
 int OpPad<Rank, Dtype>::eval()
 {
-    InEigenType pad_value = 0;
-
-    // need to use input tensor's serializationDtype to deserialize pad_const
-    // because Dtype may be FP64 in precise_mode
-    switch (DType2RefType(inputs[0]->getSerializationDtype()))
-    {
-        case TOSA_REF_TYPE_BOOL: {
-            std::vector<bool> bool_data;
-            TosaSerializationHandler::ConvertU8toBool(attribute->pad_const(),
-                                                      /* size = */ 1, bool_data);
-            pad_value = (InEigenType)bool_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_INT8: {
-            std::vector<int8_t> int8_data;
-            TosaSerializationHandler::ConvertU8toI8(attribute->pad_const(),
-                                                    /* size = */ 1, int8_data);
-            pad_value = (InEigenType)int8_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_INT16: {
-            std::vector<int16_t> int16_data;
-            TosaSerializationHandler::ConvertU8toI16(attribute->pad_const(),
-                                                     /* size = */ 1, int16_data);
-            pad_value = (InEigenType)int16_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_INT32: {
-            std::vector<int32_t> int32_data;
-            TosaSerializationHandler::ConvertU8toI32(attribute->pad_const(),
-                                                     /* size = */ 1, int32_data);
-            pad_value = (InEigenType)int32_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_FP16: {
-            std::vector<half_float::half> f16_data;
-            TosaSerializationHandler::ConvertU8toF16(attribute->pad_const(),
-                                                     /* size = */ 1, f16_data);
-            pad_value = (InEigenType)f16_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_BF16: {
-            std::vector<bf16> bf16_data;
-            TosaSerializationHandler::ConvertU8toBF16(attribute->pad_const(),
-                                                      /* size = */ 1, bf16_data);
-            // Some ops use Eigen APIs for float calculation, so convert bfloat16
-            // to float
-            std::vector<float> f32_data;
-            for (auto f : bf16_data)
-            {
-                f32_data.push_back(static_cast<float>(f));
-            }
-            pad_value = (InEigenType)f32_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_FP32: {
-            std::vector<float> f32_data;
-            TosaSerializationHandler::ConvertU8toF32(attribute->pad_const(),
-                                                     /* size = */ 1, f32_data);
-            pad_value = (InEigenType)f32_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_FP8E4M3: {
-            std::vector<fp8e4m3> f8_data;
-            TosaSerializationHandler::ConvertU8toFP8E4M3(attribute->pad_const(),
-                                                         /* size = */ 1, f8_data);
-            std::vector<float> f32_data;
-            for (auto f : f8_data)
-            {
-                f32_data.push_back(static_cast<float>(f));
-            }
-            pad_value = (InEigenType)f32_data[0];
-            break;
-        }
-        case TOSA_REF_TYPE_FP8E5M2: {
-            std::vector<fp8e5m2> f8_data;
-            TosaSerializationHandler::ConvertU8toFP8E5M2(attribute->pad_const(),
-                                                         /* size = */ 1, f8_data);
-            std::vector<float> f32_data;
-            for (auto f : f8_data)
-            {
-                f32_data.push_back(static_cast<float>(f));
-            }
-            pad_value = (InEigenType)f32_data[0];
-            break;
-        }
-        default:
-            ASSERT_MSG(false, "TOSA_REF_TYPE %s is not supported.", EnumNameTOSAREFTYPE(Dtype));
-            break;
-    }
-
     // padding is an 1D array of [Rank * 2], with ordering:
     // [Rank0_front, Rank0_back, Rank1_front, Rank1_back, ..., Rank(N-1)_front, Rank(N-1)_back]
     TPadding padding_val = this->padding->getTensor();
@@ -256,6 +176,10 @@ int OpPad<Rank, Dtype>::eval()
                  "OpPad: output shape not equal to input plus padding");
         paddings_array[i] = std::make_pair(pad_front, pad_back);
     }
+
+    TPadConst const pad_const_val = this->pad_const->getTensor();
+    ERROR_IF(pad_const_val.size() != 1, "OpPad: pad-const needs to be rank-1, size-1");
+    InEigenType const pad_value = pad_const_val(/*index*/ 0);
 
     this->out->getTensor() = this->in->getTensor().pad(this->paddings_array, pad_value);
 
