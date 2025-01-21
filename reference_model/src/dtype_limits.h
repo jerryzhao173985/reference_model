@@ -1,4 +1,4 @@
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -121,8 +121,8 @@ struct DtypeLimits<TOSA_REF_TYPE_FP8E5M2>
 template <>
 struct DtypeLimits<TOSA_REF_TYPE_INT48>
 {
-    static constexpr int64_t lowest       = -(1L << 47);
-    static constexpr int64_t max          = +(1L << 47) - 1;
+    static constexpr int64_t lowest       = -(1LL << 47);
+    static constexpr int64_t max          = +(1LL << 47) - 1;
     static constexpr int64_t min          = lowest;
     static constexpr int64_t denorm_min   = 0;
     static constexpr int64_t infinity     = 0;

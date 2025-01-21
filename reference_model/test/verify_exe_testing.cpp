@@ -32,6 +32,7 @@
 // - test for different data types
 // - test with bnd result file
 
+#ifdef __unix__    // Code will only be compiled on Unix-based systems
 std::string getVerifyFileLocation()
 {
     char res[PATH_MAX];
@@ -53,6 +54,8 @@ std::string getVerifyFileLocation()
     int adjust = std::string("/unit_tests").length();
     return exe_path.substr(0, exe_path.length() - adjust) + "/verify/tosa_verify";
 }
+#endif
+
 // Helper function to create a mock file with specific content
 void createMockFile(const std::string& filename, const std::string& content)
 {
@@ -71,7 +74,7 @@ TEST_SUITE_BEGIN("verify_exe_tests");
 
 TEST_CASE("missing and invalid")
 {
-
+#ifdef __unix__    // Code will only be compiled on Unix-based systems
     std::string verif_exe_path = getVerifyFileLocation();
 
     SUBCASE("valid exe")
@@ -82,8 +85,6 @@ TEST_CASE("missing and invalid")
 
         REQUIRE(check);
     }
-
-#ifdef __unix__    // Code will only be compiled on Unix-based systems
 
     SUBCASE("missing config file")
     {

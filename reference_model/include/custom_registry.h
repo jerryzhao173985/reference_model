@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023, 2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -16,8 +16,35 @@
 #define CUSTOMREGISTRY_H
 
 #include "custom_op_interface.h"
-#include <dlfcn.h>
 #include <unordered_map>
+
+#ifdef __linux__
+#include <dlfcn.h>
+#define LIBTYPE void*
+#define OPENLIB(libname) dlopen((libname), RTLD_LAZY)
+#define LIBFUNC(lib, fn) dlsym((lib), (fn))
+#define CLOSELIB(lib) dlclose((lib))
+#elif _WIN32
+#include <libloaderapi.h>
+#define LIBTYPE HINSTANCE
+#define OPENLIB(libname) load_library_w(libname)
+#define LIBFUNC(lib, fn) GetProcAddress((lib), (fn))
+#define CLOSELIB(lib) FreeLibrary((lib))
+
+LIBTYPE load_library_w(const char* libname)
+{
+    size_t outSize;
+    size_t size        = strlen(libname) + 1;
+    wchar_t* l_libname = (wchar_t*)(sizeof(wchar_t) * size);
+
+    mbstowcs_s(&outSize, l_libname, size, libname, size - 1);
+
+    auto lib = LoadLibraryW(l_libname);
+
+    free(l_libname);
+    return lib;
+}
+#endif
 
 using namespace tosa;
 
