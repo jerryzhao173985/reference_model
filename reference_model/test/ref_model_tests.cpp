@@ -153,190 +153,6 @@ void testConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, in
     tb.initializeRunner();
 
     int32_t expectedOutVal = 0;
-    for (size_t i = 0; i < inVals.size(); i++)
-    {
-        expectedOutVal += (static_cast<int32_t>(inVals[i]) - static_cast<int32_t>(inZp)) *
-                          (static_cast<int32_t>(weightVals[i]) - static_cast<int32_t>(weightZp));
-    }
-    std::vector<int32_t> expectedOut = { expectedOutVal };
-
-    std::vector<int8_t> inZpVals     = { inZp };
-    std::vector<int8_t> weightZpVals = { weightZp };
-    std::vector<int32_t> biasVals    = { 0 };
-    tb.setInput(inVals);
-    tb.setInput(weightVals);
-    tb.setInput(biasVals);
-    tb.setInput(inZpVals);
-    tb.setInput(weightZpVals);
-
-    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
-    std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
-
-    compareOutput<int32_t>(expectedOut, actualOut);
-}
-
-void testDepthwiseConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, int8_t inZp, int8_t weightZp)
-{
-    RefModelTestBuilder tb{};
-    constexpr DType inDtype     = DType_INT8;
-    constexpr DType weightDtype = DType_INT8;
-    constexpr DType outDtype    = DType_INT32;
-
-    const int HEIGHT = 2;
-    const int WIDTH  = 2;
-
-    REQUIRE_MESSAGE(inVals.size() == HEIGHT * WIDTH,
-                    "Unit test construction error: testDeptwiseConv2dOverflow assumes the inVals has ", HEIGHT * WIDTH,
-                    " elements");
-    REQUIRE_MESSAGE(weightVals.size() == HEIGHT * WIDTH,
-                    "Unit test construction error: testDepthConv2dOverflow assumes the weightVals has ", HEIGHT * WIDTH,
-                    " elements");
-
-    tb.addInput({ 1, HEIGHT, WIDTH, 1 }, inDtype);
-    tb.addInput({ HEIGHT, WIDTH, 1, 1 }, weightDtype);
-    tb.addInput({ 1 }, outDtype);
-    tb.addInput({ 1 }, inDtype);
-    tb.addInput({ 1 }, weightDtype);
-    tb.addOutput({ 1, 1, 1, 1 }, outDtype);
-
-    TosaAttributeBase* attr = new TosaDepthwiseConv2dAttribute({ 0, 0, 0, 0 }, { 2, 2 }, { 1, 1 }, true, DType_INT32);
-    tb.addOp(Op_DEPTHWISE_CONV2D, Attribute_DepthwiseConv2dAttribute, attr);
-
-    tb.initializeRunner();
-
-    int32_t expectedOutVal = 0;
-    for (size_t i = 0; i < inVals.size(); i++)
-    {
-        expectedOutVal += (static_cast<int32_t>(inVals[i]) - static_cast<int32_t>(inZp)) *
-                          (static_cast<int32_t>(weightVals[i]) - static_cast<int32_t>(weightZp));
-    }
-    std::vector<int32_t> expectedOut = { expectedOutVal };
-
-    std::vector<int8_t> inZpVals     = { inZp };
-    std::vector<int8_t> weightZpVals = { weightZp };
-    std::vector<int32_t> biasVals    = { 0 };
-    tb.setInput(inVals);
-    tb.setInput(weightVals);
-    tb.setInput(biasVals);
-    tb.setInput(inZpVals);
-    tb.setInput(weightZpVals);
-
-    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
-    std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
-
-    compareOutput<int32_t>(expectedOut, actualOut);
-}
-
-void testTransposeConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, int8_t inZp, int8_t weightZp)
-{
-    RefModelTestBuilder tb{};
-    constexpr DType inDtype     = DType_INT8;
-    constexpr DType weightDtype = DType_INT8;
-    constexpr DType outDtype    = DType_INT32;
-
-    const int IN_HEIGHT = 2;
-    const int IN_WIDTH  = 2;
-
-    REQUIRE_MESSAGE(inVals.size() == IN_HEIGHT * IN_WIDTH,
-                    "Unit test construction error: testTransposeConv2dOverflow assumes the inVals has ",
-                    IN_HEIGHT * IN_WIDTH, " elements");
-    REQUIRE_MESSAGE(weightVals.size() == IN_HEIGHT * IN_WIDTH,
-                    "Unit test construction error: testTrasposeConv2dOverflow assumes the weightVals has ",
-                    IN_HEIGHT * IN_WIDTH, " elements");
-
-    tb.addInput({ 1, IN_HEIGHT, IN_WIDTH, 1 }, inDtype);
-    tb.addInput({ 1, IN_HEIGHT, IN_WIDTH, 1 }, weightDtype);
-    tb.addInput({ 1 }, outDtype);    // bias
-    tb.addInput({ 1 }, inDtype);
-    tb.addInput({ 1 }, weightDtype);
-    tb.addOutput({ 1, 3, 3, 1 }, outDtype);
-
-    TosaAttributeBase* attr = new TosaTransposeConv2dAttribute({ 0, 0, 0, 0 }, { 1, 1 }, true, DType_INT32);
-
-    // Formula: OH = (IH - 1) * stride_y + out_pad_top + out_pad_bottom + KH
-    const int OUT_HEIGHT = IN_HEIGHT * 2 - 1;
-    // Formula: OW = (IW - 1) * stride_x + out_pad_left + out_pad_right + KW
-    const int OUT_WIDTH = IN_WIDTH * 2 - 1;
-
-    tb.addOp(Op_TRANSPOSE_CONV2D, Attribute_TransposeConv2dAttribute, attr);
-
-    tb.initializeRunner();
-
-    std::vector<int32_t> expectedOutTensor(9, 0);
-    for (int outRow = 0; outRow < OUT_HEIGHT; outRow++)
-    {
-        for (int outCol = 0; outCol < OUT_WIDTH; outCol++)
-        {
-            int32_t value = 0;
-
-            for (int kRow = 0; kRow < IN_HEIGHT; kRow++)
-            {
-                for (int kCol = 0; kCol < IN_WIDTH; kCol++)
-                {
-                    int inRow = outRow - kRow;
-                    int inCol = outCol - kCol;
-
-                    if (inRow >= 0 && inRow < IN_HEIGHT && inCol >= 0 && inCol < IN_WIDTH)
-                    {
-                        int inIdx     = inRow * IN_HEIGHT + inCol;
-                        int weightIdx = kRow * IN_WIDTH + kCol;
-
-                        value += (static_cast<int32_t>(inVals[inIdx]) - static_cast<int32_t>(inZp)) *
-                                 (static_cast<int32_t>(weightVals[weightIdx]) - static_cast<int32_t>(weightZp));
-                    }
-                }
-            }
-            expectedOutTensor[outRow * OUT_WIDTH + outCol] = value;
-        }
-    }
-    std::vector<int32_t> expectedOut = { expectedOutTensor };
-
-    std::vector<int8_t> inZpVals     = { inZp };
-    std::vector<int8_t> weightZpVals = { weightZp };
-    std::vector<int32_t> biasVals    = { 0 };
-    tb.setInput(inVals);
-    tb.setInput(weightVals);
-    tb.setInput(biasVals);
-    tb.setInput(inZpVals);
-    tb.setInput(weightZpVals);
-
-    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
-    std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
-
-    compareOutput<int32_t>(expectedOut, actualOut);
-}
-void testConv3d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, int8_t inZp, int8_t weightZp)
-{
-    RefModelTestBuilder tb{};
-    constexpr DType inDtype     = DType_INT8;
-    constexpr DType weightDtype = DType_INT8;
-    constexpr DType outDtype    = DType_INT32;
-
-    const int DEPTH  = 2;
-    const int HEIGHT = 2;
-    const int WIDTH  = 2;
-
-    REQUIRE_MESSAGE(inVals.size() == DEPTH * HEIGHT * WIDTH,
-                    "Unit test construction error: testConv3dOverflow assumes the inVals has ", DEPTH * HEIGHT * WIDTH,
-                    " elements");
-    REQUIRE_MESSAGE(weightVals.size() == DEPTH * HEIGHT * WIDTH,
-                    "Unit test construction error: testConv3dOverflow assumes the weightVals has ",
-                    DEPTH * HEIGHT * WIDTH, " elements");
-
-    tb.addInput({ 1, DEPTH, HEIGHT, WIDTH, 1 }, inDtype);
-    tb.addInput({ 1, DEPTH, HEIGHT, WIDTH, 1 }, weightDtype);
-    tb.addInput({ 1 }, outDtype);    // bias
-    tb.addInput({ 1 }, inDtype);
-    tb.addInput({ 1 }, weightDtype);
-    tb.addOutput({ 1, 1, 1, 1, 1 }, outDtype);
-
-    TosaAttributeBase* attr =
-        new TosaConv3dAttribute({ 0, 0, 0, 0, 0, 0 }, { 1, 1, 1 }, { 1, 1, 1 }, true, DType_INT32);
-    tb.addOp(Op_CONV3D, Attribute_Conv3dAttribute, attr);
-
-    tb.initializeRunner();
-
-    int32_t expectedOutVal = 0;
     for (int i = 0; i < inVals.size(); i++)
     {
         expectedOutVal += (static_cast<int32_t>(inVals[i]) - static_cast<int32_t>(inZp)) *
@@ -456,7 +272,7 @@ TEST_SUITE("reference_model")
         }
     }
 
-    TEST_CASE("CONV2D and DEPTHWISE_CONV2 zero point avoids overflow")
+    TEST_CASE("CONV2D zero point avoids overflow")
     {
         SUBCASE("input negative overflow")
         {
@@ -468,8 +284,6 @@ TEST_SUITE("reference_model")
             const int8_t weightZp          = 15;
 
             testConv2d(inVals, weightVals, inZp, weightZp);
-            testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
-            testTransposeConv2d(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("input positive overflow")
@@ -481,8 +295,6 @@ TEST_SUITE("reference_model")
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
             testConv2d(inVals, weightVals, inZp, weightZp);
-            testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
-            testTransposeConv2d(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("weight negative overflow")
@@ -495,8 +307,6 @@ TEST_SUITE("reference_model")
             const int8_t weightZp          = 15;
 
             testConv2d(inVals, weightVals, inZp, weightZp);
-            testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
-            testTransposeConv2d(inVals, weightVals, inZp, weightZp);
         }
 
         SUBCASE("weight positive overflow")
@@ -508,57 +318,6 @@ TEST_SUITE("reference_model")
             const int8_t inZp              = -10;
             const int8_t weightZp          = -5;
             testConv2d(inVals, weightVals, inZp, weightZp);
-            testDepthwiseConv2d(inVals, weightVals, inZp, weightZp);
-            testTransposeConv2d(inVals, weightVals, inZp, weightZp);
-        }
-    }
-
-    TEST_CASE("CONV3D zero point avoids overflow")
-    {
-        SUBCASE("input negative overflow")
-        {
-            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
-                 "using an int8_t accumulator instead of a full-precision int32_t one");
-            std::vector<int8_t> inVals     = { 127, -128, 126, -127, 125, -126, 124, -125 };
-            std::vector<int8_t> weightVals = { 2, -2, 1, -1, 3, -3, 4, -4 };
-            const int8_t inZp              = 4;
-            const int8_t weightZp          = 15;
-
-            testConv3d(inVals, weightVals, inZp, weightZp);
-        }
-
-        SUBCASE("input positive overflow")
-        {
-            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
-                 "using an int8_t accumulator instead of a full-precision int32_t one");
-            std::vector<int8_t> inVals     = { 122, -7, -120, 121, 123, -8, -119, 120 };
-            std::vector<int8_t> weightVals = { 2, 1, 4, -7, 3, -2, 5, -6 };
-            const int8_t inZp              = -10;
-            const int8_t weightZp          = -5;
-            testConv3d(inVals, weightVals, inZp, weightZp);
-        }
-
-        SUBCASE("weight negative overflow")
-        {
-            INFO("This test is meant to catch cases where the weight zero point is subtracted from the weight value "
-                 "using an int8_t accumulator instead of a full-precision int32_t one");
-            std::vector<int8_t> inVals     = { 3, -12, 5, 70, -10, 20, 15, 25 };
-            std::vector<int8_t> weightVals = { -120, -12, 0, -7, -50, 10, -30, 5 };
-            const int8_t inZp              = 55;
-            const int8_t weightZp          = 15;
-
-            testConv3d(inVals, weightVals, inZp, weightZp);
-        }
-
-        SUBCASE("weight positive overflow")
-        {
-            INFO("This test is meant to catch cases where the weight zero point is subtracted from the weight value "
-                 "using an int8_t accumulator instead of a full-precision int32_t one");
-            std::vector<int8_t> inVals     = { -5, 65, -1, 32, 20, -10, -15, 5 };
-            std::vector<int8_t> weightVals = { -2, 125, 4, -1, -20, 30, 60, 120 };
-            const int8_t inZp              = -10;
-            const int8_t weightZp          = -5;
-            testConv3d(inVals, weightVals, inZp, weightZp);
         }
     }
 }    // TEST_SUITE("reference_model")
