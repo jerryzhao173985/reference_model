@@ -7,21 +7,17 @@ import numpy as np
 import pytest
 from checker.verifier import VerifierError
 from checker.verifier import VerifierLibrary
+from test_utils import VERIFY_LIB_PATH
 
 # NOTE: These tests are marked as POST COMMIT
 # To run them, please build the reference_model in a local "build" directory
 # (as per the README) and run them using: pytest -m "postcommit"
 
-# Location of reference model binaries
-REF_MODEL_BUILD_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
-VERIFIER_LIB = "libtosa_reference_verify_lib.so"
-VERIFIER_LIB_PATH = REF_MODEL_BUILD_PATH / VERIFIER_LIB
-
 
 @pytest.mark.postcommit
 def test_verifier_lib_built():
     """First test to check the library has been built."""
-    assert VERIFIER_LIB_PATH.is_file()
+    assert VERIFY_LIB_PATH.is_file()
 
 
 @pytest.mark.postcommit
@@ -33,7 +29,7 @@ def test_checker_verifier_load_fail():
 
 @pytest.mark.postcommit
 def test_checker_verifier_load():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
+    vlib = VerifierLibrary(VERIFY_LIB_PATH)
     assert vlib
 
 
@@ -51,7 +47,7 @@ JSON_COMPLIANCE_DOT_PRODUCT = {
 
 @pytest.mark.postcommit
 def test_checker_verifier_dot_product_check():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
+    vlib = VerifierLibrary(VERIFY_LIB_PATH)
     assert vlib
 
     imp_arr = np.zeros((10, 10, 10), dtype=np.float32)
@@ -66,7 +62,7 @@ def test_checker_verifier_dot_product_check():
 
 @pytest.mark.postcommit
 def test_checker_verifier_dot_product_check_fail():
-    vlib = VerifierLibrary(VERIFIER_LIB_PATH)
+    vlib = VerifierLibrary(VERIFY_LIB_PATH)
     assert vlib
 
     imp_arr = np.zeros((10, 10, 10), dtype=np.float32)

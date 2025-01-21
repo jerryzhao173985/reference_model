@@ -1,5 +1,5 @@
 """Tests for the python interface to the data generator library."""
-# Copyright (c) 2023, ARM Limited.
+# Copyright (c) 2023,2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 from pathlib import Path
 
@@ -7,15 +7,11 @@ import numpy as np
 import pytest
 from generator.datagenerator import GenerateError
 from generator.datagenerator import GenerateLibrary
+from test_utils import GENERATE_LIB_PATH
 
 # NOTE: These tests are marked as POST COMMIT
 # To run them, please build the reference_model in a local "build" directory
 # (as per the README) and run them using: pytest -m "postcommit"
-
-# Location of reference model binaries
-REF_MODEL_BUILD_PATH = Path(__file__).resolve().parents[2] / "build" / "reference_model"
-GENERATE_LIB = "libtosa_reference_generate_lib.so"
-GENERATE_LIB_PATH = REF_MODEL_BUILD_PATH / GENERATE_LIB
 
 TEST_DIR = Path(__file__).parent
 
