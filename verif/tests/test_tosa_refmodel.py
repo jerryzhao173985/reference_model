@@ -1,12 +1,11 @@
 """Tests for tosa_reference_model."""
-# Copyright (c) 2022-2024, ARM Limited.
+# Copyright (c) 2022-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 import re
 from pathlib import Path
 from shutil import rmtree
 
-import conformance.model_files as cmf
 import numpy as np
 import pytest
 from generator.tosa_verif_build_tests import main as tosa_builder
@@ -15,18 +14,9 @@ from ml_dtypes import float8_e4m3fn
 from ml_dtypes import float8_e5m2
 from runner.run_command import run_sh_command
 from runner.run_command import RunShCommandError
-
-# Note: Must rename imports (like test_check) so that pytest doesn't assume its a test function/class
-
-# Location of reference model binaries
-REF_MODEL_DIR = Path(__file__).resolve().parents[2]
-REF_MODEL_EXE_PATH = cmf.find_tosa_file(
-    cmf.TosaFileType.REF_MODEL, REF_MODEL_DIR, False
-)
-GENERATE_LIB_PATH = cmf.find_tosa_file(
-    cmf.TosaFileType.GENERATE_LIBRARY, REF_MODEL_EXE_PATH
-)
-VERIFY_EXE_PATH = cmf.find_tosa_file(cmf.TosaFileType.VERIFY, REF_MODEL_EXE_PATH)
+from test_utils import GENERATE_LIB_PATH
+from test_utils import REF_MODEL_EXE_PATH
+from test_utils import VERIFY_EXE_PATH
 
 # Set this to False if you want ot preserve the test directories after running
 CLEAN_UP_TESTS = True
