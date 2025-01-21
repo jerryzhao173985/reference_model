@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2023, 2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#ifndef _MSC_VER
+#ifndef _WIN32
 #include <execinfo.h>
 #if !defined(__APPLE__) && !defined(__MACH__)
 #include <sys/prctl.h>
@@ -42,13 +42,13 @@ static bool str_case_equal(const std::string& a, const std::string& b)
                       [](char ac, char bc) { return tolower(ac) == tolower(bc); });
 }
 
-#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__MACH__)
 pid_t func_print_backtrace_helper(int num_tries, int sig);
 #endif
 
 void func_print_backtrace(FILE* out, int sig)
 {
-#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__MACH__)
     if (getenv("TOSA_MODEL_NO_BACKTRACE"))
         return;
 
@@ -71,7 +71,7 @@ void func_print_backtrace(FILE* out, int sig)
 #endif
 }
 
-#if !defined(_MSC_VER) && !defined(__APPLE__) && !defined(__MACH__)
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__MACH__)
 pid_t func_print_backtrace_helper(int num_tries, int sig)
 {
     const pid_t child_pid = fork();
@@ -133,6 +133,7 @@ void func_backtrace_signal_handler(int sig)
 
 // Note: this overwrites other signal handlers.  May want to make this
 // more friendly sometime
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__MACH__)
 void func_enable_signal_handlers()
 {
     static const int sig_list[] = { SIGABRT, SIGSEGV, SIGILL, SIGFPE };
@@ -155,6 +156,7 @@ void func_enable_signal_handlers()
         }
     }
 }
+#endif
 
 static const std::vector<std::pair<std::string, uint32_t>> func_debug_verbosity_table = {
     { "NONE", DEBUG_VERB_NONE }, { "INFO", DEBUG_VERB_INFO }, { "IFACE", DEBUG_VERB_IFACE },

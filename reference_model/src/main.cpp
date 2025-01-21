@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -249,14 +249,16 @@ int main(int argc, char** argv)
 int loadSharedLibs(std::string& custom_op_lib_path)
 {
     // Load the shared_lib
-    void* lib_handle = dlopen(custom_op_lib_path.c_str(), RTLD_LAZY);
+    const char* path   = custom_op_lib_path.c_str();
+    LIBTYPE lib_handle = OPENLIB(path);
     if (lib_handle == nullptr)
     {
         FATAL_ERROR("Library %s does not exist\n", custom_op_lib_path.c_str());
     }
 
     typedef int (*get_customOp_function_t)(registration_callback_t registration_func);
-    auto get_customOp_creation_funcs = (get_customOp_function_t)dlsym(lib_handle, "getCustomOpCreationFuncs");
+    auto get_customOp_creation_funcs =
+        reinterpret_cast<get_customOp_function_t>(LIBFUNC(lib_handle, "getCustomOpCreationFuncs"));
     if (get_customOp_creation_funcs == nullptr)
     {
         FATAL_ERROR("Can't find the getCustomOpCreationFuncs \n");
