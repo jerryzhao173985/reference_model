@@ -916,6 +916,8 @@ class TosaTensorValuesGen:
             tens_meta["shape"] = [int(i) for i in shape]
             tens_meta["input_pos"] = idx
             tens_meta["op"] = testGen.getOperatorNameStr(opName).upper()
+            if "unsigned_tensors" in argsDict:
+                tens_meta["unsigned_data"] = argsDict["unsigned_tensors"][idx]
 
             variable = tensor_is_variable(pCount, idx)
 
@@ -1334,6 +1336,7 @@ class TosaTensorValuesGen:
         scale32 = argsDict["scale"]
         multiplier_arr = argsDict["multiplier"]
         shift_arr = argsDict["shift"]
+        input_unsigned = argsDict["input_unsigned"]
 
         # Set up the data types and shapes of the multipler and shift tensors
         if scale32:
@@ -1358,12 +1361,19 @@ class TosaTensorValuesGen:
             max_value = (1 << (min_shift - 1)) + input_zp - 1
             min_value = (-1 << (min_shift - 1)) + input_zp
             dtype = dtypeList[0]
+            if dtype == DType.INT8 and input_unsigned:
+                dtype = DType.UINT8
+            elif dtype == DType.INT16 and input_unsigned:
+                dtype = DType.UINT16
             highval_lookup = {dtype: max_value}
             lowval_lookup = {dtype: min_value}
             data_range = TosaTensorValuesGen._get_data_range(
                 rng, dtype, highval_lookup, lowval_lookup
             )
             argsDict["data_range"] = data_range
+
+        # Set up which tensors are unsigned for data generation
+        argsDict["unsigned_tensors"] = [input_unsigned, False, False]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -3279,228 +3289,206 @@ class TosaArgGen:
     def agRescale(testGen, rng, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
-        # Enumerate the output types here
-        for outDtype in [
-            DType.UINT8,
-            DType.INT8,
-            DType.INT16,
-            DType.INT32,
-            DType.UINT16,
-        ]:
-            if (
-                outDtype in [DType.UINT8, DType.INT8, DType.UINT16]
-                and error_name == ErrorIf.OutputZeroPointNotZero
-            ):
-                continue
-            if (
-                outDtype != DType.UINT16
-                and error_name == ErrorIf.U16OutputZeroPointNotValid
-            ) or (
-                inDtype != DType.UINT16
-                and error_name == ErrorIf.U16InputZeroPointNotValid
-            ):
-                # ErrorIfs only valid with UINT16
-                continue
-            if (
-                inDtype == DType.UINT8
-                and outDtype not in [DType.INT8, DType.INT16]
-                and error_name != ErrorIf.WrongOutputType
-            ):
-                # The only output dtypes for UINT8 are INT8/INT16, skip all others
-                continue
-            if (
-                inDtype not in [DType.INT8, DType.INT16]
-                and outDtype == DType.UINT8
-                and error_name != ErrorIf.WrongOutputType
-            ):
-                # The only input dtypes for UINT8 are INT8/INT16, skip all others
-                continue
-            if (
-                inDtype == DType.UINT16
-                and outDtype != DType.INT16
-                and error_name != ErrorIf.WrongOutputType
-            ):
-                # The only output dtype for UINT16 is INT16, skip all others
-                continue
-            if (
-                inDtype != DType.INT16
-                and outDtype == DType.UINT16
-                and error_name != ErrorIf.WrongOutputType
-            ):
-                # The only input dtype for UINT16 is INT16, skip all others
-                continue
-            if (
-                error_name == ErrorIf.WrongOutputType
-                and not TosaErrorIfArgGen.eiRescaleWrongOutputType(inDtype, outDtype)
-            ):
-                continue
+        def create_rescale_test(
+            inDtype,
+            input_unsigned,
+            outDtype,
+            output_unsigned,
+            scale32,
+            rounding_mode,
+            per_channel,
+        ):
+            nc = shapeList[0][-1] if per_channel else 1
 
-            if error_name == ErrorIf.InputUnsignedOutputUnsigned and (
-                inDtype == DType.INT32 or outDtype == DType.INT32
-            ):
-                # Skip if input or output dtype is INT32 to avoid conflicts with the following two error cases
-                continue
-            if error_name == ErrorIf.I32OutputInputUnsigned and outDtype != DType.INT32:
-                continue
-            if error_name == ErrorIf.I32InputOutputUnsigned and inDtype != DType.INT32:
-                continue
-            if error_name == ErrorIf.I48InputOutputUnsigned and inDtype != DType.INT48:
-                continue
+            in_type_width = gtu.dtypeWidth(inDtype)
+            out_type_width = gtu.dtypeWidth(outDtype)
 
-            for scale32 in [False, True]:
-                if error_name == ErrorIf.ScaleTrue and not scale32:
-                    continue
-                elif error_name == ErrorIf.ScaleNotTrue and scale32:
-                    continue
+            # Calculate scale based on:
+            # scale = a *(2^output_width)/(2^input_width))
+            a = np.float32(rng.random(size=[nc]))
+            scale_arr = a * np.float32((1 << out_type_width) / (1 << in_type_width))
 
-                rounding_modes = [RoundingMode.SINGLE_ROUND]
-                if TosaProfiles.TosaExtDoubleRound in testGen.args.extension:
-                    rounding_modes.append(RoundingMode.DOUBLE_ROUND)
+            if scale32:
+                # Cap the scaling at 2^31 - 1 for scale32
+                scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), (1 << 31) - 1)
+            else:
+                # Cap the scaling at 2^15 - 1 for scale16
+                scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), 32767.0)
 
-                for rounding_mode in rounding_modes:
-                    if (
-                        error_name == ErrorIf.ScaleNotTrue
-                        and not rounding_mode == RoundingMode.DOUBLE_ROUND
+            logger.debug(f"agRescale: {out_type_width} {in_type_width} -> {scale_arr}")
+
+            multiplier_arr = np.int32(np.zeros(shape=[nc]))
+            shift_arr = np.int32(np.zeros(shape=[nc]))
+            for i in range(nc):
+                (
+                    multiplier_arr[i],
+                    shift_arr[i],
+                ) = TosaQuantGen.computeMultiplierAndShift(scale_arr[i], scale32)
+
+            if error_name == ErrorIf.WrongInputType:
+                # Override input type for this test
+                inDtype = DType.BOOL
+            elif error_name == ErrorIf.WrongOutputType:
+                outDtype = DType.BOOL
+
+            # Work out zero points
+            if inDtype == DType.INT8:
+                if input_unsigned:
+                    input_zp = rng.randInt(0, 256)
+                else:
+                    input_zp = rng.randInt(-128, 128)
+            elif error_name in [
+                ErrorIf.InputZeroPointNotZero,
+                ErrorIf.U16InputZeroPointNotValid,
+            ]:
+                input_zp = rng.randInt(-128, 128)
+                if input_zp == 0:
+                    input_zp = 1
+            elif inDtype == DType.INT16 and input_unsigned:
+                # Must come after ErrorIf.U16InputZeroPointNotValid check
+                input_zp = rng.choice([0, 32768])
+            else:
+                input_zp = 0
+
+            if outDtype == DType.INT8:
+                if output_unsigned:
+                    output_zp = rng.randInt(0, 256)
+                else:
+                    output_zp = rng.randInt(-128, 128)
+            elif error_name in [
+                ErrorIf.OutputZeroPointNotZero,
+                ErrorIf.U16OutputZeroPointNotValid,
+            ]:
+                output_zp = rng.randInt(-128, 128)
+                if output_zp == 0:
+                    output_zp = 1
+            elif outDtype == DType.INT16 and output_unsigned:
+                # Must come after ErrorIf.U16OutputZeroPointNotValid check
+                output_zp = rng.choice([0, 32768])
+            else:
+                output_zp = 0
+
+            roundStr = "S" if rounding_mode == RoundingMode.SINGLE_ROUND else "D"
+            return (
+                "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
+                    testGen.typeStr(outDtype),
+                    int(scale32),
+                    roundStr,
+                    int(per_channel),
+                    int(input_unsigned),
+                    int(output_unsigned),
+                ),
+                {
+                    "output_dtype": outDtype,
+                    "scale": scale32,
+                    "rounding_mode": rounding_mode,
+                    "per_channel": per_channel,
+                    "multiplier": multiplier_arr,
+                    "shift": shift_arr,
+                    "input_zp": input_zp,
+                    "input_unsigned": input_unsigned,
+                    "output_zp": output_zp,
+                    "output_unsigned": output_unsigned,
+                },
+            )
+
+        # Enumerate all the possible options for rescale, ignoring all the states that
+        # don't match what we need to test or thats valid
+        for input_unsigned in (True, False):
+            for outDtype in (DType.INT8, DType.INT16, DType.INT32):
+                for output_unsigned in (True, False):
+                    # Validation of allowed combination of types & signedness
+                    if error_name in (
+                        ErrorIf.InputUnsignedOutputUnsigned,
+                        ErrorIf.I32OutputInputUnsigned,
+                        ErrorIf.I32InputOutputUnsigned,
+                        ErrorIf.I48InputOutputUnsigned,
                     ):
+                        error_found = None
+                        # Check for specific errors and skip overlaps
+                        if input_unsigned and output_unsigned:
+                            error_found = ErrorIf.InputUnsignedOutputUnsigned
+                        if outDtype == DType.INT32 and input_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.I32OutputInputUnsigned
+                        if inDtype == DType.INT32 and output_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.I32InputOutputUnsigned
+                        if inDtype == DType.INT48 and output_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.I48InputOutputUnsigned
+                        if error_found != error_name:
+                            continue
+                    elif TosaErrorIfArgGen.eiRescaleInvalidTypes(
+                        inDtype, input_unsigned, outDtype, output_unsigned
+                    ):
+                        # Not a valid combination of types for positive or other
+                        # error_if tests
                         continue
-                    # Per_channel is only valid with rank > 0
-                    pc_options = (False, True) if len(shapeList[0]) > 0 else (False,)
-                    for per_channel in pc_options:
-                        if (
-                            inDtype == DType.INT48
-                            and scale32
-                            and error_name != ErrorIf.ScaleTrue
+
+                    # Validation of Zero point error_if tests
+                    if error_name == ErrorIf.OutputZeroPointNotZero:
+                        if outDtype == DType.INT8 or (
+                            outDtype == DType.INT16 and output_unsigned
                         ):
-                            # Illegal condition.  Must be scale32=False
                             continue
-                        if (
-                            rounding_mode == RoundingMode.DOUBLE_ROUND
-                            and not scale32
-                            and error_name != ErrorIf.ScaleNotTrue
-                        ):
-                            # Illegal condition.  ERROR_IF(!scale32 && DOUBLE_ROUND)
+                    elif error_name == ErrorIf.U16OutputZeroPointNotValid:
+                        if not (outDtype == DType.INT16 and output_unsigned):
+                            continue
+                    elif error_name == ErrorIf.U16InputZeroPointNotValid:
+                        if not (inDtype == DType.INT16 and input_unsigned):
                             continue
 
-                        if per_channel:
-                            nc = shapeList[0][-1]
-                        else:
-                            nc = 1
+                    for scale32 in (False, True):
+                        # Validation of scale32 error_if tests
+                        if error_name == ErrorIf.ScaleTrue and not scale32:
+                            continue
+                        elif error_name == ErrorIf.ScaleNotTrue and scale32:
+                            continue
 
-                        in_type_width = gtu.dtypeWidth(inDtype)
-                        out_type_width = gtu.dtypeWidth(outDtype)
+                        rounding_modes = [RoundingMode.SINGLE_ROUND]
+                        if TosaProfiles.TosaExtDoubleRound in testGen.args.extension:
+                            rounding_modes.append(RoundingMode.DOUBLE_ROUND)
 
-                        # Calculate scale based on:
-                        # scale = a *(2^output_width)/(2^input_width))
-
-                        a = np.float32(rng.random(size=[nc]))
-                        scale_arr = a * np.float32(
-                            (1 << out_type_width) / (1 << in_type_width)
-                        )
-
-                        if scale32:
-                            # Cap the scaling at 2^31 - 1 for scale32
-                            scale_arr = np.clip(
-                                scale_arr, 1.0 / (1 << 31), (1 << 31) - 1
+                        for rounding_mode in rounding_modes:
+                            if (
+                                error_name == ErrorIf.ScaleNotTrue
+                                and not rounding_mode == RoundingMode.DOUBLE_ROUND
+                            ):
+                                continue
+                            # Per_channel is only valid with rank > 0
+                            pc_options = (
+                                (False, True) if len(shapeList[0]) > 0 else (False,)
                             )
-                        else:
-                            # Cap the scaling at 2^15 - 1 for scale16
-                            scale_arr = np.clip(scale_arr, 1.0 / (1 << 31), 32767.0)
+                            for per_channel in pc_options:
+                                if (
+                                    inDtype == DType.INT48
+                                    and scale32
+                                    and error_name != ErrorIf.ScaleTrue
+                                ):
+                                    # Illegal condition.  Must be scale32=False
+                                    continue
+                                if (
+                                    rounding_mode == RoundingMode.DOUBLE_ROUND
+                                    and not scale32
+                                    and error_name != ErrorIf.ScaleNotTrue
+                                ):
+                                    # Illegal condition.  ERROR_IF(!scale32 && DOUBLE_ROUND)
+                                    continue
 
-                        logger.debug(
-                            f"agRescale: {out_type_width} {in_type_width} -> {scale_arr}"
-                        )
-
-                        multiplier_arr = np.int32(np.zeros(shape=[nc]))
-                        shift_arr = np.int32(np.zeros(shape=[nc]))
-                        for i in range(nc):
-                            (
-                                multiplier_arr[i],
-                                shift_arr[i],
-                            ) = TosaQuantGen.computeMultiplierAndShift(
-                                scale_arr[i], scale32
-                            )
-
-                        input_unsigned = False
-                        output_unsigned = False
-
-                        if inDtype == DType.INT8:
-                            input_zp = rng.randInt(-128, 128)
-                        elif inDtype == DType.UINT8:
-                            input_zp = rng.randInt(0, 256)
-                            input_unsigned = True
-                        elif error_name in [
-                            ErrorIf.InputZeroPointNotZero,
-                            ErrorIf.U16InputZeroPointNotValid,
-                        ]:
-                            input_zp = rng.randInt(-128, 128)
-                            if input_zp == 0:
-                                input_zp = input_zp + rng.integers(1, 10)
-                        elif inDtype == DType.UINT16:
-                            # Must come after ErrorIf.U16InputZeroPointNotValid check
-                            input_zp = rng.choice([0, 32768])
-                            input_unsigned = True
-                        else:
-                            input_zp = 0
-
-                        if outDtype == DType.INT8:
-                            output_zp = rng.randInt(-128, 128)
-                        elif outDtype == DType.UINT8:
-                            output_zp = rng.randInt(0, 256)
-                            output_unsigned = True
-                        elif error_name in [
-                            ErrorIf.OutputZeroPointNotZero,
-                            ErrorIf.U16OutputZeroPointNotValid,
-                        ]:
-                            output_zp = rng.randInt(-128, 128)
-                            if output_zp == 0:
-                                output_zp = output_zp + rng.integers(1, 10)
-                        elif outDtype == DType.UINT16:
-                            # Must come after ErrorIf.U16OutputZeroPointNotValid check
-                            output_zp = rng.choice([0, 32768])
-                            output_unsigned = True
-                        else:
-                            output_zp = 0
-
-                        if error_name == ErrorIf.InputUnsignedOutputUnsigned:
-                            input_unsigned = True
-                            output_unsigned = True
-                        elif error_name == ErrorIf.I32OutputInputUnsigned:
-                            input_unsigned = True
-                            output_unsigned = False
-                        elif error_name == ErrorIf.I32InputOutputUnsigned:
-                            input_unsigned = False
-                            output_unsigned = True
-                        elif error_name == ErrorIf.I48InputOutputUnsigned:
-                            input_unsigned = False
-                            output_unsigned = True
-
-                        roundStr = (
-                            "S" if rounding_mode == RoundingMode.SINGLE_ROUND else "D"
-                        )
-                        arg_list.append(
-                            (
-                                "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
-                                    testGen.typeStr(outDtype),
-                                    int(scale32),
-                                    roundStr,
-                                    int(per_channel),
-                                    int(input_unsigned),
-                                    int(output_unsigned),
-                                ),
-                                {
-                                    "output_dtype": outDtype,
-                                    "scale": scale32,
-                                    "rounding_mode": rounding_mode,
-                                    "per_channel": per_channel,
-                                    "multiplier": multiplier_arr,
-                                    "shift": shift_arr,
-                                    "input_zp": input_zp,
-                                    "input_unsigned": input_unsigned,
-                                    "output_zp": output_zp,
-                                    "output_unsigned": output_unsigned,
-                                },
-                            )
-                        )
+                                test_args = create_rescale_test(
+                                    inDtype,
+                                    input_unsigned,
+                                    outDtype,
+                                    output_unsigned,
+                                    scale32,
+                                    rounding_mode,
+                                    per_channel,
+                                )
+                                arg_list.append(test_args)
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,

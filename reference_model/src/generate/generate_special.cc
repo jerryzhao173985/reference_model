@@ -141,14 +141,32 @@ bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size)
                                                                 getSpecialConfig<SpecialConfig::INT>());
         }
         case DType::DType_INT8: {
-            int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return generate<int8_t, int8_t, TOSA_REF_TYPE_INT8>(cfg, outData, size,
-                                                                getSpecialConfig<SpecialConfig::INT>());
+            if (cfg.unsignedData)
+            {
+                uint8_t* outData = reinterpret_cast<uint8_t*>(data);
+                return generate<uint8_t, uint8_t, TOSA_REF_TYPE_UINT8>(cfg, outData, size,
+                                                                       getSpecialConfig<SpecialConfig::INT>());
+            }
+            else
+            {
+                int8_t* outData = reinterpret_cast<int8_t*>(data);
+                return generate<int8_t, int8_t, TOSA_REF_TYPE_INT8>(cfg, outData, size,
+                                                                    getSpecialConfig<SpecialConfig::INT>());
+            }
         }
         case DType::DType_INT16: {
-            int16_t* outData = reinterpret_cast<int16_t*>(data);
-            return generate<int16_t, int16_t, TOSA_REF_TYPE_INT16>(cfg, outData, size,
-                                                                   getSpecialConfig<SpecialConfig::INT>());
+            if (cfg.unsignedData)
+            {
+                uint16_t* outData = reinterpret_cast<uint16_t*>(data);
+                return generate<uint16_t, uint16_t, TOSA_REF_TYPE_UINT16>(cfg, outData, size,
+                                                                          getSpecialConfig<SpecialConfig::INT>());
+            }
+            else
+            {
+                int16_t* outData = reinterpret_cast<int16_t*>(data);
+                return generate<int16_t, int16_t, TOSA_REF_TYPE_INT16>(cfg, outData, size,
+                                                                       getSpecialConfig<SpecialConfig::INT>());
+            }
         }
         case DType::DType_INT32: {
             int32_t* outData = reinterpret_cast<int32_t*>(data);
@@ -159,16 +177,6 @@ bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size)
             int8_t* outData = reinterpret_cast<int8_t*>(data);
             return generate<int8_t, int64_t, TOSA_REF_TYPE_INT48>(cfg, outData, size,
                                                                   getSpecialConfig<SpecialConfig::INT>());
-        }
-        case DType::DType_UINT8: {
-            uint8_t* outData = reinterpret_cast<uint8_t*>(data);
-            return generate<uint8_t, uint8_t, TOSA_REF_TYPE_UINT8>(cfg, outData, size,
-                                                                   getSpecialConfig<SpecialConfig::INT>());
-        }
-        case DType::DType_UINT16: {
-            uint16_t* outData = reinterpret_cast<uint16_t*>(data);
-            return generate<uint16_t, uint16_t, TOSA_REF_TYPE_UINT16>(cfg, outData, size,
-                                                                      getSpecialConfig<SpecialConfig::INT>());
         }
         case DType::DType_BOOL: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);

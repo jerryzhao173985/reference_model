@@ -117,6 +117,7 @@ struct GenerateConfig
 {
     GeneratorType generatorType;
     DType dataType;
+    bool unsignedData;
     InputType inputType;
     std::vector<int32_t> shape;
     int32_t inputPos;

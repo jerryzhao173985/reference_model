@@ -5162,12 +5162,10 @@ class TosaTestGen:
                 TosaArgGen.agRescale,
             ),
             "types": [
-                DType.UINT8,
                 DType.INT8,
                 DType.INT16,
                 DType.INT32,
                 DType.INT48,
-                DType.UINT16,
             ],
             "error_if_validators": (
                 TosaErrorValidator.evInputZeroPointNotZero,

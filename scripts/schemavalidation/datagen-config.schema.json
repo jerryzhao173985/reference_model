@@ -1,5 +1,5 @@
  {
-    "$comment": "Copyright (c) 2023-2024, ARM Limited.",
+    "$comment": "Copyright (c) 2023-2025, ARM Limited.",
     "$comment": "SPDX-License-Identifier: Apache-2.0",
     "$id": "datagen-config.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -28,6 +28,10 @@
                         "data_type": {
                             "description": "tensor data type, such as: BOOL, INT16, FP32",
                             "type": "string"
+                        },
+                        "unsigned_data": {
+                            "description": "data type should be treated as unsigned",
+                            "type": "boolean"
                         },
                         "input_type": {
                             "description": "input is variable or constant",
