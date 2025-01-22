@@ -2125,6 +2125,7 @@ void special_generate_INT(const std::string tosaName,
             "input0" : {
                 "generator": "SPECIAL",
                 "data_type": "_INT_TYPE_",
+                "unsigned_data": _UNSIGNED_,
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 0,
@@ -2137,6 +2138,7 @@ void special_generate_INT(const std::string tosaName,
             "input1" : {
                 "generator": "SPECIAL",
                 "data_type": "_INT_TYPE_",
+                "unsigned_data": _UNSIGNED_,
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 1,
@@ -2148,6 +2150,7 @@ void special_generate_INT(const std::string tosaName,
             "const0": {
                 "generator": "FULL_RANGE",
                 "data_type": "_INT_TYPE_",
+                "unsigned_data": _UNSIGNED_,
                 "input_type": "VARIABLE",
                 "shape" : [ 3, 6, 4 ],
                 "input_pos": 1,
@@ -2164,7 +2167,24 @@ void special_generate_INT(const std::string tosaName,
 
     update_json_template(jsonCfg, "_OP_", opStr);
     update_json_template(jsonCfg, "_START_", startIndexStr);
-    update_json_template(jsonCfg, "_INT_TYPE_", EnumNameDType(dtype));
+    std::string dtypeStr(EnumNameDType(dtype));
+    std::string unsignedStr;
+    if (dtypeStr == "UINT16")
+    {
+        dtypeStr    = "INT16";
+        unsignedStr = "true";
+    }
+    else if (dtypeStr == "UINT8")
+    {
+        dtypeStr    = "INT8";
+        unsignedStr = "true";
+    }
+    else
+    {
+        unsignedStr = "false";
+    }
+    update_json_template(jsonCfg, "_INT_TYPE_", dtypeStr);
+    update_json_template(jsonCfg, "_UNSIGNED_", unsignedStr);
     update_json_template(jsonCfg, "_TEST_SET_", testSetStr);
 
     size_t bytes = tosaElements * sizeof(INT_TYPE);

@@ -368,14 +368,6 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             int8_t* outData = reinterpret_cast<int8_t*>(data);
             return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_BOOL>(cfg, outData, size);
         }
-        case DType::DType_UINT8: {
-            uint8_t* outData = reinterpret_cast<uint8_t*>(data);
-            return generateINT<uint8_t, TosaReference::TOSA_REF_TYPE_UINT8>(cfg, outData, size);
-        }
-        case DType::DType_UINT16: {
-            uint16_t* outData = reinterpret_cast<uint16_t*>(data);
-            return generateINT<uint16_t, TosaReference::TOSA_REF_TYPE_UINT16>(cfg, outData, size);
-        }
         default:
             WARNING("[Generator][PR] Unsupported type %s.", EnumNameDType(cfg.dataType));
             return false;

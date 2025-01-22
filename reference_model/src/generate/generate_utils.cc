@@ -225,6 +225,14 @@ void from_json(const nlohmann::json& j, GenerateConfig& cfg)
     j.at("input_pos").get_to(cfg.inputPos);
     j.at("op").get_to(cfg.opType);
     j.at("generator").get_to(cfg.generatorType);
+    if (j.contains("unsigned_data"))
+    {
+        j.at("unsigned_data").get_to(cfg.unsignedData);
+    }
+    else
+    {
+        cfg.unsignedData = false;
+    }
 
     // Set up defaults for dotProductInfo
     cfg.dotProductInfo.s       = -1;

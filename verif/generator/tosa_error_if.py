@@ -241,31 +241,21 @@ class TosaErrorIfArgGen:
             return None, None, None
 
     @staticmethod
-    def eiRescaleWrongOutputType(input_dtype, output_dtype):
-        if input_dtype == DType.INT8:
-            if output_dtype not in [DType.UINT8, DType.INT8, DType.INT16, DType.INT32]:
-                return True
-        elif input_dtype == DType.INT16:
-            if output_dtype not in [
-                DType.UINT8,
-                DType.INT8,
-                DType.UINT16,
-                DType.INT16,
-                DType.INT32,
-            ]:
-                return True
-        elif input_dtype == DType.INT32:
-            if output_dtype not in [DType.INT8, DType.INT16, DType.INT32]:
-                return True
-        elif input_dtype == DType.INT48:
-            if output_dtype not in [DType.INT8, DType.INT16, DType.INT32]:
-                return True
-        elif input_dtype == DType.UINT8:
-            if output_dtype not in [DType.INT8, DType.INT16]:
-                return True
-        elif input_dtype == DType.UINT16:
-            if output_dtype != DType.INT16:
-                return True
+    def eiRescaleInvalidTypes(
+        input_dtype, input_unsigned, output_dtype, output_unsigned
+    ):
+        if input_unsigned and output_unsigned:
+            return True
+        elif input_dtype == DType.INT32 and output_unsigned:
+            return True
+        elif output_dtype == DType.INT32 and input_unsigned:
+            return True
+        elif input_dtype == DType.INT48 and output_unsigned:
+            return True
+        elif input_dtype == DType.INT48 and input_unsigned:
+            # NOTE: Do not produce unsigned INT48 tests - specification change likely to stop this
+            # NOTE: It currently fails the integer special tests due to exceeding int32!
+            return True
         return False
 
     @staticmethod
@@ -488,8 +478,10 @@ class TosaErrorValidator:
                     error_result = True
 
             elif op["op"] == Op.RESCALE:
-                error_result = TosaErrorIfArgGen.eiRescaleWrongOutputType(
-                    input_dtype, output_dtype
+                error_result = output_dtype not in (
+                    DType.INT8,
+                    DType.INT16,
+                    DType.INT32,
                 )
 
             elif op["op"] == Op.MATMUL:
@@ -1214,7 +1206,9 @@ class TosaErrorValidator:
         error_result = False
 
         # Quantizable types
-        qTypes = (DType.INT8, DType.UINT8, DType.UINT16)
+        qTypes = [DType.INT8]
+        if op["op"] == Op.RESCALE and kwargs.get("input_unsigned", False):
+            qTypes.append(DType.INT16)
 
         # This does not apply to quantizable types
         inputDtypes = [
@@ -1278,9 +1272,12 @@ class TosaErrorValidator:
     @staticmethod
     def evOutputZeroPointNotZero(check=False, **kwargs):
         op = kwargs["op"]
-        inputDtypes = [
-            t for t in op["types"] if t not in [DType.INT8, DType.UINT8, DType.UINT16]
-        ]
+
+        qTypes = [DType.INT8]
+        if op["op"] == Op.RESCALE and kwargs.get("output_unsigned", False):
+            qTypes.append(DType.INT16)
+
+        inputDtypes = [t for t in op["types"] if t not in qTypes]
 
         error_name = ErrorIf.OutputZeroPointNotZero
         param_reqs = {"rank": None, "dtype": inputDtypes, "shape": None}
@@ -1294,11 +1291,8 @@ class TosaErrorValidator:
             if op["op"] == Op.AVG_POOL2D:
                 if input_dtype != DType.INT8 and output_zero_point != 0:
                     error_result = True
-            elif (
-                output_dtype not in [DType.INT8, DType.UINT8, DType.UINT16]
-                and output_zero_point != 0
-            ):
-                error_result = True
+            else:
+                error_result = output_dtype not in qTypes and output_zero_point != 0
 
         info_dict = {
             "error_name": error_name,
@@ -1311,17 +1305,23 @@ class TosaErrorValidator:
     @staticmethod
     def evU16InputZeroPointNotValid(check=False, **kwargs):
         error_name = ErrorIf.U16InputZeroPointNotValid
-        param_reqs = {"rank": None, "dtype": [DType.UINT16], "shape": None}
+        param_reqs = {"rank": None, "dtype": [DType.INT16], "shape": None}
         error_result = False
         error_reason = "Input DType is UINT16 and zero point not 0 or 32678"
 
         if check:
             input_dtype = kwargs["input_dtype"]
+            input_unsigned = kwargs["input_unsigned"]
             input_zero_point = TosaErrorValidator._getZeroPoint(kwargs["qinfo"], 0)
-            error_result = input_dtype == DType.UINT16 and input_zero_point not in [
-                0,
-                32768,
-            ]
+            error_result = (
+                input_dtype == DType.INT16
+                and input_unsigned
+                and input_zero_point
+                not in [
+                    0,
+                    32768,
+                ]
+            )
 
         info_dict = {
             "error_name": error_name,
@@ -1340,12 +1340,18 @@ class TosaErrorValidator:
 
         if check:
             output_dtype = kwargs["output_dtype"]
+            output_unsigned = kwargs["output_unsigned"]
             output_zero_point = TosaErrorValidator._getZeroPoint(kwargs["qinfo"], 1)
 
-            error_result = output_dtype == DType.UINT16 and output_zero_point not in [
-                0,
-                32768,
-            ]
+            error_result = (
+                output_dtype == DType.INT16
+                and output_unsigned
+                and output_zero_point
+                not in [
+                    0,
+                    32768,
+                ]
+            )
 
         info_dict = {
             "error_name": error_name,
