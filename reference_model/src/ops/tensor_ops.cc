@@ -571,10 +571,6 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     pad[3] = std::make_pair(0, 0);
 
     ETensor4<InEigenType> input_val = this->in->getTensor();
-    if (Dtype == TOSA_REF_TYPE_INT8)
-    {
-        input_val = input_val - (InEigenType)attribute->input_zp();
-    }
 
     if (g_func_config.abs_mode)
     {
@@ -586,6 +582,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     // so input and output scaling is not required
     // TODO: check if this assumption TOSA made
 
+    const AccEigenType input_zp = static_cast<AccEigenType>(attribute->input_zp());
     ETensor4<OutEigenType> out_tens(out_batch, out_height, out_width, out_channels);
 
     // sum pool
@@ -609,8 +606,13 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                             const int x = ix + kx;
                             if ((0 <= y && y < in_height) && (0 <= x && x < in_width))
                             {
+                                AccEigenType input_val_scalar = static_cast<AccEigenType>(input_val(ob, y, x, oc));
+                                if constexpr (Dtype == TOSA_REF_TYPE_INT8)
+                                {
+                                    input_val_scalar = input_val_scalar - input_zp;
+                                }
                                 ++filter_count;
-                                acc = acc + (AccEigenType)input_val(ob, y, x, oc);
+                                acc = acc + input_val_scalar;
                             }
                         }
                     }
