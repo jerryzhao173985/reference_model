@@ -430,7 +430,7 @@ void testConv3d(std::vector<int8_t>& inVals, std::vector<int8_t>& weightVals, in
     tb.initializeRunner();
 
     int32_t expectedOutVal = 0;
-    for (int i = 0; i < inVals.size(); i++)
+    for (size_t i = 0; i < inVals.size(); i++)
     {
         expectedOutVal += (static_cast<int32_t>(inVals[i]) - static_cast<int32_t>(inZp)) *
                           (static_cast<int32_t>(weightVals[i]) - static_cast<int32_t>(weightZp));
@@ -510,6 +510,72 @@ void testMatMul(std::vector<int8_t>& aVals, std::vector<int8_t>& bVals, int8_t a
     std::vector<int32_t> actualOut = tb.getOutput<int32_t>(0, /* size */ expectedOut.size());
 
     compareOutput<int32_t>(expectedOut, actualOut);
+}
+
+void testAvgPool2d(std::vector<int8_t>& inVals, int8_t inZp, int8_t outZp)
+{
+    RefModelTestBuilder tb{};
+    constexpr DType inDtype  = DType_INT8;
+    constexpr DType outDtype = DType_INT8;
+
+    // Parameters were chosen to have a single output value to simplify the computation
+    const int IH            = 2;
+    const int IW            = 2;
+    const int KERNEL_HEIGHT = 2;
+    const int KERNEL_WIDTH  = 2;
+    const int STRIDE_HEIGHT = 2;
+    const int STRIDE_WIDTH  = 2;
+    const int PAD_TOP       = 0;
+    const int PAD_BOTTOM    = 0;
+    const int PAD_LEFT      = 0;
+    const int PAD_RIGHT     = 0;
+    // const int OH            = (IH + PAD_TOP + PAD_BOTTOM - KERNEL_HEIGHT) / STRIDE_HEIGHT + 1;
+    // const int OW            = (IW + PAD_LEFT + PAD_RIGHT - KERNEL_WIDTH) / STRIDE_WIDTH + 1;
+    const int OH = 1;
+    const int OW = 1;
+
+    REQUIRE_MESSAGE(inVals.size() == IH * IW,
+                    "Unit test construction error: testAvgPool2dOverflow assumes the inVals has ", IH * IW,
+                    " elements");
+
+    tb.addInput({ 1, IH, IW, 1 }, inDtype);
+    tb.addOutput({ 1, OH, OW, 1 }, outDtype);
+
+    TosaAttributeBase* attr =
+        new TosaAvgPool2dAttribute({ KERNEL_HEIGHT, KERNEL_WIDTH }, { STRIDE_HEIGHT, STRIDE_WIDTH },
+                                   { PAD_TOP, PAD_BOTTOM, PAD_LEFT, PAD_RIGHT }, inZp, outZp, DType_INT32);
+    tb.addOp(Op_AVG_POOL2D, Attribute_AvgPool2dAttribute, attr);
+
+    tb.initializeRunner();
+    int8_t expectedOutVal = 0;
+
+    int32_t sum = 0;
+    for (const auto v : inVals)
+    {
+        sum += static_cast<int32_t>(v) - static_cast<int32_t>(inZp);
+    }
+
+    // NOTE: The following calculations are optimized for a count of 4 elements
+    // (KERNEL_HEIGHT * KERNEL_WIDTH = 4) in the computation
+    // which leads to a simplified implementation of the spec
+    // scale_t scale = reciprocal_scale(count);  (spec)
+    int8_t shift       = 32;
+    int32_t multiplier = (1 << 30) + 1;
+    // apply_scale_32(sum, multiplier, shift, /* double_round */ false); (spec)
+    int64_t round  = 1LL << (shift - 1);
+    int64_t result = (static_cast<int64_t>(sum) * multiplier) + round;
+    result >>= shift;
+    int32_t final_result = static_cast<int32_t>(result);
+    // apply_clip_s<acc_t>(acc, minimum_s<in_out_t>(), maximum_s<in_out_t>()); (spec)
+    expectedOutVal = static_cast<int8_t>(std::clamp(final_result + outZp, -128, 127));
+
+    std::vector<int8_t> expectedOut = { expectedOutVal };
+    tb.setInput(inVals);
+
+    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
+    std::vector<int8_t> actualOut = tb.getOutput<int8_t>(0, /* size */ expectedOut.size());
+
+    compareOutput<int8_t>(expectedOut, actualOut);
 }
 
 TEST_SUITE("reference_model")
@@ -606,6 +672,52 @@ TEST_SUITE("reference_model")
         SUBCASE("ignore")
         {
             testArgmaxFpSpecial<IN_TYPE>(false);
+        }
+    }
+
+    TEST_CASE("CAST int overflow truncate")
+    {
+        SUBCASE("int32 -> int16")
+        {
+
+            // This case reproduces a user-found error
+            testCast<int32_t, int16_t>(491392, 32640);
+            // Other test cases
+            testCast<int32_t, int16_t>(0x6e17a5, 0x17a5);
+            testCast<int32_t, int16_t>(0x12150000, 0x0000);
+            // -267124983 == std::bitcast<int32_t>(uint32_t(0xf013ff09))
+            // -247 == std::bitcast<int16_t>(uint16_t(0xff09))
+            testCast<int32_t, int16_t>(-267124983, -247);
+        }
+
+        SUBCASE("int32 -> int16 signflip")
+        {
+            // positive input becomes negative because it's a signless
+            // operation
+            // -1 == std::bitcast<int16_t>(uint16_t(0xffff))
+            testCast<int32_t, int16_t>(0x01ffff, -1);
+            // negative input becomes positive because it's a signless
+            // operation
+            // -1426046977 == std::bitcast<int32_t>(uint32_t(0xab003fff))
+            testCast<int32_t, int16_t>(-1426046977, 0x3fff);
+        }
+
+        SUBCASE("int16 -> int8")
+        {
+            testCast<int16_t, int8_t>(0x0337, 0x37);
+            // -17984 == std::bitcast<int16_t>(uint16_t(0xb9c0))
+            // -64 == std::bitcast<int8_t>(uint8_t(0xc0))
+            testCast<int16_t, int8_t>(-17984, -64);
+        }
+        SUBCASE("int16 -> int8 signflip")
+        {
+            // -93 == std::bitcast<int8_t>(uint8_t(0xa3))
+            testCast<int16_t, int8_t>(0x01a3, -93);
+            // -27 == std::bitcast<int8_t>(uint8_t(0xe5))
+            testCast<int16_t, int8_t>(0x0ee5, -27);
+            // -28617 == std::bitcast<int16_t>(uint16_t(0x9037))
+            // 55 == std::bitcast<int8_t>(uint8_t(0x37))
+            testCast<int16_t, int8_t>(-28617, 55);
         }
     }
 
@@ -722,49 +834,29 @@ TEST_SUITE("reference_model")
             testConv3d(inVals, weightVals, inZp, weightZp);
         }
     }
-    TEST_CASE("CAST int overflow truncate")
+
+    TEST_CASE("AVG_POOL2D zero point avoids overflow")
     {
-        SUBCASE("int32 -> int16")
+        SUBCASE("input negative overflow")
         {
+            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals = { 126, -126, -128, 0 };
+            const int8_t inZp          = 4;
+            const int8_t outZp         = 15;
 
-            // This case reproduces a user-found error
-            testCast<int32_t, int16_t>(491392, 32640);
-            // Other test cases
-            testCast<int32_t, int16_t>(0x6e17a5, 0x17a5);
-            testCast<int32_t, int16_t>(0x12150000, 0x0000);
-            // -267124983 == std::bitcast<int32_t>(uint32_t(0xf013ff09))
-            // -247 == std::bitcast<int16_t>(uint16_t(0xff09))
-            testCast<int32_t, int16_t>(-267124983, -247);
+            testAvgPool2d(inVals, inZp, outZp);
         }
 
-        SUBCASE("int32 -> int16 signflip")
+        SUBCASE("input positive overflow")
         {
-            // positive input becomes negative because it's a signless
-            // operation
-            // -1 == std::bitcast<int16_t>(uint16_t(0xffff))
-            testCast<int32_t, int16_t>(0x01ffff, -1);
-            // negative input becomes positive because it's a signless
-            // operation
-            // -1426046977 == std::bitcast<int32_t>(uint32_t(0xab003fff))
-            testCast<int32_t, int16_t>(-1426046977, 0x3fff);
-        }
+            INFO("This test is meant to catch cases where the input zero point is subtracted from the input value "
+                 "using an int8_t accumulator instead of a full-precision int32_t one");
+            std::vector<int8_t> inVals = { 126, 126, 127, 127 };
+            const int8_t inZp          = -12;
+            const int8_t outZp         = -5;
 
-        SUBCASE("int16 -> int8")
-        {
-            testCast<int16_t, int8_t>(0x0337, 0x37);
-            // -17984 == std::bitcast<int16_t>(uint16_t(0xb9c0))
-            // -64 == std::bitcast<int8_t>(uint8_t(0xc0))
-            testCast<int16_t, int8_t>(-17984, -64);
-        }
-        SUBCASE("int16 -> int8 signflip")
-        {
-            // -93 == std::bitcast<int8_t>(uint8_t(0xa3))
-            testCast<int16_t, int8_t>(0x01a3, -93);
-            // -27 == std::bitcast<int8_t>(uint8_t(0xe5))
-            testCast<int16_t, int8_t>(0x0ee5, -27);
-            // -28617 == std::bitcast<int16_t>(uint16_t(0x9037))
-            // 55 == std::bitcast<int8_t>(uint8_t(0x37))
-            testCast<int16_t, int8_t>(-28617, 55);
+            testAvgPool2d(inVals, inZp, outZp);
         }
     }
 
