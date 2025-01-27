@@ -2653,7 +2653,8 @@ class TosaArgGen:
         for a in accum_dtypes:
             d = args_dict.copy()
             d["acc_type"] = a
-            arg_list.append((f"acc{testGen.typeStr(a)}", d))
+            # Acc type is really out type for MATMUL
+            arg_list.append((f"out{testGen.typeStr(a)}", d))
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,
