@@ -73,6 +73,35 @@ void testCastFpSpecial()
     compareOutputSpecial<OUT_FP_TYPE>(expectedOut, actualOut);
 }
 
+template <typename IN_TYPE, typename OUT_TYPE>
+void testCast(IN_TYPE in, OUT_TYPE expected)
+{
+    RefModelTestBuilder tb{};
+    constexpr DType inDtype  = NativeType2Dtype<IN_TYPE>();
+    constexpr DType outDtype = NativeType2Dtype<OUT_TYPE>();
+
+    const int TEST_VALUES = 1;
+
+    tb.addInput({ TEST_VALUES }, inDtype);
+    tb.addOutput({ TEST_VALUES }, outDtype);
+
+    TosaCastAttribute attr{};
+    tb.addOp(Op_CAST, Attribute_CastAttribute, &attr);
+
+    tb.initializeRunner();
+
+    std::vector<IN_TYPE> inVals = { in };
+
+    std::vector<OUT_TYPE> expectedOut = { expected };
+
+    tb.setInput(inVals);
+
+    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
+    std::vector<OUT_TYPE> actualOut = tb.getOutput<OUT_TYPE>(0, /* size */ expectedOut.size());
+
+    compareOutput<OUT_TYPE>(expectedOut, actualOut);
+}
+
 template <typename IN_TYPE>
 void testArgmaxFpSpecial(bool propagate)
 {
@@ -631,5 +660,49 @@ TEST_SUITE("reference_model")
             testConv3d(inVals, weightVals, inZp, weightZp);
         }
     }
+    TEST_CASE("CAST int overflow truncate")
+    {
+        SUBCASE("int32 -> int16")
+        {
 
+            // This case reproduces a user-found error
+            testCast<int32_t, int16_t>(491392, 32640);
+            // Other test cases
+            testCast<int32_t, int16_t>(0x6e17a5, 0x17a5);
+            testCast<int32_t, int16_t>(0x12150000, 0x0000);
+            // -267124983 == std::bitcast<int32_t>(uint32_t(0xf013ff09))
+            // -247 == std::bitcast<int16_t>(uint16_t(0xff09))
+            testCast<int32_t, int16_t>(-267124983, -247);
+        }
+
+        SUBCASE("int32 -> int16 signflip")
+        {
+            // positive input becomes negative because it's a signless
+            // operation
+            // -1 == std::bitcast<int16_t>(uint16_t(0xffff))
+            testCast<int32_t, int16_t>(0x01ffff, -1);
+            // negative input becomes positive because it's a signless
+            // operation
+            // -1426046977 == std::bitcast<int32_t>(uint32_t(0xab003fff))
+            testCast<int32_t, int16_t>(-1426046977, 0x3fff);
+        }
+
+        SUBCASE("int16 -> int8")
+        {
+            testCast<int16_t, int8_t>(0x0337, 0x37);
+            // -17984 == std::bitcast<int16_t>(uint16_t(0xb9c0))
+            // -64 == std::bitcast<int8_t>(uint8_t(0xc0))
+            testCast<int16_t, int8_t>(-17984, -64);
+        }
+        SUBCASE("int16 -> int8 signflip")
+        {
+            // -93 == std::bitcast<int8_t>(uint8_t(0xa3))
+            testCast<int16_t, int8_t>(0x01a3, -93);
+            // -27 == std::bitcast<int8_t>(uint8_t(0xe5))
+            testCast<int16_t, int8_t>(0x0ee5, -27);
+            // -28617 == std::bitcast<int16_t>(uint16_t(0x9037))
+            // 55 == std::bitcast<int8_t>(uint8_t(0x37))
+            testCast<int16_t, int8_t>(-28617, 55);
+        }
+    }
 }    // TEST_SUITE("reference_model")
