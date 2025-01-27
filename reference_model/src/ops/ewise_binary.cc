@@ -700,22 +700,40 @@ int OpTable<Rank, InDtype>::eval()
     {
         case TOSA_REF_TYPE_INT8:
             this->out->getTensor() = this->in->getTensor().unaryExpr([this](InEigenType in) -> OutEigenType {
-                int32_t input_truncated = std::min<int32_t>(std::max<int32_t>(in, QInMin), QInMax);
-                int32_t index           = input_truncated - QInMin;
-                int32_t value           = this->table->getTensor()(index);
+                // If we get an input out of the input type range, that implies an error in a
+                // previous operation in the reference_model.
+                // This is necessary only because InEigenType is int32_t
+                if (in < QInMin || in > QInMax)
+                {
+                    FATAL_ERROR(
+                        "[Internal] Error in the reference model, OpTable input %d is out of range of INT8 input type",
+                        in);
+                }
+
+                int32_t index = in - QInMin;
+                // Note index is guaranteed to be between 0 and 255 due to the check against QInMin
+                // and QInMax above.
+                int32_t value = this->table->getTensor()(index);
 
                 return value;
             });
             break;
         case TOSA_REF_TYPE_INT16:
             this->out->getTensor() = this->in->getTensor().unaryExpr([this](InEigenType in) -> OutEigenType {
-                // 1. make sure input is int16 range
-                int32_t input_truncated = std::min<int32_t>(std::max<int32_t>(in, QInMin), QInMax);
+                // 1. if the input is not in int16 range, this is an internal error in the reference model,
+                // as the input is defined to be INT16
+                // This is necessary only because InEigenType is int32_t
+                if (in < QInMin || in > QInMax)
+                {
+                    FATAL_ERROR(
+                        "[Internal] Error in the reference model, OpTable input %d is out of range of INT16 input type",
+                        in);
+                }
 
                 // 2. calculate index and interpolation fraction
-                int32_t index = (input_truncated >> FractionBits) + (1 << (IntegerBits - 1));
+                int32_t index = (in >> FractionBits) + (1 << (IntegerBits - 1));
                 index         = std::min<int32_t>(std::max<int32_t>(index, 0), NumTableEntries - 1);    // 9-bit index
-                int32_t frac  = (input_truncated)&0x7F;    // 7-bit fraction
+                int32_t frac  = (in)&0x7F;    // 7-bit fraction
 
                 // 3. Add REQUIRE CHECK for extreme large/small slopes
                 int32_t base  = this->table->getTensor()(index);
