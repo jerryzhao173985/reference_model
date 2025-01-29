@@ -83,15 +83,19 @@ class OpNegate : public UnaryNode<Rank, Dtype>
 public:
     OpNegate(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_);
     virtual ~OpNegate();
+    virtual int checkTensorAttributes();
+    virtual int register_fcn();
 
     static constexpr int32_t QMin = GetQMin<Dtype>::value;
     static constexpr int32_t QMax = GetQMax<Dtype>::value;
     using InEigenType             = typename GetEigenType<Dtype>::type;
     using OutEigenType            = typename GetEigenType<Dtype>::type;
-    virtual int register_fcn();
+    using TInZp                   = Eigen::Tensor<InEigenType, 1>;
+    using TOutZp                  = Eigen::Tensor<OutEigenType, 1>;
 
 protected:
-    std::unique_ptr<tosa::TosaNegateAttribute> attribute;
+    TosaReference::TensorTemplate<TInZp>* input_zp;
+    TosaReference::TensorTemplate<TOutZp>* output_zp;
 };
 
 };    // namespace TosaReference

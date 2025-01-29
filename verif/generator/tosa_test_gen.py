@@ -419,12 +419,69 @@ class TosaTestGen:
             return None
 
         attr = ts.TosaSerializerAttribute()
-        if op["op"] == Op.NEGATE:
-            attr.NegateAttribute(qinfo[0], qinfo[1])
-        else:
-            # other ops have empty attributes
-            attr.setAttribute(op["op"])
+        # Ops have empty attributes
+        attr.setAttribute(op["op"])
+        self.ser.addOperator(op["op"], input_list, output_list, attr)
 
+        compliance = self.tensorComplianceMetaData(
+            op, a.dtype, args_dict, result_tensor, error_name
+        )
+        return TosaTestGen.BuildInfo(result_tensor, compliance)
+
+    def build_negate(
+        self,
+        rng,
+        op,
+        inputs,
+        args_dict,
+        validator_fcns=None,
+        error_name=None,
+        qinfo=None,
+    ):
+        assert len(inputs) == 3
+        a = inputs[0]
+        input_zp = inputs[1]
+        output_zp = inputs[2]
+        result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
+
+        assert not isinstance(op, int)
+
+        # Ensure new output type has correct qinfo
+        if error_name == ErrorIf.WrongOutputType:
+            if result_tensor.dtype not in [DType.INT8, DType.UINT8]:
+                qinfo = [
+                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, a.dtype),
+                    TosaQuantGen.getZeroPoint(
+                        rng, self.args.zeropoint, result_tensor.dtype
+                    ),
+                ]
+
+        # Invalidate Input/Output list for error if checks.
+        input_list = [a.name, input_zp.name, output_zp.name]
+        output_list = [result_tensor.name]
+        pCount, cCount = op["operands"]
+        num_operands = pCount + cCount
+        input_list, output_list = TosaErrorIfArgGen.eiInvalidateInputOutputList(
+            rng, error_name, input_list, output_list
+        )
+
+        if not TosaErrorValidator.evValidateErrorIfs(
+            self.ser,
+            validator_fcns,
+            error_name,
+            op=op,
+            input_dtype=a.dtype,
+            output_dtype=result_tensor.dtype,
+            qinfo=qinfo,
+            result_tensors=[result_tensor],
+            input_list=input_list,
+            output_list=output_list,
+            num_operands=num_operands,
+        ):
+            return None
+
+        attr = ts.TosaSerializerAttribute()
+        attr.NegateAttribute()
         self.ser.addOperator(op["op"], input_list, output_list, attr)
 
         compliance = self.tensorComplianceMetaData(
@@ -3304,6 +3361,11 @@ class TosaTestGen:
         gtu.TestDataType.SPECIAL,
         gtu.TestDataType.DYNAMIC_CTC,
     )
+    DG_RANDOM_FULL_DYNAMIC = (
+        gtu.TestDataType.PSEUDO_RANDOM,
+        gtu.TestDataType.FULL_RANGE,
+        gtu.TestDataType.DYNAMIC_CTC,
+    )
 
     # List of data types and their required test data sets
     PSEUDO_RANDOM_DATAGEN = {
@@ -3321,6 +3383,14 @@ class TosaTestGen:
         DType.INT16: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
         DType.INT8: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.FULL_RANGE),
         DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM,),
+    }
+    NEGATE_DATAGEN = {
+        DType.FP16: DG_RANDOM_FULL_DYNAMIC,
+        DType.FP32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.BF16: DG_RANDOM_FULL_DYNAMIC,
+        DType.INT32: DG_RANDOM_SPECIAL_DYNAMIC,
+        DType.INT16: DG_RANDOM_FULL_DYNAMIC,
+        DType.INT8: DG_RANDOM_FULL_DYNAMIC,
     }
     REDUCE_BOOL_DATAGEN = {
         DType.BOOL: (gtu.TestDataType.PSEUDO_RANDOM, gtu.TestDataType.SPECIAL),
@@ -4256,7 +4326,7 @@ class TosaTestGen:
             "build_fcn": (
                 build_unary,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgAbsNegate,
+                TosaTensorValuesGen.tvgAbs,
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
@@ -4420,12 +4490,12 @@ class TosaTestGen:
         },
         "negate": {
             "op": Op.NEGATE,
-            "operands": (1, 0),
-            # TODO add ctc_positions and enable EXT-DYNAMIC tests
+            "operands": (1, 2),
+            "ctc_positions": (1, 2),
             "build_fcn": (
-                build_unary,
-                TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgAbsNegate,
+                build_negate,
+                TosaTensorGen.tgNegate,
+                TosaTensorValuesGen.tvgNegate,
                 TosaArgGen.agNone,
             ),
             "qgen": TosaQuantGen.qgUnary,
@@ -4438,7 +4508,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputList,
                 TosaErrorValidator.evWrongOutputList,
             ),
-            "data_gen": EW_UNARY_DATAGEN,
+            "data_gen": NEGATE_DATAGEN,
         },
         "reciprocal": {
             "op": Op.RECIPROCAL,

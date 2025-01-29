@@ -268,7 +268,22 @@ def test_refmodel_simple_op(tosaTest):
             result = np.concatenate((*tensors, consts[0]), axis=axis)
         elif op_name == "negate":
             assert len(tensors) == 1
-            result = np.negative(tensors[0])
+            assert len(consts) == 2
+
+            tensor_dtype = tensors[0].dtype.name
+            result = tensors[0]
+            if tensor_dtype == "int8":
+                result = result.astype("int32")  # as per spec, acc type is int32
+                result = np.subtract(result, consts[0])
+                result = np.negative(result)
+                result = np.add(result, consts[1])
+                result = np.clip(
+                    result, np.iinfo(tensor_dtype).min, np.iinfo(tensor_dtype).max
+                )
+                result = result.astype(tensor_dtype)
+            else:
+                result = np.negative(result)
+
         else:
             assert False, f"Unknown operation {op_name}"
 

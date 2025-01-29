@@ -75,6 +75,11 @@ int UnaryNode<Rank, Dtype>::eval()
 
     this->result->getTensor() = this->a->getTensor().unaryExpr(this->fcn);
 
+    if (this->parent_sgt->getGraphStatus() == GraphStatus::TOSA_ERROR)
+    {
+        return 1;
+    }
+
     return GraphNode::eval();
 }
 
@@ -294,7 +299,7 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 OpNegate<Rank, Dtype>::OpNegate(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : UnaryNode<Rank, Dtype>(sgt_, Op_NEGATE, id_)
 {
-    INIT_ATTRIBUTE(Negate);
+    this->setRequiredOperands(3, 1);
 
     register_fcn();
 }
@@ -304,23 +309,62 @@ OpNegate<Rank, Dtype>::~OpNegate()
 {}
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+int OpNegate<Rank, Dtype>::checkTensorAttributes()
+{
+    if (UnaryNode<Rank, Dtype>::checkTensorAttributes())
+    {
+        return 1;
+    }
+
+    if (this->validateRequiredRank(this->inputs[1], 1, 1) || this->validateRequiredRank(this->inputs[2], 1, 1))
+    {
+        this->printNodeValidationError("OpNegate: input and output zero point must be rank 1");
+        return 1;
+    }
+
+    input_zp  = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(this->inputs[1]);
+    output_zp = dynamic_cast<TosaReference::TensorTemplate<TOutZp>*>(this->inputs[2]);
+
+    ASSERT_MEM(input_zp && output_zp);
+
+    if (input_zp->getShape()[0] != 1)
+    {
+        this->printNodeValidationError("OpNegate: input zero point shape should be 1");
+        return 1;
+    }
+
+    if (output_zp->getShape()[0] != 1)
+    {
+        this->printNodeValidationError("OpNegate: output zero point shape should be 1");
+        return 1;
+    }
+
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpNegate<Rank, Dtype>::register_fcn()
 {
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->input1_zp() != 0, "OpNegate: zeropoint only for int8_t");
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->output_zp() != 0, "OpNegate: zeropoint only for int8_t");
-
     switch (Dtype)
     {
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType {
+            this->fcn = [this](InEigenType a) -> OutEigenType {
+                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
+                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
+                ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
                 InEigenType result = -(a);
                 return fpTrunc<Dtype>(result);
             };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType {
+            this->fcn = [this](InEigenType a) -> OutEigenType {
+                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
+                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
+                ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
                 OutEigenType result = -(a);
                 return result;
             };
@@ -328,6 +372,10 @@ int OpNegate<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_INT16:
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a) -> OutEigenType {
+                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
+                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
+                ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
                 int64_t res_in_64     = 0L - a;
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
@@ -351,12 +399,14 @@ int OpNegate<Rank, Dtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_INT8:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                int64_t res_in_64     = 0 - (a - attribute->input1_zp());
-                int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-                int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
+                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                int64_t res_in_64           = 0 - (a - input_zp_val);
+                int64_t i32_max_in_64       = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+                int64_t i32_min_in_64       = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
                 REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64,
                         "OpNegate: result not in acc type range (int32)");
-                res_in_64 += attribute->output_zp();
+                res_in_64 += output_zp_val;
                 InEigenType result = static_cast<InEigenType>(
                     std::min(std::max(res_in_64, static_cast<int64_t>(QMin)), static_cast<int64_t>(QMax)));
                 return result;
