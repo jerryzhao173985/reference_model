@@ -585,6 +585,9 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
         case TOSA_REF_TYPE_INT16:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
                 int64_t result = static_cast<int64_t>(a) * static_cast<int64_t>(b);
+                // This truncation is necessary because OutEigenType is larger than the semantic
+                // type OutDType.
+                result = intTrunc<int64_t, OutDtype>(result);
                 return static_cast<OutEigenType>(result);
             };
             break;

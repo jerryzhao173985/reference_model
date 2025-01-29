@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -250,6 +250,36 @@ float fpTrunc(float f_in)
             ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-cast.", EnumNameTOSAREFTYPE(Dtype));
     }
     return f_in;
+}
+
+// truncate an integer to the width of DType
+template <typename T, TOSA_REF_TYPE OutDType>
+T intTrunc(T in)
+{
+    constexpr int width = GetNumBits<OutDType>().value;
+
+    // If GetNumBits is not implemented and returns 0, the code is unsafe.
+    if constexpr (width > 0)
+    {
+        static_assert(std::is_integral_v<T>, "intTrunc can only be called with integer inputs");
+        static_assert(width < sizeof(T) * 8, "intTrunc output should be narrower than the input");
+
+        constexpr T mask = bitmask<T>(width);
+
+        in &= mask;
+
+        // sign-extend back to the original size
+        const T sign = in & (1 << (width - 1));
+        if (sign)
+            in |= (~mask);
+    }
+    else
+    {
+        FATAL_ERROR("Internal error in the reference model unsupported output type for intTrunc");
+    }
+
+    // Only reachable if we did not cause a FATAL_ERROR
+    return in;
 }
 
 // return the maximum value when interpreting type T as a signed value.

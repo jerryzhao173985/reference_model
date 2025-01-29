@@ -161,6 +161,7 @@ struct GetAccEigenType
     using type = typename GetEigenType<Dtype>::type;
 };
 
+// TODO: missing the implementation for some types. Complete it.
 // Meta function to get number of bits
 template <TOSA_REF_TYPE T>
 struct GetNumBits
