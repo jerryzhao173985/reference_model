@@ -525,13 +525,7 @@ CastHelper<InDtype, OutDtype>::CastHelper()
         if constexpr (std::is_integral_v<InEigenType> && std::is_integral_v<OutEigenType> && outWidth < inWidth)
         {
             // Truncate the value if it's outside the range of the output type.
-            InEigenType mask = (1 << outWidth) - 1;
-            in &= mask;
-
-            // sign-extend back to the original size
-            InEigenType sign = in & (1 << (outWidth - 1));
-            if (sign)
-                in |= (~mask);
+            in = intTrunc<InEigenType, OutDtype>(in);
         }
         OutEigenType out = (OutEigenType)in;    // implicit sign_extend() if sizeof(out_t) >= sizeof(in_t)
         return out;
