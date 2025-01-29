@@ -117,6 +117,25 @@ class TosaQuantGen:
         return qinfo
 
     @staticmethod
+    def qgAvgPool2D(rng, zeropoint, op, dtype, error_name=None):
+        if error_name == ErrorIf.InputZeroPointNotZero:
+            qinfo = [
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+            ]
+        elif error_name == ErrorIf.OutputZeroPointNotZero:
+            qinfo = [
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+            ]
+        else:
+            qinfo = [
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+            ]
+        return qinfo
+
+    @staticmethod
     def computeMultiplierAndShift(scaleFp, scale32):
         # Derived from computeMultiplierAndShiftTosaScale32
         # Provide a floating-point scaling factor and the scale32 parameter
@@ -333,6 +352,22 @@ class TosaTensorGen:
         shape_list.append([1])  # Input zero point
         shape_list.append([1])  # Output zero point
         return shape_list
+
+    @staticmethod
+    def tgAvgPool2D(testGen, rng, op, rank, error_name=None):
+        pl, const = op["operands"]
+
+        if error_name != ErrorIf.WrongRank:
+            assert rank == 4
+
+        shape = testGen.makeShape(rng, rank)
+        shape = testGen.constrictBatchSize(shape)
+
+        # Constrict the overall size of the shape when creating ERROR_IF tests
+        if error_name and error_name != ErrorIf.MaxDimExceeded:
+            shape = TosaErrorIfArgGen.eiRestrictDimensions(shape)
+
+        return [shape, [1], [1]]
 
     @staticmethod
     def tgMul(testGen, rng, op, rank, error_name=None):
@@ -1026,6 +1061,23 @@ class TosaTensorValuesGen:
                 argsDict["tensor_data"].append(tdata)
 
         return TosaTensorValuesGen.TVGInfo(tens_ser_list, tens_data)
+
+    @staticmethod
+    def tvgAvgPool2D(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        qinfo = TosaQuantGen.qgAvgPool2D(rng, None, None, dtypeList, error_name)
+
+        # Create a new list for the pre-generated data in argsDict["fixed_data"]
+        argsDict["fixed_data"] = [
+            None,
+            np.int32([qinfo[0]]),
+            np.int32([qinfo[1]]),
+        ]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgConv(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):

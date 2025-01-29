@@ -517,11 +517,13 @@ void testAvgPool2d(std::vector<int8_t>& inVals, int8_t inZp, int8_t outZp)
                     " elements");
 
     tb.addInput({ 1, IH, IW, 1 }, inDtype);
+    tb.addInput({ 1 }, inDtype);
+    tb.addInput({ 1 }, outDtype);
     tb.addOutput({ 1, OH, OW, 1 }, outDtype);
 
     TosaAttributeBase* attr =
         new TosaAvgPool2dAttribute({ KERNEL_HEIGHT, KERNEL_WIDTH }, { STRIDE_HEIGHT, STRIDE_WIDTH },
-                                   { PAD_TOP, PAD_BOTTOM, PAD_LEFT, PAD_RIGHT }, inZp, outZp, DType_INT32);
+                                   { PAD_TOP, PAD_BOTTOM, PAD_LEFT, PAD_RIGHT }, DType_INT32);
     tb.addOp(Op_AVG_POOL2D, Attribute_AvgPool2dAttribute, attr);
 
     tb.initializeRunner();
@@ -549,6 +551,10 @@ void testAvgPool2d(std::vector<int8_t>& inVals, int8_t inZp, int8_t outZp)
 
     std::vector<int8_t> expectedOut = { expectedOutVal };
     tb.setInput(inVals);
+    std::vector<int8_t> inZpVals  = { inZp };
+    std::vector<int8_t> outZpVals = { outZp };
+    tb.setInput(inZpVals);
+    tb.setInput(outZpVals);
 
     REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
     std::vector<int8_t> actualOut = tb.getOutput<int8_t>(0, /* size */ expectedOut.size());

@@ -329,13 +329,13 @@ int OpNegate<Rank, Dtype>::checkTensorAttributes()
 
     if (input_zp->getShape()[0] != 1)
     {
-        this->printNodeValidationError("OpNegate: input zero point shape should be 1");
+        this->printNodeValidationError("OpNegate: input zero point shape should be [1]");
         return 1;
     }
 
     if (output_zp->getShape()[0] != 1)
     {
-        this->printNodeValidationError("OpNegate: output zero point shape should be 1");
+        this->printNodeValidationError("OpNegate: output zero point shape should be [1]");
         return 1;
     }
 

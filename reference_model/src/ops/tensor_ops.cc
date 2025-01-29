@@ -471,7 +471,7 @@ template <TOSA_REF_TYPE Dtype, TOSA_REF_TYPE AccDtype>
 OpAvgPool2d<Dtype, AccDtype>::OpAvgPool2d(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_AVG_POOL2D, id_)
 {
-    setRequiredOperands(1, 1);
+    setRequiredOperands(3, 1);
     setRequiredRank(4, 4);
 
     INIT_ATTRIBUTE(AvgPool2d);
@@ -492,19 +492,36 @@ int OpAvgPool2d<Dtype, AccDtype>::checkTensorAttributes()
         return 1;
     }
 
+    if (this->validateRequiredRank(this->inputs[1], 1, 1) || this->validateRequiredRank(this->inputs[2], 1, 1))
+    {
+        this->printNodeValidationError("OpAvgPool2d: input and output zero point must be rank 1");
+        return 1;
+    }
+
     if (inputs[0]->matchType(*outputs[0]))
     {
         printNodeValidationError("OpAvgPool2d: input and output tensor type mismatch");
         return 1;
     }
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    in        = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    out       = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    input_zp  = dynamic_cast<TosaReference::TensorTemplate<TInZp>*>(inputs[1]);
+    output_zp = dynamic_cast<TosaReference::TensorTemplate<TOutZp>*>(inputs[2]);
 
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->input_zp() != 0,
-             "OpAvgPool2d: Input zeropoint must be zero for non int8_t data");
-    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && attribute->output_zp() != 0,
-             "OpAvgPool2d: Output zeropoint must be zero for non int8_t data");
+    ASSERT_MEM(in && out && input_zp && output_zp);
+
+    if (input_zp->getShape()[0] != 1)
+    {
+        this->printNodeValidationError("OpAvgPool2d: input zero point shape should be [1]");
+        return 1;
+    }
+
+    if (output_zp->getShape()[0] != 1)
+    {
+        this->printNodeValidationError("OpAvgPool2d: output zero point shape should be [1]");
+        return 1;
+    }
 
     std::string msg;
     if (check_pool2d_attribute(attribute, in->getShape(), out->getShape(), msg))
@@ -544,6 +561,13 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     int stride_y   = this->attribute->stride()[0];
     int stride_x   = this->attribute->stride()[1];
 
+    const AccEigenType input_zp_val  = static_cast<AccEigenType>(this->input_zp->getTensor()(0));
+    const AccEigenType output_zp_val = static_cast<AccEigenType>(this->output_zp->getTensor()(0));
+    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && input_zp_val != 0,
+             "OpAvgPool2d: Input zeropoint must be zero for non int8_t data");
+    ERROR_IF(Dtype != TOSA_REF_TYPE_INT8 && output_zp_val != 0,
+             "OpAvgPool2d: Output zeropoint must be zero for non int8_t data");
+
     // Check Tosa Level
     auto tosa_level = g_func_config.tosa_level;
     LEVEL_CHECK(kernel_y <= tosa_level.MAX_KERNEL, "kernel_y should be smaller than or equal to MAX_KERNEL");
@@ -581,7 +605,6 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
     // so input and output scaling is not required
     // TODO: check if this assumption TOSA made
 
-    const AccEigenType input_zp = static_cast<AccEigenType>(attribute->input_zp());
     ETensor4<OutEigenType> out_tens(out_batch, out_height, out_width, out_channels);
 
     // sum pool
@@ -608,7 +631,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                                 AccEigenType input_val_scalar = static_cast<AccEigenType>(input_val(ob, y, x, oc));
                                 if constexpr (Dtype == TOSA_REF_TYPE_INT8)
                                 {
-                                    input_val_scalar = input_val_scalar - input_zp;
+                                    input_val_scalar = input_val_scalar - input_zp_val;
                                 }
                                 ++filter_count;
                                 acc = acc + input_val_scalar;
@@ -625,7 +648,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                             TosaReference::QuantUtil::reciprocal_scale(filter_count, multiplier, shift);
 
                             out = (OutEigenType)TosaReference::QuantUtil::apply_scale_32(acc, multiplier, shift, false);
-                            out = out + (OutEigenType)(attribute->output_zp());
+                            out = out + (OutEigenType)(output_zp_val);
                             out = std::max(out, (OutEigenType)QMin);
                             out_tens(ob, oh, ow, oc) = std::min(out, (OutEigenType)QMax);
                         }
@@ -1381,13 +1404,13 @@ int OpMatMul<Dtype, OutDtype>::checkTensorAttributes()
     // Check zero point shape
     if (a_zp->getShape()[0] != 1)
     {
-        printNodeValidationError("OpMatMul operator a_zp.shape[0] should be 1");
+        printNodeValidationError("OpMatMul: 'a_zp' zero point shape should be [1]");
         return 1;
     }
 
     if (b_zp->getShape()[0] != 1)
     {
-        printNodeValidationError("OpMatMul operator b_zp.shape[0] should be 1");
+        printNodeValidationError("OpMatMul: 'b_zp' zero point shape should be [1]");
         return 1;
     }
     W = b->getShape()[2];

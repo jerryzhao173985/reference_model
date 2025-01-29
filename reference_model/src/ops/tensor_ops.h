@@ -60,6 +60,8 @@ public:
     using OutEigenType = typename GetEigenType<Dtype>::type;
     using TIn          = Eigen::Tensor<InEigenType, 4>;
     using TOut         = Eigen::Tensor<OutEigenType, 4>;
+    using TInZp        = Eigen::Tensor<InEigenType, 1>;
+    using TOutZp       = Eigen::Tensor<OutEigenType, 1>;
 
     static constexpr int64_t QMin = GetQMin<Dtype>::value;
     static constexpr int64_t QMax = GetQMax<Dtype>::value;
@@ -67,6 +69,8 @@ public:
 protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TOut>* out;
+    TosaReference::TensorTemplate<TInZp>* input_zp;
+    TosaReference::TensorTemplate<TOutZp>* output_zp;
     std::unique_ptr<tosa::TosaAvgPool2dAttribute> attribute;
 
 protected:
