@@ -1388,6 +1388,7 @@ class TosaTensorValuesGen:
             max_value = (1 << (min_shift - 1)) + input_zp - 1
             min_value = (-1 << (min_shift - 1)) + input_zp
             dtype = dtypeList[0]
+            # Use the correct unsigned types to set the correct data ranges
             if dtype == DType.INT8 and input_unsigned:
                 dtype = DType.UINT8
             elif dtype == DType.INT16 and input_unsigned:
@@ -1405,14 +1406,17 @@ class TosaTensorValuesGen:
         shapeList[4] = [1]
         dtypeList[4] = output_dtype
 
-        # Set up which tensors are unsigned for data generation
-        argsDict["unsigned_tensors"] = [
-            input_unsigned,
-            False,
-            False,
-            input_unsigned,
-            output_unsigned,
-        ]
+        if error_name is None:
+            # Set up which tensors are unsigned for data generation
+            # NOTE: Don't set this for ERROR_IFs, as the test may use
+            #  a data type that is not supported as unsigned
+            argsDict["unsigned_tensors"] = [
+                input_unsigned,
+                False,
+                False,
+                input_unsigned,
+                output_unsigned,
+            ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
             testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
@@ -3443,27 +3447,42 @@ class TosaArgGen:
                 for output_unsigned in (True, False):
                     # Validation of allowed combination of types & signedness
                     if error_name in (
-                        ErrorIf.InputUnsignedOutputUnsigned,
-                        ErrorIf.I32OutputInputUnsigned,
-                        ErrorIf.I32InputOutputUnsigned,
-                        ErrorIf.I48InputOutputUnsigned,
+                        ErrorIf.RescaleInputUnsignedOutputUnsigned,
+                        ErrorIf.RescaleI32OutputInputUnsigned,
+                        ErrorIf.RescaleI32InputOutputUnsigned,
+                        ErrorIf.RescaleI48InputOutputUnsigned,
+                        ErrorIf.RescaleI32InputUnsigned,
+                        ErrorIf.RescaleI32OutputUnsigned,
+                        ErrorIf.RescaleI48InputUnsigned,
                     ):
                         error_found = None
                         # Check for specific errors and skip overlaps
                         if input_unsigned and output_unsigned:
-                            error_found = ErrorIf.InputUnsignedOutputUnsigned
+                            error_found = ErrorIf.RescaleInputUnsignedOutputUnsigned
                         if outDtype == DType.INT32 and input_unsigned:
                             if error_found:
                                 continue
-                            error_found = ErrorIf.I32OutputInputUnsigned
+                            error_found = ErrorIf.RescaleI32OutputInputUnsigned
                         if inDtype == DType.INT32 and output_unsigned:
                             if error_found:
                                 continue
-                            error_found = ErrorIf.I32InputOutputUnsigned
+                            error_found = ErrorIf.RescaleI32InputOutputUnsigned
                         if inDtype == DType.INT48 and output_unsigned:
                             if error_found:
                                 continue
-                            error_found = ErrorIf.I48InputOutputUnsigned
+                            error_found = ErrorIf.RescaleI48InputOutputUnsigned
+                        if inDtype == DType.INT32 and input_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.RescaleI32InputUnsigned
+                        if outDtype == DType.INT32 and output_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.RescaleI32OutputUnsigned
+                        if inDtype == DType.INT48 and input_unsigned:
+                            if error_found:
+                                continue
+                            error_found = ErrorIf.RescaleI48InputUnsigned
                         if error_found != error_name:
                             continue
                     elif TosaErrorIfArgGen.eiRescaleInvalidTypes(
@@ -3477,6 +3496,11 @@ class TosaArgGen:
                     if error_name == ErrorIf.OutputZeroPointNotZero:
                         if outDtype == DType.INT8 or (
                             outDtype == DType.INT16 and output_unsigned
+                        ):
+                            continue
+                    elif error_name == ErrorIf.InputZeroPointNotZero:
+                        if inDtype == DType.INT8 or (
+                            inDtype == DType.INT16 and input_unsigned
                         ):
                             continue
                     elif error_name == ErrorIf.U16OutputZeroPointNotValid:

@@ -84,6 +84,12 @@ extern "C"
             WARNING("[Generator] Unsupported data type");
             return false;
         }
+        else if (cfg->unsignedData && !(cfg->dataType == DType::DType_INT8 || cfg->dataType == DType::DType_INT16))
+        {
+            WARNING("[Generator] Data type %s unsupported for use with unsigned data generation.",
+                    EnumNameDType(cfg->dataType));
+            return false;
+        }
 
         // Check size
         size_t totalBytesNeeded =

@@ -136,6 +136,24 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
     }
 
+    if (InDtype == TOSA_REF_TYPE_INT32 && input_unsigned)
+    {
+        printNodeValidationError("OpRescale: Input unsigned int32");
+        return 1;
+    }
+
+    if (OutDtype == TOSA_REF_TYPE_INT32 && output_unsigned)
+    {
+        printNodeValidationError("OpRescale: Output unsigned int32");
+        return 1;
+    }
+
+    if (InDtype == TOSA_REF_TYPE_INT48 && input_unsigned)
+    {
+        printNodeValidationError("OpRescale: Input unsigned int48");
+        return 1;
+    }
+
     if (per_channel && in_rank < 1)
     {
         printNodeValidationError("OpRescale: per_channel set to true and rank of input < 1");
