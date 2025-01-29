@@ -7334,6 +7334,8 @@
     "rescale": {
         "group": "type_conversion",
         "support_for": [
+            "lazy_data_gen",
+            "random_const_inputs",
             "stable_random_gen"
         ],
         "generation": {
@@ -7347,8 +7349,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "uint8",
-                        "uint16",
                         "--tensor-dim-range",
                         "16,32",
                         "--target-rank",
@@ -7363,8 +7363,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "uint8",
-                        "uint16",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
@@ -7385,8 +7383,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "uint8",
-                        "uint16",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",

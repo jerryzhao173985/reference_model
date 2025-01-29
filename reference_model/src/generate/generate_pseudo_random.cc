@@ -353,12 +353,28 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             }
         }
         case DType::DType_INT16: {
-            int16_t* outData = reinterpret_cast<int16_t*>(data);
-            return generateINT<int16_t, TosaReference::TOSA_REF_TYPE_INT16>(cfg, outData, size);
+            if (cfg.unsignedData)
+            {
+                uint16_t* outData = reinterpret_cast<uint16_t*>(data);
+                return generateINT<uint16_t, TosaReference::TOSA_REF_TYPE_UINT16>(cfg, outData, size);
+            }
+            else
+            {
+                int16_t* outData = reinterpret_cast<int16_t*>(data);
+                return generateINT<int16_t, TosaReference::TOSA_REF_TYPE_INT16>(cfg, outData, size);
+            }
         }
         case DType::DType_INT8: {
-            int8_t* outData = reinterpret_cast<int8_t*>(data);
-            return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT8>(cfg, outData, size);
+            if (cfg.unsignedData)
+            {
+                uint8_t* outData = reinterpret_cast<uint8_t*>(data);
+                return generateINT<uint8_t, TosaReference::TOSA_REF_TYPE_UINT8>(cfg, outData, size);
+            }
+            else
+            {
+                int8_t* outData = reinterpret_cast<int8_t*>(data);
+                return generateINT<int8_t, TosaReference::TOSA_REF_TYPE_INT8>(cfg, outData, size);
+            }
         }
         case DType::DType_INT4: {
             int8_t* outData = reinterpret_cast<int8_t*>(data);

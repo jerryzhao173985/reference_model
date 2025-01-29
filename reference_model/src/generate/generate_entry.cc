@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -82,6 +82,12 @@ extern "C"
         if (cfg->dataType == DType::DType_UNKNOWN)
         {
             WARNING("[Generator] Unsupported data type");
+            return false;
+        }
+        else if (cfg->unsignedData && !(cfg->dataType == DType::DType_INT8 || cfg->dataType == DType::DType_INT16))
+        {
+            WARNING("[Generator] Data type %s unsupported for use with unsigned data generation.",
+                    EnumNameDType(cfg->dataType));
             return false;
         }
 
