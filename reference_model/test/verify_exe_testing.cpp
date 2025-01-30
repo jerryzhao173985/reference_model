@@ -14,9 +14,11 @@
 
 #include "doctest.h"
 #include "tensor.h"
+#include "verify.h"
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -28,8 +30,8 @@
 #include <mach-o/dyld.h>
 #endif
 
-//Test ToDo List
-// - test for different data types
+// TODO:
+// - test for more data types
 // - test with bnd result file
 
 #ifdef __unix__    // Code will only be compiled on Unix-based systems
@@ -48,20 +50,56 @@ std::string getVerifyFileLocation()
     }
 #else
 #error Unknown OS
-#endif
+#endif    // __linux__
     std::string exe_path = std::string(res, (count > 0) ? count : 0);
 
     int adjust = std::string("/unit_tests").length();
     return exe_path.substr(0, exe_path.length() - adjust) + "/verify/tosa_verify";
 }
-#endif
+#endif    // __unix__
 
-// Helper function to create a mock file with specific content
-void createMockFile(const std::string& filename, const std::string& content)
+TEST_SUITE_BEGIN("verify_exe_tests");
+
+// Code will only be compiled on Unix-based systems, currently no testing
+// on other platforms
+#ifdef __unix__
+TEST_CASE("Executable exists")
+{
+    std::string verif_exe_path = getVerifyFileLocation();
+
+    SUBCASE("Test valid exe")
+    {
+        //checks if the path to the tosa_verify is valid
+        bool check = std::filesystem::exists(verif_exe_path) && std::filesystem::is_regular_file(verif_exe_path);
+
+        REQUIRE(check);
+    }
+}
+
+// Helper function to create a mock Json file with specific content
+void createMockJsonFile(const std::string& filename, const std::string& content)
 {
     std::ofstream file(filename);
     file << content;
     file.close();
+}
+
+// Helper function to create mock Numpy result files, it will resize the
+// incoming refData to match the shape size
+template <typename refT, typename impT>
+void createMockNumpyFiles(const std::string& refName,
+                          const std::string& impName,
+                          const std::vector<int32_t>& shape,
+                          std::vector<refT>& refData)
+{
+    const auto elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+    // Make sure we have the right amount of data
+    refData.resize(elements);
+    // Create a copy of the data in the implementation data type
+    std::vector<impT> impData(refData.begin(), refData.end());
+
+    NumpyUtilities::writeToNpyFile(refName.c_str(), shape, refData.data());
+    NumpyUtilities::writeToNpyFile(impName.c_str(), shape, impData.data());
 }
 
 // Helper function to remove the mock file after testing
@@ -70,59 +108,50 @@ void removeMockFile(const std::string& filename)
     std::remove(filename.c_str());
 }
 
-TEST_SUITE_BEGIN("verify_exe_tests");
-
-TEST_CASE("missing and invalid")
+// Helper function to run the verify exe with optional ofm_name option
+int runVerifyCommand(const std::string& exePath,
+                     const std::string& testDesc,
+                     const std::string& refName,
+                     const std::string& impName,
+                     const std::optional<std::string>& ofmName = std::nullopt)
 {
-#ifdef __unix__    // Code will only be compiled on Unix-based systems
-    std::string verif_exe_path = getVerifyFileLocation();
-
-    SUBCASE("valid exe")
+    std::string command =
+        exePath + " --test_desc " + testDesc + " --imp_result_file " + impName + " --ref_result_file " + refName;
+    if (ofmName)
     {
-        //checks if the path to the tosa_verify is valid
-
-        bool check = std::filesystem::exists(verif_exe_path) && std::filesystem::is_regular_file(verif_exe_path);
-
-        REQUIRE(check);
+        command += " --ofm_name " + ofmName.value();
     }
 
-    SUBCASE("missing config file")
+    std::cout << "Command: " << command << std::endl;
+    int result = std::system(command.c_str());
+    return WEXITSTATUS(result);
+}
+
+TEST_CASE("Error tests - missing and invalid")
+{
+    const std::string verif_exe_path = getVerifyFileLocation();
+    const std::string refResultFile  = "ref.npy";
+    const std::string impResultFile  = "imp.npy";
+
+    SUBCASE("Test missing config file")
     {
-
-        std::string command = verif_exe_path + " --test_desc";
-
-        int result   = std::system(command.c_str());
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        // Assumes json file is checked for first
+        int exitCode = runVerifyCommand(verif_exe_path, "no-config.json", refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
     }
 
-    SUBCASE("invalid json in config file")
+    SUBCASE("Test invalid json in config file")
     {
-
         // Create a mock invalid JSON config file
         std::string invalidConfigFile = "invalid_config.json";
-        createMockFile(invalidConfigFile, "{invalid json}");
+        createMockJsonFile(invalidConfigFile, "{invalid json}");
 
-        std::string refResultFile = "ref.npy";
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 2, 12, 10, 7 };
-
-        const auto elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+        std::vector<int32_t> shape  = { 3, 1 };
         std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        std::string command = verif_exe_path + " --test_desc " + invalidConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        int exitCode = runVerifyCommand(verif_exe_path, invalidConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
 
         // Clean up
         removeMockFile(invalidConfigFile);
@@ -130,11 +159,11 @@ TEST_CASE("missing and invalid")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("unsupported data type")
+    SUBCASE("Test unsupported data type")
     {
         // Create a mock config file with unsupported data type
         std::string unsupportedConfigFile = "unsupported_data_type.json";
-        createMockFile(unsupportedConfigFile, R"({
+        createMockJsonFile(unsupportedConfigFile, R"({
             "ofm_name": [
                 "output"
             ],
@@ -142,7 +171,7 @@ TEST_CASE("missing and invalid")
                 "compliance": {
                     "tensors": {
                         "output": {
-                            "shape": [1, 2],
+                            "shape": [1, 3],
                             "data_type": "unsupported_type"
                         }
                     }
@@ -150,26 +179,12 @@ TEST_CASE("missing and invalid")
             }
         })");
 
-        std::string refResultFile = "ref.npy";
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 2, 12, 10, 7 };
-
-        const auto elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+        std::vector<int32_t> shape  = { 1, 3 };
         std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        std::string command = verif_exe_path + " --test_desc " + unsupportedConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        int exitCode = runVerifyCommand(verif_exe_path, unsupportedConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
 
         // Clean up
         removeMockFile(unsupportedConfigFile);
@@ -177,24 +192,16 @@ TEST_CASE("missing and invalid")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("ofmName mismatch")
+    SUBCASE("Test ofmName mismatch")
     {
         // Create a mock valid config file and result files
         std::string validConfigFile = "valid_config.json";
 
-        std::string refResultFile = "ref.npy";
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+        std::vector<int32_t> shape  = { 3, 5 };
         std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        createMockFile(validConfigFile, R"({
+        createMockJsonFile(validConfigFile, R"({
             "ofm_name": [
                 "result-0"
             ],
@@ -205,7 +212,7 @@ TEST_CASE("missing and invalid")
                         "result-0": {
                             "mode": "ULP",
                             "data_type": "FP32",
-                            "shape": [35,32],
+                            "shape": [3,5],
                             "ulp_info": {
                                 "ulp": 0.5
                             }
@@ -215,13 +222,9 @@ TEST_CASE("missing and invalid")
             }
         })");
 
-        std::string command = verif_exe_path + " --test_desc " + validConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile + " --ofm_name output";
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        int exitCode =
+            runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, impResultFile, "invalid-tensor");
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
 
         // Clean up
         removeMockFile(validConfigFile);
@@ -229,27 +232,19 @@ TEST_CASE("missing and invalid")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("multiple ofmName in config")
+    SUBCASE("Test multiple ofmName in config")
     {
         // Create a mock valid config file and result files
         std::string validConfigFile = "valid_config.json";
 
-        std::string refResultFile = "ref.npy";
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+        std::vector<int32_t> shape  = { 5, 2 };
         std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        createMockFile(validConfigFile, R"({
+        createMockJsonFile(validConfigFile, R"({
             "ofm_name": [
                 "result-0",
-                "result"
+                "result-1"
             ],
             "meta": {
                 "compliance": {
@@ -258,7 +253,15 @@ TEST_CASE("missing and invalid")
                         "result-0": {
                             "mode": "ULP",
                             "data_type": "FP32",
-                            "shape": [35,32],
+                            "shape": [5,2],
+                            "ulp_info": {
+                                "ulp": 0.5
+                            }
+                        },
+                        "result-1": {
+                            "mode": "ULP",
+                            "data_type": "FP32",
+                            "shape": [5,2],
                             "ulp_info": {
                                 "ulp": 0.5
                             }
@@ -268,13 +271,8 @@ TEST_CASE("missing and invalid")
             }
         })");
 
-        std::string command = verif_exe_path + " --test_desc " + validConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
 
         // Clean up
         removeMockFile(validConfigFile);
@@ -282,25 +280,12 @@ TEST_CASE("missing and invalid")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("correct usage of ofmName")
+    SUBCASE("Test missing tensor data in implementation")
     {
-        // Create a mock valid config file and result files
         std::string validConfigFile = "valid_config.json";
-        std::string refResultFile   = "ref.npy";
-        std::string impResultFile   = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
-        std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
-
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        createMockFile(validConfigFile, R"({
+        createMockJsonFile(validConfigFile, R"({
             "ofm_name": [
-                "_"
+                "result-0"
             ],
             "meta": {
                 "compliance": {
@@ -309,7 +294,7 @@ TEST_CASE("missing and invalid")
                         "result-0": {
                             "mode": "ULP",
                             "data_type": "FP32",
-                            "shape": [35,32],
+                            "shape": [5,2],
                             "ulp_info": {
                                 "ulp": 0.5
                             }
@@ -319,24 +304,73 @@ TEST_CASE("missing and invalid")
             }
         })");
 
-        std::string command = verif_exe_path + " --test_desc " + validConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile + " --ofm_name result-0";
+        std::string missingResultFile = "missing.npy";
 
-        int result = std::system(command.c_str());
+        std::vector<int32_t> shape  = { 5, 2 };
+        std::vector<double> refData = { 5.1, 10.1, 3.0 };
+        // Write both files, but just don't use one of them
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 0);
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, missingResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
 
         // Clean up
         removeMockFile(validConfigFile);
         removeMockFile(refResultFile);
         removeMockFile(impResultFile);
     }
-    SUBCASE("mismatching shapes")
+
+    SUBCASE("Test missing tensor data in reference")
+    {
+        std::string validConfigFile = "valid_config.json";
+        createMockJsonFile(validConfigFile, R"({
+            "ofm_name": [
+                "result-0"
+            ],
+            "meta": {
+                "compliance": {
+                    "version": "0.1",
+                    "tensors": {
+                        "result-0": {
+                            "mode": "ULP",
+                            "data_type": "FP32",
+                            "shape": [5,2],
+                            "ulp_info": {
+                                "ulp": 0.5
+                            }
+                        }
+                    }
+                }
+            }
+        })");
+
+        std::string missingResultFile = "missing.npy";
+
+        std::vector<int32_t> shape  = { 5, 2 };
+        std::vector<double> refData = { 5.1, 10.1, 3.0 };
+        // Write both files, but just don't use one of them
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
+
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, missingResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_ERROR);
+        // Clean up
+        removeMockFile(validConfigFile);
+        removeMockFile(refResultFile);
+        removeMockFile(impResultFile);
+    }
+}
+
+TEST_CASE("Non-compliant tests")
+{
+    const std::string verif_exe_path = getVerifyFileLocation();
+    const std::string refResultFile  = "ref.npy";
+    const std::string impResultFile  = "imp.npy";
+
+    SUBCASE("Test mismatching shapes")
     {
         // Create a mock config file with mismatching shapes
         std::string mismatchingShapesConfigFile = "mismatching_shapes.json";
-        createMockFile(mismatchingShapesConfigFile, R"({
+        createMockJsonFile(mismatchingShapesConfigFile, R"({
             "ofm_name": [
                 "output"
             ],
@@ -345,32 +379,19 @@ TEST_CASE("missing and invalid")
                     "tensors": {
                         "output": {
                             "shape": [1, 2],
-                            "data_type": "int32"
+                            "data_type": "FP32"
                         }
                     }
                 }
             }
         })");
 
-        std::string refResultFile = "ref.npy";
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+        std::vector<int32_t> shape  = { 2, 1 };
         std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        std::string command = verif_exe_path + " --test_desc " + mismatchingShapesConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
+        int exitCode = runVerifyCommand(verif_exe_path, mismatchingShapesConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_NON_COMPLIANT);
 
         // Clean up
         removeMockFile(mismatchingShapesConfigFile);
@@ -378,126 +399,116 @@ TEST_CASE("missing and invalid")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("missing tensor data in implementation")
+    SUBCASE("Test mismatching shapes rank0 versus rank1")
     {
-        std::string missingTensorDataConfigFile = "missing_tensor_data.json";
-        createMockFile(missingTensorDataConfigFile, R"({
+        // Create a mock config file with mismatching shapes
+        std::string mismatchingShapesConfigFile = "mismatching_shapes.json";
+        createMockJsonFile(mismatchingShapesConfigFile, R"({
             "ofm_name": [
-                "result-0"
+                "output"
             ],
             "meta": {
                 "compliance": {
-                    "version": "0.1",
                     "tensors": {
-                        "result-0": {
-                            "mode": "ULP",
-                            "data_type": "FP32",
-                            "shape": [35,32],
-                            "ulp_info": {
-                                "ulp": 0.5
-                            }
+                        "output": {
+                            "shape": [],
+                            "data_type": "INT32"
                         }
                     }
                 }
             }
         })");
 
-        std::string refResultFile = "ref.npy";
+        std::vector<int32_t> shape   = { 1 };
+        std::vector<int32_t> refData = { 5 };
+        createMockNumpyFiles<int32_t, int32_t>(refResultFile, impResultFile, shape, refData);
 
-        std::vector<int32_t> shape = { 35, 32 };
+        int exitCode = runVerifyCommand(verif_exe_path, mismatchingShapesConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_NON_COMPLIANT);
 
-        const auto elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
-        std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-
-        std::string command = verif_exe_path + " --test_desc " + missingTensorDataConfigFile +
-                              " --imp_result_file "
-                              "imp.npy" +
-                              " --ref_result_file " + refResultFile;
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
         // Clean up
-        removeMockFile(missingTensorDataConfigFile);
+        removeMockFile(mismatchingShapesConfigFile);
         removeMockFile(refResultFile);
-    }
-
-    SUBCASE("missing tensor data in reference")
-    {
-        std::string missingTensorDataConfigFile = "missing_tensor_data.json";
-        createMockFile(missingTensorDataConfigFile, R"({
-            "ofm_name": [
-                "result-0"
-            ],
-            "meta": {
-                "compliance": {
-                    "version": "0.1",
-                    "tensors": {
-                        "result-0": {
-                            "mode": "ULP",
-                            "data_type": "FP32",
-                            "shape": [35,32],
-                            "ulp_info": {
-                                "ulp": 0.5
-                            }
-                        }
-                    }
-                }
-            }
-        })");
-
-        std::string impResultFile = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
-        std::vector<float> impData = { 5.1, 10.1, 3.0 };
-        impData.resize(elements);
-
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        std::string command = verif_exe_path + " --test_desc " + missingTensorDataConfigFile + " --imp_result_file " +
-                              impResultFile +
-                              " --ref_result_file "
-                              "ref.npy";
-
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 1);
-        // Clean up
-        removeMockFile(missingTensorDataConfigFile);
         removeMockFile(impResultFile);
     }
-#endif
+
+    SUBCASE("Test mismatching shapes rank1 versus rank0")
+    {
+        // Create a mock config file with mismatching shapes
+        std::string mismatchingShapesConfigFile = "mismatching_shapes.json";
+        createMockJsonFile(mismatchingShapesConfigFile, R"({
+            "ofm_name": [
+                "output"
+            ],
+            "meta": {
+                "compliance": {
+                    "tensors": {
+                        "output": {
+                            "shape": [1],
+                            "data_type": "INT32"
+                        }
+                    }
+                }
+            }
+        })");
+
+        std::vector<int32_t> shape   = {};
+        std::vector<int32_t> refData = { 5 };
+        createMockNumpyFiles<int32_t, int32_t>(refResultFile, impResultFile, shape, refData);
+
+        int exitCode = runVerifyCommand(verif_exe_path, mismatchingShapesConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_NON_COMPLIANT);
+
+        // Clean up
+        removeMockFile(mismatchingShapesConfigFile);
+        removeMockFile(refResultFile);
+        removeMockFile(impResultFile);
+    }
+
+    SUBCASE("Test mismatching datatypes")
+    {
+        // Create a mock config file with mismatching shapes
+        std::string mismatchingTypesConfigFile = "mismatching_types.json";
+        createMockJsonFile(mismatchingTypesConfigFile, R"({
+            "ofm_name": [
+                "output"
+            ],
+            "meta": {
+                "compliance": {
+                    "tensors": {
+                        "output": {
+                            "shape": [1,3,50],
+                            "data_type": "INT32"
+                        }
+                    }
+                }
+            }
+        })");
+
+        std::vector<int32_t> shape  = { 1, 3, 50 };
+        std::vector<double> refData = { 5.1 };
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
+
+        int exitCode = runVerifyCommand(verif_exe_path, mismatchingTypesConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_NON_COMPLIANT);
+
+        // Clean up
+        removeMockFile(mismatchingTypesConfigFile);
+        removeMockFile(refResultFile);
+        removeMockFile(impResultFile);
+    }
 }
-
-#ifdef __unix__    // Code will only be compiled on Unix-based systems
-TEST_CASE("different types")
+TEST_CASE("Compliant tests")
 {
-    std::string verif_exe_path = getVerifyFileLocation();
+    const std::string verif_exe_path = getVerifyFileLocation();
+    const std::string refResultFile  = "ref.npy";
+    const std::string impResultFile  = "imp.npy";
 
-    SUBCASE("fp32")
+    SUBCASE("Test correct usage of ofmName")
     {
         // Create a mock valid config file and result files
         std::string validConfigFile = "valid_config.json";
-        std::string refResultFile   = "ref.npy";
-        std::string impResultFile   = "imp.npy";
-
-        std::vector<int32_t> shape = { 35, 32 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
-        std::vector<double> refData = { 5.1, 10.1, 3.0 };
-        refData.resize(elements);
-        std::vector<float> impData(refData.begin(), refData.end());
-
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, refData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, impData.data());
-
-        createMockFile(validConfigFile, R"({
+        createMockJsonFile(validConfigFile, R"({
             "ofm_name": [
                 "result-0"
             ],
@@ -518,13 +529,12 @@ TEST_CASE("different types")
             }
         })");
 
-        std::string command = verif_exe_path + " --test_desc " + validConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
+        std::vector<int32_t> shape  = { 35, 32 };
+        std::vector<double> refData = { 5.1, 10.1, 3.0 };
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
 
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 0);
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, impResultFile, "result-0");
+        REQUIRE(exitCode == tvf_status_t::TVF_COMPLIANT);
 
         // Clean up
         removeMockFile(validConfigFile);
@@ -532,23 +542,49 @@ TEST_CASE("different types")
         removeMockFile(impResultFile);
     }
 
-    SUBCASE("int32")
+    SUBCASE("Test fp32")
+    {
+        // Create a mock valid config file and result files
+        std::string validConfigFile = "valid_config.json";
+        createMockJsonFile(validConfigFile, R"({
+            "ofm_name": [
+                "result-0"
+            ],
+            "meta": {
+                "compliance": {
+                    "version": "0.1",
+                    "tensors": {
+                        "result-0": {
+                            "mode": "ULP",
+                            "data_type": "FP32",
+                            "shape": [35,32],
+                            "ulp_info": {
+                                "ulp": 0.5
+                            }
+                        }
+                    }
+                }
+            }
+        })");
+
+        std::vector<int32_t> shape  = { 35, 32 };
+        std::vector<double> refData = { 5.1, 10.1, 3.0 };
+        createMockNumpyFiles<double, float>(refResultFile, impResultFile, shape, refData);
+
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_COMPLIANT);
+
+        // Clean up
+        removeMockFile(validConfigFile);
+        removeMockFile(refResultFile);
+        removeMockFile(impResultFile);
+    }
+
+    SUBCASE("Test int32")
     {
         // Create a mock valid config file and result files dynamically
         std::string validConfigFile = "valid_config_int32.json";
-        std::string refResultFile   = "ref_int32.npy";
-        std::string impResultFile   = "imp_int32.npy";
-
-        std::vector<int32_t> shape = { 2, 12, 10, 7 };
-        const auto elements        = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
-        std::vector<int32_t> tensorData = { 5, 10, 3 };
-        tensorData.resize(elements);
-
-        NumpyUtilities::writeToNpyFile(refResultFile.c_str(), shape, tensorData.data());
-        NumpyUtilities::writeToNpyFile(impResultFile.c_str(), shape, tensorData.data());
-
-        // Create the config file dynamically
-        createMockFile(validConfigFile, R"({
+        createMockJsonFile(validConfigFile, R"({
             "ofm_name": [
                 "result-0"
             ],
@@ -571,14 +607,12 @@ TEST_CASE("different types")
             }
         })");
 
-        // Run the verify command with dynamically generated files
-        std::string command = verif_exe_path + " --test_desc " + validConfigFile + " --imp_result_file " +
-                              impResultFile + " --ref_result_file " + refResultFile;
+        std::vector<int32_t> shape   = { 2, 12, 10, 7 };
+        std::vector<int32_t> refData = { 5, 10, 3 };
+        createMockNumpyFiles<int32_t, int32_t>(refResultFile, impResultFile, shape, refData);
 
-        int result = std::system(command.c_str());
-
-        int exitCode = WEXITSTATUS(result);
-        REQUIRE(exitCode == 0);
+        int exitCode = runVerifyCommand(verif_exe_path, validConfigFile, refResultFile, impResultFile);
+        REQUIRE(exitCode == tvf_status_t::TVF_COMPLIANT);
 
         // Clean up dynamically generated files
         removeMockFile(validConfigFile);
@@ -586,5 +620,5 @@ TEST_CASE("different types")
         removeMockFile(impResultFile);
     }
 }
-#endif
+#endif    // __unix__
 TEST_SUITE_END();

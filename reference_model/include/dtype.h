@@ -129,11 +129,11 @@ inline constexpr TOSA_REF_TYPE DType2RefType(const DType dtype)
 
 // return corresponding TOSA_REF_TYPE for DType
 // if precise_mode, convert all floating dtype to FP64
-inline TOSA_REF_TYPE ConvertDType(const DType dtype)
+inline TOSA_REF_TYPE ConvertDType(const DType dtype, const bool precise)
 {
     assert(DType_MAX == DType_FP8E5M2);    // must update whenever DType_MAX changes
 
-    if (g_func_config.precise_mode)
+    if (precise)
     {
         // in precise mode, convert all floating DType to TOSA_REF_TYPE_FP64
         switch (dtype)
@@ -150,6 +150,13 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
     }
 
     return DType2RefType(dtype);
+}
+
+// return corresponding TOSA_REF_TYPE for DType
+// if precise_mode, convert all floating dtype to FP64
+inline TOSA_REF_TYPE ConvertDType(const DType dtype)
+{
+    return ConvertDType(dtype, g_func_config.precise_mode);
 }
 
 template <TOSA_REF_TYPE Dtype>
