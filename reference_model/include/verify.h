@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023,2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -21,11 +21,19 @@
 #define VERIFY_H
 
 #include "types.h"
+#include <cstdlib>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
+
+    enum tvf_status_t : int
+    {
+        TVF_COMPLIANT     = EXIT_SUCCESS,
+        TVF_ERROR         = EXIT_FAILURE,
+        TVF_NON_COMPLIANT = 2,
+    };
 
     /// \brief Perform compliance validation between a reference and a target output
     ///
