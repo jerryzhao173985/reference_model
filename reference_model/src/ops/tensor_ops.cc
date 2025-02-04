@@ -1713,6 +1713,14 @@ int OpFFT2d<Dtype>::eval()
         // in abs_mode: take abs values of real and imag operands
         in_real_val = in_real_val.abs();
         in_imag_val = in_imag_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = in_real_val.maximum();
+            in_real_val.setConstant(input_abs_max(0));
+            input_abs_max = in_imag_val.maximum();
+            in_imag_val.setConstant(input_abs_max(0));
+        }
     }
 
     for (int n = 0; n < in_real_batch; n++)
@@ -1853,6 +1861,12 @@ int OpRFFT2d<Dtype>::eval()
     {
         // in abs_mode: take abs values of in operand
         in_val = in_val.abs();
+
+        if (!this->attribute->local_bound())
+        {
+            Eigen::Tensor<InEigenType, 0> input_abs_max = in_val.maximum();
+            in_val.setConstant(input_abs_max(0));
+        }
     }
 
     for (int n = 0; n < in_batch; n++)
