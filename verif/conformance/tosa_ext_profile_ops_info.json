@@ -8135,7 +8135,7 @@
             "random_const_inputs"
         ],
         "generation": {
-            "standard": {
+            "tosa-ext-fft": {
                 "supports_all": [
                     "tosa-ext-fft"
                 ],

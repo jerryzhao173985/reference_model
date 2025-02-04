@@ -3534,15 +3534,19 @@ class TosaArgGen:
         shape = shapeList[0]
         dot_products = gtu.product(shape)
         ks = 2 * shape[1] * shape[2]  # 2*H*W
+
         for inverse in (True, False):
+            local_bound = rng.choice((False, True))
             args_dict = {
                 "dot_products": dot_products,
                 "shape": shape,
                 "ks": ks,
                 "acc_type": dtype,
                 "inverse": inverse,
+                "local_bound": local_bound,
             }
-            arg_list.append((f"inverse{inverse}", args_dict))
+            lclbnd = "1" if local_bound else "0"
+            arg_list.append((f"inverse{inverse}_lclbnd{lclbnd}", args_dict))
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,
@@ -3562,13 +3566,18 @@ class TosaArgGen:
         shape = shapeList[0]
         dot_products = gtu.product(shape)
         ks = shape[1] * shape[2]  # H*W
-        args_dict = {
-            "dot_products": dot_products,
-            "shape": shape,
-            "ks": ks,
-            "acc_type": dtype,
-        }
-        arg_list.append(("", args_dict))
+        # As we have minimal test variants due to no other arguments, to
+        # get coverage we use local_bound as the main argument
+        for local_bound in (True, False):
+            args_dict = {
+                "dot_products": dot_products,
+                "shape": shape,
+                "ks": ks,
+                "acc_type": dtype,
+                "local_bound": local_bound,
+            }
+            lclbnd = "1" if local_bound else "0"
+            arg_list.append((f"lclbnd{lclbnd}", args_dict))
 
         arg_list = TosaArgGen._add_data_generators(
             testGen,

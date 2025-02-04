@@ -2758,8 +2758,7 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
+        local_bound = args_dict["local_bound"]
 
         attr = ts.TosaSerializerAttribute()
         attr.FFT2dAttribute(inverse, local_bound)
@@ -2818,8 +2817,7 @@ class TosaTestGen:
         ):
             return None
 
-        # TODO - Test local_bound, for now set local bound attribute to False
-        local_bound = False
+        local_bound = args_dict["local_bound"]
 
         attr = ts.TosaSerializerAttribute()
         attr.RFFT2dAttribute(local_bound)
