@@ -420,14 +420,13 @@ int OpArgMax<Rank, Dtype>::eval()
 
     Eigen::Tensor<OutEigenType, 1> argmaxes(matrix_dimensions[1]);
 
-    constexpr bool is_fp = std::is_floating_point_v<InEigenType>;
+    constexpr bool is_fp = IsFloat<Dtype>();
     const auto nan_mode  = attribute->nan_mode();
 
     // Find the maximum of a row in the matrix.
     for (DenseIndex j = 0; j < matrix_dimensions[1]; j++)
     {
-        InEigenType max_val =
-            (is_fp && isIgnoringNan(nan_mode)) ? DtypeLimits<Dtype>::quiet_NaN : DtypeLimits<Dtype>::low_extreme;
+        InEigenType max_val = getApplyMaxPadding<Dtype, InEigenType>(nan_mode);
 
         OutEigenType max_idx = 0;
 
@@ -1577,7 +1576,7 @@ int OpMaxPool2d<Dtype>::eval()
     // Set the padding value to be the lowest value that can be represented
     // by the datatype to ensure that any padding values will be equal
     // to or smaller than the actual maximum in the KH x KW patch.
-    InEigenType padding_value = DtypeLimits<Dtype>::low_extreme;
+    InEigenType padding_value = getApplyMaxPadding<Dtype, InEigenType>(attribute->nan_mode());
 
     ETensor4<InEigenType> input_padded = this->in->getTensor().pad(pad, padding_value);
 

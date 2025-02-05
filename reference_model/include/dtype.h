@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -153,7 +153,37 @@ inline TOSA_REF_TYPE ConvertDType(const DType dtype)
 }
 
 template <TOSA_REF_TYPE Dtype>
-bool IsSignedInt()
+constexpr bool IsFloat()
+{
+    switch (Dtype)
+    {
+        case TOSA_REF_TYPE_FP64:
+        case TOSA_REF_TYPE_FP32:
+        case TOSA_REF_TYPE_FP16:
+        case TOSA_REF_TYPE_BF16:
+        case TOSA_REF_TYPE_FP8E4M3:
+        case TOSA_REF_TYPE_FP8E5M2:
+            return true;
+
+        case TOSA_REF_TYPE_SHAPE:
+        case TOSA_REF_TYPE_BOOL:
+        case TOSA_REF_TYPE_INT4:
+        case TOSA_REF_TYPE_INT8:
+        case TOSA_REF_TYPE_INT16:
+        case TOSA_REF_TYPE_INT32:
+        case TOSA_REF_TYPE_INT48:
+        case TOSA_REF_TYPE_UINT8:
+        case TOSA_REF_TYPE_UINT16:
+            return false;
+
+        default:
+            FATAL_ERROR("dtype %s is not supported by IsFloat", EnumNameTOSAREFTYPE(Dtype));
+            break;
+    }
+}
+
+template <TOSA_REF_TYPE Dtype>
+constexpr bool IsSignedInt()
 {
     switch (Dtype)
     {
@@ -169,6 +199,7 @@ bool IsSignedInt()
             return false;
 
         case TOSA_REF_TYPE_BOOL:
+        case TOSA_REF_TYPE_FP64:
         case TOSA_REF_TYPE_FP32:
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
@@ -176,7 +207,7 @@ bool IsSignedInt()
         case TOSA_REF_TYPE_FP8E4M3:
         case TOSA_REF_TYPE_FP8E5M2:
         default:
-            FATAL_ERROR("dtype is not an integer type");
+            FATAL_ERROR("dtype %s is not an integer type", EnumNameTOSAREFTYPE(Dtype));
             break;
     }
 }
