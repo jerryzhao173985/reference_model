@@ -32,6 +32,7 @@
 #include <math.h>
 #define __STDC_LIMIT_MACROS    //enable min/max of plain data type
 #include "dtype.h"
+#include "dtype_limits.h"
 #include "func_config.h"
 #include "func_debug.h"
 #include "half.hpp"
@@ -433,6 +434,28 @@ T applyClip(T value,
     value = applyMin<T>(value, max_val, nan_mode);
 
     return value;
+}
+
+// Return the value that will function as lowest for applyMax in the given nan_mode.
+// This is useful for padding and for initializing reducers.
+template <TOSA_REF_TYPE Dtype, typename T>
+constexpr T getApplyMaxPadding(NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
+{
+    // When ignoring NaNs, NaN functions as the *smallest* value for applyMax.
+    const auto v =
+        (IsFloat<Dtype>() && isIgnoringNan(nan_mode)) ? DtypeLimits<Dtype>::quiet_NaN : DtypeLimits<Dtype>::low_extreme;
+    return static_cast<T>(v);
+}
+
+// Return the value that will function as highest for applyMin in the given nan_mode.
+// This is useful for padding and for initializing reducers.
+template <TOSA_REF_TYPE Dtype, typename T>
+constexpr T getApplyMinPadding(NanPropagationMode nan_mode = NanPropagationMode_PROPAGATE)
+{
+    // When ignoring NaNs, NaN functions as the *largest* value for applyMin.
+    const auto v = (IsFloat<Dtype>() && isIgnoringNan(nan_mode)) ? DtypeLimits<Dtype>::quiet_NaN
+                                                                 : DtypeLimits<Dtype>::high_extreme;
+    return static_cast<T>(v);
 }
 
 #endif /* _ARITH_UTIL_H */

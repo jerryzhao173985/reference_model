@@ -129,7 +129,7 @@ struct MaxReducer
     }
     T initialize() const
     {
-        return DtypeLimits<Dtype>::low_extreme;
+        return getApplyMaxPadding<Dtype, T>(_nan_mode);
     }
     T finalize(const T accum) const
     {
@@ -151,7 +151,7 @@ struct MinReducer
     }
     T initialize() const
     {
-        return DtypeLimits<Dtype>::high_extreme;
+        return getApplyMinPadding<Dtype, T>(_nan_mode);
     }
     T finalize(const T accum) const
     {
