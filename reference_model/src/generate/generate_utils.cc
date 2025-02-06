@@ -393,7 +393,6 @@ void writeValue<int8_t, TOSA_REF_TYPE_BOOL>(int64_t value, int64_t index, int8_t
 }
 
 // Instantiate other needed writeValue functions
-template void writeValue<int8_t, TOSA_REF_TYPE_BOOL>(int64_t value, int64_t index, int8_t* data);
 template void writeValue<int8_t, TOSA_REF_TYPE_INT8>(int64_t value, int64_t index, int8_t* data);
 template void writeValue<int16_t, TOSA_REF_TYPE_INT16>(int64_t value, int64_t index, int16_t* data);
 template void writeValue<int32_t, TOSA_REF_TYPE_INT32>(int64_t value, int64_t index, int32_t* data);
