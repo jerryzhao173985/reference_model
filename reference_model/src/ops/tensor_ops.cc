@@ -2100,9 +2100,6 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     bcast[2] = out_width;
     bcast[3] = (b_out_channels == 1) ? out_channels : 1;
 
-    // initialize with bias
-    this->output->getTensor() = bias_val.reshape(reshape_dim).broadcast(bcast);
-
     TAcc acc_tensor = this->output->getTensor().template cast<AccEigenType>();
     acc_tensor.setZero();
 
@@ -2147,12 +2144,13 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                             }
                         }
                     }
+                    // update output tensor and add bias
+                    this->output->getTensor()(ob, oy, ox, oc) =
+                        static_cast<OutEigenType>(acc_tensor(ob, oy, ox, oc)) + bias_val(oc);
                 }
             }
         }
     }
-
-    this->output->getTensor() += acc_tensor.template cast<OutEigenType>();
 
     if (OutDtype == TOSA_REF_TYPE_INT48)
     {
