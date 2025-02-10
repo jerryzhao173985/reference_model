@@ -2347,8 +2347,8 @@ class TosaErrorValidator:
 
         if check:
             cond = kwargs["cond"]
-            # Size of 1 is equivalent to rank 0
-            if len(cond.shape) != 0:
+            # Size of 1
+            if gtu.product(cond.shape) != 1:
                 error_result = True
 
         info_dict = {

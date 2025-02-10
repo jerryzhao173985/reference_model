@@ -858,12 +858,11 @@ def main():
                             )
                             continue
 
-                        if profile_ext not in supports_any and not (
-                            len(supports_all) > 0
-                            and all(p in profileExtList for p in supports_all)
-                        ):
+                        # Already checked that the profile is in supported (any or all), so this
+                        # verifies that all conditions are met
+                        if not all(p in profileExtList for p in supports_all):
                             logger.info(
-                                f"Profile/extension {profile_ext} is not in {supports_any} or the profiles/extensions chosen do not meet all the requirements of {supports_all} - skipping"
+                                f"For profile/extension {profile_ext} the profiles/extensions chosen do not meet all the requirements of {supports_all} - skipping"
                             )
                             continue
 

@@ -93,7 +93,7 @@ class TosaRandomGenerator(np.random.Generator):
                 return (rng[0], rng[1] - 1)
 
     def randInt(self, low=0, high=256):
-        return np.int32(self.integers(low=low, high=high, size=1))[0]
+        return np.int32(self.integers(low=low, high=high))
 
     def randNumberDType(self, dtype):
         low, high = self.dTypeRange(dtype)
@@ -112,9 +112,9 @@ class TosaRandomGenerator(np.random.Generator):
             return self.choice([False, True])
         elif dtype == DType.INT48 or dtype == DType.SHAPE:
             # Special size
-            return np.int64(self.integers(low, high, size=1))[0]
+            return np.int64(self.integers(low, high))
 
-        return np.int32(self.integers(low, high, size=1))[0]
+        return np.int32(self.integers(low, high))
 
     def randTensor(self, shape, dtype, data_range=None):
         if data_range is None:

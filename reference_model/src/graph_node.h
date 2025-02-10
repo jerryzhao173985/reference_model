@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -124,6 +124,17 @@
     DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 4, DTYPE)                                                                 \
     DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 5, DTYPE)                                                                 \
     DEF_INSTANTIATE_TWO_RANK_ONE_TYPE(OP, 6, 6, DTYPE)
+
+#define DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, RANK) template class TosaReference::OP<RANK>;
+
+#define DEF_INSTANTIATE_COND_IF_RANK0_6(OP)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 0)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 1)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 2)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 3)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 4)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 5)                                                                            \
+    DEF_INSTANTIATE_COND_IF_ONE_RANK(OP, 6)
 
 #define INIT_ATTRIBUTE(ATTRIBUTE_NAME)                                                                                 \
     if (auto p = dynamic_cast<Tosa##ATTRIBUTE_NAME##Attribute*>(attribute_))                                           \

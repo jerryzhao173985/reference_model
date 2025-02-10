@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -156,31 +156,37 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     return 0;
 }
 
-OpCondIf::OpCondIf(SubgraphTraverser* sgt_, TosaSerializationHandler* tsh_, TosaAttributeBase* attribute_, uint64_t id_)
+template <int Rank>
+OpCondIf<Rank>::OpCondIf(SubgraphTraverser* sgt_,
+                         TosaSerializationHandler* tsh_,
+                         TosaAttributeBase* attribute_,
+                         uint64_t id_)
     : OpControlFlow(sgt_, tsh_, Op_COND_IF, id_)
 {
     INIT_ATTRIBUTE(CondIf);
 }
 
-OpCondIf::~OpCondIf()
+template <int Rank>
+OpCondIf<Rank>::~OpCondIf()
 {}
 
-int OpCondIf::checkTensorAttributes()
+template <int Rank>
+int OpCondIf<Rank>::checkTensorAttributes()
 {
     ERROR_IF(!tsh, "OpCondIf: tosa serialization handler must not be null");
 
     int32_t num_inputs = getInputs().size();
     ERROR_IF(num_inputs < 1, "OpCondIf: must have at least 1 operand");
 
-    ERROR_IF(inputs[0]->getDtype() != TOSA_REF_TYPE_BOOL || inputs[0]->getRank() != 0,
-             "OpCondIf: invalid tensor dtype=%s, rank=%d", EnumNameTOSAREFTYPE(inputs[0]->getDtype()),
-             inputs[0]->getRank());
+    ERROR_IF(inputs[0]->getDtype() != TOSA_REF_TYPE_BOOL || inputs[0]->getElementCount() != 1,
+             "OpCondIf: invalid tensor dtype=%s, elements=%d", EnumNameTOSAREFTYPE(inputs[0]->getDtype()),
+             inputs[0]->getElementCount());
 
     auto tosa_level = g_func_config.tosa_level;
     LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
-    cond = dynamic_cast<TosaReference::Tensor0<bool>*>(inputs[0]);
+    cond = dynamic_cast<TosaReference::TensorTemplate<TCond>*>(inputs[0]);
     ASSERT_MEM(cond);
 
     auto then_region = tsh->GetRegionByName(attribute->then_graph());
@@ -269,7 +275,8 @@ int OpCondIf::checkTensorAttributes()
     return 0;
 }
 
-int OpCondIf::eval()
+template <int Rank>
+int OpCondIf<Rank>::eval()
 {
     bool cond_val = cond->getTensor()(0);
     std::vector<TosaReference::Tensor*> block_inputs(getInputs().begin() + 1, getInputs().end());
@@ -461,3 +468,5 @@ int OpWhileLoop::eval()
 
     return GraphNode::eval();
 }
+
+DEF_INSTANTIATE_COND_IF_RANK0_6(OpCondIf);

@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2023,2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -284,6 +284,22 @@
                 }                                                                                                      \
             }                                                                                                          \
         }                                                                                                              \
+    }
+
+#define DEF_FACTORY_COND_IF_ONE_RANK(OP, RANK)                                                                         \
+    case RANK:                                                                                                         \
+        return new OP<RANK>(sgt, tsh, attribute, id);
+
+#define DEF_FACTORY_COND_IF_RANK0_6(OP)                                                                                \
+    switch (inputRank)                                                                                                 \
+    {                                                                                                                  \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 0)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 1)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 2)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 3)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 4)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 5)                                                                            \
+        DEF_FACTORY_COND_IF_ONE_RANK(OP, 6)                                                                            \
     }
 
 namespace TosaReference
