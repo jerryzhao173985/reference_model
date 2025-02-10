@@ -15,6 +15,7 @@ class TosaProfiles:
     TosaExtShape = "tosa-ext-shape"
     TosaExtDynamic = "tosa-ext-dynamic"
     TosaExtDoubleRound = "tosa-ext-doubleround"
+    TosaExtControlFlow = "tosa-ext-controlflow"
 
     @staticmethod
     def profiles():
@@ -33,6 +34,7 @@ class TosaProfiles:
             TosaProfiles.TosaExtShape,
             TosaProfiles.TosaExtDynamic,
             TosaProfiles.TosaExtDoubleRound,
+            TosaProfiles.TosaExtControlFlow,
         ]
 
     @staticmethod

@@ -654,7 +654,9 @@ GraphNode* OpFactory::newOp(SubgraphTraverser* sgt,
 
         // control_flow
         case Op_COND_IF:
-            return new OpCondIf(sgt, tsh, attribute, id);
+            DEF_FACTORY_COND_IF_RANK0_6(OpCondIf);
+            break;
+
         case Op_WHILE_LOOP:
             return new OpWhileLoop(sgt, tsh, attribute, id);
 

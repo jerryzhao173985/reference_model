@@ -2065,9 +2065,8 @@
         ],
         "generation": {
             "standard": {
-                "supports_any": [
-                    "tosa-pro-int",
-                    "tosa-pro-fp"
+                "supports_all": [
+                    "tosa-ext-controlflow"
                 ],
                 "generator_args": [
                     [
@@ -2087,7 +2086,8 @@
                 ]
             },
             "tosa-pro-int": {
-                "supports_any": [
+                "supports_all": [
+                    "tosa-ext-controlflow",
                     "tosa-pro-int"
                 ],
                 "generator_args": [
@@ -2119,7 +2119,8 @@
                 ]
             },
             "tosa-pro-fp": {
-                "supports_any": [
+                "supports_all": [
+                    "tosa-ext-controlflow",
                     "tosa-pro-fp"
                 ],
                 "generator_args": [
@@ -2154,7 +2155,8 @@
             },
             "tosa-ext-bf16": {
                 "supports_all": [
-                    "tosa-ext-bf16"
+                        "tosa-ext-controlflow",
+                        "tosa-ext-bf16"
                 ],
                 "no_negative_tests": "true",
                 "generator_args": [
@@ -10132,7 +10134,8 @@
         ],
         "generation": {
             "tosa-pro-int": {
-                "supports_any": [
+                "supports_all": [
+                    "tosa-ext-controlflow",
                     "tosa-pro-int"
                 ],
                 "generator_args": [
@@ -10179,7 +10182,8 @@
                 ]
             },
             "tosa-pro-fp": {
-                "supports_any": [
+                "supports_all": [
+                    "tosa-ext-controlflow",
                     "tosa-pro-fp"
                 ],
                 "generator_args": [
@@ -10214,6 +10218,7 @@
             },
             "tosa-ext-bf16": {
                 "supports_all": [
+                    "tosa-ext-controlflow",
                     "tosa-ext-bf16"
                 ],
                 "no_negative_tests": "true",

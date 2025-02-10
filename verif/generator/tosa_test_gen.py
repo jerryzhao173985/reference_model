@@ -2356,8 +2356,13 @@ class TosaTestGen:
             else:
                 cond_shape = [1, 2]
         else:
-            # Must be of size 1 (rank 0)
-            cond_shape = []
+            # Must be of size 1, but choose a rank up to max
+            rank = rng.randInt(low=0, high=(gtu.MAX_TENSOR_RANK + 1))
+            if rank == 0:
+                cond_shape = []
+            else:
+                cond_shape = [1] * rank
+
         cond_tens = self.ser.addConst(cond_shape, cond_type, [cond])
         return cond_tens
 

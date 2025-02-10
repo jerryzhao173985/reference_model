@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020, 2024 ARM Limited.
+// Copyright (c) 2020,2024-2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ protected:
     TosaSerializationHandler* tsh;
 };
 
+template <int Rank>
 class OpCondIf : public OpControlFlow
 {
 public:
@@ -45,9 +46,11 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
+    using TCond = Eigen::Tensor<bool, Rank>;
+
 protected:
     std::unique_ptr<TosaCondIfAttribute> attribute;
-    TosaReference::Tensor0<bool>* cond;
+    TosaReference::TensorTemplate<TCond>* cond;
     TosaSerializationBasicBlock* then_block;
     TosaSerializationBasicBlock* else_block;
 };
