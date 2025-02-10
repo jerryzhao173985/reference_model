@@ -44,32 +44,20 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    if (inputs.empty())
-    {
-        printNodeValidationError("Concat operator must have at least one input tensor");
-        return 1;
-    }
+    ERROR_IF(inputs.empty(), "Concat operator must have at least one input tensor");
 
     int32_t num_inputs = inputs.size();
     LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
-    // output and input must be the same types and rank
     for (int32_t i = 0; i < num_inputs; i++)
     {
-        if (inputs[i]->matchRankType(*outputs[0]))
-        {
-            printNodeValidationError("OpConcat: input ranks and types must match");
-            return 1;
-        }
+        ERROR_IF(inputs[i]->matchRank(*outputs[0]), "OpConcat: input and output must have same ranks");
+        ERROR_IF(inputs[i]->matchType(*outputs[0]), "OpConcat: input and output must have same element types");
         ins.push_back(dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[i]));
     }
 
-    if (attribute->axis() < 0 || (size_t)attribute->axis() >= Rank)
-    {
-        printNodeValidationError("OpConcat: axis is beyond output tensor rank");
-        return 1;
-    }
+    ERROR_IF(attribute->axis() < 0 || (size_t)attribute->axis() >= Rank, "OpConcat: axis is beyond output tensor rank");
 
     int32_t output_dim_on_axis = 0;
     for (int32_t j = 0; j < num_inputs; j++)
@@ -148,12 +136,8 @@ int OpPad<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    // output and input must be the same types
-    if (inputs[0]->matchRankType(*outputs[0]))
-    {
-        printNodeValidationError("Failure to match input and output type and rank");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRank(*outputs[0]), "OpPad: input and output must have same ranks");
+    ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpPad: input and output must have same element types");
 
     in        = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     padding   = dynamic_cast<TosaReference::TensorTemplate<TPadding>*>(inputs[1]);
@@ -224,12 +208,7 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
     if (validateRequiredOperands())
         return 1;
 
-    // output and input must be the same types
-    if (inputs[0]->matchType(*outputs[0]))
-    {
-        printNodeValidationError("OpReshape: Input and output types must match");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpReshape: Input and output types must match");
 
     ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
              "Input tensor size does not match output tensor size");
@@ -317,23 +296,16 @@ int OpReverse<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    // output and input must be the same types
-    if (inputs[0]->matchRankTypeShape(*outputs[0]))
-    {
-        printNodeValidationError("Failure to match input and output rank/type/shape");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRankTypeShape(*outputs[0]),
+             "OpReverse: Failure to match input and output rank/type/shape");
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
     ASSERT_MEM(in && out);
 
-    if (attribute->axis() < 0 || attribute->axis() >= inputs[0]->getRank())
-    {
-        printNodeValidationError("Reverse axis must between [0, input_rank - 1]");
-        return 1;
-    }
+    ERROR_IF(attribute->axis() < 0 || attribute->axis() >= inputs[0]->getRank(),
+             "OpReverse: axis must be between [0, input_rank - 1]");
 
     // transform list of axis into true or false list
     // e.g. rank=4, axis=[1,2], reverse array would be [false, true, true, false]
@@ -381,12 +353,8 @@ int OpSlice<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    // output and input must be the same types
-    if (inputs[0]->matchRankType(*outputs[0]))
-    {
-        printNodeValidationError("Failure to match input and output rank or type");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRank(*outputs[0]), "OpSlice: input and output must have same ranks");
+    ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpSlice: input and output must have same element types");
 
     in    = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     start = dynamic_cast<TosaReference::TensorTemplate<TSlicing>*>(inputs[1]);
@@ -456,12 +424,8 @@ int OpTileBase<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    // output and input must be the same ranks and types
-    if (inputs[0]->matchRankType(*outputs[0]))
-    {
-        printNodeValidationError("Failure to match input and output rank or type");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRank(*outputs[0]), "OpTile: input and output must have same ranks");
+    ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpTile: input and output must have same element types");
 
     in        = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     multiples = dynamic_cast<TosaReference::TensorTemplate<TInMultiples>*>(inputs[1]);
@@ -648,18 +612,11 @@ int OpTranspose<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    // output and input must be the same types
-    if (inputs[0]->matchRankType(*outputs[0]))
-    {
-        printNodeValidationError("Failure to match input and output rank and type");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRank(*outputs[0]), "OpTranspose: input and output must have same ranks");
+    ERROR_IF(inputs[0]->matchType(*outputs[0]), "OpTranspose: input and output must have same element types");
 
-    if (inputs[0]->getElementCount() != outputs[0]->getElementCount())
-    {
-        printNodeValidationError("Failure to match input and output total element count");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
+             "OpTranspose: input and output must have same total element counts");
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
