@@ -436,6 +436,14 @@ T applyClip(T value,
     return value;
 }
 
+template <typename T>
+T arithRshift(T a, T b)
+{
+    static_assert(sizeof(int32_t) >= sizeof(T));
+    int32_t c = static_cast<int32_t>(a) >> static_cast<int32_t>(b);
+    return static_cast<T>(c);
+}
+
 // Return the value that will function as lowest for applyMax in the given nan_mode.
 // This is useful for padding and for initializing reducers.
 template <TOSA_REF_TYPE Dtype, typename T>
