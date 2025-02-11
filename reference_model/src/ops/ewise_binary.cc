@@ -190,18 +190,19 @@ int OpArithmeticRightShift<Rank, Dtype>::register_fcn()
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
     }
 
-    this->fcn = [this, round, num_bits](InEigenType a, InEigenType b) -> OutEigenType {
-        REQUIRE(b >= 0 && b < num_bits, "OpArithmeticRightShift: shift value %d is out of valid range [0, %d]",
-                (int32_t)b, num_bits);
+    this->fcn = [this, round, num_bits](InEigenType value1, InEigenType value2) -> OutEigenType {
+        REQUIRE(value2 >= 0 && value2 < num_bits,
+                "OpArithmeticRightShift: shift value %d is out of valid range [0, %d]", static_cast<int32_t>(value2),
+                num_bits);
 
-        InEigenType acc = a >> b;
+        InEigenType result = arithRshift(value1, value2);
 
-        if (round && b > 0 && (a >> (b - 1) & 1) != 0)
+        if (round && static_cast<int32_t>(value2) > 0 && ((arithRshift(value1, value2 - 1) & 1) != 0))
         {
-            acc++;
+            result++;
         }
 
-        return acc;
+        return result;
     };
 
     return 0;
