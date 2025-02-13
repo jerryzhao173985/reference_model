@@ -5339,11 +5339,11 @@ class TosaTestGen:
         "const_shape": {
             "op": Op.CONST_SHAPE,
             "operands": (0, 1),
-            "rank": (1, 1),
+            # "rank" can be up to MAX_RANK it sets the shape data, not the rank of the operation
             "build_fcn": (
                 build_const,
                 TosaTensorGen.tgBasic,
-                TosaTensorValuesGen.tvgLazyGenDefault,
+                TosaTensorValuesGen.tvgConstShape,
                 TosaArgGen.agNone,
             ),
             "types": [DType.SHAPE],
