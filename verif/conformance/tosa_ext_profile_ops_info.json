@@ -2518,9 +2518,21 @@
                         "--target-dtype",
                         "shape",
                         "--tensor-dim-range",
-                        "10,16",
+                        "1,64",
                         "--target-rank",
-                        "1"
+                        "0",
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6"
+                    ],
+                    [
+                        "--target-dtype",
+                        "shape",
+                        "--target-shape",
+                        "1,2147483647"
                     ]
                 ]
             }

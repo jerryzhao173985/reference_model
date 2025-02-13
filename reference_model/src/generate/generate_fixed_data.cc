@@ -89,9 +89,17 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
     }
 
     std::vector<int32_t> inData = cfg.fixedDataInfo.data;
-    const auto T                = numElementsFromShape(cfg.shape);
+    auto T                      = numElementsFromShape(cfg.shape);
     const int64_t inSize        = static_cast<int64_t>(inData.size());
     const bool broadcastMode    = (inSize == 1);
+
+    // Special case for SHAPE of rank 0
+    if (cfg.dataType == DType_SHAPE && cfg.shape.size() == 0)
+    {
+        // There is no data to copy - its a rank 0 shape
+        T = 0;
+    }
+
     // Check data size matches tensor size or it is 1 so that we can broadcast the values
     if (T != inSize && !broadcastMode)
     {

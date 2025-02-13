@@ -1080,6 +1080,25 @@ class TosaTensorValuesGen:
         )
 
     @staticmethod
+    def tvgConstShape(
+        testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
+    ):
+        assert len(shapeList) == 1
+        assert dtypeList[0] == DType.SHAPE
+
+        # Make the chosen shape the data
+        shape = shapeList[0]
+        argsDict["fixed_data"] = [shape]
+        # Set the shape of the data to be rank 1 (or 0)
+        # TODO: Change rank 0 to be shape [0] when serlib and refmodel
+        #       support it - as this would correctly indicate no shape data
+        shapeList = [[len(shape)]] if len(shape) >= 1 else [[]]
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
+
+    @staticmethod
     def tvgConv(testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None):
         if argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
             op = testGen.TOSA_OP_LIST[opName]
