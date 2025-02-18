@@ -3,6 +3,7 @@
 import struct
 from enum import IntEnum
 
+from conformance.tosa_profiles import TosaProfiles
 from tosa.DType import DType
 from tosa.NanPropagationMode import NanPropagationMode
 from tosa.Op import Op
@@ -245,7 +246,6 @@ def get_wrong_output_type(op_name, rng, input_dtype):
                 DType.INT16,
                 DType.INT32,
                 DType.INT48,
-                DType.FP32,
                 DType.BF16,
             )
     else:
@@ -341,3 +341,51 @@ def get_nan_node(args_dict) -> NanPropagationMode:
         or nan_mode == NanPropagationMode.IGNORE
     ), "Invalid NaN mode"
     return nan_mode
+
+
+def get_proext_from_types(dtypesList):
+    """
+    Work out profile and extension(s) from input dtypes.
+    Returns set of profiles_supported and set of extensions_required
+    NOTE: This will not work for every op, such as CAST.
+    """
+    profiles_supported = set()
+    extensions_required = set()
+
+    if DType.INT4 in dtypesList:
+        extensions_required.add(TosaProfiles.TosaExtInt4)
+        profiles_supported.add(TosaProfiles.TosaProINT)
+    if DType.INT48 in dtypesList:
+        extensions_required.add(TosaProfiles.TosaExtInt16)
+        profiles_supported.add(TosaProfiles.TosaProINT)
+    if DType.BF16 in dtypesList:
+        extensions_required.add(TosaProfiles.TosaExtBF16)
+        profiles_supported.add(TosaProfiles.TosaProFP)
+    if DType.FP8E5M2 in dtypesList:
+        extensions_required.add(TosaProfiles.TosaExtFP8E5M2)
+        profiles_supported.add(TosaProfiles.TosaProFP)
+    if DType.FP8E4M3 in dtypesList:
+        extensions_required.add(TosaProfiles.TosaExtFP8E4M3)
+        profiles_supported.add(TosaProfiles.TosaProFP)
+
+    if any([d in dtypesList for d in (DType.FP16, DType.FP32)]):
+        profiles_supported.add(TosaProfiles.TosaProFP)
+    if any(
+        [
+            d in dtypesList
+            for d in (DType.BOOL, DType.INT4, DType.INT8, DType.INT16, DType.INT32)
+        ]
+    ):
+        profiles_supported.add(TosaProfiles.TosaProINT)
+
+    # We are not expecting to support multiple different profiles
+    assert (
+        len(profiles_supported) == 1
+    ), f"Mixed types, not sure which profile for: {[DTYPE_ATTRIBUTES[d]['str'] for d in dtypesList]}"
+
+    # But we are expecting at least 1!
+    assert (
+        profiles_supported
+    ), f"Failed to determine profile or extension from: {[DTYPE_ATTRIBUTES[d]['str'] for d in dtypesList]}"
+
+    return profiles_supported, extensions_required

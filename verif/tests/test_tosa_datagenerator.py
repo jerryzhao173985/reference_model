@@ -52,7 +52,12 @@ JSON_DATAGEN_DOT_PRODUCT = {
                     "shape": [3, 5, 4],
                     "input_pos": 0,
                     "op": "MATMUL",
-                    "dot_product_info": {"s": 0, "ks": 4, "acc_type": "FP32"},
+                    "dot_product_info": {
+                        "s": 0,
+                        "ks": 4,
+                        "acc_type": "FP32",
+                        "other_data_type": "FP32",
+                    },
                 },
                 "input-1": {
                     "generator": "DOT_PRODUCT",
@@ -61,7 +66,12 @@ JSON_DATAGEN_DOT_PRODUCT = {
                     "shape": [3, 4, 6],
                     "input_pos": 1,
                     "op": "MATMUL",
-                    "dot_product_info": {"s": 0, "ks": 4, "acc_type": "FP32"},
+                    "dot_product_info": {
+                        "s": 0,
+                        "ks": 4,
+                        "acc_type": "FP32",
+                        "other_data_type": "FP32",
+                    },
                 },
             },
         }

@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -465,11 +465,18 @@ def main(argv=None):
 
         if not selectionMode:
             # Allow all tests to be selected
-            tests = testList.all()
+            tests = testList.all(
+                profiles_chosen=args.profile,
+                extensions_chosen=args.extension,
+            )
         else:
             # Use the random number generator to shuffle the test list
             # and select the per op tests from it
-            tests = testList.select(ttg.global_rng)
+            tests = testList.select(
+                rng=ttg.global_rng,
+                profiles_chosen=args.profile,
+                extensions_chosen=args.extension,
+            )
 
         if args.list_tests:
             for test in tests:

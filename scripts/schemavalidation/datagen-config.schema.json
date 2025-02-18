@@ -118,6 +118,10 @@
                                     "description": "axis dimension (for reduce_sum)",
                                     "type": "integer",
                                     "minimum": 0
+                                },
+                                "other_data_type": {
+                                    "description": "other input data type (for matmul)",
+                                    "type": "string"
                                 }
                             },
                             "additionalProperties": false,

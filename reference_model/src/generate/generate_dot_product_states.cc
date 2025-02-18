@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -301,10 +301,11 @@ private:
     PrimitiveGenerator _set_data;
 };
 
-float getBoundParameter(const DType& dataType, const DType& accType)
+float getBoundParameter(const DType& dataType, const DType& accType, const DType& otherDataType = DType::DType_UNKNOWN)
 {
     // Work out the bounds parameter value B for the given data and accumulator types
     // Returns value > 0.f on success
+    // Note that otherDataType is DType::UNKNOWN for non-MATMUL ops.
     float B = 0.f;
     if (dataType == DType::DType_FP16)
     {
@@ -325,13 +326,39 @@ float getBoundParameter(const DType& dataType, const DType& accType)
     }
     else if (dataType == DType::DType_FP8E4M3)
     {
-        if (accType == DType::DType_FP16)
-            B = 240.f;    // (1<<8) - (1<<4)
+        if (otherDataType == DType::DType_FP8E4M3 || otherDataType == DType::DType_UNKNOWN)
+        {
+            if (accType == DType::DType_FP16)
+                B = 240.f;    // (1<<8) - (1<<4)
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
+        else if (otherDataType == DType::DType_FP8E5M2)
+        {
+            // mixed types
+            if (accType == DType::DType_FP16)
+                B = 224.f;
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
     }
     else if (dataType == DType::DType_FP8E5M2)
     {
-        if (accType == DType::DType_FP16)
-            B = 224.f;    // (1<<8) - (1<<5)
+        if (otherDataType == DType::DType_FP8E5M2 || otherDataType == DType::DType_UNKNOWN)
+        {
+            if (accType == DType::DType_FP16)
+                B = 224.f;    // (1<<8) - (1<<5)
+            else if (accType == DType::DType_FP32)
+                B = 57344.f;
+        }
+        else if (otherDataType == DType::DType_FP8E4M3)
+        {
+            // mixed types
+            if (accType == DType::DType_FP16)
+                B = 224.f;
+            else if (accType == DType::DType_FP32)
+                B = 448.f;
+        }
     }
     return B;
 }
@@ -349,7 +376,15 @@ std::unique_ptr<IDotProductGenerator> pickDotProductGenerator(const GenerateConf
 
     const DotProductInfo& dpinfo = cfg.dotProductInfo;
 
-    float B = getBoundParameter(cfg.dataType, dpinfo.accType);
+    float B;
+    if (cfg.opType == Op_MATMUL)
+    {
+        B = getBoundParameter(cfg.dataType, dpinfo.accType, static_cast<DType>(dpinfo.otherDataType));
+    }
+    else
+    {
+        B = getBoundParameter(cfg.dataType, dpinfo.accType);
+    }
     if (B > 0.f)
     {
         auto param = cfg.inputPos;

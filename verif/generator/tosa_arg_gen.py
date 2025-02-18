@@ -993,6 +993,10 @@ class TosaTensorValuesGen:
                     info["kernel"] = [int(k) for k in argsDict["kernel"]]
                 if "axis" in argsDict:
                     info["axis"] = int(argsDict["axis"])
+                if "other_data_type" in argsDict:
+                    info["other_data_type"] = gtu.DTYPE_ATTRIBUTES[
+                        argsDict["other_data_type"]
+                    ]["json"]
                 tens_meta["dot_product_info"] = info
 
             elif dg_type == gtu.DataGenType.FULL_RANGE:
@@ -2120,9 +2124,9 @@ class TosaArgGen:
                     if len(shapeList[0]) <= 1:
                         continue
                     arg_str = f"{arg_str}_dyn" if arg_str else "dyn"
-                    gen_args_dict["tags"] = args_dict.get("tags", []) + [
-                        "tosa-ext-dynamic"
-                    ]
+                    gen_args_dict["extensions_required"] = args_dict.get(
+                        "extensions_required", set()
+                    ).add(TosaProfiles.TosaExtDynamic)
                     no_more_special_tests = True
 
                     # Fallback to using initial tests data generator for the
@@ -2718,29 +2722,40 @@ class TosaArgGen:
         return arg_list
 
     @staticmethod
-    def agMatmul(testGen, rng, opName, shapeList, dtype, error_name=None):
+    def agMatmul(testGen, rng, opName, shapeList, dtypes, error_name=None):
+        if error_name == ErrorIf.WrongInputType:
+            # Set both input types as the chosen single type
+            input0_dtype = input1_dtype = dtypes
+        else:
+            assert (
+                len(dtypes) == 4
+            ), "Expected list of input0, input1, input0 zp, input1 zp types"
+            input0_dtype, input1_dtype = dtypes[0:2]
+
         # Get valid accumulate type(s)
-        if dtype == DType.INT8:
+        if input0_dtype == DType.INT8:
             accum_dtypes = [DType.INT32]
-        elif dtype == DType.INT16:
+        elif input0_dtype == DType.INT16:
             accum_dtypes = [DType.INT48]
-        elif dtype == DType.FP16:
+        elif input0_dtype == DType.FP16:
             accum_dtypes = [DType.FP16, DType.FP32]
-        elif dtype == DType.BF16:
+        elif input0_dtype == DType.BF16:
             accum_dtypes = [DType.FP32]
-        elif dtype == DType.FP32:
+        elif input0_dtype == DType.FP32:
             accum_dtypes = [DType.FP32]
-        elif dtype == DType.FP8E4M3 or dtype == DType.FP8E5M2:
+        elif input0_dtype in (DType.FP8E4M3, DType.FP8E5M2):
             accum_dtypes = [DType.FP16]
         elif error_name is None:
-            assert False, f"Invalid I/O DType for MatMul: {DTypeNames[dtype]}"
+            assert False, f"Invalid I/O DType for MatMul: {DTypeNames[input0_dtype]}"
 
         if error_name == ErrorIf.WrongOutputType:
             # Get incorrect output dtype for ErrorIf case
-            accum_dtypes = [gtu.get_wrong_output_type(opName, rng, dtype)]
+            accum_dtypes = [gtu.get_wrong_output_type(opName, rng, input0_dtype)]
         elif error_name == ErrorIf.WrongInputType:
             # Pick some potentially correct output dtype if input type is incorrect
-            accum_dtypes = [DType.INT32]
+            accum_dtypes = (
+                [DType.FP32] if gtu.dtypeIsFloat(input0_dtype) else [DType.INT32]
+            )
 
         # Set up compliance info
         args_dict = {
@@ -2750,13 +2765,24 @@ class TosaArgGen:
                 (shapeList[0][0], shapeList[0][1], shapeList[1][2])
             ),
             "shape": shapeList[0],
+            "other_data_type": input1_dtype,
         }
 
         # Create arg tuple of string and dict
         arg_list = []
+
+        # Go though all supported dtypes, so that we always generate
+        # a deterministic set of tests for MATMUL, we will use
+        # the test select to filter on extension and profile later
         for a in accum_dtypes:
             d = args_dict.copy()
             d["acc_type"] = a
+            valid_dtypes = [input0_dtype, input1_dtype]
+            if error_name != ErrorIf.WrongOutputType:
+                valid_dtypes.append(a)
+            profiles, extensions = gtu.get_proext_from_types(valid_dtypes)
+            d["extensions_required"] = extensions
+            d["profiles_supported"] = profiles
             # Acc type is really out type for MATMUL
             arg_list.append((f"out{testGen.typeStr(a)}", d))
 
@@ -2764,7 +2790,7 @@ class TosaArgGen:
             testGen,
             opName,
             shapeList,
-            dtype,
+            input0_dtype,
             arg_list,
             error_name,
         )
@@ -3269,70 +3295,131 @@ class TosaArgGen:
     def agCast(testGen, rng, opName, shapeList, inDtype, error_name=None):
         arg_list = []
 
-        supported = testGen.args.profile + testGen.args.extension
-        dtypeList = []
+        outDtypeList = []
 
-        # Enumerate the output types here
-        if error_name == ErrorIf.WrongOutputType:
-            dtypeList = TosaErrorIfArgGen.eiCastErrorIf(inDtype)
-        elif inDtype in (DType.INT8, DType.INT16, DType.INT32):
-            if TosaProfiles.TosaProINT in supported:
-                # Get the common list of output types without the input type
-                outDtypes = [DType.BOOL, DType.INT8, DType.INT16, DType.INT32]
-                outDtypes.remove(inDtype)
-                dtypeList.extend(outDtypes)
-            if TosaProfiles.TosaProFP in supported:
-                dtypeList.extend([DType.FP16, DType.FP32])
-            if TosaProfiles.TosaExtBF16 in supported:
-                dtypeList.extend([DType.BF16])
-        elif inDtype == DType.BOOL:
-            if TosaProfiles.TosaProINT in supported:
-                dtypeList.extend([DType.INT8, DType.INT16, DType.INT32])
-        elif inDtype == DType.FP16:
-            if TosaProfiles.TosaProFP in supported:
-                dtypeList.extend([DType.INT8, DType.INT16, DType.INT32, DType.FP32])
-            if TosaProfiles.TosaExtFP8E4M3 in supported:
-                dtypeList.extend([DType.FP8E4M3])
-            if TosaProfiles.TosaExtFP8E5M2 in supported:
-                dtypeList.extend([DType.FP8E5M2])
-        elif inDtype == DType.BF16:
-            if TosaProfiles.TosaExtBF16 in supported:
-                dtypeList.extend([DType.INT8, DType.INT16, DType.INT32, DType.FP32])
-                # Need EXT-BF16 and the EXT-FP8 extensions
-                if TosaProfiles.TosaExtFP8E4M3 in supported:
-                    dtypeList.extend([DType.FP8E4M3])
-                if TosaProfiles.TosaExtFP8E5M2 in supported:
-                    dtypeList.extend([DType.FP8E5M2])
-        elif inDtype == DType.FP32:
-            if TosaProfiles.TosaProFP in supported:
-                dtypeList.extend([DType.INT8, DType.INT16, DType.INT32, DType.FP16])
-            if TosaProfiles.TosaExtBF16 in supported:
-                dtypeList.extend([DType.BF16])
-            if TosaProfiles.TosaExtFP8E4M3 in supported:
-                dtypeList.extend([DType.FP8E4M3])
-            if TosaProfiles.TosaExtFP8E5M2 in supported:
-                dtypeList.extend([DType.FP8E5M2])
-        elif inDtype == DType.FP8E4M3:
-            if TosaProfiles.TosaExtFP8E4M3 in supported:
-                dtypeList.extend([DType.FP16, DType.FP32])
-                if TosaProfiles.TosaExtBF16 in supported:
-                    dtypeList.extend([DType.BF16])
-        elif inDtype == DType.FP8E5M2:
-            if TosaProfiles.TosaExtFP8E5M2 in supported:
-                dtypeList.extend([DType.FP16, DType.FP32])
-                if TosaProfiles.TosaExtBF16 in supported:
-                    dtypeList.extend([DType.BF16])
-        elif error_name == ErrorIf.WrongInputType:
-            # Pick some potentially correct output type for incorrect input type
-            dtypeList = [DType.BOOL, DType.INT8, DType.INT16, DType.FP32]
+        # Work out the output types we should look at
+        if error_name == ErrorIf.WrongInputType:
+            # Pick a potentially correct output type for incorrect input type
+            outDtypeList = [DType.INT8]
+        elif error_name == ErrorIf.WrongOutputType:
+            # Try all of the usable types!
+            outDtypeList = gtu.usableDTypes()
         else:
-            raise Exception(
-                "OpCast: Unexpected input dtype - {}".format(testGen.typeStr(inDtype))
-            )
+            # All supported dtypes, so that we always generate a
+            # deterministic set of tests for CAST, we will use the
+            # test select to filter on extension and profile later
+            outDtypeList = testGen.TOSA_OP_LIST[opName]["types"]
 
-        for dtype in dtypeList:
+        for outDtype in outDtypeList:
+            profiles = []
+            extensions = []
+
+            if error_name != ErrorIf.WrongInputType:
+                # Check if we can CAST to this out type
+                unsupported = TosaErrorIfArgGen.eiCastWrongOutputType(inDtype, outDtype)
+
+                if error_name == ErrorIf.WrongOutputType:
+                    if not unsupported:
+                        # Supported output for error_if - skip
+                        continue
+                elif unsupported:
+                    # Skip CASTs that are not supported
+                    continue
+
+            # Set profiles and extensions required so that filtering
+            # of tests takes place as part of test select
+            if inDtype in (DType.INT8, DType.INT16, DType.INT32):
+                if (
+                    outDtype in (DType.BOOL, DType.INT8, DType.INT16, DType.INT32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProINT]
+                elif outDtype in (DType.FP16, DType.FP32):
+                    profiles = [TosaProfiles.TosaProFP]
+                elif outDtype == DType.BF16:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtBF16]
+            elif inDtype == DType.BOOL:
+                if (
+                    outDtype in (DType.INT8, DType.INT16, DType.INT32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProINT]
+            elif inDtype in (DType.FP16, DType.FP32):
+                if (
+                    outDtype
+                    in (DType.INT8, DType.INT16, DType.INT32, DType.FP16, DType.FP32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProFP]
+                elif outDtype == DType.FP8E4M3:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtFP8E4M3]
+                elif outDtype == DType.FP8E5M2:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtFP8E5M2]
+                elif inDtype == DType.FP32 and outDtype == DType.BF16:
+                    # FP32 special case
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtBF16]
+            elif inDtype == DType.BF16:
+                if (
+                    outDtype in (DType.INT8, DType.INT16, DType.INT32, DType.FP32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtBF16]
+                elif outDtype == DType.FP8E4M3:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [
+                        TosaProfiles.TosaExtBF16,
+                        TosaProfiles.TosaExtFP8E4M3,
+                    ]
+                elif outDtype == DType.FP8E5M2:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [
+                        TosaProfiles.TosaExtBF16,
+                        TosaProfiles.TosaExtFP8E5M2,
+                    ]
+            elif inDtype == DType.FP8E4M3:
+                if (
+                    outDtype in (DType.FP16, DType.FP32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtFP8E4M3]
+                elif outDtype == DType.BF16:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [
+                        TosaProfiles.TosaExtBF16,
+                        TosaProfiles.TosaExtFP8E4M3,
+                    ]
+            elif inDtype == DType.FP8E5M2:
+                if (
+                    outDtype in (DType.FP16, DType.FP32)
+                    or error_name == ErrorIf.WrongOutputType
+                ):
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [TosaProfiles.TosaExtFP8E5M2]
+                elif outDtype == DType.BF16:
+                    profiles = [TosaProfiles.TosaProFP]
+                    extensions = [
+                        TosaProfiles.TosaExtBF16,
+                        TosaProfiles.TosaExtFP8E5M2,
+                    ]
+            assert (
+                profiles or error_name == ErrorIf.WrongInputType
+            ), f"Failed to set up profile/extensions for CAST dtypes - in:{inDtype} out:{outDtype}"
+
             arg_list.append(
-                ("out{}".format(testGen.typeStr(dtype)), {"out_type": dtype})
+                (
+                    "out{}".format(testGen.typeStr(outDtype)),
+                    {
+                        "out_type": outDtype,
+                        "profiles_supported": set(profiles),
+                        "extensions_required": set(extensions),
+                    },
+                )
             )
 
         # Now add data generator types
@@ -3430,7 +3517,14 @@ class TosaArgGen:
             else:
                 output_zp = 0
 
-            roundStr = "S" if rounding_mode == RoundingMode.SINGLE_ROUND else "D"
+            if rounding_mode == RoundingMode.SINGLE_ROUND:
+                roundStr = "S"
+                extensions = []
+            else:
+                assert rounding_mode == RoundingMode.DOUBLE_ROUND
+                roundStr = "D"
+                extensions = [TosaProfiles.TosaExtDoubleRound]
+
             return (
                 "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
                     testGen.typeStr(outDtype),
@@ -3441,6 +3535,7 @@ class TosaArgGen:
                     int(output_unsigned),
                 ),
                 {
+                    "extensions_required": set(extensions),
                     "output_dtype": outDtype,
                     "scale": scale32,
                     "rounding_mode": rounding_mode,
@@ -3531,11 +3626,12 @@ class TosaArgGen:
                         elif error_name == ErrorIf.ScaleNotTrue and scale32:
                             continue
 
-                        rounding_modes = [RoundingMode.SINGLE_ROUND]
-                        if TosaProfiles.TosaExtDoubleRound in testGen.args.extension:
-                            rounding_modes.append(RoundingMode.DOUBLE_ROUND)
-
-                        for rounding_mode in rounding_modes:
+                        # Always create all the list of tests for rounding modes
+                        # this will be pruned to the chosen extensions in test select
+                        for rounding_mode in (
+                            RoundingMode.SINGLE_ROUND,
+                            RoundingMode.DOUBLE_ROUND,
+                        ):
                             if (
                                 error_name == ErrorIf.ScaleNotTrue
                                 and not rounding_mode == RoundingMode.DOUBLE_ROUND
