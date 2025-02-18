@@ -1137,9 +1137,10 @@
             "random_const_inputs"
         ],
         "generation": {
-            "input_int_or_bool": {
-                "supports_all": [
-                    "tosa-pro-int"
+            "tosa-pro-int-pro-fp": {
+                "supports_any": [
+                    "tosa-pro-int",
+                    "tosa-pro-fp"
                 ],
                 "generator_args": [
                     [
@@ -1147,7 +1148,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
@@ -1159,7 +1159,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "bool",
                         "--tensor-dim-range",
                         "16,64",
                         "--target-rank",
@@ -1172,7 +1171,6 @@
                         "--target-dtype",
                         "int16",
                         "int32",
-                        "bool",
                         "--tensor-dim-range",
                         "1,16",
                         "--target-rank",
@@ -1193,7 +1191,6 @@
                         "int8",
                         "int16",
                         "int32",
-                        "bool",
                         "--tensor-dim-range",
                         "1,10",
                         "--target-rank",
@@ -1201,7 +1198,36 @@
                     ]
                 ]
             },
-            "input_fp32_or_fp16": {
+            "tosa-pro-int": {
+                "supports_all": [
+                    "tosa-pro-int"
+                ],
+                "generator_args": [
+                    [
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "16,64",
+                        "--target-rank",
+                        "3"
+                    ],
+                    [
+                        "--no-special-tests",
+                        "--target-dtype",
+                        "bool",
+                        "--tensor-dim-range",
+                        "2,27",
+                        "--target-rank",
+                        "0",
+                        "1",
+                        "2",
+                        "4",
+                        "5",
+                        "6"
+                    ]
+                ]
+            },
+            "tosa-pro-fp": {
                 "supports_all": [
                     "tosa-pro-fp"
                 ],
@@ -7448,11 +7474,11 @@
                 "permutes": [
                     "rank",
                     "type",
+                    "rounding_mode",
                     "output_dtype"
                 ],
                 "full_params": [
                     "scale",
-                    "rounding_mode",
                     "per_channel",
                     "multiplier",
                     "shift",

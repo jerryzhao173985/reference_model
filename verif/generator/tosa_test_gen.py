@@ -3836,14 +3836,15 @@ class TosaTestGen:
             ),
             "qgen": TosaQuantGen.qgMatmul,
             "types": [
+                # Input0, Input1, Input0 zp, Input1 zp
                 [DType.INT8, DType.INT8, DType.INT8, DType.INT8],
                 [DType.FP16, DType.FP16, DType.FP16, DType.FP16],
                 [DType.FP32, DType.FP32, DType.FP32, DType.FP32],
                 [DType.BF16, DType.BF16, DType.BF16, DType.BF16],
                 [DType.FP8E4M3, DType.FP8E4M3, DType.FP8E4M3, DType.FP8E4M3],
                 [DType.FP8E5M2, DType.FP8E5M2, DType.FP8E5M2, DType.FP8E5M2],
-                [DType.FP8E4M3, DType.FP8E5M2, DType.FP8E4M3, DType.FP8E4M3],
-                [DType.FP8E5M2, DType.FP8E4M3, DType.FP8E5M2, DType.FP8E5M2],
+                [DType.FP8E4M3, DType.FP8E5M2, DType.FP8E4M3, DType.FP8E5M2],
+                [DType.FP8E5M2, DType.FP8E4M3, DType.FP8E5M2, DType.FP8E4M3],
                 [DType.INT16, DType.INT16, DType.INT16, DType.INT16],
             ],
             "error_if_validators": (
@@ -5784,64 +5785,10 @@ class OutputShaper:
         # a: N, H, C
         # b: N, C, W
         # out: N, H, W
-
         output_shape = [a.shape[0], a.shape[1], b.shape[2]]
 
-        if error_name == ErrorIf.WrongOutputType:
-            if a.dtype == DType.INT8:
-                incorrect_types = (
-                    DType.INT4,
-                    DType.INT8,
-                    DType.INT16,
-                    DType.INT48,
-                    DType.FP32,
-                    DType.FP16,
-                    DType.BF16,
-                    DType.FP8E4M3,
-                    DType.FP8E5M2,
-                )
-            elif a.dtype == DType.INT16:
-                incorrect_types = (
-                    DType.INT4,
-                    DType.INT8,
-                    DType.INT16,
-                    DType.INT32,
-                    DType.FP32,
-                    DType.FP16,
-                    DType.BF16,
-                    DType.FP8E4M3,
-                    DType.FP8E5M2,
-                )
-            elif a.dtype == DType.FP8E4M3 or a.dtype == DType.FP8E5M2:
-                incorrect_types = (
-                    DType.INT4,
-                    DType.INT8,
-                    DType.INT16,
-                    DType.INT32,
-                    DType.INT48,
-                    DType.FP32,
-                    DType.BF16,
-                    DType.FP8E4M3,
-                    DType.FP8E5M2,
-                )
-            elif (
-                a.dtype == DType.FP32 or a.dtype == DType.FP16 or a.dtype == DType.BF16
-            ):
-                incorrect_types = (
-                    DType.INT4,
-                    DType.INT8,
-                    DType.INT16,
-                    DType.INT32,
-                    DType.INT48,
-                    DType.FP8E4M3,
-                    DType.FP8E5M2,
-                )
-            out_dtype = rng.choice(a=incorrect_types)
-        elif error_name == ErrorIf.WrongInputType:
-            # Pick some potentially correct output dtype if input type is incorrect
-            out_dtype = DType.INT32
-        else:
-            out_dtype = accum_dtype  # Validated in arg_gen
+        # Set up correctly by agMatmul (or incorrectly for ERROR_IF tests)
+        out_dtype = accum_dtype
 
         return ser.addOutput(output_shape, out_dtype)
 

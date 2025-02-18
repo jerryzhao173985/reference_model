@@ -702,11 +702,17 @@ def parse_args(argv=None):
 
     if PROFILES_EXTENSIONS_ALL in args.profile:
         args.profile = TosaProfiles.profiles()
+    else:
+        # Remove duplicates from the list
+        args.profile = list(set(args.profile))
 
     if PROFILES_EXTENSIONS_ALL in args.extension:
         args.extension = TosaProfiles.extensions()
     elif PROFILES_EXTENSIONS_NONE in args.extension:
         args.extension = []
+    else:
+        # Remove duplicates from the list
+        args.extension = list(set(args.extension))
 
     return args
 
@@ -814,7 +820,8 @@ def main():
                     f"{action} conformance tests for TOSA {profile_ext} profile/extension"
                 )
 
-                for op in operators:
+                # Use a set to ignore duplicate operators chosen
+                for op in set(operators):
                     logger.info(f"OPERATOR: {op}")
                     if op not in test_params:
                         logger.warning(

@@ -56,7 +56,7 @@ JSON_DATAGEN_DOT_PRODUCT = {
                         "s": 0,
                         "ks": 4,
                         "acc_type": "FP32",
-                        "otherInputType": "FP32",
+                        "other_data_type": "FP32",
                     },
                 },
                 "input-1": {
@@ -70,7 +70,7 @@ JSON_DATAGEN_DOT_PRODUCT = {
                         "s": 0,
                         "ks": 4,
                         "acc_type": "FP32",
-                        "otherInputType": "FP32",
+                        "other_data_type": "FP32",
                     },
                 },
             },

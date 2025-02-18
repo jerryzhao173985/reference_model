@@ -328,34 +328,73 @@ class TosaErrorIfArgGen:
             return start, size
 
     @staticmethod
-    def eiCastErrorIf(input_dtype):
-        if input_dtype in [DType.BOOL]:
-            outputDType = [
-                DType.BOOL,
-                DType.INT48,
-                DType.FP32,
-                DType.FP16,
-                DType.BF16,
-                DType.FP8E4M3,
-                DType.FP8E5M2,
-            ]
-        elif input_dtype in [DType.FP32]:
-            outputDType = [DType.BOOL, DType.INT48, DType.FP32]
-        elif input_dtype in [DType.FP16, DType.BF16]:
-            outputDType = [DType.BOOL, DType.INT48]
-        elif input_dtype in [DType.INT8, DType.INT16, DType.INT32]:
-            outputDType = [DType.INT48]
-        elif input_dtype in [DType.FP8E4M3, DType.FP8E5M2]:
-            outputDType = [
-                DType.BOOL,
-                DType.INT8,
-                DType.INT16,
-                DType.INT32,
-                DType.INT48,
-            ]
+    def eiCastWrongOutputType(input_dtype, output_dtype):
+        if input_dtype in (DType.BOOL,):
+            unsupported = gtu.allDTypes(excludes=(DType.INT8, DType.INT16, DType.INT32))
+        elif input_dtype in (DType.FP32,):
+            unsupported = gtu.allDTypes(
+                excludes=(
+                    DType.INT8,
+                    DType.INT16,
+                    DType.INT32,
+                    DType.FP16,
+                    DType.BF16,
+                    DType.FP8E4M3,
+                    DType.FP8E5M2,
+                )
+            )
+        elif input_dtype in (DType.FP16, DType.BF16):
+            unsupported = gtu.allDTypes(
+                excludes=(
+                    DType.INT8,
+                    DType.INT16,
+                    DType.INT32,
+                    DType.FP32,
+                    DType.FP8E4M3,
+                    DType.FP8E5M2,
+                )
+            )
+        elif input_dtype in (DType.INT8,):
+            unsupported = gtu.allDTypes(
+                excludes=(
+                    DType.BOOL,
+                    DType.INT16,
+                    DType.INT32,
+                    DType.FP32,
+                    DType.FP16,
+                    DType.BF16,
+                )
+            )
+        elif input_dtype in (DType.INT16,):
+            unsupported = gtu.allDTypes(
+                excludes=(
+                    DType.BOOL,
+                    DType.INT8,
+                    DType.INT32,
+                    DType.FP32,
+                    DType.FP16,
+                    DType.BF16,
+                )
+            )
+        elif input_dtype in (DType.INT32,):
+            unsupported = gtu.allDTypes(
+                excludes=(
+                    DType.BOOL,
+                    DType.INT8,
+                    DType.INT16,
+                    DType.FP32,
+                    DType.FP16,
+                    DType.BF16,
+                )
+            )
+        elif input_dtype in (DType.FP8E4M3, DType.FP8E5M2):
+            unsupported = gtu.allDTypes(excludes=(DType.FP32, DType.FP16, DType.BF16))
         else:
-            assert False, f"input_dtype ({input_dtype}) not supported"
-        return outputDType
+            # Input type unsupported, so all output types are unsupported
+            unsupported = gtu.allDTypes()
+
+        # Check if the output type is unsupported by CAST
+        return output_dtype in unsupported
 
 
 class TosaErrorValidator:
@@ -551,95 +590,10 @@ class TosaErrorValidator:
                     error_result = True
 
             elif op["op"] == Op.CAST:
-                if (
-                    (
-                        input_dtype == DType.BOOL
-                        and output_dtype not in [DType.INT8, DType.INT16, DType.INT32]
+                if input_dtype in op["types"]:
+                    error_result = TosaErrorIfArgGen.eiCastWrongOutputType(
+                        input_dtype, output_dtype
                     )
-                    or (
-                        input_dtype == DType.INT8
-                        and output_dtype
-                        not in [
-                            DType.BOOL,
-                            DType.INT16,
-                            DType.INT32,
-                            DType.FP32,
-                            DType.FP16,
-                            DType.BF16,
-                        ]
-                    )
-                    or (
-                        input_dtype == DType.INT16
-                        and output_dtype
-                        not in [
-                            DType.BOOL,
-                            DType.INT8,
-                            DType.INT32,
-                            DType.FP32,
-                            DType.FP16,
-                            DType.BF16,
-                        ]
-                    )
-                    or (
-                        input_dtype == DType.INT32
-                        and output_dtype
-                        not in [
-                            DType.BOOL,
-                            DType.INT8,
-                            DType.INT16,
-                            DType.FP32,
-                            DType.FP16,
-                            DType.BF16,
-                        ]
-                    )
-                    or (
-                        input_dtype == DType.FP16
-                        and output_dtype
-                        not in [
-                            DType.INT8,
-                            DType.INT16,
-                            DType.INT32,
-                            DType.FP32,
-                            DType.FP8E4M3,
-                            DType.FP8E5M2,
-                        ]
-                    )
-                    or (
-                        input_dtype == DType.BF16
-                        and output_dtype
-                        not in [
-                            DType.INT8,
-                            DType.INT16,
-                            DType.INT32,
-                            DType.FP32,
-                            DType.FP8E4M3,
-                            DType.FP8E5M2,
-                        ]
-                    )
-                    or (
-                        input_dtype == DType.FP32
-                        and output_dtype
-                        not in [
-                            DType.INT8,
-                            DType.INT16,
-                            DType.INT32,
-                            DType.FP16,
-                            DType.BF16,
-                            DType.FP8E4M3,
-                            DType.FP8E5M2,
-                        ]
-                    )
-                    or (
-                        input_dtype in [DType.FP8E4M3, DType.FP8E5M2]
-                        and output_dtype
-                        not in [
-                            DType.FP16,
-                            DType.BF16,
-                            DType.FP32,
-                        ]
-                    )
-                ):
-                    error_result = True
 
             elif op["op"] in [Op.FFT2D, Op.RFFT2D]:
                 if not all([ty == input_dtype for ty in output_dtype]):

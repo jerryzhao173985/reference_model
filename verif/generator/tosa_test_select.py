@@ -1,4 +1,4 @@
-# Copyright (c) 2024, ARM Limited.
+# Copyright (c) 2024-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import copy
 import logging
@@ -97,6 +97,16 @@ class Test:
 
     def isSpecialTest(self):
         return gtu.isSpecialTest(self.argsDict["td_type"])
+
+    def isSupported(self, profiles, extensions):
+        profiles_supported = self.argsDict.get("profiles_supported", set())
+        extensions_required = self.argsDict.get("extensions_required", set())
+        return (
+            not profiles_supported or any([p in profiles for p in profiles_supported])
+        ) and (
+            not extensions_required
+            or all([e in extensions for e in extensions_required])
+        )
 
 
 def _get_selection_info_from_op(op, selectionCriteria, item, default):
@@ -347,7 +357,7 @@ class TestList:
             )
         self.opLists[test.opName].add(test)
 
-    def _get_tests(self, selectMode, rng):
+    def _get_tests(self, selectMode, rng, profiles, extensions):
         selection = []
 
         for opList in self.opLists.values():
@@ -357,12 +367,24 @@ class TestList:
                 tests = opList.all()
             selection.extend(tests)
 
+        # Filter out the tests that rely on profiles or extensions that are not
+        # supported
+        # Neither list means don't perform this filter
+        # Perform this after the initial selection to make sure the test selection
+        # is not different based on extension chosen
+        assert (profiles is None and extensions is None) or (
+            profiles is not None and extensions is not None
+        ), "Only supplied one of profiles or extensions chosen - need both or neither"
+        if profiles:
+            selection = [t for t in selection if t.isSupported(profiles, extensions)]
+
         if selectMode:
             selection = sorted(selection)
+
         return selection
 
-    def select(self, rng=None):
-        return self._get_tests(True, rng)
+    def select(self, rng=None, profiles_chosen=None, extensions_chosen=None):
+        return self._get_tests(True, rng, profiles_chosen, extensions_chosen)
 
-    def all(self):
-        return self._get_tests(False, None)
+    def all(self, profiles_chosen=None, extensions_chosen=None):
+        return self._get_tests(False, None, profiles_chosen, extensions_chosen)
