@@ -77,13 +77,7 @@ The *TOSA Reference Model* build can be prepared by creating makefiles using CMa
 ``` bash
 mkdir -p build
 cd build
-cmake ..
-```
-
-Optionally, `-DCMAKE_BUILD_TYPE=Debug` can be used on the `cmake`
-command to create a debug build.  Next compile using `make`:
-
-``` bash
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 
