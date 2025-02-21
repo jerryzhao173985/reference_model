@@ -765,7 +765,7 @@ TEST_CASE("positive - relative")
 template <typename FP_TYPE>
 void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp = 1.0)
 {
-    DType dtype               = NativeType2Dtype<FP_TYPE>();
+    DType dtype               = NativeType2DType<FP_TYPE>();
     tosa_datatype_t tosaDtype = DType2tosa_datatype_t(dtype);
 
     std::string jsonCfg = R"({

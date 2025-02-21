@@ -29,7 +29,7 @@ using namespace TosaReference;
 using namespace half_float;
 
 template <typename T>
-constexpr DType NativeType2Dtype()
+constexpr DType NativeType2DType()
 {
     if constexpr (std::is_same<T, bool>::value)
         return DType_BOOL;
