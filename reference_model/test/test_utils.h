@@ -35,7 +35,7 @@ using binary16 = cfloat_advanced<16, 5, float_support::AllFeats>;
 using bfloat16 = cfloat_advanced<16, 8, float_support::AllFeats>;
 
 template <typename T>
-constexpr DType NativeType2Dtype()
+constexpr DType NativeType2DType()
 {
     if constexpr (std::is_same<T, bool>::value)
         return DType_BOOL;

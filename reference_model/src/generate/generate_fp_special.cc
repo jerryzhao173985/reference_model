@@ -75,6 +75,8 @@ const TestValues powTestVals{ { SValue(SVE::RndFloat, SVE::Min, SVE::Max), SValu
                               { SValue(SVE::Max), SValue(SVE::RndEvenInteger, SVE::One, SVE::Ten) },
                               { SValue(SVE::Zero), SValue(SVE::One) },
                               { SValue(SVE::Zero), SValue(SVE::Two) },
+                              { SValue(SVE::Zero), SValue(SVE::Max) },
+                              { SValue(SVE::Ten), SValue(SVE::Zero) },
                               { SValue(SVE::Max), SValue(SVE::Zero) } };
 
 const TestValues minMaxTestVals{ { SValue(SVE::Zero), -SValue(SVE::Zero) },

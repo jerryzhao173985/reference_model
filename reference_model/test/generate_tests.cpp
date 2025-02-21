@@ -2163,7 +2163,7 @@ void special_generate_INT(const std::string tosaName,
     })";
 
     ;
-    DType dtype = NativeType2Dtype<INT_TYPE>();
+    DType dtype = NativeType2DType<INT_TYPE>();
 
     update_json_template(jsonCfg, "_OP_", opStr);
     update_json_template(jsonCfg, "_START_", startIndexStr);
@@ -2796,7 +2796,7 @@ void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t
         }
     })";
 
-    DType dtype = NativeType2Dtype<TYPE>();
+    DType dtype = NativeType2DType<TYPE>();
     update_json_template(jsonCfg, "_TYPE_", EnumNameDType(dtype));
     update_json_template(jsonCfg, "_SHAPE_", numbers_to_string(shape));
     update_json_template(jsonCfg, "_DATA_", numbers_to_string(values));
