@@ -2187,12 +2187,12 @@ void special_generate_INT(const std::string tosaName,
     update_json_template(jsonCfg, "_START_", startIndexStr);
     std::string dtypeStr(EnumNameDType(dtype));
     std::string unsignedStr;
-    if (dtypeStr == "UINT16")
+    if (std::is_same<INT_TYPE, uint16_t>::value)
     {
         dtypeStr    = "INT16";
         unsignedStr = "true";
     }
-    else if (dtypeStr == "UINT8")
+    else if (std::is_same<INT_TYPE, uint8_t>::value)
     {
         dtypeStr    = "INT8";
         unsignedStr = "true";

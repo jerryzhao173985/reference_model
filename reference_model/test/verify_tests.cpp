@@ -46,8 +46,6 @@ tosa_datatype_t DType2tosa_datatype_t(DType dtype)
     {
         case DType_BOOL:
             return tosa_datatype_bool_t;
-        case DType_UINT8:
-            return tosa_datatype_uint8_t;
         case DType_INT4:
             return tosa_datatype_int4_t;
         case DType_INT8:
@@ -60,8 +58,6 @@ tosa_datatype_t DType2tosa_datatype_t(DType dtype)
             return tosa_datatype_int48_t;
         case DType_FP32:
             return tosa_datatype_fp32_t;
-        case DType_UINT16:
-            return tosa_datatype_uint16_t;
         case DType_FP16:
             return tosa_datatype_fp16_t;
         case DType_BF16:

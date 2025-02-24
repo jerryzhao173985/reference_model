@@ -113,8 +113,8 @@ class TypeChecker
 public:
     static bool is_integer(DType dtype)
     {
-        if (dtype == DType_INT4 || dtype == DType_INT8 || dtype == DType_UINT8 || dtype == DType_INT16 ||
-            dtype == DType_UINT16 || dtype == DType_INT32 || dtype == DType_INT48)
+        if (dtype == DType_INT4 || dtype == DType_INT8 || dtype == DType_INT16 || dtype == DType_INT32 ||
+            dtype == DType_INT48)
         {
             return true;
         }

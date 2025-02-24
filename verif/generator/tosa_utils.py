@@ -23,9 +23,7 @@ DTYPE_ATTRIBUTES = {
     DType.BOOL: {"str": "b", "width": 1, "fullset": 2, "json": "BOOL"},
     DType.INT4: {"str": "i4", "width": 4, "fullset": 16, "json": "INT4"},
     DType.INT8: {"str": "i8", "width": 8, "fullset": 256, "json": "INT8"},
-    DType.UINT8: {"str": "u8", "width": 8, "fullset": 256, "json": "UINT8"},
     DType.INT16: {"str": "i16", "width": 16, "fullset": 65536, "json": "INT16"},
-    DType.UINT16: {"str": "u16", "width": 16, "fullset": 65536, "json": "UINT16"},
     DType.INT32: {"str": "i32", "width": 32, "fullset": 1 << 32, "json": "INT32"},
     DType.INT48: {"str": "i48", "width": 48, "fullset": 1 << 48, "json": "INT48"},
     DType.SHAPE: {"str": "s", "width": 64, "fullset": 1 << 64, "json": "SHAPE"},
@@ -169,7 +167,7 @@ def allDTypes(*, excludes=None):
 def usableDTypes(*, excludes=None):
     """Get a set of usable DType values, optionally excluding some values.
 
-    Excludes uncommon types (DType.UNKNOWN, DType.UINT16, DType.UINT8) in
+    Excludes uncommon types (DType.UNKNOWN) in
     addition to the excludes specified by the caller, as the serializer lib
     does not support them.
     If you wish to include 'UNKNOWN', 'UINT8' or 'UINT16' use allDTypes
@@ -181,7 +179,7 @@ def usableDTypes(*, excludes=None):
     Returns:
         A set of DType values
     """
-    omit = {DType.UNKNOWN, DType.UINT8, DType.UINT16, DType.SHAPE}
+    omit = {DType.UNKNOWN, DType.SHAPE}
     omit.update(excludes if excludes else ())
     return allDTypes(excludes=omit)
 

@@ -54,8 +54,6 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
             return EnumNameDType(DType_UNKNOWN);
         case TOSA_REF_TYPE_BOOL:
             return EnumNameDType(DType_BOOL);
-        case TOSA_REF_TYPE_UINT8:
-            return EnumNameDType(DType_UINT8);
         case TOSA_REF_TYPE_INT4:
             return EnumNameDType(DType_INT4);
         case TOSA_REF_TYPE_INT8:
@@ -68,8 +66,6 @@ inline const char* EnumNameTOSAREFTYPE(TOSA_REF_TYPE e)
             return EnumNameDType(DType_INT48);
         case TOSA_REF_TYPE_FP32:
             return EnumNameDType(DType_FP32);
-        case TOSA_REF_TYPE_UINT16:
-            return EnumNameDType(DType_UINT16);
         case TOSA_REF_TYPE_FP16:
             return EnumNameDType(DType_FP16);
         case TOSA_REF_TYPE_BF16:
@@ -95,8 +91,6 @@ inline constexpr TOSA_REF_TYPE DType2RefType(const DType dtype)
     {
         case DType_BOOL:
             return TOSA_REF_TYPE_BOOL;
-        case DType_UINT8:
-            return TOSA_REF_TYPE_UINT8;
         case DType_INT4:
             return TOSA_REF_TYPE_INT4;
         case DType_INT8:
@@ -109,8 +103,6 @@ inline constexpr TOSA_REF_TYPE DType2RefType(const DType dtype)
             return TOSA_REF_TYPE_INT48;
         case DType_FP32:
             return TOSA_REF_TYPE_FP32;
-        case DType_UINT16:
-            return TOSA_REF_TYPE_UINT16;
         case DType_FP16:
             return TOSA_REF_TYPE_FP16;
         case DType_BF16:
@@ -179,8 +171,6 @@ constexpr bool IsFloat()
         case TOSA_REF_TYPE_INT16:
         case TOSA_REF_TYPE_INT32:
         case TOSA_REF_TYPE_INT48:
-        case TOSA_REF_TYPE_UINT8:
-        case TOSA_REF_TYPE_UINT16:
             return false;
 
         default:
@@ -200,10 +190,6 @@ constexpr bool IsSignedInt()
         case TOSA_REF_TYPE_INT32:
         case TOSA_REF_TYPE_INT48:
             return true;
-
-        case TOSA_REF_TYPE_UINT8:
-        case TOSA_REF_TYPE_UINT16:
-            return false;
 
         case TOSA_REF_TYPE_BOOL:
         case TOSA_REF_TYPE_FP64:

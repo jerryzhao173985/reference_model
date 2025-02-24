@@ -105,10 +105,9 @@ bool parseCmdLine(int argc,
 DType mapToDType(const std::string dataType)
 {
     static std::map<std::string, DType> typeMap = {
-        { "BOOL", DType_BOOL },   { "INT4", DType_INT4 },   { "INT8", DType_INT8 },       { "UINT16", DType_UINT16 },
-        { "INT16", DType_INT16 }, { "INT32", DType_INT32 }, { "INT48", DType_INT48 },     { "FP16", DType_FP16 },
-        { "BF16", DType_BF16 },   { "FP32", DType_FP32 },   { "FP8E4M3", DType_FP8E4M3 }, { "FP8E5M2", DType_FP8E5M2 },
-        { "UINT8", DType_UINT8 }, { "SHAPE", DType_SHAPE },
+        { "BOOL", DType_BOOL },   { "INT4", DType_INT4 },       { "INT8", DType_INT8 },       { "INT16", DType_INT16 },
+        { "INT32", DType_INT32 }, { "INT48", DType_INT48 },     { "FP16", DType_FP16 },       { "BF16", DType_BF16 },
+        { "FP32", DType_FP32 },   { "FP8E4M3", DType_FP8E4M3 }, { "FP8E5M2", DType_FP8E5M2 }, { "SHAPE", DType_SHAPE },
     };
 
     if (typeMap.count(dataType))
