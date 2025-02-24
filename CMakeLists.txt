@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 
-# Copyright (c) 2023-2024, ARM Limited.
+# Copyright (c) 2023-2025, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -29,6 +29,10 @@ option(FLATBUFFERS_DIR "Location where the FlatBuffers 'include' and 'lib' folde
 option(EIGEN_DIR "Location where the Eigen folder is found" Off)
 option(HALF_DIR "Location where the Half folder is found" Off)
 option(DOCTEST_DIR "Location where the doctest folder is found (If building unit tests)" Off)
+
+if(MSVC)
+  add_compile_options("/Zc:preprocessor")
+endif()
 
 if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
