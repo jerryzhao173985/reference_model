@@ -131,12 +131,8 @@ class TosaRandomGenerator(np.random.Generator):
             return np.int8(self.integers(low=low, high=high, size=shape))
         elif dtype == DType.INT8:
             return np.int8(self.integers(low=low, high=high, size=shape))
-        elif dtype == DType.UINT8:
-            return np.uint8(self.integers(low=low, high=high, size=shape))
         elif dtype == DType.INT16:
             return np.int16(self.integers(low=low, high=high, size=shape))
-        elif dtype == DType.UINT16:
-            return np.uint16(self.integers(low=low, high=high, size=shape))
         elif dtype in (DType.INT48, DType.SHAPE):
             return np.int64(self.integers(low=low, high=high, size=shape))
         elif dtype in (

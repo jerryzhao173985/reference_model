@@ -163,11 +163,9 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, f16databuf);
             break;
         case DType_INT32:
-        case DType_UINT8:
         case DType_INT4:
         case DType_INT8:
         case DType_INT16:
-        case DType_UINT16:
             i32databuf = (int32_t*)calloc(sizeof(int32_t), elements);
             ASSERT_MEM(i32databuf);
 

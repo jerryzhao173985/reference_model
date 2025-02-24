@@ -30,8 +30,6 @@ NLOHMANN_JSON_SERIALIZE_ENUM(DType,
                                  { DType::DType_INT16, "INT16" },
                                  { DType::DType_INT32, "INT32" },
                                  { DType::DType_INT48, "INT48" },
-                                 { DType::DType_UINT8, "UINT8" },
-                                 { DType::DType_UINT16, "UINT16" },
                                  { DType::DType_FP16, "FP16" },
                                  { DType::DType_BF16, "BF16" },
                                  { DType::DType_FP32, "FP32" },
@@ -321,12 +319,10 @@ size_t tensorSizeInBytesFromType(int64_t numElements, DType type)
     switch (type)
     {
         case DType::DType_BOOL:
-        case DType::DType_UINT8:
         case DType::DType_INT8:
         case DType::DType_FP8E4M3:
         case DType::DType_FP8E5M2:
             return static_cast<size_t>(1 * numElements);
-        case DType::DType_UINT16:
         case DType::DType_INT16:
         case DType::DType_FP16:
         case DType::DType_BF16:

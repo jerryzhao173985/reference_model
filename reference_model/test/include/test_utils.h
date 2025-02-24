@@ -38,13 +38,13 @@ constexpr DType NativeType2DType()
         return DType_INT8;
 
     if constexpr (std::is_same<T, uint8_t>::value)
-        return DType_UINT8;
+        return DType_INT8;
 
     if constexpr (std::is_same<T, int16_t>::value)
         return DType_INT16;
 
     if constexpr (std::is_same<T, uint16_t>::value)
-        return DType_UINT16;
+        return DType_INT16;
 
     if constexpr (std::is_same<T, int32_t>::value)
         return DType_INT32;
