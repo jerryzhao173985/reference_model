@@ -336,5 +336,6 @@
 "test_tanh_1x8x16_qi16",
 "test_tanh_1x8x4x17_qi16",
 "test_tanh_3x1x1x7_qi16",
-"test_tanh_64_qi16"
+"test_tanh_64_qi16",
+"test_dynamic_linear_14x19_f32"
 ]

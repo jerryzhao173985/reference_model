@@ -51,7 +51,8 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
     // Get number of elements
     const std::vector<int32_t> refShape(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims);
     const auto elementCount = numElements(refShape);
-    TOSA_REF_REQUIRE(elementCount > 0, "[E] Invalid shape for reference tensor");
+    TOSA_REF_REQUIRE((elementCount > 0) || (elementCount == 0 && referenceTensor->data_type == tosa_datatype_shape_t),
+                     "[E] Invalid shape for reference tensor");
 
     const auto* refData_dbl = reinterpret_cast<const double*>(referenceTensor->data);
 

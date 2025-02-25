@@ -80,16 +80,19 @@ public:
     virtual int checkTensorAttributes();
     virtual int eval();
 
-    using InEigenType  = typename GetEigenType<Dtype>::type;
-    using OutEigenType = typename GetEigenType<Dtype>::type;
-    using TIn          = Eigen::Tensor<InEigenType, InRank>;
-    using TOut         = Eigen::Tensor<OutEigenType, OutRank>;
+    using InEigenType      = typename GetEigenType<Dtype>::type;
+    using InShapeEigenType = typename GetEigenType<TOSA_REF_TYPE_SHAPE>::type;
+    using OutEigenType     = typename GetEigenType<Dtype>::type;
+    using TIn              = Eigen::Tensor<InEigenType, InRank>;
+    using TInShape         = Eigen::Tensor<InShapeEigenType, 1>;
+    using TOut             = Eigen::Tensor<OutEigenType, OutRank>;
 
 protected:
     Eigen::array<Eigen::Index, OutRank> array_shape;
     Eigen::array<Eigen::Index, InRank> in_reverser;
     Eigen::array<Eigen::Index, OutRank> out_reverser;
     TosaReference::TensorTemplate<TIn>* in;
+    TosaReference::TensorTemplate<TInShape>* in_new_shape;
     TosaReference::TensorTemplate<TOut>* out;
 };
 

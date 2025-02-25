@@ -1,5 +1,4 @@
-
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -1009,11 +1008,17 @@ public:
                 switch (rank)
                 {
                     case 0:
-                        return new Tensor0<int64_t>(tensorName_, dtype_, shape_);
+                        // <TOPIC: EMPTY_SHAPE>
+                        // an empty shape (i.e. the shape of a rank 0 tensor) is
+                        // itself encoded as {shape=[], data=[]}, which has the
+                        // shape of a rank 0 tensor, but no data. To avoid having
+                        // to deal with it as a special case, allocate it as an
+                        // empty rank 1 here instead.
+                        return new Tensor1<int64_t>(tensorName_, dtype_, { 0 });
+
                     case 1:
                         return new Tensor1<int64_t>(tensorName_, dtype_, shape_);
                     default:
-                        // shape tensors must have rank of 0 or 1
                         break;
                 }
                 break;
