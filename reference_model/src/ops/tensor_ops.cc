@@ -585,7 +585,8 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                "perform AvgPool2d, input.shape=[%d,%d,%d,%d], output.shape=[%d,%d,%d,%d], kernel=[%d,%d], "
                "stride=[%d,%d], pad=[%d,%d,%d,%d], acc_type=%s",
                in_batch, in_height, in_width, in_channels, out_batch, out_height, out_width, out_channels, kernel_y,
-               kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right, EnumNamesDType()[accum_dtype]);
+               kernel_x, stride_y, stride_x, pad_top, pad_bottom, pad_left, pad_right,
+               EnumNameTOSAREFTYPE(accum_dtype));
 
     Eigen::array<std::pair<int32_t, int32_t>, 4> pad;
     pad[0] = std::make_pair(0, 0);
