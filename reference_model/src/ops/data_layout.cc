@@ -213,13 +213,11 @@ int OpReshape<InRank, OutRank, Dtype>::checkTensorAttributes()
     ERROR_IF(inputs[0]->getElementCount() != outputs[0]->getElementCount(),
              "Input tensor size does not match output tensor size");
 
-    in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
-    out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
+    in           = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
+    in_new_shape = dynamic_cast<TosaReference::TensorTemplate<TInShape>*>(inputs[1]);
+    out          = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
 
-    // note: do not assert mem on shape input, because it may be {} for reshape to scalar
-    // and also, because the shape input is not actually used in eval()
-
-    ASSERT_MEM(in && out)
+    ASSERT_MEM(in && in_new_shape && out)
 
     return 0;
 }
@@ -229,7 +227,7 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 {
     for (int32_t d = 0; d < OutRank; d++)
     {
-        array_shape[d]  = getOutputs()[0]->getShape()[OutRank - 1 - d];
+        array_shape[d]  = in_new_shape->getTensor()(OutRank - 1 - d);
         out_reverser[d] = OutRank - 1 - d;
     }
 

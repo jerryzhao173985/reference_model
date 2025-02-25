@@ -142,7 +142,7 @@ tosa_datatype_t mapToTosaDataType(const TosaReference::TOSA_REF_TYPE tosaRefType
 
 tvf_status_t validateResultFile(const std::string resultFile,
                                 const TosaReference::TOSA_REF_TYPE tosaRefType,
-                                std::vector<int32_t>& shape)
+                                const std::vector<int32_t>& shape)
 {
     NumpyUtilities::NPError nperror;
 
@@ -472,7 +472,6 @@ int main(int argc, char* argv[])
     }
 
     std::vector<int32_t> shape = test_desc["meta"]["compliance"]["tensors"][ofmName]["shape"];
-
     if (!test_desc["meta"]["compliance"]["tensors"][ofmName].contains("data_type"))
     {
         WARNING("[Verifier] Invalid json test descriptor - missing datatype information required for validation.");
@@ -489,6 +488,12 @@ int main(int argc, char* argv[])
         return tvf_status_t::TVF_ERROR;
     }
 
+    // NOTE: we are likely to change the representation of the shape of a rank 0 tensor in the future
+    // TODO(ITL) if we don't change the way we represent shapes of rank 0 tensors, implement this as
+    // a utility in the serialization library instead
+    const std::vector<int32_t> shapeOfRank0Shape = { 0 };
+    std::vector<int32_t> npyShape = (dtype == DType_SHAPE) && (shape.size() == 0) ? shapeOfRank0Shape : shape;
+
     // Convert type to TOSA_REF_TYPE
     TosaReference::TOSA_REF_TYPE impTosaRefType = TosaReference::ConvertDType(dtype, false);
 
@@ -504,25 +509,25 @@ int main(int argc, char* argv[])
     // Verifier exit status
     tvf_status_t verifyStatus;
 
-    verifyStatus = validateResultFile(impResultFile, impTosaRefType, shape);
+    verifyStatus = validateResultFile(impResultFile, impTosaRefType, npyShape);
     if (verifyStatus == tvf_status_t::TVF_COMPLIANT)
     {
         // Read implementation result numpy into a data buffer
         imp = new tosa_tensor_t;
-        if (!createTensorMap(impResultFile, impTosaRefType, ofmName, shape, imp))
+        if (!createTensorMap(impResultFile, impTosaRefType, ofmName, npyShape, imp))
         {
             verifyStatus = tvf_status_t::TVF_ERROR;
         }
     }
 
     if (verifyStatus == tvf_status_t::TVF_COMPLIANT)
-        verifyStatus = validateResultFile(refResultFile, refTosaRefType, shape);
+        verifyStatus = validateResultFile(refResultFile, refTosaRefType, npyShape);
 
     if (verifyStatus == tvf_status_t::TVF_COMPLIANT)
     {
         // Read reference result numpy into a data buffer
         ref = new tosa_tensor_t;
-        if (!createTensorMap(refResultFile, refTosaRefType, ofmName, shape, ref))
+        if (!createTensorMap(refResultFile, refTosaRefType, ofmName, npyShape, ref))
         {
             verifyStatus = tvf_status_t::TVF_ERROR;
         }
@@ -531,13 +536,13 @@ int main(int argc, char* argv[])
     if (!bndResultFile.empty())
     {
         if (verifyStatus == tvf_status_t::TVF_COMPLIANT)
-            verifyStatus = validateResultFile(bndResultFile, refTosaRefType, shape);
+            verifyStatus = validateResultFile(bndResultFile, refTosaRefType, npyShape);
 
         if (verifyStatus == tvf_status_t::TVF_COMPLIANT)
         {
             // Read reference bounds result numpy into a data buffer
             bnd = new tosa_tensor_t;
-            if (!createTensorMap(bndResultFile, refTosaRefType, ofmName, shape, bnd))
+            if (!createTensorMap(bndResultFile, refTosaRefType, ofmName, npyShape, bnd))
             {
                 verifyStatus = tvf_status_t::TVF_ERROR;
             }
