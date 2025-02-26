@@ -255,8 +255,12 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       test/model_runner_tests.cpp
       test/verify_tests.cpp
       test/verify_exe_testing.cpp
-      test/ref_model_tests.cpp
-      ${DOCTEST_DIR}/doctest.h
+      test/ref_model_tests/tensor_ops_tests.cpp
+      test/ref_model_tests/reduction_tests.cpp
+      test/ref_model_tests/ewise_binary_tests.cpp
+      test/ref_model_tests/ewise_ternary_tests.cpp
+      test/ref_model_tests/type_conversion_tests.cpp
+      test/ref_model_tests/activation_funcs_tests.cpp
   )
 
   list(APPEND CXX_SOURCE_TESTS ${CXX_SOURCE})
