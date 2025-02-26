@@ -123,7 +123,7 @@ class TosaTestGen:
     def getSerializer(self):
         return self.ser
 
-    def serialize(self, testName, metaData=None, tags=None):
+    def serialize(self, testName, metaData=None, tags=None, testRequirements=None):
         path = Path(self.basePath) / self.testPath
 
         # Write out TOSA flatbuffer binary
@@ -140,6 +140,9 @@ class TosaTestGen:
 
         if tags:
             desc["tag"] = tags
+
+        if testRequirements:
+            desc["test_requirements"] = testRequirements
 
         # Validate desc.json before we output it
         self.descSchemaValidator.validate_config(desc)
@@ -3227,16 +3230,32 @@ class TosaTestGen:
 
         if result:
             # The test is valid, serialize it
-            if isinstance(result, TosaTestGen.BuildInfo):
-                # Add the compliance meta data (if any)
-                compliance = result.getComplianceInfo()
-                if compliance:
-                    tensMeta["compliance"] = compliance
-                # Add late serialized tensors (like cond_if_const)
-                dataGenTensors = result.getDataGenTensors()
-                if "data_gen" in tensMeta and dataGenTensors is not None:
-                    tensMeta["data_gen"]["tensors"].update(dataGenTensors)
-            self.serialize("test", tensMeta, tags)
+            assert isinstance(
+                result, TosaTestGen.BuildInfo
+            ), f"{opName} produced invalid build test result"
+
+            # Add the compliance meta data (if any)
+            compliance = result.getComplianceInfo()
+            if compliance:
+                tensMeta["compliance"] = compliance
+            # Add late serialized tensors (like cond_if_const)
+            dataGenTensors = result.getDataGenTensors()
+            if "data_gen" in tensMeta and dataGenTensors is not None:
+                tensMeta["data_gen"]["tensors"].update(dataGenTensors)
+
+            # Work out the profiles/extensions this test is testing
+            profiles_supported = argsDict.get("profiles_supported", set())
+            extensions_required = argsDict.get("extensions_required", set())
+            assert (
+                profiles_supported
+            ), f"{opName} is missing profile/extension requirements"
+            testRequirements = {
+                "profiles_supported": list(profiles_supported),
+            }
+            if extensions_required:
+                testRequirements["extensions_required"] = list(extensions_required)
+
+            self.serialize("test", tensMeta, tags, testRequirements)
             return True
         else:
             # The test is not valid
@@ -3390,6 +3409,8 @@ class TosaTestGen:
         [DType.FP8E4M3, DType.FP8E4M3, DType.FP16, DType.FP8E4M3, DType.FP8E4M3],
         [DType.FP8E5M2, DType.FP8E5M2, DType.FP16, DType.FP8E5M2, DType.FP8E5M2],
     ]
+
+    PROEXT_ALL_PROFILES = (TosaProfiles.TosaProINT, TosaProfiles.TosaProFP)
 
     DEFAULT_RANK_RANGE = (0, gtu.MAX_TENSOR_RANK)
 
@@ -3636,6 +3657,9 @@ class TosaTestGen:
     #  'types': list of datatypes to be tested
     #    or list of lists of datatypes. In the second case, each list has datatypes for
     #    each of the inputs in the operator.
+    # 'profile_extension_types': (optional) dictionary of "profile" and "extension" that are
+    #   dictionaries of types with tuple of profiles or extensions
+    #   required for those tests - see get_proext_from_types() for usage
     #  'invalid_test_validators': tuple of functions to be used for validating the tests
     #  'error_if_validators': tuple of functions to be used for validating ERROR_IF tests
     #  'data_gen': list of TestDataTypes to be used
@@ -3664,6 +3688,11 @@ class TosaTestGen:
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_NARROW_INT_FP + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evAxisSmallerZero,
                 TosaErrorValidator.evAxisLargerRank,
@@ -3691,6 +3720,11 @@ class TosaTestGen:
             ),
             "qgen": TosaQuantGen.qgUnary,
             "types": TYPE_NARROW_INT_FP + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "invalid_test_validators": (TosaInvalidValidator.ivHeightWidthInvalid,),
             "error_if_validators": (
                 TosaErrorValidator.evKernelSmallerOne,
@@ -3865,6 +3899,11 @@ class TosaTestGen:
                 TosaArgGen.agPooling,
             ),
             "types": TYPE_NARROW_INT_FP + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "invalid_test_validators": (TosaInvalidValidator.ivHeightWidthInvalid,),
             "error_if_validators": (
                 TosaErrorValidator.evKernelSmallerOne,
@@ -3930,6 +3969,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_NARROW_INT_FP,
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evMaxSmallerMin,
                 TosaErrorValidator.evWrongInputType,
@@ -4008,6 +4052,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4119,6 +4168,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": [DType.INT32],
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4141,6 +4195,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4163,6 +4222,13 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT8: PROEXT_ALL_PROFILES,
+                    DType.INT16: PROEXT_ALL_PROFILES,
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                },
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4185,6 +4251,13 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_INT,
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT8: PROEXT_ALL_PROFILES,
+                    DType.INT16: PROEXT_ALL_PROFILES,
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                },
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4207,6 +4280,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4229,6 +4307,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4296,6 +4379,11 @@ class TosaTestGen:
                 TosaArgGen.agMul,
             ),
             "types": TYPE_INT_FP,
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
@@ -4342,6 +4430,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FI32,
+            "profile_extension_types": {
+                "profile": {
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4369,6 +4462,11 @@ class TosaTestGen:
                 TosaArgGen.agTable,
             ),
             "types": [DType.INT8, DType.INT16],
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
@@ -4538,6 +4636,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
@@ -4639,6 +4742,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4734,6 +4842,11 @@ class TosaTestGen:
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evAxisLargerRank,
                 TosaErrorValidator.evAxisSmallerZero,
@@ -4757,6 +4870,11 @@ class TosaTestGen:
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_BOOL,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evAxisLargerRank,
                 TosaErrorValidator.evAxisSmallerZero,
@@ -4872,6 +4990,14 @@ class TosaTestGen:
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                },
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                },
+            },
             "error_if_validators": (
                 TosaErrorValidator.evAxisLargerRank,
                 TosaErrorValidator.evAxisSmallerZero,
@@ -4896,6 +5022,11 @@ class TosaTestGen:
                 TosaArgGen.agPad,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evPadSmallerZero,
@@ -4920,6 +5051,11 @@ class TosaTestGen:
                 TosaArgGen.agReshape,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evTensorSizeInputOutputMismatch,
                 TosaErrorValidator.evWrongInputType,
@@ -4939,6 +5075,11 @@ class TosaTestGen:
                 TosaArgGen.agAxis,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evAxisSmallerZero,
                 TosaErrorValidator.evAxisLargerRank,
@@ -4961,6 +5102,11 @@ class TosaTestGen:
                 TosaArgGen.agSlice,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 # TODO Turn off these error categories for now as the reference
                 # model cannot allocate memory space for empty tensor. We probably
@@ -4993,6 +5139,11 @@ class TosaTestGen:
                 TosaArgGen.agTile,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
@@ -5015,6 +5166,11 @@ class TosaTestGen:
                 TosaArgGen.agTranspose,
             ),
             "types": TYPE_FIB + [DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evIndexOutsideBounds,
                 TosaErrorValidator.evIndexUsedTwice,
@@ -5039,6 +5195,14 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT4, DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                    DType.INT8: PROEXT_ALL_PROFILES,
+                    DType.INT16: PROEXT_ALL_PROFILES,
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "data_gen": PR_FS_DATAGEN,
         },
         "identity": {
@@ -5051,6 +5215,14 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": TYPE_FIB + [DType.INT4, DType.INT48, DType.FP8E4M3, DType.FP8E5M2],
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                    DType.INT8: PROEXT_ALL_PROFILES,
+                    DType.INT16: PROEXT_ALL_PROFILES,
+                    DType.INT32: PROEXT_ALL_PROFILES,
+                }
+            },
             "data_gen": PR_FS_DATAGEN,
         },
         # Scatter/Gather
@@ -5126,6 +5298,11 @@ class TosaTestGen:
                 TosaArgGen.agResize,
             ),
             "types": (DType.INT8, DType.INT16, DType.FP16, DType.BF16, DType.FP32),
+            "profile_extension_types": {
+                "extension": {
+                    DType.INT16: (TosaProfiles.TosaExtInt16,),
+                }
+            },
             "invalid_test_validators": (
                 TosaInvalidValidator.ivWrongDataTypeOrModeResize,
             ),
@@ -5236,6 +5413,11 @@ class TosaTestGen:
                 TosaArgGen.agCondIf,
             ),
             "types": [DType.BOOL] + TYPE_INT_FP,
+            "profile_extension_types": {
+                "profile": {
+                    DType.BOOL: PROEXT_ALL_PROFILES,
+                }
+            },
             "error_if_validators": (
                 TosaErrorValidator.evOutputListThenGraphMismatch,
                 TosaErrorValidator.evOutputListElseGraphMismatch,
@@ -5344,6 +5526,11 @@ class TosaTestGen:
                 TosaArgGen.agNone,
             ),
             "types": [DType.SHAPE],
+            "profile_extension_types": {
+                "profile": {
+                    DType.SHAPE: PROEXT_ALL_PROFILES,
+                }
+            },
         },
     }
 

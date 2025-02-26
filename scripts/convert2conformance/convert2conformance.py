@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2021-2024, ARM Limited.
+# Copyright (c) 2021-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 """This script converts generated tests into conformance tests.
 
@@ -15,7 +15,6 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from conformance.tosa_profiles import TosaProfiles
 from json2fbbin.json2fbbin import fbbin_to_json
 from json2numpy.json2numpy import npy_to_json
 from schemavalidation.schemavalidation import TestDescSchemaValidator
@@ -28,9 +27,6 @@ NAME_FLATBUFFER_DIR = ["flatbuffer-", "_FW_"]
 NAME_DESC_FILENAME = "desc.json"
 NAME_CONFORMANCE_RESULT_PREFIX = "Conformance-"
 NAME_REFMODEL_RUN_RESULT_SUFFIX = ".runner.tosa_refmodel_sut_run.npy"
-
-PROFILES_LIST = TosaProfiles.profiles()
-EXTENSIONS_LIST = TosaProfiles.extensions()
 
 OUTPUT_TYPE_JSON = "json"
 OUTPUT_TYPE_BINARY = "binary"
@@ -95,10 +91,9 @@ def parse_args(argv):
     parser.add_argument(
         "--profile",
         dest="profile",
-        choices=PROFILES_LIST + EXTENSIONS_LIST,
+        type=str,
         action="append",
-        required=True,
-        help="Profiles and extensions this test is suitable for. May be repeated",
+        help="DEPRECATED",
     )
     parser.add_argument(
         "--tag",
@@ -234,14 +229,8 @@ def update_desc_json(
         # have some files!
         test_desc["expected_result_file"] = cfm_files
 
-    # Add supported profiles
-    if profiles is None:
-        # Assume base profile
-        profiles = [PROFILES_LIST[0]]
-    test_desc["profile"] = profiles
-
     # Add tags (if any)
-    if tags is not None:
+    if tags:
         test_desc["tag"] = test_desc.get("tag", []) + tags
 
     return test_desc
@@ -394,7 +383,7 @@ def main(argv=None):
         test_desc,
         output_dir=args.output_dir,
         record_result=record_result,
-        profiles=args.profile,
+        profiles=None,
         tags=args.tags,
     )
     if not test_desc:

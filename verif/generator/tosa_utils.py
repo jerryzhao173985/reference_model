@@ -343,14 +343,38 @@ def get_nan_node(args_dict) -> NanPropagationMode:
     return nan_mode
 
 
-def get_proext_from_types(dtypesList):
+def get_proext_from_types(dtypes, profile_extension_types_lookup=None):
     """
     Work out profile and extension(s) from input dtypes.
+
+    Used for both test selection (see isSupported in test_select) and
+    for populating the "profile" list in desc.json
+
+    Optionally takes a dictionary usually from the TOSA_OP_LIST entry
+    "profile_extension_types" that can add to the defaults.
+
     Returns set of profiles_supported and set of extensions_required
-    NOTE: This will not work for every op, such as CAST.
+
+    NOTE: This will not work for every op, such as CAST which will
+    need to work out their own profiles/extensions per test
     """
     profiles_supported = set()
     extensions_required = set()
+
+    dtypesList = dtypes if isinstance(dtypes, (list, tuple)) else [dtypes]
+
+    profiles_amended = False
+
+    # Special case table supplied - add to defaults
+    if profile_extension_types_lookup:
+        profile_lookup = profile_extension_types_lookup.get("profile", {})
+        extension_lookup = profile_extension_types_lookup.get("extension", {})
+        for d in dtypesList:
+            if d in profile_lookup:
+                profiles_supported.update(profile_lookup[d])
+                profiles_amended = True
+            if d in extension_lookup:
+                extensions_required.update(extension_lookup[d])
 
     if DType.INT4 in dtypesList:
         extensions_required.add(TosaProfiles.TosaExtInt4)
@@ -378,9 +402,10 @@ def get_proext_from_types(dtypesList):
     ):
         profiles_supported.add(TosaProfiles.TosaProINT)
 
-    # We are not expecting to support multiple different profiles
+    # We are not expecting to support multiple different profiles unless
+    # overridden by the profile_extension_types_lookup
     assert (
-        len(profiles_supported) == 1
+        profiles_amended or len(profiles_supported) == 1
     ), f"Mixed types, not sure which profile for: {[DTYPE_ATTRIBUTES[d]['str'] for d in dtypesList]}"
 
     # But we are expecting at least 1!

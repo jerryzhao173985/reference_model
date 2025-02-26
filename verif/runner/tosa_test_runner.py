@@ -1,5 +1,5 @@
 """Template test runner class for running TOSA tests."""
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 from enum import IntEnum
@@ -9,6 +9,7 @@ from checker.color_print import LogColors
 from checker.color_print import print_color
 from checker.color_print import set_print_in_color
 from checker.tosa_result_checker import TosaVerifyReturnCode
+from conformance.tosa_profiles import TosaProfiles
 from generator.datagenerator import GenerateLibrary
 from json2fbbin import json2fbbin
 from json2numpy import json2numpy
@@ -131,10 +132,18 @@ class TosaTestRunner:
             return True, "non-negative type"
         elif self.args.test_type == "positive" and expectedFailure:
             return True, "non-positive type"
-        if self.args.profile:
-            profile = self.testDesc["profile"] if "profile" in self.testDesc else []
-            if self.args.profile not in profile:
-                return True, "non-{} profile".format(self.args.profile)
+        if "test_requirements" in self.testDesc:
+            profiles_supported = self.testDesc.get("profiles_supported", [])
+            extensions_required = self.testDesc.get("extensions_required", [])
+            if not TosaProfiles.isSupported(
+                self.args.profile,
+                self.args.extension,
+                profiles_supported,
+                extensions_required,
+            ):
+                return True, "filtered profile/extension type ({})".format(
+                    profiles_supported + extensions_required
+                )
         return False, ""
 
     def _ready_file(self, dataFile, jsonOnly=False):
