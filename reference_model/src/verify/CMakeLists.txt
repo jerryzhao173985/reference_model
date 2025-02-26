@@ -82,19 +82,19 @@ set(PRIVATE_INCLUDE_DIRS
 )
 
 add_executable(tosa_verify
-    ${BASE_REF_DIR}/reference_model/src/func_debug.cc
-    ${BASE_REF_DIR}/reference_model/src/tensor.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_abs_error.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_dot_product.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_entry.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_ulp.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cc
-    ${BASE_REF_DIR}/reference_model/src/verify/verify_config.cc
-    ${BASE_REF_DIR}/reference_model/src/generate/generate_utils.cc
+    ${BASE_REF_DIR}/reference_model/src/func_debug.cpp
+    ${BASE_REF_DIR}/reference_model/src/tensor.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_abs_error.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_dot_product.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_entry.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_ulp.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_config.cpp
+    ${BASE_REF_DIR}/reference_model/src/generate/generate_utils.cpp
     ../../src/verify/verify_main.cpp
 )
 
