@@ -1,5 +1,5 @@
  {
-    "$comment": "Copyright (c) 2023, ARM Limited.",
+    "$comment": "Copyright (c) 2023,2025, ARM Limited.",
     "$comment": "SPDX-License-Identifier: Apache-2.0",
     "$id": "desc.schema.json",
     "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -67,11 +67,11 @@
             }
         },
         "profile": {
-            "description": "list of profiles this test is valid for",
+            "description": "DEPRECATED",
             "type": "array",
             "minItems": 1,
             "items": {
-                "description": "profile name - tosa_bi or tosa_mi",
+                "description": "DEPRECATED",
                 "type": "string"
             }
         },
@@ -82,6 +82,34 @@
                 "description": "test tag for filtering",
                 "type": "string"
             }
+        },
+        "test_requirements": {
+            "description": "test requirements dictionary",
+            "type": "object",
+            "properties":
+            {
+                "profiles_supported": {
+                    "description": "list of profiles this test is valid for",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "description": "profile name such as tosa-pro-fp",
+                        "type": "string"
+                    }
+                },
+                "extensions_required": {
+                    "description": "list of extensions that are required for this test",
+                    "type": "array",
+                    "items": {
+                        "description": "extension name such as tosa-ext-int16",
+                        "type": "string"
+                    }
+                }
+            },
+            "additionalProperties": false,
+            "required": [
+                "profiles_supported"
+            ]
         },
         "meta": {
             "description": "meta-data for test libraries",

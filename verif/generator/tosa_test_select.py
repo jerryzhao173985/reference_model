@@ -4,6 +4,7 @@ import copy
 import logging
 
 import generator.tosa_utils as gtu
+from conformance.tosa_profiles import TosaProfiles
 
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_build_tests")
@@ -101,11 +102,9 @@ class Test:
     def isSupported(self, profiles, extensions):
         profiles_supported = self.argsDict.get("profiles_supported", set())
         extensions_required = self.argsDict.get("extensions_required", set())
-        return (
-            not profiles_supported or any([p in profiles for p in profiles_supported])
-        ) and (
-            not extensions_required
-            or all([e in extensions for e in extensions_required])
+
+        return TosaProfiles.isSupported(
+            profiles, extensions, profiles_supported, extensions_required
         )
 
 

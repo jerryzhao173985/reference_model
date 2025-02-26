@@ -24,6 +24,7 @@ def parseArgs(argv):
     """Parse the arguments and return the settings."""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
+    filter_group = parser.add_argument_group("filter options")
     group.add_argument(
         "-t",
         "--test",
@@ -146,7 +147,7 @@ def parseArgs(argv):
         default="result.xml",
         help="XUnit output file",
     )
-    parser.add_argument(
+    filter_group.add_argument(
         "--test-type",
         dest="test_type",
         type=str,
@@ -161,13 +162,10 @@ def parseArgs(argv):
         action="store_true",
         help="Disable color output",
     )
-    parser.add_argument(
-        "--profile",
-        dest="profile",
-        type=str,
-        choices=TosaProfiles.profiles(),
-        help="Filter tests based on profile",
-    )
+
+    # Add --profile and --extension options
+    TosaProfiles.addArgumentsToParser(filter_group)
+
     parser.add_argument(
         "--tosa_level",
         dest="tosa_level",
@@ -185,6 +183,9 @@ def parseArgs(argv):
     )
 
     args = parser.parse_args(argv)
+
+    # Silently update/validate the --profile and --extension options
+    TosaProfiles.parseArguments(args)
 
     # Autodetect CPU count
     if args.jobs <= 0:

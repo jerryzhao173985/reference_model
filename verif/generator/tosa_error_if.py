@@ -100,6 +100,15 @@ class ErrorIf(object):
 
 class TosaErrorIfArgGen:
     @staticmethod
+    def isTypeCheckErrorIf(error_name):
+        return error_name in (
+            ErrorIf.WrongInputType,
+            ErrorIf.WrongOutputType,
+            ErrorIf.WrongAccumulatorType,
+            ErrorIf.WrongBiasType,
+        )
+
+    @staticmethod
     def eiResizeErrorIf(
         rng,
         error_name,

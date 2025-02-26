@@ -2061,6 +2061,57 @@ class TosaArgGen:
         pass
 
     @staticmethod
+    def _fix_up_proext_required(op, dtypes, args_dict, error_name):
+        """
+        Updates the profiles/extensions required ("profiles_supported" and
+        "extensions_required") in the args_dict.
+        Adds the profiles/extensions required if not already set.
+        Adds relevant profiles to ERROR_IF type checking tests.
+        """
+        if TosaErrorIfArgGen.isTypeCheckErrorIf(error_name):
+            # Make ERROR_IF type checking tests work under the relevant
+            # profiles that match the operators input types ignoring the
+            # extensions!
+            numFloatTypes = 0
+            numIntTypes = 0
+            for t in op["types"]:
+                d = t[0] if isinstance(t, (list, tuple)) else t
+                if gtu.dtypeIsFloat(d):
+                    numFloatTypes += 1
+                else:
+                    # This considers SHAPEs as integer profile!
+                    numIntTypes += 1
+            profiles = set()
+            if numFloatTypes > 0:
+                profiles.add(TosaProfiles.TosaProFP)
+            if numIntTypes > 0:
+                profiles.add(TosaProfiles.TosaProINT)
+            args_dict["profiles_supported"] = profiles
+            args_dict["extensions_required"] = set()
+
+        elif any(
+            [
+                entry not in args_dict
+                for entry in ("profiles_supported", "extensions_required")
+            ]
+        ):
+            # Missing some information about profiles or extensions
+            # Get the default profiles/extensions required for
+            # this op using the passed data type and using any
+            # special data types specified in the op
+            profiles, extensions = gtu.get_proext_from_types(
+                dtypes, op.get("profile_extension_types")
+            )
+            # Update any existing entries or create missing ones
+            for entry, items in zip(
+                ("profiles_supported", "extensions_required"), (profiles, extensions)
+            ):
+                if entry in args_dict:
+                    args_dict[entry].update(items)
+                else:
+                    args_dict[entry] = items
+
+    @staticmethod
     def _add_data_generators(testGen, opName, shapeList, dtype, arg_list, error_name):
         """Add extra tests for each type of test data for this op."""
         op = testGen.TOSA_OP_LIST[opName]
@@ -2105,7 +2156,17 @@ class TosaArgGen:
             no_more_special_tests = False
 
             for arg_str, args_dict in arg_list:
+                # First check we have set up the required profiles/extensions
+                # for this test
+                # NOTE: This only uses the first input dtype, more complex ops
+                # should set up profiles_supported and extensions_required before
+                # calling this function!
+                TosaArgGen._fix_up_proext_required(op, dtype, args_dict, error_name)
+
+                # Create a copy of the test dictionary in case we
+                # need to add a new test
                 gen_args_dict = args_dict.copy()
+
                 # Only create one test by default - no sets of tests
                 num_test_sets = 0
 
@@ -2621,6 +2682,10 @@ class TosaArgGen:
         more_tests = True
         n = 0
         for a in accum_dtypes:
+            # Work out profiles/extensions for this test from all the input types
+            profiles, extensions = gtu.get_proext_from_types(
+                dtypes + [a], op.get("profile_extension_types", None)
+            )
             for s in sorted(list(strides)):
                 for p in sorted(list(paddings)):
                     for d in sorted(list(dilations)):
@@ -2681,6 +2746,8 @@ class TosaArgGen:
                                     "dot_products": dots,
                                     "shape": ifm_shape,
                                     "local_bound": local_bound,
+                                    "profiles_supported": profiles,
+                                    "extensions_required": extensions,
                                 }
 
                                 # Support for larger values than 9 needs different delimiter
@@ -2814,6 +2881,9 @@ class TosaArgGen:
                 [DType.BF16] if gtu.dtypeIsFloat(dtypes[0]) else [DType.INT16]
             )
 
+        # For op type checks
+        op = testGen.TOSA_OP_LIST[opName]
+
         # Must be rank 4
         if error_name != ErrorIf.WrongRank:
             assert len(ifm_shape) == 4
@@ -2923,6 +2993,10 @@ class TosaArgGen:
 
         n = 0
         for a in accum_dtypes:
+            # Work out profiles/extensions for this test from all the input types
+            profiles, extensions = gtu.get_proext_from_types(
+                dtypes + [a], op.get("profile_extension_types", None)
+            )
             for s in sorted(list(strides)):
                 for p in sorted(list(paddings)):
                     if n % sparsity == 0:
@@ -2948,6 +3022,8 @@ class TosaArgGen:
                             "shape": ifm_shape,
                             "out_shape": os,
                             "local_bound": local_bound,
+                            "profiles_supported": profiles,
+                            "extensions_required": extensions,
                         }
 
                         # Support for larger values than 9 needs different delimiter
@@ -3405,8 +3481,16 @@ class TosaArgGen:
                         TosaProfiles.TosaExtBF16,
                         TosaProfiles.TosaExtFP8E5M2,
                     ]
+
+            # Set ERROR_IF required profiles/extensions based on correct type chosen
+            if error_name == ErrorIf.WrongInputType:
+                profiles, extensions = gtu.get_proext_from_types(outDtype)
+            elif error_name == ErrorIf.WrongOutputType:
+                profiles, extensions = gtu.get_proext_from_types(inDtype)
+
+            # Unsupported combination of types - haven't set requirements
             assert (
-                profiles or error_name == ErrorIf.WrongInputType
+                profiles
             ), f"Failed to set up profile/extensions for CAST dtypes - in:{inDtype} out:{outDtype}"
 
             arg_list.append(
@@ -3515,13 +3599,15 @@ class TosaArgGen:
             else:
                 output_zp = 0
 
+            # Get profiles/extesions based on in/out types only
+            profiles, extensions = gtu.get_proext_from_types((inDtype, outDtype))
+
             if rounding_mode == RoundingMode.SINGLE_ROUND:
                 roundStr = "S"
-                extensions = []
             else:
                 assert rounding_mode == RoundingMode.DOUBLE_ROUND
                 roundStr = "D"
-                extensions = [TosaProfiles.TosaExtDoubleRound]
+                extensions.add(TosaProfiles.TosaExtDoubleRound)
 
             return (
                 "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
@@ -3533,7 +3619,8 @@ class TosaArgGen:
                     int(output_unsigned),
                 ),
                 {
-                    "extensions_required": set(extensions),
+                    "extensions_required": extensions,
+                    "profiles_supported": profiles,
                     "output_dtype": outDtype,
                     "scale": scale32,
                     "rounding_mode": rounding_mode,
@@ -3738,6 +3825,8 @@ class TosaArgGen:
                 "acc_type": dtype,
                 "inverse": inverse,
                 "local_bound": local_bound,
+                "profiles_supported": set([TosaProfiles.TosaProFP]),
+                "extensions_required": set([TosaProfiles.TosaExtFFT]),
             }
             lclbnd = "1" if local_bound else "0"
             arg_list.append((f"inverse{inverse}_lclbnd{lclbnd}", args_dict))
@@ -3769,6 +3858,8 @@ class TosaArgGen:
                 "ks": ks,
                 "acc_type": dtype,
                 "local_bound": local_bound,
+                "profiles_supported": set([TosaProfiles.TosaProFP]),
+                "extensions_required": set([TosaProfiles.TosaExtFFT]),
             }
             lclbnd = "1" if local_bound else "0"
             arg_list.append((f"lclbnd{lclbnd}", args_dict))
@@ -4372,9 +4463,26 @@ class TosaArgGen:
         # Convert to tensors in the build function, along with the
         # then and else blocks
         arg_list = []
+        op = testGen.TOSA_OP_LIST[opName]
 
-        for c in [False, True]:
-            arg_list.append(("cond{}".format(int(c)), {"condition": c}))
+        # Include the profile/extension for the conditional ops/data and
+        # EXT-CONTROLFLOW when deterimining test requirements
+        profiles, extensions = gtu.get_proext_from_types(
+            dtype, op.get("profile_extension_types", None)
+        )
+        extensions.add(TosaProfiles.TosaExtControlFlow)
+
+        for cond in [False, True]:
+            arg_list.append(
+                (
+                    "cond{}".format(int(cond)),
+                    {
+                        "condition": cond,
+                        "profiles_supported": profiles,
+                        "extensions_required": extensions,
+                    },
+                )
+            )
 
         # Now add data generator types
         arg_list = TosaArgGen._add_data_generators(
@@ -4391,9 +4499,26 @@ class TosaArgGen:
     def agWhileLoop(testGen, rng, opName, shapeList, dtype, error_name=None):
         # While loop: 0 iterations, 1, more than 1
         arg_list = []
+        op = testGen.TOSA_OP_LIST[opName]
+
+        # Include the profile/extension for the ops in the loop and EXT-CONTROLFLOW
+        # when deterimining test requirements
+        profiles, extensions = gtu.get_proext_from_types(
+            dtype, op.get("profile_extension_types", None)
+        )
+        extensions.add(TosaProfiles.TosaExtControlFlow)
 
         for iterations in [0, 1, 4]:
-            arg_list.append(("iter{}".format(iterations), {"iterations": iterations}))
+            arg_list.append(
+                (
+                    "iter{}".format(iterations),
+                    {
+                        "iterations": iterations,
+                        "profiles_supported": profiles,
+                        "extensions_required": extensions,
+                    },
+                )
+            )
 
         # Now add data generator types
         arg_list = TosaArgGen._add_data_generators(

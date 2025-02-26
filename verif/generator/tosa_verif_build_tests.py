@@ -15,8 +15,6 @@ from serializer.tosa_serializer import dtype_str_to_val
 from serializer.tosa_serializer import DTypeNames
 
 OPTION_FP_VALUES_RANGE = "--fp-values-range"
-PROFILES_EXTENSIONS_ALL = "all"
-PROFILES_EXTENSIONS_NONE = "none"
 
 logging.basicConfig()
 logger = logging.getLogger("tosa_verif_build_tests")
@@ -98,27 +96,8 @@ def parseArgs(argv):
         help="Filter operators by this regular expression (all operator names are lower case)",
     )
 
-    filter_group.add_argument(
-        "--profile",
-        dest="profile",
-        choices=TosaProfiles.profiles() + [PROFILES_EXTENSIONS_ALL],
-        default=[PROFILES_EXTENSIONS_ALL],
-        type=str,
-        nargs="*",
-        help=f"TOSA profile(s) - used for filtering CAST operations (default is {PROFILES_EXTENSIONS_ALL})",
-    )
-
-    filter_group.add_argument(
-        "--extension",
-        dest="extension",
-        choices=TosaProfiles.extensions()
-        + [PROFILES_EXTENSIONS_ALL, PROFILES_EXTENSIONS_NONE],
-        default=[PROFILES_EXTENSIONS_ALL],
-        type=str,
-        nargs="*",
-        help=f"TOSA extension(s) - used for filtering CAST operations (default is {PROFILES_EXTENSIONS_ALL})."
-        + f" Use {PROFILES_EXTENSIONS_NONE} to choose no extensions.",
-    )
+    # Add --profile and --extension options
+    TosaProfiles.addArgumentsToParser(filter_group)
 
     parser.add_argument(
         "-v",
@@ -358,13 +337,8 @@ def parseArgs(argv):
 
     args = parser.parse_args(argv)
 
-    if PROFILES_EXTENSIONS_ALL in args.profile:
-        args.profile = TosaProfiles.profiles()
-
-    if PROFILES_EXTENSIONS_ALL in args.extension:
-        args.extension = TosaProfiles.extensions()
-    elif PROFILES_EXTENSIONS_NONE in args.extension:
-        args.extension = []
+    # Update/validate the --profile and --extension options
+    TosaProfiles.parseArguments(args, logger)
 
     return args
 
@@ -464,14 +438,15 @@ def main(argv=None):
             raise e
 
         if not selectionMode:
-            # Allow all tests to be selected
+            # Allow all tests  matching profiles/extensions to be selected
             tests = testList.all(
                 profiles_chosen=args.profile,
                 extensions_chosen=args.extension,
             )
         else:
             # Use the random number generator to shuffle the test list
-            # and select the per op tests from it
+            # and select the per op tests from it, and then filter to the
+            # profiles and extensions requested
             tests = testList.select(
                 rng=ttg.global_rng,
                 profiles_chosen=args.profile,
