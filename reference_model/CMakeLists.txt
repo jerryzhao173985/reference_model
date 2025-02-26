@@ -74,47 +74,47 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Common sources required for TOSA Reference Model library, executable and unit tests
 set(CXX_SOURCE
-    src/func_debug.cc
-    src/graph_node.cc
-    src/model_runner_impl.cc
-    src/model_runner.cc
-    src/subgraph_traverser.cc
-    src/tensor.cc
-    src/generate/generate_dot_product_states.cc
-    src/generate/generate_dot_product.cc
-    src/generate/generate_pseudo_random.cc
-    src/generate/generate_fixed_data.cc
-    src/generate/generate_full_range.cc
-    src/generate/generate_special.cc
-    src/generate/generate_fp_special.cc
-    src/generate/generate_int_special.cc
-    src/generate/generate_entry.cc
-    src/generate/generate_utils.cc
-    src/verify/verify_abs_error.cc
-    src/verify/verify_dot_product.cc
-    src/verify/verify_entry.cc
-    src/verify/verify_exact.cc
-    src/verify/verify_reduce_product.cc
-    src/verify/verify_relative.cc
-    src/verify/verify_ulp.cc
-    src/verify/verify_fp_special.cc
-    src/verify/verify_utils.cc
-    src/ops/op_factory.cc
-    src/ops/tensor_ops.cc
-    src/ops/activation_funcs.cc
-    src/ops/ewise_binary.cc
-    src/ops/ewise_unary.cc
-    src/ops/ewise_ternary.cc
-    src/ops/comparison.cc
-    src/ops/reduction.cc
-    src/ops/data_layout.cc
-    src/ops/scatter_gather.cc
-    src/ops/image.cc
-    src/ops/type_conversion.cc
-    src/ops/data_nodes.cc
-    src/ops/custom.cc
-    src/ops/control_flow.cc
-    src/ops/shape.cc
+    src/func_debug.cpp
+    src/graph_node.cpp
+    src/model_runner_impl.cpp
+    src/model_runner.cpp
+    src/subgraph_traverser.cpp
+    src/tensor.cpp
+    src/generate/generate_dot_product_states.cpp
+    src/generate/generate_dot_product.cpp
+    src/generate/generate_pseudo_random.cpp
+    src/generate/generate_fixed_data.cpp
+    src/generate/generate_full_range.cpp
+    src/generate/generate_special.cpp
+    src/generate/generate_fp_special.cpp
+    src/generate/generate_int_special.cpp
+    src/generate/generate_entry.cpp
+    src/generate/generate_utils.cpp
+    src/verify/verify_abs_error.cpp
+    src/verify/verify_dot_product.cpp
+    src/verify/verify_entry.cpp
+    src/verify/verify_exact.cpp
+    src/verify/verify_reduce_product.cpp
+    src/verify/verify_relative.cpp
+    src/verify/verify_ulp.cpp
+    src/verify/verify_fp_special.cpp
+    src/verify/verify_utils.cpp
+    src/ops/op_factory.cpp
+    src/ops/tensor_ops.cpp
+    src/ops/activation_funcs.cpp
+    src/ops/ewise_binary.cpp
+    src/ops/ewise_unary.cpp
+    src/ops/ewise_ternary.cpp
+    src/ops/comparison.cpp
+    src/ops/reduction.cpp
+    src/ops/data_layout.cpp
+    src/ops/scatter_gather.cpp
+    src/ops/image.cpp
+    src/ops/type_conversion.cpp
+    src/ops/data_nodes.cpp
+    src/ops/custom.cpp
+    src/ops/control_flow.cpp
+    src/ops/shape.cpp
 )
 
 set(PUBLIC_INCLUDE_DIRS
@@ -169,17 +169,17 @@ set_target_properties(tosa_reference_model_lib PROPERTIES PUBLIC_HEADER "${PUBLI
 
 # Build TOSA verification library
 add_library(tosa_reference_verify_lib SHARED
-  src/verify/verify_abs_error.cc
-  src/verify/verify_dot_product.cc
-  src/verify/verify_entry.cc
-  src/verify/verify_exact.cc
-  src/verify/verify_reduce_product.cc
-  src/verify/verify_relative.cc
-  src/verify/verify_ulp.cc
-  src/verify/verify_fp_special.cc
-  src/verify/verify_utils.cc
-  src/verify/verify_config.cc
-  src/func_debug.cc
+  src/verify/verify_abs_error.cpp
+  src/verify/verify_dot_product.cpp
+  src/verify/verify_entry.cpp
+  src/verify/verify_exact.cpp
+  src/verify/verify_reduce_product.cpp
+  src/verify/verify_relative.cpp
+  src/verify/verify_ulp.cpp
+  src/verify/verify_fp_special.cpp
+  src/verify/verify_utils.cpp
+  src/verify/verify_config.cpp
+  src/func_debug.cpp
 )
 target_include_directories(tosa_reference_verify_lib
   PUBLIC
@@ -190,18 +190,18 @@ target_include_directories(tosa_reference_verify_lib
 
 # Build TOSA generator library
 add_library(tosa_reference_generate_lib SHARED
-  src/generate/generate_dot_product_states.cc
-  src/generate/generate_dot_product.cc
-  src/generate/generate_pseudo_random.cc
-  src/generate/generate_fixed_data.cc
-  src/generate/generate_full_range.cc
-  src/generate/generate_special.cc
-  src/generate/generate_fp_special.cc
-  src/generate/generate_int_special.cc
-  src/generate/generate_entry.cc
-  src/generate/generate_utils.cc
-  src/generate/generate_config.cc
-  src/func_debug.cc
+  src/generate/generate_dot_product_states.cpp
+  src/generate/generate_dot_product.cpp
+  src/generate/generate_pseudo_random.cpp
+  src/generate/generate_fixed_data.cpp
+  src/generate/generate_full_range.cpp
+  src/generate/generate_special.cpp
+  src/generate/generate_fp_special.cpp
+  src/generate/generate_int_special.cpp
+  src/generate/generate_entry.cpp
+  src/generate/generate_utils.cpp
+  src/generate/generate_config.cpp
+  src/func_debug.cpp
 )
 target_include_directories(tosa_reference_generate_lib
   PUBLIC
@@ -244,6 +244,11 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
     set(DOCTEST_DIR "../thirdparty/doctest/doctest")
   endif()
 
+  set(TEST_INCLUDE_DIRS
+    test/include
+    ${DOCTEST_DIR}
+  )
+
   # Sources only required for unit tests.
   set(CXX_SOURCE_TESTS
       test/generate_tests.cpp
@@ -263,7 +268,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
       ${PRIVATE_INCLUDE_DIRS}
-      ${DOCTEST_DIR}
+      ${TEST_INCLUDE_DIRS}
     )
 
   # GCC-8 and below require explicit linking against stdc++fs
