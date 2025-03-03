@@ -1,5 +1,5 @@
 
-// Copyright (c) 2024, ARM Limited.
+// Copyright (c) 2024-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -157,7 +157,7 @@ std::pair<std::vector<py::array>, GraphStatus> run_model(string tosa_binary,
                                                          uint32_t initialize_variable_tensor_from_numpy,
                                                          string fp_format,
                                                          uint32_t precise_mode,
-                                                         bool abs_mode,
+                                                         bool bounds_mode,
                                                          string tosa_level)
 {
 
@@ -178,7 +178,7 @@ std::pair<std::vector<py::array>, GraphStatus> run_model(string tosa_binary,
     func_config.initialize_variable_tensor_from_numpy = initialize_variable_tensor_from_numpy;
     func_config.fp_format                             = fp_format;
     func_config.precise_mode                          = precise_mode;
-    func_config.abs_mode                              = abs_mode;
+    func_config.bounds_mode                           = bounds_mode;
 
     if (tosa_level == "NONE")
         func_config.tosa_level = func_config_t::NONE;
@@ -239,7 +239,7 @@ fp_format : str, default='0.5'
     Floating-point number dump format string (printf-style format, e.g. 0.5)
 precise_mode : int, default=0
     Calculate floating point operations in FP64 (0/1)
-abs_mode : bool, default=False
+bounds_mode : bool, default=False
     Take absolute values of operands
 tosa_level : str, default='NONE'
     TOSA level (NONE, EIGHTK)
@@ -265,7 +265,7 @@ ValueError
     m.def("run", &run_model, docstring.c_str(), "tosa_binary"_a, "inputs"_a, py::kw_only(), "inst_id"_a = 0,
           "debug_filename"_a = nullptr, "is_unbuffered"_a = false, "debug_mode"_a = nullptr, "verbosity"_a = "NONE",
           "dump_intermediates"_a = 0, "initialize_variable_tensor_from_numpy"_a = 0, "fp_format"_a = "0.5",
-          "precise_mode"_a = 0, "abs_mode"_a = false, "tosa_level"_a = "NONE");
+          "precise_mode"_a = 0, "bounds_mode"_a = false, "tosa_level"_a = "NONE");
 }
 
 // Helpers

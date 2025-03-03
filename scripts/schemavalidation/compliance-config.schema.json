@@ -145,8 +145,22 @@
                                 "scale",
                                 "ulp_bound"
                             ]
+                        },
+                        "rescale_inexact_info": {
+                            "description": "info required for the RESCALE INEXACT mode",
+                            "type": "object",
+                            "properties":
+                            {
+                                "unsigned_data": {
+                                    "description": "data type should be treated as unsigned",
+                                    "type": "boolean"
+                                }
+                            },
+                            "additionalProperties": false,
+                            "required": [
+                                "unsigned_data"
+                            ]
                         }
-
                     },
                     "additionalProperties": false,
                     "required": [

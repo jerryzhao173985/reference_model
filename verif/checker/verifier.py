@@ -1,6 +1,6 @@
-# Copyright (c) 2023-2024, ARM Limited.
+# Copyright (c) 2023-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
-"""Verfier library interface."""
+"""Verifier library interface."""
 import ctypes as ct
 import json
 from pathlib import Path

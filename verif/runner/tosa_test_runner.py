@@ -18,15 +18,20 @@ from runner.run_command import RunShCommandError
 from runner.tosa_test_presets import TOSA_REFCOMPLIANCE_RUNNER
 
 
-def isComplianceAbsModeNeeded(testDesc):
-    """Checks the test descriptor for DOT_PRODUCT/ABS_ERROR compliance mode."""
+def isComplianceBoundsModeNeeded(testDesc):
+    """Checks the test descriptor for compliance modes that need a bounds file."""
     if (
         "meta" in testDesc
         and "compliance" in testDesc["meta"]
         and "tensors" in testDesc["meta"]["compliance"]
     ):
         for _, t in testDesc["meta"]["compliance"]["tensors"].items():
-            if "mode" in t and t["mode"] in ("DOT_PRODUCT", "ABS_ERROR", "FP_SPECIAL"):
+            if "mode" in t and t["mode"] in (
+                "DOT_PRODUCT",
+                "ABS_ERROR",
+                "FP_SPECIAL",
+                "RESCALE_INEXACT",
+            ):
                 return True
         return False
 
@@ -203,7 +208,7 @@ class TosaTestRunner:
                         conformanceFilePath = getRunnerResultFilePath(
                             resultFilePath, TOSA_REFCOMPLIANCE_RUNNER
                         )
-                        if isComplianceAbsModeNeeded(self.testDesc):
+                        if isComplianceBoundsModeNeeded(self.testDesc):
                             conformanceBoundsPath = getBoundsResultFilePath(
                                 resultFilePath, TOSA_REFCOMPLIANCE_RUNNER
                             )
@@ -286,7 +291,7 @@ class TosaTestRunner:
                             getRunnerResultFilePath(resultFilePath, sutModule)
                         )
                         if (
-                            isComplianceAbsModeNeeded(self.testDesc)
+                            isComplianceBoundsModeNeeded(self.testDesc)
                             and sutModule == TOSA_REFCOMPLIANCE_RUNNER
                         ):
                             boundsFilePath = getBoundsResultFilePath(resultFilePath)

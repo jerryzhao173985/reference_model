@@ -60,7 +60,7 @@ bool verify(const double* refData,
         {
             // mismatch found
             auto pos = TosaReference::indexToPosition(i, refShape);
-            WARNING("[Verfier][FS] Location %s", TosaReference::positionToString(pos).c_str());
+            WARNING("[Verifier][FS] Location %s", TosaReference::positionToString(pos).c_str());
             return false;
         }
     }

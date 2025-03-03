@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -58,8 +58,8 @@ struct func_config_t
     std::string fp_format                          = "0.5";
     std::string custom_op_lib_path                 = "";
     uint32_t precise_mode                          = 0;
-    bool abs_mode                                  = 0;        // set in main as second run of precise_mode
-    bool float_is_big_endian                       = false;    // Set in arith_util.h by float_is_big_endian()
+    bool bounds_mode                               = false;    // set in main as second run of compliance_mode
+    bool compliance_mode = false;    // set in main to indicate compliance testing (precise mode + specific test reqs)
 
     tosa_level_t tosa_level;
     static constexpr tosa_level_t EIGHTK = { 6, 8192, 8192, 256, 64 };
@@ -68,7 +68,7 @@ struct func_config_t
     // returns whether tosa_extra_multiplies is true or not
     inline bool tosaExtraMultiplies() const
     {
-        return abs_mode;
+        return bounds_mode;
     }
 };
 

@@ -3602,6 +3602,9 @@ class TosaArgGen:
 
             if rounding_mode == RoundingMode.SINGLE_ROUND:
                 roundStr = "S"
+            elif rounding_mode == RoundingMode.INEXACT_ROUND:
+                roundStr = "I"
+                extensions.add(TosaProfiles.TosaExtInexactRound)
             else:
                 assert rounding_mode == RoundingMode.DOUBLE_ROUND
                 roundStr = "D"
@@ -3714,6 +3717,7 @@ class TosaArgGen:
                         for rounding_mode in (
                             RoundingMode.SINGLE_ROUND,
                             RoundingMode.DOUBLE_ROUND,
+                            RoundingMode.INEXACT_ROUND,
                         ):
                             if (
                                 error_name == ErrorIf.ScaleNotTrue

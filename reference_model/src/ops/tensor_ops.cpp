@@ -596,9 +596,9 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
 
     ETensor4<InEigenType> input_val = this->in->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of input_val
+        // in bounds_mode: take abs values of input_val
         input_val = input_val.abs();
     }
 
@@ -785,9 +785,9 @@ int OpConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     TWeight weight_val = this->weight->getTensor();
     TBias bias_val     = this->bias->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of conv operands
+        // in bounds_mode: take abs values of conv operands
         input_val  = input_val.abs();
         weight_val = weight_val.abs();
         bias_val   = bias_val.abs();
@@ -1011,9 +1011,9 @@ int OpConv3d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
     TWeight weight_val = this->weight->getTensor();
     TBias bias_val     = this->bias->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of conv operands
+        // in bounds_mode: take abs values of conv operands
         input_val  = input_val.abs();
         weight_val = weight_val.abs();
         bias_val   = bias_val.abs();
@@ -1240,9 +1240,9 @@ int OpDepthwiseConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     TBias bias_val = this->bias->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of conv operands
+        // in bounds_mode: take abs values of conv operands
         input_val  = input_val.abs();
         weight_val = weight_val.abs();
         bias_val   = bias_val.abs();
@@ -1431,9 +1431,9 @@ int OpMatMul<Input1Dtype, Input2Dtype, OutDtype>::eval()
     ERROR_IF(Input1Dtype != TOSA_REF_TYPE_INT8 && a_zp != 0, "OpMatMul: A zeropoint must be zero for non int8_t data");
     ERROR_IF(Input2Dtype != TOSA_REF_TYPE_INT8 && b_zp != 0, "OpMatMul: B zeropoint must be zero for non int8_t data");
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of matmul operands
+        // in bounds_mode: take abs values of matmul operands
         a_val = a_val.abs();
         b_val = b_val.abs();
     }
@@ -1727,9 +1727,9 @@ int OpFFT2d<Dtype>::eval()
     TIn in_real_val = this->in_real->getTensor();
     TIn in_imag_val = this->in_imag->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of real and imag operands
+        // in bounds_mode: take abs values of real and imag operands
         in_real_val = in_real_val.abs();
         in_imag_val = in_imag_val.abs();
 
@@ -1768,7 +1768,7 @@ int OpFFT2d<Dtype>::eval()
                         // Calculate weight values
                         a_cos = cos(a);
                         a_sin = sin(a);
-                        if (g_func_config.abs_mode)
+                        if (g_func_config.bounds_mode)
                         {
                             // Bounded op - Use abs weight values
                             a_cos = std::abs(a_cos);
@@ -1876,9 +1876,9 @@ int OpRFFT2d<Dtype>::eval()
 
     TIn in_val = this->in->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of in operand
+        // in bounds_mode: take abs values of in operand
         in_val = in_val.abs();
 
         if (!this->attribute->local_bound())
@@ -1914,7 +1914,7 @@ int OpRFFT2d<Dtype>::eval()
                         a_cos = cos(a);
                         a_sin = sin(a);
 
-                        if (g_func_config.abs_mode)
+                        if (g_func_config.bounds_mode)
                         {
                             // Bounded op - Use abs weight values
                             a_cos = std::abs(a_cos);
@@ -2109,9 +2109,9 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
 
     TBias bias_val = this->bias->getTensor();
 
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of conv operands
+        // in bounds_mode: take abs values of conv operands
         input_val  = input_val.abs();
         weight_val = weight_val.abs();
         bias_val   = bias_val.abs();

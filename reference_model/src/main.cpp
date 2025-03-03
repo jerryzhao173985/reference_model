@@ -49,7 +49,7 @@ int loadSharedLibs(std::string& custom_op_lib_path);
 int loadGraph(TosaSerializationHandler& tsh, json& test_desc);
 void parse_value(const std::string& text, tosa_level_t& value);
 const std::string getResultFilenamePrefix();
-bool isComplianceAbsModeNeeded(json& test_desc);
+bool isComplianceBoundsModeNeeded(json& test_desc);
 
 int main(int argc, char** argv)
 {
@@ -105,13 +105,21 @@ int main(int argc, char** argv)
 
     GraphStatus status = GraphStatus::TOSA_VALID;
 
-    if (isComplianceAbsModeNeeded(test_desc) && !g_func_config.precise_mode)
+    if (isComplianceBoundsModeNeeded(test_desc))
     {
-        // Warn about precise mode for dot product or abs error compliance
-        DEBUG_INFO(CONFIG, "DOT_PRODUCT/ABS_ERROR compliance: NOTE - enable precise mode for compliance results")
+        if (g_func_config.precise_mode)
+        {
+            // Precise mode enabled and we have a compliance test
+            g_func_config.compliance_mode = true;
+        }
+        else
+        {
+            // Warn about precise mode for compliance tests
+            DEBUG_INFO(CONFIG, "Compliance test: NOTE - enable precise mode for compliance results")
+        }
     }
 
-    // max of 2 runs, second run only happens when precise_mode is set, to do an abs_mode run
+    // max of 2 runs, second run only happens when precise_mode is set, to do a bounds_mode run
     for (int run = 0; run < 2; run++)
     {
         SubgraphTraverser main_gt(tsh.GetMainRegion()->GetBlockByName("main"), &tsh, nullptr);
@@ -234,12 +242,11 @@ int main(int argc, char** argv)
                 fprintf(stderr, "Unknown graph status code=%d.\n", (int)main_gt.getGraphStatus());
         }
 
-        if (run == 0 && status == GraphStatus::TOSA_VALID && g_func_config.precise_mode && g_func_config.eval &&
-            isComplianceAbsModeNeeded(test_desc))
+        if (run == 0 && status == GraphStatus::TOSA_VALID && g_func_config.compliance_mode && g_func_config.eval)
         {
-            // when first run result is valid and precise mode and eval is true: turn on abs_mode for second run
-            DEBUG_INFO(CONFIG, "DOT_PRODUCT/ABS_ERROR compliance: Evaluating the graph again to produce bounds results")
-            g_func_config.abs_mode = true;
+            // when first run result is valid and precise mode and eval is true: turn on bounds_mode for second run
+            DEBUG_INFO(CONFIG, "Compliance test: Evaluating the graph again to produce bounds results")
+            g_func_config.bounds_mode = true;
             continue;
         }
 
@@ -394,21 +401,21 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
 
 const std::string getResultFilenamePrefix()
 {
-    return g_func_config.abs_mode ? "bounds_" : "";
+    return g_func_config.bounds_mode ? "bounds_" : "";
 }
 
 // returns true if test_desc contains a "meta" object containing a "compliance"
 // object which contains "tensors" and one of those has a "mode" whose value is
-// "DOT_PRODUCT" or "ABS_ERROR" or "FP_SPECIAL"
-bool isComplianceAbsModeNeeded(json& test_desc)
+// "DOT_PRODUCT" or "ABS_ERROR" or "FP_SPECIAL" or "RESCALE_INEXACT"
+bool isComplianceBoundsModeNeeded(json& test_desc)
 {
     if (test_desc.contains("meta") && test_desc["meta"].contains("compliance") &&
         test_desc["meta"]["compliance"].contains("tensors"))
     {
         for (auto t : test_desc["meta"]["compliance"]["tensors"])
         {
-            if (t.contains("mode") &&
-                (t["mode"] == "DOT_PRODUCT" || t["mode"] == "ABS_ERROR" || t["mode"] == "FP_SPECIAL"))
+            if (t.contains("mode") && (t["mode"] == "DOT_PRODUCT" || t["mode"] == "ABS_ERROR" ||
+                                       t["mode"] == "FP_SPECIAL" || t["mode"] == "RESCALE_INEXACT"))
             {
                 return true;
             }

@@ -18,7 +18,7 @@ project(tosa_reference_model LANGUAGES CXX)
 
 # The verify directy includes a cmake list that builds the verifier main
 # utility tool only.
-if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE) 
+if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/verify verify)
 endif()
 
@@ -96,6 +96,7 @@ set(CXX_SOURCE
     src/verify/verify_exact.cpp
     src/verify/verify_reduce_product.cpp
     src/verify/verify_relative.cpp
+    src/verify/verify_rescale_inexact.cpp
     src/verify/verify_ulp.cpp
     src/verify/verify_fp_special.cpp
     src/verify/verify_utils.cpp
@@ -122,6 +123,7 @@ set(PUBLIC_INCLUDE_DIRS
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
 )
 set(PRIVATE_INCLUDE_DIRS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/verify
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${FLATBUFFERS_DIR}/include
     ${EIGEN_DIR}
@@ -180,6 +182,7 @@ add_library(tosa_reference_verify_lib SHARED
   src/verify/verify_reduce_product.cpp
   src/verify/verify_relative.cpp
   src/verify/verify_ulp.cpp
+  src/verify/verify_rescale_inexact.cpp
   src/verify/verify_fp_special.cpp
   src/verify/verify_utils.cpp
   src/verify/verify_config.cpp

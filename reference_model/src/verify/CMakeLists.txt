@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 
-# Copyright (c) 2024, ARM Limited.
+# Copyright (c) 2024-2025, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ add_executable(tosa_verify
     ${BASE_REF_DIR}/reference_model/src/verify/verify_exact.cpp
     ${BASE_REF_DIR}/reference_model/src/verify/verify_reduce_product.cpp
     ${BASE_REF_DIR}/reference_model/src/verify/verify_relative.cpp
+    ${BASE_REF_DIR}/reference_model/src/verify/verify_rescale_inexact.cpp
     ${BASE_REF_DIR}/reference_model/src/verify/verify_ulp.cpp
     ${BASE_REF_DIR}/reference_model/src/verify/verify_fp_special.cpp
     ${BASE_REF_DIR}/reference_model/src/verify/verify_utils.cpp

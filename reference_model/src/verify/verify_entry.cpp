@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -48,6 +48,9 @@ bool verify(const CTensor* ref, const CTensor* refBnd, const CTensor* imp, const
         }
         case VerifyMode::FpSpecial: {
             return verifyFpSpecial(ref, refBnd, imp);
+        }
+        case VerifyMode::RescaleInexact: {
+            return verifyRescaleInexact(ref, refBnd, imp, cfg.rescaleInexactInfo);
         }
         default: {
             WARNING("[Verifier] Unsupported verification mode.");

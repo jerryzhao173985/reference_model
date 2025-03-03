@@ -1,5 +1,5 @@
 
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -93,6 +93,18 @@ bool verifyRelative(const CTensor* referenceTensor,
 ///
 /// \return True if compliant else false
 bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* boundsTensor, const CTensor* implementationTensor);
+
+/// \brief Perform rescale inexact result verification
+///
+/// \param referenceTensor      Reference tensor
+/// \param implementationTensor Implementation resulting tensor
+/// \param riInfo               Rescale inexact meta-data
+///
+/// \return True if compliant else false
+bool verifyRescaleInexact(const CTensor* referenceTensor,
+                          const CTensor* boundsTensor,
+                          const CTensor* implementationTensor,
+                          const RescaleInexactVerifyInfo& riInfo);
 
 };    // namespace TosaReference
 
