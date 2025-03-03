@@ -47,6 +47,7 @@ class ComplianceMode(IntEnum):
     REDUCE_PRODUCT = 4
     ABS_ERROR = 5
     RELATIVE = 6
+    RESCALE_INEXACT = 7
 
 
 class TestDataType(IntEnum):

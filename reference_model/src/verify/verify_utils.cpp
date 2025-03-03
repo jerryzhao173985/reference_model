@@ -57,6 +57,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
                                  { VerifyMode::ReduceProduct, "REDUCE_PRODUCT" },
                                  { VerifyMode::AbsError, "ABS_ERROR" },
                                  { VerifyMode::Relative, "RELATIVE" },
+                                 { VerifyMode::RescaleInexact, "RESCALE_INEXACT" },
                              })
 
 void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
@@ -110,6 +111,11 @@ void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
     j.at("ulp_bound").get_to(rInfo.ulpBound);
 }
 
+void from_json(const nlohmann::json& j, RescaleInexactVerifyInfo& riInfo)
+{
+    j.at("unsigned_data").get_to(riInfo.unsignedData);
+}
+
 void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
@@ -145,6 +151,12 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     if (j.contains("relative_info"))
     {
         j.at("relative_info").get_to(cfg.relativeInfo);
+    }
+
+    cfg.rescaleInexactInfo.unsignedData = false;
+    if (j.contains("rescale_inexact_info"))
+    {
+        j.at("rescale_inexact_info").get_to(cfg.rescaleInexactInfo);
     }
 }
 

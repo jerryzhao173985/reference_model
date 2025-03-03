@@ -19,6 +19,7 @@
 #include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
+#include "verify_utils.h"
 #include <cfenv>
 #include <cmath>
 
@@ -95,7 +96,8 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     const int in_rank          = inputs[0]->getRank();
     const auto rounding_mode   = attribute->rounding_mode();
 
-    if (rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND)
+    if (rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND &&
+        rounding_mode != RoundingMode_INEXACT_ROUND)
     {
         printNodeValidationError("OpRescale: Unsupported rounding mode");
         return 1;
@@ -201,6 +203,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     const bool scale32       = attribute->scale32();
     const auto rounding_mode = attribute->rounding_mode();
     const bool double_round  = (rounding_mode == RoundingMode_DOUBLE_ROUND);
+    const bool inexact_round = (rounding_mode == RoundingMode_INEXACT_ROUND);
     const bool per_channel   = attribute->per_channel();
 
     // Note that how rescale op interprets signedness of the tensor depends on
@@ -303,55 +306,104 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
         shift.push_back(static_cast<int32_t>(shift_val(i)));
     }
 
+    // These will be updated if the per_channel flag is set
+    int32_t value_multiplier = multiplier[0];
+    int32_t value_shift      = shift[0];
+
+    // unaryExpr function for RESCALE
+    auto rescale_func = [=, &value_multiplier, &value_shift](InEigenType in_val) -> OutEigenType {
+        int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
+
+        if (!inexact_round)
+        {
+            int32_t scaled;
+            if (scale32)
+                scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
+                                                                  value_multiplier, value_shift, double_round);
+            else
+                scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, value_multiplier, value_shift);
+
+            int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp_extended;
+            int64_t i32_max_in_64, i32_min_in_64;
+            i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+            i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+
+            if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
+            {
+                std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
+                                   std::to_string(output_zp_extended) + "] not in " +
+                                   ((output_unsigned) ? "unsigned" : "signed") + " i32 range";
+                throw desc;
+            }
+
+            // Treat the output values as unsigned if `output_unsigned` is true.
+            int32_t clipped_val = (output_unsigned)
+                                      ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u, this->parent_sgt)
+                                      : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s, this->parent_sgt);
+
+            OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
+            return out_val;
+        }
+        else
+        {
+            if (!g_func_config.precise_mode)
+            {
+                // INEXACT ROUND using FP32 maths
+                float res_f32 = static_cast<float>(input_zp_shifted) * static_cast<float>(value_multiplier) *
+                                std::exp2(static_cast<float>(-value_shift));
+                res_f32 += static_cast<float>(output_zp_extended);
+                float clipped_f32    = (output_unsigned)
+                                           ? applyClip<float, float>(res_f32, QMin_u, QMax_u, this->parent_sgt)
+                                           : applyClip<float, float>(res_f32, QMin_s, QMax_s, this->parent_sgt);
+                OutEigenType out_val = std::rint(clipped_f32);
+                return out_val;
+            }
+            else
+            {
+                // INEXACT ROUND Precision calculation using FP64 maths
+                double res_f64 = static_cast<double>(input_zp_shifted) * static_cast<double>(value_multiplier) *
+                                 std::exp2(static_cast<double>(-value_shift));
+
+                res_f64 += static_cast<double>(output_zp_extended);
+
+                if (g_func_config.compliance_mode)
+                {
+                    // Alter result to be min or max of error bound limits depending on mode
+                    // In the normal (first) pass of precise mode - choose the minimum
+                    // In the bounds (second) pass of precise mode - choose the maximum
+                    double err_bnd = 0.5 + 3 * std::abs(res_f64) * std::exp2(-23 /*-normal_frac<fp32>()*/ - 1);
+
+                    // Force the rounding depending on minimum/maximum value
+                    res_f64 =
+                        (g_func_config.bounds_mode) ? std::floor(res_f64 + err_bnd) : std::ceil(res_f64 - err_bnd);
+                }
+
+                double clipped_f64   = (output_unsigned)
+                                           ? applyClip<double, double>(res_f64, QMin_u, QMax_u, this->parent_sgt)
+                                           : applyClip<double, double>(res_f64, QMin_s, QMax_s, this->parent_sgt);
+                OutEigenType out_val = std::rint(clipped_f64);
+                return out_val;
+            }
+        }
+    };
+
     if (per_channel)
     {
         ETensor2<InEigenType> curr_channel_slice_prescaled;
         ETensor2<OutEigenType> curr_channel_slice_postscaled;
-        int32_t channel_multiplier, channel_shift;
         Eigen::array<Eigen::Index, 2> begin, size;
         size = Eigen::array<Eigen::Index, 2>({ shape_2d[0], 1 });
+
         try
         {
             for (int32_t i = 0; i < shape_2d[1]; i++)
             {
                 begin                        = Eigen::array<Eigen::Index, 2>({ 0, i });
                 curr_channel_slice_prescaled = input_reshaped.slice(begin, size);
-                channel_multiplier           = multiplier[static_cast<size_t>(i)];
-                channel_shift                = shift[static_cast<size_t>(i)];
-                curr_channel_slice_postscaled =
-                    curr_channel_slice_prescaled.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                        int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
+                value_multiplier             = multiplier[static_cast<size_t>(i)];
+                value_shift                  = shift[static_cast<size_t>(i)];
 
-                        int32_t scaled;
-                        if (scale32)
-                            scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
-                                                                              channel_multiplier, channel_shift,
-                                                                              double_round);
-                        else
-                            scaled = TosaReference::QuantUtil::apply_scale_16(
-                                input_zp_shifted, static_cast<int16_t>(channel_multiplier), channel_shift);
-
-                        int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
-                        int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-                        int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-
-                        if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
-                        {
-                            std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
-                                               std::to_string(output_zp_extended) + "] not in i32 range";
-                            throw desc;
-                        }
-
-                        // Treat the output values as unsigned if `output_unsigned` is true.
-                        int32_t clipped_val = (output_unsigned)
-                                                  ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64),
-                                                                                 QMin_u, QMax_u, this->parent_sgt)
-                                                  : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64), QMin_s,
-                                                                                QMax_s, this->parent_sgt);
-
-                        OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
-                        return out_val;
-                    });
+                curr_channel_slice_postscaled = curr_channel_slice_prescaled.unaryExpr(rescale_func);
 
                 for (int32_t j = 0; j < shape_2d[0]; j++)
                 {
@@ -366,43 +418,9 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     }
     else
     {
-        int32_t tensor_multiplier = multiplier[0];
-        int32_t tensor_shift      = shift[0];
         try
         {
-            output_2d = input_reshaped.unaryExpr([=](InEigenType in_val) -> OutEigenType {
-                int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
-
-                int32_t scaled;
-                if (scale32)
-                    scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
-                                                                      tensor_multiplier, tensor_shift, double_round);
-                else
-                    scaled = TosaReference::QuantUtil::apply_scale_16(
-                        input_zp_shifted, static_cast<int16_t>(tensor_multiplier), tensor_shift);
-
-                int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
-                int64_t i32_max_in_64 = IsSignedInt<OutDtype>()
-                                            ? static_cast<int64_t>(std::numeric_limits<int32_t>::max())
-                                            : static_cast<int64_t>(std::numeric_limits<uint32_t>::max());
-                int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-
-                if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
-                {
-                    std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
-                                       std::to_string(output_zp_extended) + "] not in i32 range";
-                    throw desc;
-                }
-
-                // Treat the output values as unsigned if `output_unsigned` is true.
-                int32_t clipped_val = (output_unsigned) ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64),
-                                                                                       QMin_u, QMax_u, this->parent_sgt)
-                                                        : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64),
-                                                                                      QMin_s, QMax_s, this->parent_sgt);
-
-                OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
-                return out_val;
-            });
+            output_2d = input_reshaped.unaryExpr(rescale_func);
         }
         catch (std::string desc)
         {

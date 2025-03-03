@@ -620,7 +620,7 @@ int OpPow<Rank, Dtype>::register_fcn()
             };
             break;
         case TOSA_REF_TYPE_FP64:
-            if (g_func_config.abs_mode)
+            if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 2*(1+abs(log(abs(x))*y))
                 this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {

@@ -12,6 +12,7 @@ class TosaProfiles:
     TosaExtFFT = "tosa-ext-fft"
     TosaExtFP8E4M3 = "tosa-ext-fp8e4m3"
     TosaExtFP8E5M2 = "tosa-ext-fp8e5m2"
+    TosaExtInexactRound = "tosa-ext-inexactround"
     TosaExtInt16 = "tosa-ext-int16"
     TosaExtInt4 = "tosa-ext-int4"
     TosaExtVariable = "tosa-ext-variable"
@@ -24,6 +25,7 @@ class TosaProfiles:
         TosaExtFFT: (TosaProFP,),
         TosaExtFP8E4M3: (TosaProFP,),
         TosaExtFP8E5M2: (TosaProFP,),
+        TosaExtInexactRound: (TosaProINT,),
         TosaExtInt16: (TosaProINT,),
         TosaExtInt4: (TosaProINT,),
         TosaExtVariable: (TosaProINT, TosaProFP),
@@ -43,6 +45,7 @@ class TosaProfiles:
             TosaProfiles.TosaExtFFT,
             TosaProfiles.TosaExtFP8E4M3,
             TosaProfiles.TosaExtFP8E5M2,
+            TosaProfiles.TosaExtInexactRound,
             TosaProfiles.TosaExtInt16,
             TosaProfiles.TosaExtInt4,
             TosaProfiles.TosaExtVariable,

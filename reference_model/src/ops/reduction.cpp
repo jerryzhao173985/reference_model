@@ -399,9 +399,9 @@ template <int Rank, TOSA_REF_TYPE Dtype>
 int OpReduceSumDouble<Rank, Dtype>::eval()
 {
     typename ReduceNode<Rank, Dtype>::TIn in_val = this->in->getTensor();
-    if (g_func_config.abs_mode)
+    if (g_func_config.bounds_mode)
     {
-        // in abs_mode: take abs values of in value
+        // in bounds_mode: take abs values of in value
         in_val = in_val.abs();
     }
     switch (Dtype)

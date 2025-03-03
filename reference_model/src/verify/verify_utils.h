@@ -54,7 +54,8 @@ enum class VerifyMode
     FpSpecial,
     ReduceProduct,
     AbsError,
-    Relative
+    Relative,
+    RescaleInexact
 };
 
 /// \brief ULP verification meta-data
@@ -105,6 +106,14 @@ struct RelativeVerifyInfo
     double ulpBound;
 };
 
+/// \brief rescale inexact verification meta-data
+struct RescaleInexactVerifyInfo
+{
+    RescaleInexactVerifyInfo() = default;
+
+    bool unsignedData;
+};
+
 /// \brief Verification meta-data
 struct VerifyConfig
 {
@@ -117,6 +126,7 @@ struct VerifyConfig
     ReduceProductVerifyInfo reduceProductInfo;
     AbsErrorVerifyInfo absErrorInfo;
     RelativeVerifyInfo relativeInfo;
+    RescaleInexactVerifyInfo rescaleInexactInfo;
 };
 
 /// \brief Parse the verification config for a tensor when given in JSON form

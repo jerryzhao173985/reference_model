@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
             };
             break;
         case TOSA_REF_TYPE_FP64:
-            if (g_func_config.abs_mode)
+            if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 2*(1+abs(a))
                 this->fcn = [](InEigenType a) -> OutEigenType {
@@ -230,7 +230,7 @@ int OpTanh<Rank, Dtype>::register_fcn()
             };
             break;
         case TOSA_REF_TYPE_FP64:
-            if (g_func_config.abs_mode)
+            if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 4*(1+abs(a))
                 this->fcn = [](InEigenType a) -> OutEigenType {
