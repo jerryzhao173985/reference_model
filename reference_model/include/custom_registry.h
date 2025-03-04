@@ -25,6 +25,7 @@
 #define LIBFUNC(lib, fn) dlsym((lib), (fn))
 #define CLOSELIB(lib) dlclose((lib))
 #elif _WIN32
+#define NOMINMAX
 #include <windows.h>
 #define LIBTYPE HINSTANCE
 #define OPENLIB(libname) load_library_w(libname)
