@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -201,10 +201,9 @@ void func_debug_warning(
 // Expression for whether the debugging verbosity + debugging unit is enabled for free-form printouts
 #ifdef DEBUG_INSTANCE_EXPR_2
 #define DEBUG_ENABLED(VERB, LEVEL)                                                                                     \
-    (__builtin_expect((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) && \
-                          (g_func_debug.func_debug_inst_mask & (uint64_t(1) << (DEBUG_INSTANCE_EXPR))) &&              \
-                          (g_func_debug.func_debug_verbosity & (VERB)),                                                \
-                      0))
+    ((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) &&                  \
+     (g_func_debug.func_debug_inst_mask & (uint64_t(1) << (DEBUG_INSTANCE_EXPR))) &&                                   \
+     (g_func_debug.func_debug_verbosity & (VERB)))
 // Debug printing macro
 #define DEBUG(VERB, LEVEL, FMT, ...)                                                                                   \
     if (DEBUG_ENABLED(VERB, LEVEL))                                                                                    \
@@ -221,10 +220,9 @@ void func_debug_warning(
 #else    // !DEBUG_INSTANCE_EXPR_2
 
 #define DEBUG_ENABLED(VERB, LEVEL)                                                                                     \
-    (__builtin_expect((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) && \
-                          (g_func_debug.func_debug_inst_mask & (uint64_t(1) << (DEBUG_INSTANCE_EXPR))) &&              \
-                          (g_func_debug.func_debug_verbosity & (VERB)),                                                \
-                      0))
+    ((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) &&                  \
+     (g_func_debug.func_debug_inst_mask & (uint64_t(1) << (DEBUG_INSTANCE_EXPR))) &&                                   \
+     (g_func_debug.func_debug_verbosity & (VERB)))
 // Debug printing macro
 #define DEBUG(VERB, LEVEL, FMT, ...)                                                                                   \
     if (DEBUG_ENABLED(VERB, LEVEL))                                                                                    \
@@ -244,9 +242,8 @@ void func_debug_warning(
 
 // Expression for whether the debugging verbosity + debugging unit is enabled for free-form printouts
 #define DEBUG_ENABLED(VERB, LEVEL)                                                                                     \
-    (__builtin_expect((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) && \
-                          (g_func_debug.func_debug_verbosity & (VERB)),                                                \
-                      0))
+    ((g_func_debug.func_debug_mask == DEBUG_ALL || g_func_debug.func_debug_mask & (DEBUG_##LEVEL)) &&                  \
+     (g_func_debug.func_debug_verbosity & (VERB)))
 // Debug printing macro
 #define DEBUG(VERB, LEVEL, FMT, ...)                                                                                   \
     if (DEBUG_ENABLED(VERB, LEVEL))                                                                                    \
