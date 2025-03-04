@@ -28,9 +28,6 @@
 #ifndef ARITH_UTIL_H
 #define ARITH_UTIL_H
 
-#include <fenv.h>
-#include <math.h>
-#define __STDC_LIMIT_MACROS    //enable min/max of plain data type
 #include "dtype.h"
 #include "dtype_limits.h"
 #include "func_config.h"
@@ -41,12 +38,12 @@
 #include "subgraph_traverser.h"
 #include <bitset>
 #include <cassert>
+#include <fenv.h>
 #include <limits>
 #include <stdint.h>
 #include <typeinfo>
 
 using namespace tosa;
-using namespace std;
 using namespace TosaReference;
 
 inline size_t _count_one(uint64_t val)
