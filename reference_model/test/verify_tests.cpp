@@ -186,7 +186,7 @@ std::enable_if_t<std::is_floating_point_v<FP>, std::vector<FP>> generateRandomTe
 // Calculates the "error" in the tolerance calculation as: E = pow(1 + pow(2, -M-1), N) - 1.
 // where M is the number of mantisa bits in the floating point representation and N is the number
 // of elements in the product.
-constexpr auto reduceProductError(uint64_t M, uint64_t N)
+auto reduceProductError(uint64_t M, uint64_t N)
 {
     return std::pow(1 + std::pow(2, -static_cast<int64_t>(M) - 1), N) - 1;
 }
