@@ -25,7 +25,7 @@
 #define LIBFUNC(lib, fn) dlsym((lib), (fn))
 #define CLOSELIB(lib) dlclose((lib))
 #elif _WIN32
-#include <libloaderapi.h>
+#include <windows.h>
 #define LIBTYPE HINSTANCE
 #define OPENLIB(libname) load_library_w(libname)
 #define LIBFUNC(lib, fn) GetProcAddress((lib), (fn))
