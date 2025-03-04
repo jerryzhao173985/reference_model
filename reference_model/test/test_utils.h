@@ -190,24 +190,36 @@ void compareOutputSpecial(std::vector<T>& tensor1, std::vector<T>& tensor2)
                     "Test construction error: tensor1 must not be larger than tensor2");
     for (size_t i = 0; i < tensor1.size(); ++i)
     {
-        T t1_i = tensor1[i];
-        T t2_i = tensor2[i];
-        if (std::isfinite(double(t1_i)) && std::isfinite(double(t2_i)))
+        T t1_i            = tensor1[i];
+        T t2_i            = tensor2[i];
+        const double d1_i = static_cast<double>(t1_i);
+        const double d2_i = static_cast<double>(t2_i);
+
+        if (std::isfinite(d1_i) && std::isfinite(d2_i))
         {
             INFO("index ", i);
-            CHECK(t1_i == t2_i);
+            // If both values are zero, check that their sign bits match.
+            if (d1_i == 0.0 && d2_i == 0.0)
+            {
+                // Check sign for 0
+                CHECK(std::signbit(d1_i) == std::signbit(d2_i));
+            }
+            else
+            {
+                CHECK(t1_i == t2_i);
+            }
         }
         else
         {
             INFO("index", i);
 
-            CHECK(std::isnan(double(t1_i)) == std::isnan(double(t2_i)));
+            CHECK(std::isnan(d1_i) == std::isnan(d2_i));
             // Do not check sign for NaNs
-            if (std::isnan(double(t1_i)) && std::isnan(double(t2_i)))
+            if (std::isnan(d1_i) && std::isnan(d2_i))
                 continue;
 
-            CHECK(std::isinf(double(t1_i)) == std::isinf(double(t2_i)));
-            CHECK(std::signbit(double(t1_i)) == std::signbit(double(t2_i)));
+            CHECK(std::isinf(d1_i) == std::isinf(d2_i));
+            CHECK(std::signbit(d1_i) == std::signbit(d2_i));
         }
     }
 }
