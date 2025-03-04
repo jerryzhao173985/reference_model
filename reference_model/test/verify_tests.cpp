@@ -636,7 +636,7 @@ TEST_CASE("positive - abs error")
     {
         // Generate some data that meets the ABS_ERROR requirements of the result.
         auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [=](auto& value) {
             if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
             {
                 // If we used 32-bit precision here, we would add more error.
@@ -659,7 +659,7 @@ TEST_CASE("positive - abs error")
     {
         // Generate some data that exceeds a requirements for each value in the tensor.
         auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [](auto& value) {
+        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [=](auto& value) {
             if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
             {
                 // If we used 32-bit precision here, we would add more error.
