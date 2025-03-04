@@ -156,7 +156,18 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.f / (1.f + (expf(-1.f * a)))); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                OutEigenType one        = static_cast<OutEigenType>(1);
+                OutEigenType minus_one  = static_cast<OutEigenType>(-1);
+                OutEigenType a_native   = static_cast<OutEigenType>(a);
+                OutEigenType exp_arg    = minus_one * a_native;
+                float exp_arg_f         = static_cast<float>(exp_arg);
+                float exp_result_f      = expf(exp_arg_f);
+                OutEigenType exp_result = static_cast<OutEigenType>(exp_result_f);
+                OutEigenType sum        = one + exp_result;
+                OutEigenType result     = one / sum;
+                return fpTrunc<Dtype>(result);
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
@@ -188,7 +199,30 @@ int OpTanh<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(tanhf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                // If the input is zero (including -0), return it directly to preserve its sign.
+                if (a == static_cast<InEigenType>(0))
+                    return static_cast<OutEigenType>(a);
+
+                OutEigenType one     = static_cast<OutEigenType>(1);
+                OutEigenType neg_two = static_cast<OutEigenType>(-2);
+
+                OutEigenType exp_arg_native = neg_two * a;
+                float exp_arg               = static_cast<float>(exp_arg_native);
+                float exp_result            = expf(exp_arg);
+                OutEigenType native_exp     = static_cast<OutEigenType>(exp_result);
+
+                OutEigenType numerator   = one - native_exp;
+                OutEigenType denominator = one + native_exp;
+
+                numerator   = std::clamp(numerator, static_cast<OutEigenType>(DtypeLimits<Dtype>::lowest),
+                                         static_cast<OutEigenType>(DtypeLimits<Dtype>::max));
+                denominator = std::clamp(denominator, static_cast<OutEigenType>(DtypeLimits<Dtype>::lowest),
+                                         static_cast<OutEigenType>(DtypeLimits<Dtype>::max));
+
+                OutEigenType tanh_value = numerator / denominator;
+                return fpTrunc<Dtype>(tanh_value);
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
