@@ -102,13 +102,12 @@
                       TOSA_REF_TYPE_##OUT_DTYPE>(sgt, attribute, id);                                                  \
     }
 
-// Statement-expression to evaluate accumulate attribute in-place
 #define ACCUM_FROM_ATTRIBUTE(ATTRIBUTE_NAME)                                                                           \
-    ({                                                                                                                 \
+    ([=](tosa::TosaAttributeBase* attribute) -> TosaReference::TOSA_REF_TYPE {                                         \
         tosa::DType accumDType = tosa::DType_UNKNOWN;                                                                  \
         if (auto p = dynamic_cast<tosa::Tosa##ATTRIBUTE_NAME##Attribute*>(attribute))                                  \
         {                                                                                                              \
-            auto attr = new tosa::Tosa##ATTRIBUTE_NAME##Attribute(p);                                                  \
+            auto attr = new tosa::Tosa##ATTRIBUTE_NAME##Attribute(*p);                                                 \
             ASSERT_MEM(attr);                                                                                          \
             accumDType = tosa::EnumValuesDType()[attr->acc_type()];                                                    \
         }                                                                                                              \
@@ -117,8 +116,8 @@
             FATAL_ERROR("Can't initialize Tosa" #ATTRIBUTE_NAME "Attribute.\nPre-initialization "                      \
                         "of this attribute is required in order to determine the accumulate type.");                   \
         }                                                                                                              \
-        ConvertDType(accumDType);                                                                                      \
-    })
+        return ConvertDType(accumDType);                                                                               \
+    })(attribute)
 
 #define DEF_FACTORY_TWO_TYPE_RESIZE_INT16(OP, DTYPE1, DTYPE2)                                                          \
     if (inputDTYPE == TOSA_REF_TYPE_##DTYPE1 && outputDTYPE == TOSA_REF_TYPE_##DTYPE2)                                 \
