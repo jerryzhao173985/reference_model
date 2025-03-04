@@ -30,6 +30,11 @@
 #include <nlohmann/json.hpp>
 #include <stdio.h>
 
+#ifdef _WIN32
+#include <ctype.h>
+#define strncasecmp _strnicmp
+#endif
+
 using namespace TosaReference;
 using namespace tosa;
 using json = nlohmann::json;
