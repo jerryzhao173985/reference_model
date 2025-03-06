@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Arm Limited.
+# Copyright (c) 2021-2025 Arm Limited.
 # SPDX-License-Identifier: Apache-2.0
 """Setup script for backward compatibility."""
 import multiprocessing
@@ -30,7 +30,7 @@ class CMakeBuild(build_py):
         ]
         generator_flags = ["-GNinja", "-UCMAKE_GENERATOR"]
         build_cmd = ["cmake", "--build", "."]
-        build_cmd.append(f"-j{round(multiprocessing.cpu_count()*0.7)}")
+        build_cmd.append(f"-j{round(multiprocessing.cpu_count() * 0.7)}")
 
         print(f"Configuring cmake from build dir '{build_dir}'.")
 

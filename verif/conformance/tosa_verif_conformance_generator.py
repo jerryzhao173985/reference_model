@@ -211,7 +211,7 @@ def build_op_tests(
         try:
             raw_stdout, _ = _run_sh_command(args, args.ref_model_path.parent, cmd)
             logger.info(
-                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} completed successfully"
+                f"{operator} test batch {(i + 1)}/{len(build_cmds_list)} completed successfully"
             )
 
             if args.tests_list_file is not None:
@@ -220,7 +220,7 @@ def build_op_tests(
 
         except Exception as e:
             logger.error(
-                f"{operator} test batch {(i+1)}/{len(build_cmds_list)} unsuccessful, skipping"
+                f"{operator} test batch {(i + 1)}/{len(build_cmds_list)} unsuccessful, skipping"
             )
             logger.error(f" build_op_tests error: {e} ")
             error = True
@@ -325,12 +325,12 @@ def generate_results(
     # Use captured output for run_sh_command to work out if test passed.
     for i, rc in enumerate(pool_results):
         if fail_string in str(rc[0]):
-            logger.error(f"Test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} failed.")
+            logger.error(f"Test {i + 1}/{len(ref_cmds)}: {ref_cmds[i][-1]} failed.")
             failed_counter += 1
         else:
-            logger.debug(f"Test {i+1}/{len(ref_cmds)}: {ref_cmds[i][-1]} passed.")
+            logger.debug(f"Test {i + 1}/{len(ref_cmds)}: {ref_cmds[i][-1]} passed.")
 
-    logger.info(f"{len(ref_cmds)-failed_counter}/{len(ref_cmds)} tests passed")
+    logger.info(f"{len(ref_cmds) - failed_counter}/{len(ref_cmds)} tests passed")
     logger.info("Ran tests on model and saved results of passing tests")
 
 
@@ -399,15 +399,15 @@ def convert_tests(
     for i, result in enumerate(pool_results):
         if result != 0:
             logger.error(
-                f"test {i+1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} failed to convert."
+                f"test {i + 1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} failed to convert."
             )
             failed_counter += 1
         else:
             logger.debug(
-                f"test {i+1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} converted"
+                f"test {i + 1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} converted"
             )
     logger.info(
-        f"{len(c2c_args_list)-failed_counter}/{len(c2c_args_list)} tests successfully converted"
+        f"{len(c2c_args_list) - failed_counter}/{len(c2c_args_list)} tests successfully converted"
     )
 
     if failed_counter > 0:
