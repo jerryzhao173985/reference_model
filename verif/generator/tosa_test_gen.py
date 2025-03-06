@@ -3643,9 +3643,6 @@ class TosaTestGen:
     #    different inputs in the operator require different TestDataTypes.
     #  'compliance': (optional) sets some extra information for compliance. E.g. the number of ULPs
     #    of error allowed in implementations.
-    #  'broadcastable_bias': (optional) if set to True, the "bias" input of this operation will be
-    #    sometimes generated as an array of a single value regardless of the output shape.
-    #    Otherwise, output shape is always respected.
     #  'broadcastable_inputs': (optional) number of inputs that can be broadcastable - all other
     #    inputs are treated as normal tensors
     #  'filter': (optional) list of shapes to be used for generating kernels/filters
@@ -3747,7 +3744,6 @@ class TosaTestGen:
             ),
             "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
-            "broadcastable_bias": True,
             "filter": KERNELS_2D,
             "template": True,
         },

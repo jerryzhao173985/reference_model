@@ -2123,20 +2123,11 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
         }
     }
 
-    Eigen::array<Eigen::Index, 4> reshape_dim;
-    reshape_dim.fill(1);
-    reshape_dim[3] = b_out_channels;
-
-    Eigen::array<Eigen::Index, 4> bcast;
-    bcast[0] = out_batch;
-    bcast[1] = out_height;
-    bcast[2] = out_width;
-    bcast[3] = (b_out_channels == 1) ? out_channels : 1;
+    bool broadcast_bias = (b_out_channels == 1);
 
     TAcc acc_tensor = this->output->getTensor().template cast<AccEigenType>();
     acc_tensor.setZero();
 
-    // reference implementation from: tensorflow/tensorflow/lite/kernels/internal/reference/reference_ops.h
     for (int ob = 0; ob < out_batch; ob++)
     {
         for (int oy = 0; oy < out_height; oy++)
@@ -2177,9 +2168,9 @@ int OpTransposeConv2d<InDtype, WeightDtype, AccDtype, OutDtype>::eval()
                             }
                         }
                     }
-                    // update output tensor and add bias
+                    // update output tensor and add bias, broadcasting if necessary
                     this->output->getTensor()(ob, oy, ox, oc) =
-                        static_cast<OutEigenType>(acc_tensor(ob, oy, ox, oc)) + bias_val(oc);
+                        static_cast<OutEigenType>(acc_tensor(ob, oy, ox, oc)) + bias_val(broadcast_bias ? 0 : oc);
                 }
             }
         }

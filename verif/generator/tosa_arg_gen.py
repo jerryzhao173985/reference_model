@@ -404,14 +404,9 @@ class TosaTensorGen:
         # The filter dimensions are OHWI
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
 
-        # The bias is OC or 1 if broadcastable
-        try:
-            if op["broadcastable_bias"]:
-                if rng.choice([True, False]):
-                    ofm_depth = 1
-        except KeyError:
-            pass
-        bias_shape = np.asarray([ofm_depth])
+        # The bias is OC or 1 (if 1, it's broadcasted)
+        broadcast_bias = rng.choice((False, True))
+        bias_shape = np.asarray([1 if broadcast_bias else ofm_depth])
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -447,8 +442,9 @@ class TosaTensorGen:
             [ofm_channel, filter_dhw[0], filter_dhw[1], filter_dhw[2], ifm_shape[4]]
         )
 
-        # The bias is OC
-        bias_shape = np.asarray([ofm_channel])
+        # The bias is OC or 1 (if 1, it's broadcasted)
+        broadcast_bias = rng.choice((False, True))
+        bias_shape = np.asarray([1 if broadcast_bias else ofm_channel])
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -482,8 +478,9 @@ class TosaTensorGen:
         # The filter dimensions are OHWI
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
 
-        # The bias is OC
-        bias_shape = np.asarray([ofm_depth])
+        # The bias is OC or 1 (if 1, it's broadcasted)
+        broadcast_bias = rng.choice((False, True))
+        bias_shape = np.asarray([1 if broadcast_bias else ofm_depth])
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -522,8 +519,9 @@ class TosaTensorGen:
         # The filter dimensions are HWCM
         filter_shape = np.asarray([filter_hw[0], filter_hw[1], ifm_shape[3], filter_m])
 
-        # The bias is M * C
-        bias_shape = np.asarray([ifm_shape[3] * filter_m])
+        # The bias is M * C or 1 (if 1, it's broadcasted)
+        broadcast_bias = rng.choice((False, True))
+        bias_shape = np.asarray([1 if broadcast_bias else ifm_shape[3] * filter_m])
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
