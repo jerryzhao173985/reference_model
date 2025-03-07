@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -135,6 +135,10 @@ set(PRIVATE_INCLUDE_DIRS
 # Build TOSA Reference Model library
 add_library(tosa_reference_model_lib STATIC ${CXX_SOURCE})
 
+if(MSVC)
+  target_compile_options(tosa_reference_model_lib PRIVATE /Ob0)
+endif()
+
 target_include_directories(tosa_reference_model_lib
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
@@ -217,6 +221,10 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
 
   add_executable(tosa_reference_model ${CXX_SOURCE_EX})
 
+if(MSVC)
+  target_compile_options(tosa_reference_model PRIVATE /Ob0)
+endif()
+
   target_include_directories(tosa_reference_model
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
@@ -267,6 +275,10 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   list(APPEND CXX_SOURCE_TESTS ${CXX_SOURCE})
 
   add_executable(unit_tests ${CXX_SOURCE_TESTS})
+
+  if(MSVC)
+    target_compile_options(unit_tests PRIVATE /Ob0)
+  endif()
 
   target_include_directories(unit_tests
     PUBLIC
