@@ -164,6 +164,7 @@ protected:
     TosaReference::TensorTemplate<TIn>* in;
     TosaReference::TensorTemplate<TInMultiples>* multiples;
     TosaReference::TensorTemplate<TOut>* out;
+    int checkOutputShapeVersusMultiples();
 };
 
 // primary template for op tile

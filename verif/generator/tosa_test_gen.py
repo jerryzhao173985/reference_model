@@ -1059,6 +1059,7 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
             bias_dtype=bias.dtype,
+            bias_shape=bias.shape,
         ):
             return None
 
@@ -1150,6 +1151,7 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
             bias_dtype=bias.dtype,
+            bias_shape=bias.shape,
         ):
             return None
 
@@ -1231,6 +1233,7 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
             bias_dtype=bias.dtype,
+            bias_shape=bias.shape,
         ):
             return None
 
@@ -1321,6 +1324,7 @@ class TosaTestGen:
             output_shape=result_tensor.shape,
             accum_dtype=accum_dtype,
             bias_dtype=bias.dtype,
+            bias_shape=bias.shape,
         ):
             return None
 
@@ -1948,6 +1952,7 @@ class TosaTestGen:
             output_list=output_list,
             num_operands=num_operands,
             input1=a,
+            multiples=multiples_attr,
         ):
             return None
 
@@ -2279,6 +2284,7 @@ class TosaTestGen:
             num_operands=num_operands,
             input_unsigned=input_unsigned,
             output_unsigned=output_unsigned,
+            per_channel=per_channel,
         ):
             return None
 
@@ -3758,6 +3764,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
+                TosaErrorValidator.evConvBiasShapeMismatch,
             ),
             "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
@@ -3794,6 +3801,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
+                TosaErrorValidator.evConvBiasShapeMismatch,
             ),
             "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
@@ -3830,6 +3838,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeNonInteger,
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
+                TosaErrorValidator.evConvBiasShapeMismatch,
             ),
             "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_CONVOLUTION,
@@ -3933,6 +3942,7 @@ class TosaTestGen:
                 TosaErrorValidator.evConvOutputShapeMismatch,
                 TosaErrorValidator.evWrongAccumulatorType,
                 TosaErrorValidator.evWrongBiasType,
+                TosaErrorValidator.evConvBiasShapeMismatch,
             ),
             "data_gen": DP_FS_IS_DYN_DATAGEN,
             "special_test_sets": STS_TRANSPOSE_CONVOLUTION,
@@ -4988,6 +4998,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongInputType,
                 TosaErrorValidator.evWrongOutputType,
                 TosaErrorValidator.evWrongOutputList,
+                TosaErrorValidator.evConcatNoInputList,
             ),
             "data_gen": PR_FS_IS_DATAGEN,
         },
@@ -5089,12 +5100,8 @@ class TosaTestGen:
                 }
             },
             "error_if_validators": (
-                # TODO Turn off these error categories for now as the reference
-                # model cannot allocate memory space for empty tensor. We probably
-                # can report an accurate error messege at the right place during
-                # exeuction.
-                # TosaErrorValidator.evStartSmallerZero,
-                # TosaErrorValidator.evSizeSmallerEqualZero,
+                TosaErrorValidator.evStartSmallerZero,
+                TosaErrorValidator.evSizeSmallerEqualZero,
                 TosaErrorValidator.evStartSizeOutsideBounds,
                 TosaErrorValidator.evSizeOutputShapeMismatch,
                 TosaErrorValidator.evInputSizeStartLengthMismatch,
@@ -5132,6 +5139,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evRankMismatch,
                 TosaErrorValidator.evWrongRank,
+                TosaErrorValidator.evTileMultiplesOutputShapeMismatch,
             ),
             # TODO Enable EXT-DYNAMIC tests for shape_t - see ctc_positions note
             "data_gen": PR_FS_IS_DATAGEN,
@@ -5161,7 +5169,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
                 TosaErrorValidator.evWrongRank,
                 TosaErrorValidator.evRankMismatch,
-                TosaErrorValidator.evTensorSizeInputOutputMismatch,
+                TosaErrorValidator.evTransposePermsOutputShapeMismatch,
             ),
             "data_gen": PR_FS_IS_DATAGEN,
         },
@@ -5376,6 +5384,7 @@ class TosaTestGen:
                 TosaErrorValidator.evRescaleI32InputUnsigned,
                 TosaErrorValidator.evRescaleI32OutputUnsigned,
                 TosaErrorValidator.evRescaleI48InputUnsigned,
+                TosaErrorValidator.evRescalePerChannelRank0,
             ),
             "data_gen": RESCALE_DATAGEN,
         },
@@ -6099,7 +6108,10 @@ class OutputShaper:
                     output_shape[index] = output_shape[index] + rng.choice(
                         [-2, -1, 1, 2]
                     )
-        elif error_name == ErrorIf.InputSizeStartLengthMismatch:
+        elif error_name in (
+            ErrorIf.InputSizeStartLengthMismatch,
+            ErrorIf.SizeSmallerEqualZero,
+        ):
             output_shape = input.shape.copy()
         elif error_name == ErrorIf.RankMismatch:
             output_shape = gtu.get_rank_mismatch_shape(rng, output_shape)
@@ -6114,6 +6126,13 @@ class OutputShaper:
 
         for i in range(len(output_shape)):
             output_shape[i] = a.shape[i] * multiples[i]
+
+        if error_name == ErrorIf.TileMultiplesOutputShapeMismatch:
+            # Alter a dimension of output so it doesn't match the multiples
+            dim = rng.randInt(high=len(output_shape))
+            multiple = multiples[dim]
+            multiple = multiple - 1 if multiple > 1 else multiple + 1
+            output_shape[dim] = a.shape[dim] * multiple
 
         if error_name == ErrorIf.RankMismatch:
             output_shape = gtu.get_rank_mismatch_shape(rng, output_shape)
@@ -6145,9 +6164,16 @@ class OutputShaper:
             for i in range(len(output_shape)):
                 output_shape[i] = a.shape[perms[i]]
 
-        if error_name == ErrorIf.TensorSizeInputOutputMismatch:
-            for i in range(len(output_shape)):
-                output_shape[i] += rng.integers(1, 10)
+        if error_name == ErrorIf.TransposePermsOutputShapeMismatch:
+            # Try creating the wrong output shape by reversing
+            wrong_shape = output_shape.copy()
+            wrong_shape.reverse()
+            if wrong_shape == output_shape:
+                # If this doesn't work, fall back to altering the shape
+                for i in range(len(output_shape)):
+                    output_shape[i] += rng.integers(1, 10)
+            else:
+                output_shape = wrong_shape
         elif error_name == ErrorIf.RankMismatch:
             output_shape = gtu.get_rank_mismatch_shape(rng, output_shape)
 
