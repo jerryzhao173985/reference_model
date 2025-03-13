@@ -63,6 +63,14 @@
                                 "ksb": {
                                     "description": "kernel size bounds for this dot product operation",
                                     "type": "integer"
+                                },
+                                "abs_bound": {
+                                    "description": "maximum allowed absolute error when NaN or overflow is not present",
+                                    "type": "integer"
+                                },
+                                "variance_error_bound": {
+                                    "description": "maximum allowed variance across the entire output tensor",
+                                    "type": "number"
                                 }
                             },
                             "additionalProperties": false,

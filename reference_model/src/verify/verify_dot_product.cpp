@@ -101,10 +101,10 @@ bool validateDataDP(const double* referenceData,
     const int32_t ksb = cfg.kernelSizeBound;
 
     // Maximum allowed absolute error when NaN or overflow is not present
-    const int32_t absBound = 2 * ksb;
+    const int32_t absBound = cfg.absBound > 0 ? cfg.absBound : 2 * ksb;
 
     // Maximum allowed variance across the entire output tensor
-    const double varianceErrorBound = 4 * 0.4 * ksb;
+    const double varianceErrorBound = cfg.varianceErrorBound > 0 ? cfg.varianceErrorBound : 4.0 * 0.4 * ksb;
 
     double out_err_sum   = 0.0;
     double out_err_sumsq = 0.0;

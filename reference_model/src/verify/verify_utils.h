@@ -72,6 +72,8 @@ struct DotProductVerifyInfo
 
     int32_t setNumber;
     int32_t kernelSizeBound;
+    int32_t absBound;
+    double varianceErrorBound;
 };
 
 /// \brief reduce-product verification meta-data
