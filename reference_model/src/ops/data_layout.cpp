@@ -442,6 +442,22 @@ int OpTileBase<Rank, Dtype>::checkTensorAttributes()
 }
 
 template <int Rank, TOSA_REF_TYPE Dtype>
+int OpTileBase<Rank, Dtype>::checkOutputShapeVersusMultiples()
+{
+    auto outShape      = this->out->getShape();
+    auto inShape       = this->in->getShape();
+    auto sizeMultiples = this->multiples->getElementCount();
+
+    for (uint32_t dim = 0; dim < sizeMultiples; dim++)
+    {
+        auto expectedSize = inShape[dim] * this->multiples->getTensor()(dim);
+        ERROR_IF(outShape[dim] != expectedSize,
+                 "OpTile: output shape does not match input shape * multiples for dimension %d", dim);
+    }
+    return 0;
+}
+
+template <int Rank, TOSA_REF_TYPE Dtype>
 int OpTile<Rank, Dtype>::eval()
 {
     // primary template shouldn't be called
@@ -451,6 +467,9 @@ int OpTile<Rank, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<1, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0                 = od0 % this->in->getShape()[0];
@@ -463,6 +482,9 @@ int OpTile<1, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<2, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0 = od0 % this->in->getShape()[0];
@@ -479,6 +501,9 @@ int OpTile<2, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<3, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0 = od0 % this->in->getShape()[0];
@@ -499,6 +524,9 @@ int OpTile<3, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<4, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0 = od0 % this->in->getShape()[0];
@@ -523,6 +551,9 @@ int OpTile<4, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<5, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0 = od0 % this->in->getShape()[0];
@@ -552,6 +583,9 @@ int OpTile<5, Dtype>::eval()
 template <TOSA_REF_TYPE Dtype>
 int OpTile<6, Dtype>::eval()
 {
+    if (this->checkOutputShapeVersusMultiples())
+        return 1;
+
     for (int32_t od0 = 0; od0 < this->out->getShape()[0]; od0++)
     {
         int32_t id0 = od0 % this->in->getShape()[0];

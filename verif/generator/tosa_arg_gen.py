@@ -426,6 +426,15 @@ class TosaTensorGen:
         return shape_list
 
     @staticmethod
+    def _get_conv_bias_shape(rng, bias_dim, error_name):
+        # Return the bias shape - randomly broadcasted or Wrong!
+        if error_name == ErrorIf.ConvBiasShapeMismatch:
+            bias_dim = (bias_dim - 1) if bias_dim > 2 else (bias_dim + 1)
+        else:
+            bias_dim = rng.choice([bias_dim, 1])
+        return np.asarray([bias_dim])
+
+    @staticmethod
     def tgConv2D(testGen, rng, op, rank, error_name=None):
         pl, const = op["operands"]
 
@@ -452,8 +461,7 @@ class TosaTensorGen:
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
 
         # The bias is OC or 1 (if 1, it's broadcasted)
-        broadcast_bias = rng.choice((False, True))
-        bias_shape = np.asarray([1 if broadcast_bias else ofm_depth])
+        bias_shape = TosaTensorGen._get_conv_bias_shape(rng, ofm_depth, error_name)
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -490,8 +498,7 @@ class TosaTensorGen:
         )
 
         # The bias is OC or 1 (if 1, it's broadcasted)
-        broadcast_bias = rng.choice((False, True))
-        bias_shape = np.asarray([1 if broadcast_bias else ofm_channel])
+        bias_shape = TosaTensorGen._get_conv_bias_shape(rng, ofm_channel, error_name)
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -526,8 +533,7 @@ class TosaTensorGen:
         filter_shape = np.asarray([ofm_depth, filter_hw[0], filter_hw[1], ifm_shape[3]])
 
         # The bias is OC or 1 (if 1, it's broadcasted)
-        broadcast_bias = rng.choice((False, True))
-        bias_shape = np.asarray([1 if broadcast_bias else ofm_depth])
+        bias_shape = TosaTensorGen._get_conv_bias_shape(rng, ofm_depth, error_name)
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -567,8 +573,9 @@ class TosaTensorGen:
         filter_shape = np.asarray([filter_hw[0], filter_hw[1], ifm_shape[3], filter_m])
 
         # The bias is M * C or 1 (if 1, it's broadcasted)
-        broadcast_bias = rng.choice((False, True))
-        bias_shape = np.asarray([1 if broadcast_bias else ifm_shape[3] * filter_m])
+        bias_shape = TosaTensorGen._get_conv_bias_shape(
+            rng, filter_m * ifm_shape[3], error_name
+        )
 
         # The shape of zero points.
         ifm_zp_shape = np.asarray([1])
@@ -3648,6 +3655,11 @@ class TosaArgGen:
                 roundStr = "D"
                 extensions.add(TosaProfiles.TosaExtDoubleRound)
 
+            if error_name == ErrorIf.RescalePerChannelRank0:
+                # Rank 0 should be enforced by evRescalePerChannelRank0
+                assert len(shapeList[0]) == 0
+                per_channel = True
+
             return (
                 "out{}_sc{}_rm{}_pc{}_iu{}_ou{}".format(
                     testGen.typeStr(outDtype),
@@ -3755,11 +3767,16 @@ class TosaArgGen:
                             RoundingMode.DOUBLE_ROUND,
                             RoundingMode.INEXACT_ROUND,
                         ):
-                            if (
-                                error_name == ErrorIf.ScaleNotTrue
-                                and not rounding_mode == RoundingMode.DOUBLE_ROUND
-                            ):
-                                continue
+                            if error_name == ErrorIf.ScaleNotTrue:
+                                if rounding_mode != RoundingMode.DOUBLE_ROUND:
+                                    # Need DOUBLE_ROUND for ERROR_IF
+                                    continue
+                            elif error_name:
+                                if rounding_mode != RoundingMode.SINGLE_ROUND:
+                                    # Use SINGLE_ROUND for all other ERROR_IFs so
+                                    # we get all tests ignoring extensions
+                                    continue
+
                             # Per_channel is only valid with rank > 0
                             pc_options = (
                                 (False, True) if len(shapeList[0]) > 0 else (False,)
@@ -3770,7 +3787,7 @@ class TosaArgGen:
                                     and scale32
                                     and error_name != ErrorIf.ScaleTrue
                                 ):
-                                    # Illegal condition.  Must be scale32=False
+                                    # Illegal condition.  ERROR_IF(scale32 && INT48)
                                     continue
                                 if (
                                     rounding_mode == RoundingMode.DOUBLE_ROUND

@@ -96,6 +96,11 @@ class ErrorIf(object):
     RescaleI32InputUnsigned = "RescaleI32InputUnsigned"
     RescaleI32OutputUnsigned = "RescaleI32OutputUnsigned"
     RescaleI48InputUnsigned = "RescaleI48InputUnsigned"
+    ConvBiasShapeMismatch = "ConvBiasShapeMismatch"
+    ConcatNoInputList = "ConcatNoInputList"
+    TileMultiplesOutputShapeMismatch = "TileMultiplesOutputShapeMismatch"
+    TransposePermsOutputShapeMismatch = "TransposePermsOutputShapeMismatch"
+    RescalePerChannelRank0 = "RescalePerChannelRank0"
 
 
 class TosaErrorIfArgGen:
@@ -276,18 +281,20 @@ class TosaErrorIfArgGen:
     @staticmethod
     def eiInvalidateInputOutputList(rng, error_name, input_list, output_list):
         # Mess up input/output tensors for ERROR_IF checks
-        if error_name == "WrongInputList":
+        if error_name == ErrorIf.WrongInputList:
             add_input = rng.choice([True, False])
             if add_input:
                 input_list.append("eiDummyInput")
             else:
                 input_list = input_list[:-1]
-        elif error_name == "WrongOutputList":
+        elif error_name == ErrorIf.WrongOutputList:
             add_output = rng.choice([True, False])
             if add_output:
                 output_list.append("eiDummyOutput")
             else:
                 output_list = []
+        elif error_name == ErrorIf.ConcatNoInputList:
+            input_list = []
         return input_list, output_list
 
     @staticmethod
@@ -295,7 +302,7 @@ class TosaErrorIfArgGen:
         """Restrict the dimensions and overall size of a shape to
         max_dim and max_items.
         """
-        new_shape = [min(d, max_dim) for d in shape] if max(shape) > max_dim else shape
+        new_shape = [min(d, max_dim) for d in shape]
         while gtu.product(new_shape) > max_items:
             new_shape = [max(d - 1, 1) for d in new_shape]
         return new_shape
@@ -706,6 +713,25 @@ class TosaErrorValidator:
             num_operands = kwargs["num_operands"]
             if len(input_list) != num_operands:
                 error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evConcatNoInputList(check=False, **kwargs):
+        error_name = ErrorIf.ConcatNoInputList
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Concat is given an empty list of inputs"
+
+        if check:
+            input_list = kwargs["input_list"]
+            error_result = len(input_list) == 0
 
         info_dict = {
             "error_name": error_name,
@@ -1829,6 +1855,26 @@ class TosaErrorValidator:
         }
 
     @staticmethod
+    def evConvBiasShapeMismatch(check=False, **kwargs):
+        error_result = False
+        if check:
+            op = kwargs["op"]
+            bias_shape = kwargs["bias_shape"]
+            weight_shape = kwargs["weight_shape"]
+            if op["op"] == Op.DEPTHWISE_CONV2D:
+                bias = weight_shape[2] * weight_shape[3]  # C * M
+            else:
+                bias = int(weight_shape[0])  # OC
+            # Correct results are 1 or the calculated bias
+            error_result = bias_shape[0] not in (1, bias)
+        return {
+            "error_name": ErrorIf.ConvBiasShapeMismatch,
+            "error_reason": "Convolution bias shape mismatch",
+            "param_reqs": {"rank": None, "dtype": None, "shape": None},
+            "error_result": error_result,
+        }
+
+    @staticmethod
     def evScaleTrue(check=False, **kwargs):
         error_name = ErrorIf.ScaleTrue
         param_reqs = {"rank": None, "dtype": [DType.INT48], "shape": None}
@@ -1986,7 +2032,8 @@ class TosaErrorValidator:
                 rank = len(input_shape)
                 if len(size) == rank:
                     for index in range(rank):
-                        if size[index] != output_shape[index]:
+                        # If we have a valid size, check it matches to output_shape
+                        if size[index] > 0 and size[index] != output_shape[index]:
                             error_result = True
 
         info_dict = {
@@ -2930,6 +2977,86 @@ class TosaErrorValidator:
 
             if input_dtype == DType.INT48 and input_unsigned:
                 error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evRescalePerChannelRank0(check=False, **kwargs):
+        error_name = ErrorIf.RescalePerChannelRank0
+        # Make sure we create rank 0 tests
+        param_reqs = {"rank": [0, 0], "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Per channel set for rank 0"
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            per_channel = kwargs["per_channel"]
+
+            if len(input_shape) == 0 and per_channel:
+                error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evTileMultiplesOutputShapeMismatch(check=False, **kwargs):
+        error_name = ErrorIf.TileMultiplesOutputShapeMismatch
+        param_reqs = {"rank": None, "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Multiples does not match output shape"
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            multiples = kwargs["multiples"]
+
+            if len(input_shape) == len(output_shape):
+                for i in range(len(output_shape)):
+                    if output_shape[i] != (input_shape[i] * multiples[i]):
+                        error_result = True
+
+        info_dict = {
+            "error_name": error_name,
+            "error_result": error_result,
+            "error_reason": error_reason,
+            "param_reqs": param_reqs,
+        }
+        return info_dict
+
+    @staticmethod
+    def evTransposePermsOutputShapeMismatch(check=False, **kwargs):
+        error_name = ErrorIf.TransposePermsOutputShapeMismatch
+        # Make sure we have more than 1 dimension, so we can muddle them
+        # up compared to the Perms
+        param_reqs = {"rank": [2, 3], "dtype": None, "shape": None}
+        error_result = False
+        error_reason = "Permutations does not match output shape"
+
+        if check:
+            input_shape = kwargs["input_shape"]
+            output_shape = kwargs["output_shape"]
+            perms = kwargs["perms"]
+
+            # Make sure the shapes and perms are valid
+            if len(input_shape) == len(output_shape) and len(set(perms)) == len(perms):
+                for i in range(len(output_shape)):
+                    # Make sure perms are within range before testing for wrong shapes
+                    if (
+                        perms[i] < len(input_shape)
+                        and output_shape[i] != input_shape[perms[i]]
+                    ):
+                        error_result = True
 
         info_dict = {
             "error_name": error_name,
