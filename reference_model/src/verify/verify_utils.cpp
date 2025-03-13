@@ -68,6 +68,14 @@ void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
 {
     j.at("s").get_to(dotProductInfo.setNumber);
     j.at("ksb").get_to(dotProductInfo.kernelSizeBound);
+    if (j.contains("abs_bound"))
+    {
+        j.at("abs_bound").get_to(dotProductInfo.absBound);
+    }
+    if (j.contains("variance_error_bound"))
+    {
+        j.at("variance_error_bound").get_to(dotProductInfo.varianceErrorBound);
+    }
 }
 
 void from_json(const nlohmann::json& j, ReduceProductVerifyInfo& reduceProduceInfo)
@@ -111,8 +119,10 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     {
         j.at("ulp_info").get_to(cfg.ulpInfo);
     }
-    cfg.dotProductInfo.setNumber       = 0;
-    cfg.dotProductInfo.kernelSizeBound = 0;
+    cfg.dotProductInfo.setNumber          = 0;
+    cfg.dotProductInfo.kernelSizeBound    = 0;
+    cfg.dotProductInfo.absBound           = 0;
+    cfg.dotProductInfo.varianceErrorBound = 0;
     if (j.contains("dot_product_info"))
     {
         j.at("dot_product_info").get_to(cfg.dotProductInfo);

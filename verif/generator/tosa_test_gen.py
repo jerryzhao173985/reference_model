@@ -271,20 +271,27 @@ class TosaTestGen:
         if not gtu.dtypeIsFloat(outputTensor.dtype):
             mode = gtu.ComplianceMode.EXACT
         elif argsDict["dg_type"] == gtu.DataGenType.DOT_PRODUCT:
-            # compute ceiling(KS / exp2(normal_frac<acc_t>() - normal_frac<out_t>()))
             out_dtype = outputTensor.dtype
             acc_dtype = argsDict["acc_type"]
+
+            # compute ksb as ceiling(KS / exp2(normal_frac<acc_t>() - normal_frac<out_t>()))
             ksb = int(argsDict["ks"])
             ksb_divide_by = 2.0 ** (
                 (gtu.normal_frac(acc_dtype) - gtu.normal_frac(out_dtype)) / 2
             )
-
             ksb = math.ceil(ksb / ksb_divide_by)
             ksb += argsDict.get("ksb_increment", 0)
+
+            # compute ABS_BOUND & VARIANCE_ERROR_BOUND
+            abs_bound = 2 * ksb
+            variance_bound = 4 * 0.4 * ksb
+
             mode = gtu.ComplianceMode.DOT_PRODUCT
             compliance_tens["dot_product_info"] = {
                 "s": argsDict["s"],
                 "ksb": ksb,
+                "abs_bound": abs_bound,
+                "variance_error_bound": variance_bound,
             }
         elif "ulp" in op_compliance:
             mode = gtu.ComplianceMode.ULP
