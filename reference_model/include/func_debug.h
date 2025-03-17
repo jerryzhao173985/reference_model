@@ -28,6 +28,12 @@ void func_print_backtrace(FILE* out, int sig = SIGABRT);
 
 void func_enable_signal_handlers();
 
+#ifdef __GNUC__
+#define FORMAT_ATTR(type, fmt, args) __attribute__((format(type, fmt, args)))
+#else
+#define FORMAT_ATTR(type, fmt, args)
+#endif
+
 // STRINGIFY2 is needed expand expression passed to STRINGIFY
 #define STRINGIFY2(s) #s
 #define STRINGIFY(s) STRINGIFY2(s)
@@ -172,7 +178,8 @@ struct func_debug_t
 #endif
 
 void func_debug_warning(
-    func_debug_t* func_debug, const char* file, const char* func, const int line, const char* fmt, ...);
+    func_debug_t* func_debug, const char* file, const char* func, const int line, const char* fmt, ...)
+    FORMAT_ATTR(printf, 5, 6);
 #ifndef WARNING
 #define WARNING(...) func_debug_warning(&g_func_debug, __FILE__, __func__, __LINE__, __VA_ARGS__)
 #endif

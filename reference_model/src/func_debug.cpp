@@ -231,10 +231,10 @@ void func_debug_t::set_verbosity(const uint32_t verb)
             break;
         case DEBUG_VERB_HIGH:
             new_mask |= DEBUG_VERB_HIGH;
-            // Intentional fallthrough
+            [[fallthrough]];
         case DEBUG_VERB_MED:
             new_mask |= DEBUG_VERB_MED;
-            // Intentional fallthrough
+            [[fallthrough]];
         case DEBUG_VERB_LOW:
             new_mask |= DEBUG_VERB_LOW;
             new_mask |= DEBUG_VERB_INFO;
@@ -291,7 +291,7 @@ void func_debug_t::set_mask(const std::string& str)
     {
         if (mode.first == str)
         {
-            set_mask(mode.second);
+            set_mask(static_cast<uint64_t>(mode.second));
             return;
         }
     }

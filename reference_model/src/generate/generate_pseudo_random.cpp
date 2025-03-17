@@ -220,11 +220,11 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
     const auto W     = cfg.shape[1];    // Width of rows
     if (W > range)
     {
-        WARNING("[Generator][PR][INT] Cannot fill data size %d with given shuffle range %d.", W, range);
+        WARNING("[Generator][PR][INT] Cannot fill data size %d with given shuffle range %ld.", W, range);
         return false;
     }
 
-    std::vector<DataType> numbers(range);
+    std::vector<DataType> numbers(static_cast<size_t>(range));
     for (int n = 0; n < N; ++n)
     {
         // Fill in the numbers in range
@@ -233,12 +233,12 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
         // Perform random shuffling
         for (auto num = numbers.begin(); num < numbers.end(); ++num)
         {
-            std::swap(*num, numbers[generator->getRandomInteger()]);
+            std::swap(*num, numbers[static_cast<size_t>(generator->getRandomInteger())]);
         }
         // Copy amount of data required
         for (auto w = 0; w < W; ++w)
         {
-            data[(n * W) + w] = numbers[w];
+            data[(n * W) + w] = numbers[static_cast<size_t>(w)];
         }
     }
     return true;
