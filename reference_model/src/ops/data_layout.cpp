@@ -663,7 +663,7 @@ int OpTranspose<Rank, Dtype>::checkTensorAttributes()
     for (size_t d = 0; d < Rank; d++)
     {
         int32_t index = attribute->perms()[d];
-        ERROR_IF(index < 0 or index >= Rank, "OpTranspose: index out of boundary");
+        ERROR_IF(index < 0 || index >= Rank, "OpTranspose: index out of boundary");
         ERROR_IF(index_used[static_cast<size_t>(index)], "OpTranspose: index duplicated in perm attribute");
         index_used[static_cast<size_t>(index)] = true;
         ERROR_IF(in->getShape()[static_cast<size_t>(index)] != out->getShape()[d],
