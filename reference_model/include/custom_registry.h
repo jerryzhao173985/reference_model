@@ -18,7 +18,7 @@
 #include "custom_op_interface.h"
 #include <unordered_map>
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 #include <dlfcn.h>
 #define LIBTYPE void*
 #define OPENLIB(libname) dlopen((libname), RTLD_LAZY)
