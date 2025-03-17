@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ void generateMatMulA(const TosaReference::GenerateConfig& cfg,
                      DataType* data,
                      size_t size)
 {
-    const uint32_t T = cfg.shape[0] * cfg.shape[1] * cfg.shape[2];
-    const uint32_t C = cfg.shape[2];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0] * cfg.shape[1] * cfg.shape[2]);
+    const uint32_t C = static_cast<uint32_t>(cfg.shape[2]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -42,9 +42,9 @@ void generateMatMulB(const TosaReference::GenerateConfig& cfg,
                      DataType* data,
                      size_t size)
 {
-    const uint32_t T = cfg.shape[0] * cfg.shape[1] * cfg.shape[2];
-    const uint32_t C = cfg.shape[1];
-    const uint32_t W = cfg.shape[2];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0] * cfg.shape[1] * cfg.shape[2]);
+    const uint32_t C = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t W = static_cast<uint32_t>(cfg.shape[2]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -128,14 +128,14 @@ bool generateConv2DInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t IH = cfg.shape[1];
-    const uint32_t IW = cfg.shape[2];
-    const uint32_t IC = cfg.shape[3];
-    const uint32_t KH = cfg.dotProductInfo.kernel[0];
-    const uint32_t KW = cfg.dotProductInfo.kernel[1];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t IH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t IW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[3]);
+    const uint32_t KH = static_cast<uint32_t>(cfg.dotProductInfo.kernel[0]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.dotProductInfo.kernel[1]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t ix = (t / IC) % IW;
@@ -159,12 +159,12 @@ bool generateConv2DWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t KH = cfg.shape[1];
-    const uint32_t KW = cfg.shape[2];
-    const uint32_t IC = cfg.shape[3];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t KH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[3]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t kx = (t / IC) % KW;
@@ -188,7 +188,7 @@ bool generateConv2DBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const uint32_t T = cfg.shape[0];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -299,19 +299,19 @@ void generateReduceSumData(const TosaReference::GenerateConfig& cfg,
                            DataType* data,
                            size_t size)
 {
-    const int64_t T     = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t axis = cfg.dotProductInfo.axis;
+    const uint32_t T    = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t axis = static_cast<uint32_t>(cfg.dotProductInfo.axis);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
-        uint64_t k = t;
-        for (uint32_t d = cfg.shape.size() - 1; d > axis; --d)
+        uint32_t k = t;
+        for (uint32_t d = static_cast<uint32_t>(cfg.shape.size()) - 1; d > axis; --d)
         {
-            k = k / cfg.shape[d];
+            k = k / static_cast<uint32_t>(cfg.shape[d]);
         }
-        k = k % cfg.shape[axis];
+        k = k % static_cast<uint32_t>(cfg.shape[axis]);
 
-        data[t] = static_cast<DataType>(generator(static_cast<int32_t>(k)));
+        data[t] = static_cast<DataType>(generator(k));
     }
 }
 
@@ -376,14 +376,14 @@ void generateAvgPool2DData(const TosaReference::GenerateConfig& cfg,
                            DataType* data,
                            size_t size)
 {
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t IH = cfg.shape[1];
-    const uint32_t IW = cfg.shape[2];
-    const uint32_t C  = cfg.shape[3];
-    const uint32_t KY = cfg.dotProductInfo.kernel[0];
-    const uint32_t KX = cfg.dotProductInfo.kernel[1];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t IH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t IW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t C  = static_cast<uint32_t>(cfg.shape[3]);
+    const uint32_t KY = static_cast<uint32_t>(cfg.dotProductInfo.kernel[0]);
+    const uint32_t KX = static_cast<uint32_t>(cfg.dotProductInfo.kernel[1]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t c  = t % C;
         uint32_t ix = (t / C) % IW;
@@ -470,14 +470,14 @@ bool generateDepthwiseConv2DInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t IH = cfg.shape[1];
-    const uint32_t IW = cfg.shape[2];
-    const uint32_t C  = cfg.shape[3];
-    const uint32_t KH = cfg.dotProductInfo.kernel[0];
-    const uint32_t KW = cfg.dotProductInfo.kernel[1];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t IH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t IW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t C  = static_cast<uint32_t>(cfg.shape[3]);
+    const uint32_t KH = static_cast<uint32_t>(cfg.dotProductInfo.kernel[0]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.dotProductInfo.kernel[1]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ix = (t / C) % IW;
         uint32_t iy = ((t / C) / IW) % IH;
@@ -500,13 +500,13 @@ bool generateDepthwiseConv2DWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t KH = cfg.shape[0];
-    const uint32_t KW = cfg.shape[1];
-    const uint32_t C  = cfg.shape[2];
-    const uint32_t M  = cfg.shape[3];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t KH = static_cast<uint32_t>(cfg.shape[0]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t C  = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t M  = static_cast<uint32_t>(cfg.shape[3]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t kx = ((t / M) / C) % KW;
         uint32_t ky = (((t / M) / C) / KW) % KH;
@@ -529,7 +529,7 @@ bool generateDepthwiseConv2DBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const uint32_t T = cfg.shape[0];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -651,14 +651,14 @@ bool generateTransposeConv2DInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t IH = cfg.shape[1];
-    const uint32_t IW = cfg.shape[2];
-    const uint32_t IC = cfg.shape[3];
-    const uint32_t KH = cfg.dotProductInfo.kernel[0];
-    const uint32_t KW = cfg.dotProductInfo.kernel[1];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t IH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t IW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[3]);
+    const uint32_t KH = static_cast<uint32_t>(cfg.dotProductInfo.kernel[0]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.dotProductInfo.kernel[1]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t ix = (t / IC) % IW;
@@ -682,12 +682,12 @@ bool generateTransposeConv2DWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t KH = cfg.shape[1];
-    const uint32_t KW = cfg.shape[2];
-    const uint32_t IC = cfg.shape[3];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t KH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[3]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t kx = (t / IC) % KW;
@@ -711,7 +711,7 @@ bool generateTransposeConv2DBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const uint32_t T = cfg.shape[0];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -835,16 +835,16 @@ bool generateConv3DInput(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t ID = cfg.shape[1];
-    const uint32_t IH = cfg.shape[2];
-    const uint32_t IW = cfg.shape[3];
-    const uint32_t IC = cfg.shape[4];
-    const uint32_t KD = cfg.dotProductInfo.kernel[0];
-    const uint32_t KH = cfg.dotProductInfo.kernel[1];
-    const uint32_t KW = cfg.dotProductInfo.kernel[2];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t ID = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t IH = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IW = static_cast<uint32_t>(cfg.shape[3]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[4]);
+    const uint32_t KD = static_cast<uint32_t>(cfg.dotProductInfo.kernel[0]);
+    const uint32_t KH = static_cast<uint32_t>(cfg.dotProductInfo.kernel[1]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.dotProductInfo.kernel[2]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t ix = (t / IC) % IW;
@@ -869,13 +869,13 @@ bool generateConv3DWeight(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const int64_t T   = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t KD = cfg.shape[0];
-    const uint32_t KH = cfg.shape[1];
-    const uint32_t KW = cfg.shape[2];
-    const uint32_t IC = cfg.shape[3];
+    const uint32_t T  = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t KD = static_cast<uint32_t>(cfg.shape[0]);
+    const uint32_t KH = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t KW = static_cast<uint32_t>(cfg.shape[2]);
+    const uint32_t IC = static_cast<uint32_t>(cfg.shape[3]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t ic = t % IC;
         uint32_t kx = (t / IC) % KW;
@@ -900,7 +900,7 @@ bool generateConv3DBias(const TosaReference::GenerateConfig& cfg,
         return false;
     }
 
-    const uint32_t T = cfg.shape[0];
+    const uint32_t T = static_cast<uint32_t>(cfg.shape[0]);
 
     for (uint32_t t = 0; t < T; ++t)
     {
@@ -1011,11 +1011,11 @@ bool generateFFT2DReal(const TosaReference::GenerateConfig& cfg,
                        DataType* data,
                        size_t size)
 {
-    const int64_t T  = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t H = cfg.shape[1];
-    const uint32_t W = cfg.shape[2];
+    const uint32_t T = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t H = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t W = static_cast<uint32_t>(cfg.shape[2]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t x = t % W;
         uint32_t y = (t / W) % H;
@@ -1032,16 +1032,16 @@ bool generateFFT2DImag(const TosaReference::GenerateConfig& cfg,
                        DataType* data,
                        size_t size)
 {
-    const int64_t T  = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t H = cfg.shape[1];
-    const uint32_t W = cfg.shape[2];
+    const uint32_t T = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t H = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t W = static_cast<uint32_t>(cfg.shape[2]);
 
     // The index expression of ((1*N+n)*H+y)*W+x in the spec equates to
     // using the values after those used for the Real tensor, but we need
     // to iterate through all those values to get to the Imaginary data
-    for (int64_t n = 0; n < 2; ++n)
+    for (uint32_t n = 0; n < 2; ++n)
     {
-        for (int64_t t = 0; t < T; ++t)
+        for (uint32_t t = 0; t < T; ++t)
         {
             uint32_t x = t % W;
             uint32_t y = (t / W) % H;
@@ -1097,11 +1097,11 @@ bool generateRFFT2DReal(const TosaReference::GenerateConfig& cfg,
                         DataType* data,
                         size_t size)
 {
-    const int64_t T  = TosaReference::numElementsFromShape(cfg.shape);
-    const uint32_t H = cfg.shape[1];
-    const uint32_t W = cfg.shape[2];
+    const uint32_t T = static_cast<uint32_t>(TosaReference::numElementsFromShape(cfg.shape));
+    const uint32_t H = static_cast<uint32_t>(cfg.shape[1]);
+    const uint32_t W = static_cast<uint32_t>(cfg.shape[2]);
 
-    for (int64_t t = 0; t < T; ++t)
+    for (uint32_t t = 0; t < T; ++t)
     {
         uint32_t x = t % W;
         uint32_t y = (t / W) % H;

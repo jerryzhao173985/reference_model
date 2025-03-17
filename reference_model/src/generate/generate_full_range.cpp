@@ -24,7 +24,7 @@ template <typename BinaryType>
 void generateBinaryValues(const TosaReference::GenerateConfig& cfg, BinaryType* data, const int64_t elements)
 {
     const TosaReference::FullRangeInfo& frinfo = cfg.fullRangeInfo;
-    BinaryType value                           = frinfo.startVal;
+    BinaryType value                           = static_cast<BinaryType>(frinfo.startVal);
 
     // Generate the full range of binary data values - wrapping as necessary
     // For floating point type representations this will enable testing of all values
