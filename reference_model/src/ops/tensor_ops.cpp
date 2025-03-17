@@ -407,7 +407,7 @@ int OpArgMax<Rank, Dtype>::eval()
 
     auto dimensions = input.dimensions();
 
-    Eigen::array<long, 2> matrix_dimensions;
+    Eigen::array<int64_t, 2> matrix_dimensions;
     matrix_dimensions[0] = dimensions[static_cast<size_t>(attribute->axis())];
     matrix_dimensions[1] = 1;
     for (size_t i = 0; i < Rank; i++)
@@ -451,7 +451,7 @@ int OpArgMax<Rank, Dtype>::eval()
         argmaxes(j) = max_idx;
     }
 
-    Eigen::array<long, Rank - 1> output_shape;
+    Eigen::array<int64_t, Rank - 1> output_shape;
     size_t in_idx  = 0;
     size_t out_idx = 0;
     while (in_idx < Rank)

@@ -1103,8 +1103,8 @@ TEST_CASE("positive - INT48")
     const size_t tosaElementsP2  = 10 * 2 * 3;
     const size_t tosaSizeP2      = tosaElementsP2 * 6;
 
-    const int64_t max    = +(1L << 47) - 1;
-    const int64_t lowest = -(1L << 47);
+    const int64_t max    = +(static_cast<int64_t>(1) << 47) - 1;
+    const int64_t lowest = -(static_cast<int64_t>(1) << 47);
 
     SUBCASE("INT48 random - no range set")
     {
