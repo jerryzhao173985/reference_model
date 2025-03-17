@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Setup script for backward compatibility."""
 import multiprocessing
+import os
 import shutil
 import subprocess
 import sys
@@ -103,7 +104,7 @@ class CMakeBuild(build_py):
         build_py.run(self)
 
 
-build_pybind = False
+build_pybind = os.getenv("BUILD_PYBIND", "0") == "1"
 if build_pybind:
     setup(cmdclass={"build_py": CMakeBuild})
 else:
