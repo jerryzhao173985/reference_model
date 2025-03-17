@@ -507,15 +507,21 @@ CastHelper<InDtype, OutDtype>::CastHelper()
 {
     constexpr int32_t outWidth = GetNumBits<OutDtype>().value;
     constexpr int32_t inWidth  = GetNumBits<InDtype>().value;
-
-    fcn = [](InEigenType in) -> OutEigenType {
-        if constexpr (std::is_integral_v<InEigenType> && std::is_integral_v<OutEigenType> && outWidth < inWidth)
-        {
+    if constexpr (std::is_integral_v<InEigenType> && std::is_integral_v<OutEigenType> && outWidth < inWidth)
+    {
+        fcn = [](InEigenType in) -> OutEigenType {
             // Truncate the value if it's outside the range of the output type.
-            in = intTrunc<InEigenType, OutDtype>(in);
-        }
-        OutEigenType out = (OutEigenType)in;    // implicit sign_extend() if sizeof(out_t) >= sizeof(in_t)
-        return out;
+            in               = intTrunc<InEigenType, OutDtype>(in);
+            OutEigenType out = (OutEigenType)in;    // implicit sign_extend() if sizeof(out_t) >= sizeof(in_t)
+            return out;
+        };
+    }
+    else
+    {
+        fcn = [](InEigenType in) -> OutEigenType {
+            OutEigenType out = (OutEigenType)in;    // implicit sign_extend() if sizeof(out_t) >= sizeof(in_t)
+            return out;
+        };
     };
 }
 
