@@ -20,6 +20,7 @@
 #include "command_line_utils.h"
 #include "custom_op_interface.h"
 #include "custom_registry.h"
+#include "load_library.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"

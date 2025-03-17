@@ -221,6 +221,10 @@ target_include_directories(tosa_reference_generate_lib
 if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
   set(CXX_SOURCE_EX src/main.cpp)
   list(APPEND CXX_SOURCE_EX ${CXX_SOURCE})
+  if (WIN32)
+    set(CXX_SOURCE_WIN src/load_library_win.cpp)
+    list(APPEND CXX_SOURCE_EX ${CXX_SOURCE_WIN})
+  endif()
 
   add_executable(tosa_reference_model ${CXX_SOURCE_EX})
 
