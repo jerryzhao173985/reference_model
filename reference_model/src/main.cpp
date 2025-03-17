@@ -20,6 +20,7 @@
 #include "command_line_utils.h"
 #include "custom_op_interface.h"
 #include "custom_registry.h"
+#include "load_library.h"
 #include "ops/op_factory.h"
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
@@ -29,6 +30,22 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+
+#if defined(__linux__) || defined(__APPLE__)
+#include <dlfcn.h>
+#define LIBTYPE void*
+#define OPENLIB(libname) dlopen((libname), RTLD_LAZY)
+#define LIBFUNC(lib, fn) dlsym((lib), (fn))
+#define CLOSELIB(lib) dlclose((lib))
+#elif _WIN32
+#define NOMINMAX
+#include <windows.h>
+#define LIBTYPE HINSTANCE
+#define OPENLIB(libname) load_library_w(libname)
+#define LIBFUNC(lib, fn) GetProcAddress((lib), (fn))
+#define CLOSELIB(lib) FreeLibrary((lib))
+
+#endif
 
 #ifdef _WIN32
 #include <ctype.h>

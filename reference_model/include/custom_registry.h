@@ -18,35 +18,6 @@
 #include "custom_op_interface.h"
 #include <unordered_map>
 
-#if defined(__linux__) || defined(__APPLE__)
-#include <dlfcn.h>
-#define LIBTYPE void*
-#define OPENLIB(libname) dlopen((libname), RTLD_LAZY)
-#define LIBFUNC(lib, fn) dlsym((lib), (fn))
-#define CLOSELIB(lib) dlclose((lib))
-#elif _WIN32
-#define NOMINMAX
-#include <windows.h>
-#define LIBTYPE HINSTANCE
-#define OPENLIB(libname) load_library_w(libname)
-#define LIBFUNC(lib, fn) GetProcAddress((lib), (fn))
-#define CLOSELIB(lib) FreeLibrary((lib))
-
-LIBTYPE load_library_w(const char* libname)
-{
-    size_t outSize;
-    auto const size{ std::string_view{ libname }.size() + 1 };
-    wchar_t* l_libname = (wchar_t*)(sizeof(wchar_t) * size);
-
-    mbstowcs_s(&outSize, l_libname, size, libname, size - 1);
-
-    auto lib = LoadLibraryW(l_libname);
-
-    free(l_libname);
-    return lib;
-}
-#endif
-
 using namespace tosa;
 
 namespace TosaReference
