@@ -139,6 +139,7 @@ add_library(tosa_reference_model_lib STATIC ${CXX_SOURCE})
 
 if(MSVC)
   target_compile_options(tosa_reference_model_lib PRIVATE /Ob0)
+  target_compile_options(tosa_reference_model_lib PRIVATE /bigobj)
 endif()
 
 target_include_directories(tosa_reference_model_lib
@@ -230,6 +231,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
 
 if(MSVC)
   target_compile_options(tosa_reference_model PRIVATE /Ob0)
+  target_compile_options(tosa_reference_model PRIVATE /bigobj)
 endif()
 
   target_include_directories(tosa_reference_model
@@ -285,6 +287,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
 
   if(MSVC)
     target_compile_options(unit_tests PRIVATE /Ob0)
+    target_compile_options(unit_tests PRIVATE /bigobj)
   endif()
 
   target_include_directories(unit_tests

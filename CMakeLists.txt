@@ -32,6 +32,7 @@ option(DOCTEST_DIR "Location where the doctest folder is found (If building unit
 
 if(MSVC)
   add_compile_options("/Zc:preprocessor")
+  add_compile_options(/MP)
 endif()
 
 if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
