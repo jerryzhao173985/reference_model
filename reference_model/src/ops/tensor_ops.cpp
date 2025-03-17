@@ -13,6 +13,9 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+#if _WIN32
+#define _USE_MATH_DEFINES
+#endif
 #include "tensor_ops.h"
 #include "dtype_limits.h"
 #include "half.hpp"
