@@ -16,6 +16,7 @@
 #include "subgraph_traverser.h"
 #include "arith_util.h"
 #include "tosa_model_types.h"
+#include <cinttypes>
 
 #ifndef SUBGRAPH_ERROR_IF
 #define SUBGRAPH_ERROR_IF(COND, fmt, ...)                                                                              \
@@ -323,7 +324,7 @@ int SubgraphTraverser::initializeGraph()
                 EnumNamesOp()[op->GetOp()], EnumNameTOSAREFTYPE(bias_dtype), EnumNameTOSAREFTYPE(output_dtype));
         }
 
-        DEBUG_INFO(GT, "Creating operator id_%03u, %8s, %lu input tensors, %lu output tensors", idx,
+        DEBUG_INFO(GT, "Creating operator id_%03u, %8s, %zu input tensors, %zu output tensors", idx,
                    EnumNamesOp()[op->GetOp()], op->GetInputTensorNames().size(), op->GetOutputTensorNames().size());
 
         GraphNode* node = nullptr;
@@ -767,8 +768,8 @@ int SubgraphTraverser::evaluateNextNode()
 
     GraphNode* currNode = getNextNode();
 
-    DEBUG_INFO(GT, "Evaluating node_%03lu, %8s, output tensor=%s", currNode->getID(), EnumNamesOp()[currNode->getOp()],
-               currNode->getOutputNames()[0].c_str());
+    DEBUG_INFO(GT, "Evaluating node_%03" PRIu64 ", %8s, output tensor=%s", currNode->getID(),
+               EnumNamesOp()[currNode->getOp()], currNode->getOutputNames()[0].c_str());
 
     // Sanity check for never-ending loops
     if (currNode->getEvalCount() >= MAX_EVAL_COUNT && (currNode->getEvalCount() % MAX_EVAL_COUNT) == 0)
@@ -1011,13 +1012,15 @@ int SubgraphTraverser::linkTensorsAndNodes()
         for (std::string& name : currNode->getInputNames())
         {
             TosaReference::Tensor* t = findTensorByName(name);
-            SUBGRAPH_ERROR_IF(!t, "SubgraphTraverser::linkTensorsAndNodes(): Cannot find tensor %s in node %lu\n",
+            SUBGRAPH_ERROR_IF(!t,
+                              "SubgraphTraverser::linkTensorsAndNodes(): Cannot find tensor %s in node %" PRIu64 "\n",
                               name.c_str(), currNode->getID());
             SUBGRAPH_ERROR_IF(currNode->addInputTensor(t),
-                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link tensor %s to node %lu\n",
+                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link tensor %s to node %" PRIu64 "\n ",
                               name.c_str(), currNode->getID());
             SUBGRAPH_ERROR_IF(t->addConsumer(currNode),
-                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link consumer node %lu to tensor %s\n",
+                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link consumer node %" PRIu64
+                              " to tensor %s\n",
                               currNode->getID(), name.c_str());
         }
 
@@ -1025,16 +1028,17 @@ int SubgraphTraverser::linkTensorsAndNodes()
         for (std::string& name : currNode->getOutputNames())
         {
             TosaReference::Tensor* t = findTensorByName(name);
-            SUBGRAPH_ERROR_IF(!t, "SubgraphTraverser::linkTensorsAndNodes(): Cannot find tensor %s in node %lu\n",
+            SUBGRAPH_ERROR_IF(!t,
+                              "SubgraphTraverser::linkTensorsAndNodes(): Cannot find tensor %s in node %" PRIu64 "\n",
                               name.c_str(), currNode->getID());
             SUBGRAPH_ERROR_IF(currNode->addOutputTensor(t),
-                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link tensor %s to node %lu\n",
+                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link tensor %s to node %" PRIu64 "\n",
                               name.c_str(), currNode->getID());
 
-            SUBGRAPH_ERROR_IF(
-                t->setProducer(currNode),
-                "SubgraphTraverser::linkTensorsAndNodes(): cannot link producer node %lu to tensor tensor %s\n",
-                currNode->getID(), name.c_str());
+            SUBGRAPH_ERROR_IF(t->setProducer(currNode),
+                              "SubgraphTraverser::linkTensorsAndNodes(): cannot link producer node %" PRIu64
+                              " to tensor tensor %s\n",
+                              currNode->getID(), name.c_str());
         }
     }
 

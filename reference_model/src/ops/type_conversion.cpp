@@ -19,8 +19,8 @@
 #include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
-#include "verify_utils.h"
 #include <cfenv>
+#include <cinttypes>
 #include <cmath>
 
 using namespace TosaReference;
@@ -286,9 +286,9 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     ERROR_IF(!isI8(OutDtype) && !(isI16(OutDtype) && output_unsigned) && (output_zp_extended != 0),
              "OpRescale: Output TOSA_REF_TYPE not INT8/UINT8/UINT16 and zero point not 0");
     ERROR_IF(isI16(InDtype) && input_unsigned && (input_zp_extended != 0) && (input_zp_extended != 32768),
-             "OpRescale: Input unsigned int16 and zero point (%ld) not 0 or 32768", input_zp_extended);
+             "OpRescale: Input unsigned int16 and zero point (%" PRId64 ") not 0 or 32768", input_zp_extended);
     ERROR_IF(isI16(OutDtype) && output_unsigned && (output_zp_extended != 0) && (output_zp_extended != 32768),
-             "OpRescale: Output unsigned int16 and zero point (%ld) not 0 or 32768", output_zp_extended);
+             "OpRescale: Output unsigned int16 and zero point (%" PRId64 ") not 0 or 32768", output_zp_extended);
 
     // reshape [d0, d1, ..., dn] into [d0 * d1 ..., dn]
     Eigen::array<Eigen::Index, 2> shape_2d;
