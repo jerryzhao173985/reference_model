@@ -51,18 +51,18 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
 
     for (size_t i = 0; i < block_inputs.size(); i++)
     {
-        DEBUG_HIGH(OP, "Input[%ld]:  %s", i, block_inputs[i]->getName().c_str());
+        DEBUG_HIGH(OP, "Input[%zd]:  %s", i, block_inputs[i]->getName().c_str());
     }
     for (size_t i = 0; i < block_outputs.size(); i++)
     {
-        DEBUG_HIGH(OP, "Output[%ld]: %s", i, block_outputs[i]->getName().c_str());
+        DEBUG_HIGH(OP, "Output[%zd]: %s", i, block_outputs[i]->getName().c_str());
     }
 
     ASSERT_MSG((size_t)num_input_tensors == block_inputs.size(),
-               "op block %s inputs[%lu] does not match with graph traverser's inputs[%d]", block_name.c_str(),
+               "op block %s inputs[%zu] does not match with graph traverser's inputs[%d]", block_name.c_str(),
                block_inputs.size(), num_input_tensors);
     ASSERT_MSG((size_t)num_output_tensors == block_outputs.size(),
-               "op block %s outputs[%lu] does not match with graph traverser's outputs[%d]", block_name.c_str(),
+               "op block %s outputs[%zu] does not match with graph traverser's outputs[%d]", block_name.c_str(),
                block_outputs.size(), num_output_tensors);
 
     // set graph traverser's input = basic block's input

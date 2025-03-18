@@ -15,6 +15,7 @@
 
 #include "graph_node.h"
 #include "arith_util.h"
+#include <cinttypes>
 
 using namespace TosaReference;
 using namespace Eigen;
@@ -118,7 +119,7 @@ int GraphNode::hasAllOutputsReady() const
 int GraphNode::dumpNode(FILE* out)
 {
     int i;
-    fprintf(out, "Node type: %s ID: %lu Eval Count: %d On next node list: %d Evaluated: %d Is marked: %d\n",
+    fprintf(out, "Node type: %s ID: %" PRIu64 " Eval Count: %d On next node list: %d Evaluated: %d Is marked: %d\n",
             EnumNamesOp()[nodeType], nodeId, evalCount, onNextNodeList, evaluated, isMarked);
 
     i = 0;
