@@ -401,16 +401,6 @@ class TosaTestGen:
 
         assert not isinstance(op, int)
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongOutputType:
-            if result_tensor.dtype not in [DType.INT8, DType.UINT8]:
-                qinfo = [
-                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, a.dtype),
-                    TosaQuantGen.getZeroPoint(
-                        rng, self.args.zeropoint, result_tensor.dtype
-                    ),
-                ]
-
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name]
         output_list = [result_tensor.name]
@@ -462,16 +452,6 @@ class TosaTestGen:
         result_tensor = OutputShaper.unaryOp(self.ser, rng, a, error_name)
 
         assert not isinstance(op, int)
-
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongOutputType:
-            if result_tensor.dtype not in [DType.INT8, DType.UINT8]:
-                qinfo = [
-                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, a.dtype),
-                    TosaQuantGen.getZeroPoint(
-                        rng, self.args.zeropoint, result_tensor.dtype
-                    ),
-                ]
 
         # Invalidate Input/Output list for error if checks.
         input_list = [a.name, input_zp.name, output_zp.name]
@@ -887,16 +867,6 @@ class TosaTestGen:
             self.ser, rng, inp, kernel, stride, pad, error_name
         )
 
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType:
-            if inp.dtype not in [DType.INT8, DType.UINT8]:
-                qinfo = [
-                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, inp.dtype),
-                    TosaQuantGen.getZeroPoint(
-                        rng, self.args.zeropoint, result_tensor.dtype
-                    ),
-                ]
-
         # Invalidate Input/Output list for error if checks.
         input_list = [inp.name, input_zp.name, output_zp.name]
         output_list = [result_tensor.name]
@@ -957,17 +927,6 @@ class TosaTestGen:
         result_tensor = OutputShaper.pool2dOp(
             self.ser, rng, inp, kernel, stride, pad, error_name
         )
-
-        # Ensure new output type has correct qinfo
-        if error_name == ErrorIf.WrongInputType:
-            if inp.dtype not in [DType.INT8, DType.UINT8]:
-                # TODO: get qinfo from serializeTest instead
-                qinfo = [
-                    TosaQuantGen.getZeroPoint(rng, self.args.zeropoint, inp.dtype),
-                    TosaQuantGen.getZeroPoint(
-                        rng, self.args.zeropoint, result_tensor.dtype
-                    ),
-                ]
 
         # Invalidate Input/Output list for error if checks.
         input_list = [inp.name]
@@ -2268,9 +2227,8 @@ class TosaTestGen:
         scale32 = args_dict["scale"]
         rounding_mode = args_dict["rounding_mode"]
         per_channel = args_dict["per_channel"]
-        input_zp_value = args_dict["input_zp"]
+        input_zp_value, output_zp_value = args_dict["qinfo"]
         input_unsigned = args_dict["input_unsigned"]
-        output_zp_value = args_dict["output_zp"]
         output_unsigned = args_dict["output_unsigned"]
 
         result_tensor = OutputShaper.typeConversionOp(
@@ -3199,7 +3157,12 @@ class TosaTestGen:
 
         if qgen is not None:
             qinfo = qgen(
-                build_rng, self.args.zeropoint, op, dtype_or_dtypeList, error_name
+                build_rng,
+                self.args.zeropoint,
+                op,
+                dtype_or_dtypeList,
+                error_name=error_name,
+                argsDict=argsDict,
             )
         else:
             qinfo = None
@@ -5377,6 +5340,7 @@ class TosaTestGen:
                 TosaTensorValuesGen.tvgRescale,
                 TosaArgGen.agRescale,
             ),
+            "qgen": TosaQuantGen.qgUnary,
             "types": [
                 DType.INT8,
                 DType.INT16,

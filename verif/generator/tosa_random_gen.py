@@ -49,22 +49,25 @@ class TosaRandomGenerator(np.random.Generator):
         # to 8 bytes because C++ cannot handle larger seeds.
         return (self._seed + tensorIdx) & 0xFFFFFFFFFFFFFFFF
 
-    def dTypeRange(self, dtype, high_inclusive=False):
+    def dTypeRange(self, dtype, high_inclusive=False, unsigned=False):
         """Returns range tuple for given dtype.
 
         dtype: DType
         high_inclusive: True for inclusive high values
+        unsigned: True interprets the dtype as unsigned
         Returns: dtype value range boundaries tuple (low, high)
             The high boundary is excluded in the range unless high_inclusive is True
         """
         if dtype in self._restrict_range_by_type:
             rng = self._restrict_range_by_type[dtype]
+        elif unsigned and dtype == DType.INT8:
+            rng = (0, 256)
+        elif unsigned and dtype == DType.INT16:
+            rng = (0, 65536)
+        # Treat unsigned=True cases with illegal dtypes fall to the signed case below.
+        # This is used for some ERRORIF tests in RESCALE
         elif dtype == DType.BOOL:
             rng = (0, 2)
-        elif dtype == DType.UINT8:
-            rng = (0, 256)
-        elif dtype == DType.UINT16:
-            rng = (0, 65536)
         elif dtype == DType.INT4:
             # TOSA specific INT4 weight range from -7 to 7
             rng = (-7, 8)
