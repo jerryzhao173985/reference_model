@@ -36,47 +36,94 @@ class TosaQuantGen:
         pass
 
     @staticmethod
-    def getZeroPoint(rng, zeropoint, dtype, error_name=None):
-        if dtype == DType.INT8:
-            if zeropoint is not None:
-                return min(127, max(-128, zeropoint))
-            return rng.randInt(-128, 128)
-        elif dtype == DType.UINT8:
-            if zeropoint is not None:
-                return min(255, max(0, zeropoint))
-            return rng.randInt(0, 256)
-        elif error_name in [
+    def getZeroPoint(rng, zeropoint, op, dtype, error_name=None, unsigned=False):
+        # These cases override the input/output type and can end up with illegal
+        # zero points if not set to 0
+        if error_name in [ErrorIf.WrongInputType, ErrorIf.WrongOutputType]:
+            return 0
+
+        if error_name in [
             ErrorIf.InputZeroPointNotZero,
             ErrorIf.WeightZeroPointNotZero,
             ErrorIf.OutputZeroPointNotZero,
+            ErrorIf.U16InputZeroPointNotValid,
+            ErrorIf.U16OutputZeroPointNotValid,
         ]:
             zero_point = rng.randInt(-128, 128)
             if zero_point == 0:
                 zero_point = 1
             return zero_point
+
+        elif dtype == DType.INT8:
+            zp_min = 0 if unsigned else -128
+            zp_max = 255 if unsigned else 127
+
+            if zeropoint is None:
+                # +1 because randInt does not include the end
+                return rng.randInt(zp_min, zp_max + 1)
+            else:
+                return min(zp_max, max(zp_min, zeropoint))
+
+        # RESCALE allows 32768 as a valid zero point for unsigned i16.
+        # Other operators only allow 0
+        elif dtype == DType.INT16 and unsigned and op == Op.RESCALE:
+            return rng.choice([0, 32768])
+
         return 0
 
     @staticmethod
-    def qgUnary(rng, zeropoint, op, dtype, error_name=None):
-        if error_name == ErrorIf.InputZeroPointNotZero:
+    def qgUnary(rng, zeropoint, op, dtype, argsDict, error_name=None):
+        input_unsigned = argsDict.get("input_unsigned", False)
+        output_unsigned = argsDict.get("output_unsigned", False)
+
+        # Many ops don't set an "output_dtype". In those cases, assume it's
+        # the same as the input dtype
+        output_dtype = argsDict.get("output_dtype", dtype)
+
+        if error_name in (
+            ErrorIf.InputZeroPointNotZero,
+            ErrorIf.U16InputZeroPointNotValid,
+            ErrorIf.WrongInputType,
+        ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, zeropoint, op, dtype, error_name, unsigned=input_unsigned
+                ),
+                TosaQuantGen.getZeroPoint(
+                    rng, zeropoint, op, output_dtype, unsigned=output_unsigned
+                ),
             ]
-        elif error_name == ErrorIf.OutputZeroPointNotZero:
+        elif error_name in (
+            ErrorIf.OutputZeroPointNotZero,
+            ErrorIf.U16OutputZeroPointNotValid,
+            ErrorIf.WrongOutputType,
+        ):
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(
+                    rng, zeropoint, op, dtype, unsigned=input_unsigned
+                ),
+                TosaQuantGen.getZeroPoint(
+                    rng,
+                    zeropoint,
+                    op,
+                    output_dtype,
+                    error_name,
+                    unsigned=output_unsigned,
+                ),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(
+                    rng, zeropoint, op, dtype, unsigned=input_unsigned
+                ),
+                TosaQuantGen.getZeroPoint(
+                    rng, zeropoint, op, output_dtype, unsigned=output_unsigned
+                ),
             ]
         return qinfo
 
     @staticmethod
-    def qgConv(rng, zeropoint, op, dtype_or_dtypeList, error_name=None):
+    def qgConv(rng, zeropoint, op, dtype_or_dtypeList, argsDict, error_name=None):
         if isinstance(dtype_or_dtypeList, list):
             # a list of [input, weights, output] dtypes
             dtypeList = dtype_or_dtypeList
@@ -86,51 +133,51 @@ class TosaQuantGen:
 
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0], error_name),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[0], error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[1]),
             ]
         elif error_name == ErrorIf.WeightZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0]),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1], error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[0]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[1], error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[0]),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtypeList[1]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[0]),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtypeList[1]),
             ]
         return qinfo
 
     @staticmethod
-    def qgMatmul(rng, zeropoint, op, dtype, error_name=None):
+    def qgMatmul(rng, zeropoint, op, dtype, argsDict, error_name=None):
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype, error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
             ]
         return qinfo
 
     @staticmethod
-    def qgAvgPool2D(rng, zeropoint, op, dtype, error_name=None):
+    def qgAvgPool2D(rng, zeropoint, op, dtype, argsDict, error_name=None):
         if error_name == ErrorIf.InputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
             ]
         elif error_name == ErrorIf.OutputZeroPointNotZero:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype, error_name),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype, error_name),
             ]
         else:
             qinfo = [
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
-                TosaQuantGen.getZeroPoint(rng, zeropoint, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
+                TosaQuantGen.getZeroPoint(rng, zeropoint, op, dtype),
             ]
         return qinfo
 
@@ -756,12 +803,14 @@ class TosaTensorValuesGen:
     }
 
     @staticmethod
-    def _get_data_range(rng, dtype, highValueLookup, lowValueLookup=None):
+    def _get_data_range(
+        rng, dtype, highValueLookup, lowValueLookup=None, unsigned=False
+    ):
         # Return a tuple of (low,high) data range values for the given data
         # type using a combination of per operator table limits, data limits
         # and user supplied ranges for FP numbers
         if dtype in highValueLookup:
-            type_range = rng.dTypeRange(dtype, high_inclusive=True)
+            type_range = rng.dTypeRange(dtype, high_inclusive=True, unsigned=unsigned)
             high_val = highValueLookup[dtype]
             if lowValueLookup is not None and dtype in lowValueLookup:
                 low_val = lowValueLookup[dtype]
@@ -1066,7 +1115,7 @@ class TosaTensorValuesGen:
     def tvgAvgPool2D(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        qinfo = TosaQuantGen.qgAvgPool2D(rng, None, None, dtypeList, error_name)
+        qinfo = argsDict["qinfo"]
 
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [
@@ -1110,18 +1159,6 @@ class TosaTensorValuesGen:
                 argsDict["special_test_sets"] = test_set
 
         qinfo = argsDict["qinfo"]
-
-        # Ensure new output type has correct qinfo
-        input_dtype = dtypeList[0]
-        weight_dtype = dtypeList[1]
-        if error_name == ErrorIf.WrongInputType and input_dtype not in (
-            DType.INT8,
-            DType.UINT8,
-        ):
-            qinfo = [
-                TosaQuantGen.getZeroPoint(rng, None, input_dtype),
-                TosaQuantGen.getZeroPoint(rng, None, weight_dtype),
-            ]
 
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [
@@ -1189,15 +1226,13 @@ class TosaTensorValuesGen:
         if data_range:
             argsDict["data_range"] = data_range
 
-        qinfo = TosaQuantGen.qgUnary(rng, None, None, dtype, error_name)
-        argsDict["input_zp"] = np.int32([qinfo[0]])
-        argsDict["output_zp"] = np.int32([qinfo[1]])
+        qinfo = argsDict["qinfo"]
 
         # Create a new list for the pre-generated data in argsDict["fixed_data"]
         argsDict["fixed_data"] = [
             None,
-            argsDict["input_zp"],
-            argsDict["output_zp"],
+            np.int32([qinfo[0]]),
+            np.int32([qinfo[1]]),
         ]
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
@@ -1401,8 +1436,7 @@ class TosaTensorValuesGen:
         shift_arr = argsDict["shift"]
         input_unsigned = argsDict["input_unsigned"]
         output_unsigned = argsDict["output_unsigned"]
-        input_zp = argsDict["input_zp"]
-        output_zp = argsDict["output_zp"]
+        input_zp, output_zp = argsDict["qinfo"]
         input_dtype = dtypeList[0]
         output_dtype = argsDict["output_dtype"]
 
@@ -1448,18 +1482,22 @@ class TosaTensorValuesGen:
             # the input zp, this will limit the values to a valid range
             # REQUIRE(value >= (-1 << (shift - 1)) && value < (1 << (shift - 1)));
             min_shift = min(shift_arr)
-            max_value = (1 << (min_shift - 1)) + input_zp - 1
-            min_value = (-1 << (min_shift - 1)) + input_zp
+            if input_unsigned:
+                max_value = (1 << min_shift) + input_zp - 1
+                min_value = 0 + input_zp
+            else:
+                max_value = (1 << (min_shift - 1)) + input_zp - 1
+                min_value = (-1 << (min_shift - 1)) + input_zp
+
             dtype = dtypeList[0]
-            # Use the correct unsigned types to set the correct data ranges
-            if dtype == DType.INT8 and input_unsigned:
-                dtype = DType.UINT8
-            elif dtype == DType.INT16 and input_unsigned:
-                dtype = DType.UINT16
             highval_lookup = {dtype: max_value}
             lowval_lookup = {dtype: min_value}
             data_range = TosaTensorValuesGen._get_data_range(
-                rng, dtype, highval_lookup, lowval_lookup
+                rng,
+                dtype,
+                highval_lookup,
+                lowval_lookup,
+                unsigned=argsDict["input_unsigned"],
             )
             argsDict["data_range"] = data_range
 
@@ -3628,9 +3666,7 @@ class TosaArgGen:
                     "per_channel": per_channel,
                     "multiplier": multiplier_arr,
                     "shift": shift_arr,
-                    "input_zp": input_zp,
                     "input_unsigned": input_unsigned,
-                    "output_zp": output_zp,
                     "output_unsigned": output_unsigned,
                 },
             )
