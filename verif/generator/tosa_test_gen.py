@@ -3258,10 +3258,10 @@ class TosaTestGen:
                 profiles_supported
             ), f"{opName} is missing profile/extension requirements"
             testRequirements = {
-                "profiles_supported": list(profiles_supported),
+                "profiles_supported": sorted(profiles_supported),
             }
             if extensions_required:
-                testRequirements["extensions_required"] = list(extensions_required)
+                testRequirements["extensions_required"] = sorted(extensions_required)
 
             self.serialize("test", tensMeta, tags, testRequirements)
             return True
