@@ -461,7 +461,7 @@ int main(int argc, char* argv[])
 
     if (!test_desc["meta"]["compliance"]["tensors"].contains(ofmName))
     {
-        WARNING(("Invalid json test descriptor - missing tensor information for ofm_name: " + ofmName).c_str());
+        WARNING("Invalid json test descriptor - missing tensor information for ofm_name: %s", ofmName.c_str());
         return tvf_status_t::TVF_ERROR;
     }
 

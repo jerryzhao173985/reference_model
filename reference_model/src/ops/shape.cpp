@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ int OpConstShape::eval()
     std::vector<int> shapeValue;
     for (int i = 0; out != nullptr && i < out->getTensor().size(); ++i)
     {
-        shapeValue.push_back(out->getTensor()(i));
+        shapeValue.push_back(static_cast<int>(out->getTensor()(i)));
     }
 
     this->getOutputs()[0]->setShapeValue(shapeValue);

@@ -46,11 +46,11 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
 
     ERROR_IF(inputs.empty(), "Concat operator must have at least one input tensor");
 
-    int32_t num_inputs = inputs.size();
+    size_t num_inputs = inputs.size();
     LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
-    for (int32_t i = 0; i < num_inputs; i++)
+    for (size_t i = 0; i < num_inputs; i++)
     {
         ERROR_IF(inputs[i]->matchRank(*outputs[0]), "OpConcat: input and output must have same ranks");
         ERROR_IF(inputs[i]->matchType(*outputs[0]), "OpConcat: input and output must have same element types");
@@ -60,9 +60,9 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
     ERROR_IF(attribute->axis() < 0 || (size_t)attribute->axis() >= Rank, "OpConcat: axis is beyond output tensor rank");
 
     int32_t output_dim_on_axis = 0;
-    for (int32_t j = 0; j < num_inputs; j++)
+    for (size_t j = 0; j < num_inputs; j++)
     {
-        for (int32_t i = 0; i < Rank; i++)
+        for (size_t i = 0; i < Rank; i++)
         {
             int32_t input_dim = inputs[j]->getShape()[i];
             if (i == attribute->axis())
@@ -77,7 +77,7 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
         }
     }
 
-    ERROR_IF(output_dim_on_axis != outputs[0]->getShape()[attribute->axis()],
+    ERROR_IF(output_dim_on_axis != outputs[0]->getShape()[static_cast<size_t>(attribute->axis())],
              "OpConcat: sum of input dimension on axis not equal to output dimension on axis");
 
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
@@ -93,7 +93,7 @@ int OpConcat<Rank, Dtype>::eval()
 
     for (int32_t d = 0; d < Rank; d++)
     {
-        reverser[d] = Rank - 1 - d;
+        reverser[static_cast<size_t>(d)] = Rank - 1 - d;
     }
 
     TIn result = ins[0]->getTensor().shuffle(reverser);
@@ -172,9 +172,10 @@ int OpPad<Rank, Dtype>::eval()
         auto pad_front = padding_val(2 * i);
         auto pad_back  = padding_val(2 * i + 1);
         ERROR_IF((pad_front < 0) || (pad_back < 0), "OpPad: padding can't be smaller than 0");
-        ERROR_IF(out->getShape()[i] != pad_front + in->getShape()[i] + pad_back,
+        ERROR_IF(out->getShape()[static_cast<size_t>(i)] !=
+                     pad_front + in->getShape()[static_cast<size_t>(i)] + pad_back,
                  "OpPad: output shape not equal to input plus padding");
-        paddings_array[i] = std::make_pair(pad_front, pad_back);
+        paddings_array[static_cast<size_t>(i)] = std::make_pair(pad_front, pad_back);
     }
 
     TPadConst const pad_const_val = this->pad_const->getTensor();
@@ -227,13 +228,13 @@ int OpReshape<InRank, OutRank, Dtype>::eval()
 {
     for (int32_t d = 0; d < OutRank; d++)
     {
-        array_shape[d]  = in_new_shape->getTensor()(OutRank - 1 - d);
-        out_reverser[d] = OutRank - 1 - d;
+        array_shape[static_cast<size_t>(d)]  = in_new_shape->getTensor()(OutRank - 1 - d);
+        out_reverser[static_cast<size_t>(d)] = OutRank - 1 - d;
     }
 
     for (int32_t d = 0; d < InRank; d++)
     {
-        in_reverser[d] = InRank - 1 - d;
+        in_reverser[static_cast<size_t>(d)] = InRank - 1 - d;
     }
 
     // Eigen Tensor is col-major, and we're referencing row-major result
@@ -307,11 +308,11 @@ int OpReverse<Rank, Dtype>::checkTensorAttributes()
 
     // transform list of axis into true or false list
     // e.g. rank=4, axis=[1,2], reverse array would be [false, true, true, false]
-    for (int i = 0; i < Rank; i++)
+    for (size_t i = 0; i < Rank; i++)
     {
         reverse_array[i] = false;
     }
-    reverse_array[attribute->axis()] = true;
+    reverse_array[static_cast<size_t>(attribute->axis())] = true;
 
     return 0;
 }
@@ -378,10 +379,10 @@ int OpSlice<Rank, Dtype>::eval()
     ERROR_IF(static_cast<int32_t>(size_tensor.size()) != in->getRank(),
              "OpSlice: size array length needs to be rank(input)");
 
-    for (int32_t i = 0; i < in->getRank(); i++)
+    for (size_t i = 0; i < in->getRank(); i++)
     {
-        int32_t b = start_tensor(i);
-        int32_t s = size_tensor(i);
+        int32_t b = static_cast<int32_t>(start_tensor(static_cast<long>(i)));
+        int32_t s = static_cast<int32_t>(size_tensor(static_cast<long>(i)));
         ERROR_IF(b < 0 || b >= in->getShape()[i], "OpSlice: start out of boundary");
         ERROR_IF((b + s) < 0 || (b + s) > in->getShape()[i], "OpSlice: (start+size) out of boundary");
         ERROR_IF(s <= 0, "OpSlice: output must be positive");
@@ -625,13 +626,14 @@ int OpTranspose<Rank, Dtype>::checkTensorAttributes()
 
     std::array<bool, Rank> index_used;
     index_used.fill(false);
-    for (int32_t d = 0; d < Rank; d++)
+    for (size_t d = 0; d < Rank; d++)
     {
         int32_t index = attribute->perms()[d];
         ERROR_IF(index < 0 or index >= Rank, "OpTranspose: index out of boundary");
-        ERROR_IF(index_used[index], "OpTranspose: index duplicated in perm attribute");
-        index_used[index] = true;
-        ERROR_IF(in->getShape()[index] != out->getShape()[d], "OpTranspose: input output shape mismatch");
+        ERROR_IF(index_used[static_cast<size_t>(index)], "OpTranspose: index duplicated in perm attribute");
+        index_used[static_cast<size_t>(index)] = true;
+        ERROR_IF(in->getShape()[static_cast<size_t>(index)] != out->getShape()[d],
+                 "OpTranspose: input output shape mismatch");
         perm_array[d] = index;
     }
 
