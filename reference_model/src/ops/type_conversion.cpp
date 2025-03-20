@@ -221,8 +221,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                                               : sign_extend(static_cast<uint16_t>(val & 0xFFFF));
                 break;
             case 32:
-                val_extended = (unsigned_val) ? zero_extend(static_cast<int32_t>(val))
-                                              : static_cast<int64_t>(static_cast<int32_t>(val & 0xFFFFFFFF));
+                val_extended = (unsigned_val) ? zero_extend(static_cast<int32_t>(val)) : static_cast<int64_t>((val));
                 break;
             case 48:
                 if (unsigned_val)
@@ -267,11 +266,11 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     shape_2d[0] = 1;
     if (Rank > 0)
     {
-        for (int i = 0; i < Rank - 1; i++)
+        for (size_t i = 0; i < Rank - 1; i++)
         {
             shape_2d[0] *= this->in->getShape()[i];
         }
-        shape_2d[1] = this->in->getShape()[Rank - 1];
+        shape_2d[1] = this->in->getShape()[static_cast<size_t>(Rank - 1)];
     }
     else
     {
@@ -316,8 +315,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
             {
                 begin                        = Eigen::array<Eigen::Index, 2>({ 0, i });
                 curr_channel_slice_prescaled = input_reshaped.slice(begin, size);
-                channel_multiplier           = multiplier[i];
-                channel_shift                = shift[i];
+                channel_multiplier           = multiplier[static_cast<size_t>(i)];
+                channel_shift                = shift[static_cast<size_t>(i)];
                 curr_channel_slice_postscaled =
                     curr_channel_slice_prescaled.unaryExpr([=](InEigenType in_val) -> OutEigenType {
                         int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
@@ -328,8 +327,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                                                                               channel_multiplier, channel_shift,
                                                                               double_round);
                         else
-                            scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, channel_multiplier,
-                                                                              channel_shift);
+                            scaled = TosaReference::QuantUtil::apply_scale_16(
+                                input_zp_shifted, static_cast<int16_t>(channel_multiplier), channel_shift);
 
                         int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
                         int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
@@ -343,10 +342,11 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                         }
 
                         // Treat the output values as unsigned if `output_unsigned` is true.
-                        int32_t clipped_val =
-                            (output_unsigned)
-                                ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u, this->parent_sgt)
-                                : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s, this->parent_sgt);
+                        int32_t clipped_val = (output_unsigned)
+                                                  ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64),
+                                                                                 QMin_u, QMax_u, this->parent_sgt)
+                                                  : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64), QMin_s,
+                                                                                QMax_s, this->parent_sgt);
 
                         OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
                         return out_val;
@@ -374,11 +374,11 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
                 int32_t scaled;
                 if (scale32)
-                    scaled = TosaReference::QuantUtil::apply_scale_32(input_zp_shifted, tensor_multiplier, tensor_shift,
-                                                                      double_round);
+                    scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
+                                                                      tensor_multiplier, tensor_shift, double_round);
                 else
-                    scaled =
-                        TosaReference::QuantUtil::apply_scale_16(input_zp_shifted, tensor_multiplier, tensor_shift);
+                    scaled = TosaReference::QuantUtil::apply_scale_16(
+                        input_zp_shifted, static_cast<int16_t>(tensor_multiplier), tensor_shift);
 
                 int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
                 int64_t i32_max_in_64 = IsSignedInt<OutDtype>()
@@ -394,9 +394,10 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
                 }
 
                 // Treat the output values as unsigned if `output_unsigned` is true.
-                int32_t clipped_val = (output_unsigned)
-                                          ? applyClip<int32_t, uint32_t>(res_in_64, QMin_u, QMax_u, this->parent_sgt)
-                                          : applyClip<int32_t, int32_t>(res_in_64, QMin_s, QMax_s, this->parent_sgt);
+                int32_t clipped_val = (output_unsigned) ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64),
+                                                                                       QMin_u, QMax_u, this->parent_sgt)
+                                                        : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64),
+                                                                                      QMin_s, QMax_s, this->parent_sgt);
 
                 OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
                 return out_val;
@@ -410,7 +411,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
     // reshape [d0 * d1 ..., dn] back to [d0, d1, ..., dn]
     Eigen::array<Eigen::Index, Rank> output_shape;
-    for (int i = 0; i < Rank; i++)
+    for (size_t i = 0; i < Rank; i++)
     {
         output_shape[i] = this->out->getShape()[i];
     }
@@ -506,7 +507,7 @@ CastHelper<InDtype, TOSA_REF_TYPE_FP16>::CastHelper()
 {
     // Integer data converted to fp16 (stored as fp32)
     fcn = [](InEigenType in) -> float {
-        half_float::half h = half_float::half(in);
+        half_float::half h = half_float::half(static_cast<float>(in));
         float out          = half_float::half_cast<float, half_float::half>(h);
         return out;
     };
@@ -576,7 +577,7 @@ CastHelper<TOSA_REF_TYPE_BF16, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = std::rint(in);
+        OutEigenType out = static_cast<OutEigenType>(std::rint(in));
         return out;
     };
 }
@@ -608,7 +609,7 @@ CastHelper<TOSA_REF_TYPE_FP32, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = std::rint(in);
+        OutEigenType out = static_cast<OutEigenType>(std::rint(in));
         return out;
     };
 }
@@ -787,13 +788,13 @@ CastHelper<TOSA_REF_TYPE_FP64, OutDtype>::CastHelper()
                 if (in <= double(OutMin))
                     return OutMin;
 
-                OutEigenType out = std::rint(in);
+                OutEigenType out = static_cast<OutEigenType>(std::rint(in));
                 return out;
             };
             break;
         case TOSA_REF_TYPE_FP64:
             // no op
-            fcn = [](InEigenType in) -> OutEigenType { return in; };
+            fcn = [](InEigenType in) -> OutEigenType { return static_cast<OutEigenType>(in); };
             break;
         default:
             ASSERT_MSG(false, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(OutDtype));

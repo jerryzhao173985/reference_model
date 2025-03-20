@@ -103,7 +103,7 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
     // Check data size matches tensor size or it is 1 so that we can broadcast the values
     if (T != inSize && !broadcastMode)
     {
-        WARNING("[Generator][FD] Given data size %d is not broadcastable or does not match output size %d.",
+        WARNING("[Generator][FD] Given data size %zd is not broadcastable or does not match output size %ld.",
                 inData.size(), T);
         return false;
     }

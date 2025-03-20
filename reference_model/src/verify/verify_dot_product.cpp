@@ -39,7 +39,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
         is_valid = std::isnan(double(imp));
         if (!is_valid)
         {
-            WARNING("[Verifier][DP] index %d: ref is NaN, but imp (%.*g) is not.", index, FLT_DIG,
+            WARNING("[Verifier][DP] index %zd: ref is NaN, but imp (%.*g) is not.", index, FLT_DIG,
                     static_cast<double>(imp));
         }
         err = 0.0;
@@ -62,8 +62,8 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
         is_valid = (ref == 0.0) && (static_cast<double>(imp) == 0.0);
         if (!is_valid)
         {
-            WARNING("[Verifier][DP] index %d: bound is zero, but ref (%.*g) or imp (%.*g) is not.", index, DBL_DIG, ref,
-                    FLT_DIG, static_cast<double>(imp));
+            WARNING("[Verifier][DP] index %zd: bound is zero, but ref (%.*g) or imp (%.*g) is not.", index, DBL_DIG,
+                    ref, FLT_DIG, static_cast<double>(imp));
         }
         err = 0.0;
     }
@@ -78,7 +78,7 @@ std::optional<double> validateElement(size_t index, double ref, double bnd, OutT
         is_valid = std::abs(err) <= absBound;
         if (!is_valid)
         {
-            WARNING("[Verifier][DP] index %d: out_err (abs(%.*g)) is not within ABS_BOUND (%d).", index, DBL_DIG, err,
+            WARNING("[Verifier][DP] index %zd: out_err (abs(%.*g)) is not within ABS_BOUND (%d).", index, DBL_DIG, err,
                     absBound);
         }
     }

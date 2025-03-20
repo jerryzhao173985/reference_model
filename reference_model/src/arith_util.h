@@ -316,7 +316,7 @@ int32_t getSignedMinimum()
 
 // return the maximum value when interpreting type T as an unsigned value.
 template <TOSA_REF_TYPE Dtype>
-int32_t getUnsignedMaximum()
+uint32_t getUnsignedMaximum()
 {
     if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
         return GetQMax<TOSA_REF_TYPE_UINT8>::value;
@@ -333,7 +333,7 @@ int32_t getUnsignedMaximum()
 
 // return the minimum value when interpreting type T as an unsigned value.
 template <TOSA_REF_TYPE Dtype>
-int32_t getUnsignedMinimum()
+uint32_t getUnsignedMinimum()
 {
     if (Dtype == TOSA_REF_TYPE_INT8 || Dtype == TOSA_REF_TYPE_UINT8)
         return GetQMin<TOSA_REF_TYPE_UINT8>::value;
