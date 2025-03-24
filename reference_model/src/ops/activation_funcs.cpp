@@ -106,7 +106,8 @@ int OpClamp<Rank, Dtype>::register_fcn()
             ERROR_IF(std::isnan(min) || std::isnan(max), "OpClamp: min/max cannot be NaN")
             // apply fpTrunc<Dtype> after min/max
             this->fcn = [min, max, this, nan_mode](InEigenType a) -> OutEigenType {
-                return fpTrunc<Dtype>(applyClip<InEigenType, InEigenType>(a, min, max, this->parent_sgt, nan_mode));
+                return static_cast<OutEigenType>(
+                    fpTrunc<Dtype>(applyClip<InEigenType, InEigenType>(a, min, max, this->parent_sgt, nan_mode)));
             };
         }
         break;
@@ -166,18 +167,22 @@ int OpSigmoid<Rank, Dtype>::register_fcn()
                 OutEigenType exp_result = static_cast<OutEigenType>(exp_result_f);
                 OutEigenType sum        = one + exp_result;
                 OutEigenType result     = one / sum;
-                return fpTrunc<Dtype>(result);
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(result));
             };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 2*(1+abs(a))
-                this->fcn = [](InEigenType a) -> OutEigenType { return 2.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+                this->fcn = [](InEigenType a) -> OutEigenType {
+                    return 2.0f * (1.0f + static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a)));
+                };
             }
             else
             {
-                this->fcn = [](InEigenType a) -> OutEigenType { return (1.L / (1.L + (exp(-1.L * a)))); };
+                this->fcn = [](InEigenType a) -> OutEigenType {
+                    return static_cast<OutEigenType>(1.L / (1.L + (exp(-1.L * a))));
+                };
             }
             break;
         default:
@@ -221,14 +226,16 @@ int OpTanh<Rank, Dtype>::register_fcn()
                                          static_cast<OutEigenType>(DtypeLimits<Dtype>::max));
 
                 OutEigenType tanh_value = numerator / denominator;
-                return fpTrunc<Dtype>(tanh_value);
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(tanh_value));
             };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 4*(1+abs(a))
-                this->fcn = [](InEigenType a) -> OutEigenType { return 4.0 * (1.0 + (a > (InEigenType)0 ? a : (-a))); };
+                this->fcn = [](InEigenType a) -> OutEigenType {
+                    return 4.0f * (1.0f + static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a)));
+                };
             }
             else
             {
@@ -254,7 +261,7 @@ int OpErf<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(erff(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(erf(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a) -> OutEigenType { return erf(a); };

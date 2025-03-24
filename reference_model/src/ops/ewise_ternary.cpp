@@ -72,7 +72,7 @@ int OpSelect<Rank, Dtype>::broadcast(std::vector<int>& calculated_shape)
     const std::vector<int>& output_shape = this->out->getShape();
 
     // calculates the multipliers for Eigen
-    for (int i = 0; i < Rank; i++)
+    for (size_t i = 0; i < Rank; i++)
     {
         this->bcast_cond[i] = (cond_shape[i] != output_shape[i] && cond_shape[i] == 1) ? output_shape[i] : 1;
         this->bcast_then[i] = (then_shape[i] != output_shape[i] && then_shape[i] == 1) ? output_shape[i] : 1;

@@ -99,16 +99,16 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
     int out_width    = out->getShape()[2];
     int out_channels = out->getShape()[3];
 
-    int16_t scale_y_n = scale_val(0);
-    int16_t scale_y_d = scale_val(1);
-    int16_t scale_x_n = scale_val(2);
-    int16_t scale_x_d = scale_val(3);
+    InEigenShapeType scale_y_n = scale_val(0);
+    InEigenShapeType scale_y_d = scale_val(1);
+    InEigenShapeType scale_x_n = scale_val(2);
+    InEigenShapeType scale_x_d = scale_val(3);
 
-    int16_t offset_y = offset_val(0);
-    int16_t offset_x = offset_val(1);
+    InEigenShapeType offset_y = offset_val(0);
+    InEigenShapeType offset_x = offset_val(1);
 
-    int16_t border_y = border_val(0);
-    int16_t border_x = border_val(1);
+    InEigenShapeType border_y = border_val(0);
+    InEigenShapeType border_x = border_val(1);
 
     ERROR_IF(std::max<int>({ in_height, in_width, out_height, out_width }) >= 16384,
              "OpResize: exceeds maximum dimension");
@@ -139,10 +139,12 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
     int32_t res_height = 0;
     int32_t res_width  = 0;
 
-    if (idiv_check((in_height - 1) * scale_y_n - offset_y + border_y, scale_y_d, res_height))
+    if (idiv_check(static_cast<int32_t>((in_height - 1) * scale_y_n - offset_y + border_y),
+                   static_cast<int32_t>(scale_y_d), res_height))
         return 1;
 
-    if (idiv_check((in_width - 1) * scale_x_n - offset_x + border_x, scale_x_d, res_width))
+    if (idiv_check(static_cast<int32_t>((in_width - 1) * scale_x_n - offset_x + border_x),
+                   static_cast<int32_t>(scale_x_d), res_width))
         return 1;
 
     ERROR_IF(out_height != res_height + 1,
@@ -155,11 +157,11 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
             for (int oy = 0; oy < out_height; oy++)
                 for (int ox = 0; ox < out_width; ox++)
                 {
-                    int32_t y = oy * scale_y_d + offset_y;
-                    int32_t x = ox * scale_x_d + offset_x;
+                    int32_t y = static_cast<int32_t>(oy * scale_y_d + offset_y);
+                    int32_t x = static_cast<int32_t>(ox * scale_x_d + offset_x);
 
-                    int16_t iy = idiv_floor(y, scale_y_n);
-                    int16_t ix = idiv_floor(x, scale_x_n);
+                    int32_t iy = idiv_floor(y, static_cast<int32_t>(scale_y_n));
+                    int32_t ix = idiv_floor(x, static_cast<int32_t>(scale_x_n));
 
                     resize_t dy;
                     resize_t dx;
@@ -168,8 +170,8 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         const double fy_double = static_cast<double>(y) / static_cast<double>(scale_y_n);
                         const double fx_double = static_cast<double>(x) / static_cast<double>(scale_x_n);
 
-                        dy = (resize_t)(fy_double - iy);
-                        dx = (resize_t)(fx_double - ix);
+                        dy = ct::compat::cast<resize_t>(fy_double - iy);
+                        dx = ct::compat::cast<resize_t>(fx_double - ix);
                     }
                     else
                     {
@@ -179,13 +181,13 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(bf16)) ||
                             (typeid(resize_t) == typeid(half_float::half)))
                         {
-                            dy = (resize_t)(fy - iy);
-                            dx = (resize_t)(fx - ix);
+                            dy = ct::compat::cast<resize_t>(fy - static_cast<float>(iy));
+                            dx = ct::compat::cast<resize_t>(fx - static_cast<float>(ix));
                         }
                         else
                         {
-                            dy = (resize_t)(y - (iy * scale_y_n));
-                            dx = (resize_t)(x - (ix * scale_x_n));
+                            dy = ct::compat::cast<resize_t>(y - (iy * scale_y_n));
+                            dx = ct::compat::cast<resize_t>(x - (ix * scale_x_n));
                         }
                     }
 
@@ -205,18 +207,20 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         if (std::is_floating_point<resize_t>::value || (typeid(resize_t) == typeid(half_float::half)))
                         {
                             resize_t native_acc;
-                            native_acc = (resize_t)v00 * (resize_t)(1.0 - dy) * (resize_t)(1.0 - dx);
-                            native_acc += (resize_t)v01 * (resize_t)(1.0 - dy) * (resize_t)dx;
-                            native_acc += (resize_t)v10 * (resize_t)dy * (resize_t)(1.0 - dx);
-                            native_acc += (resize_t)v11 * (resize_t)dy * (resize_t)dx;
-                            acc = OutEigenType(native_acc);
+                            resize_t one = static_cast<resize_t>(1.0f);
+                            native_acc   = static_cast<resize_t>(v00) * (one - dy) * (one - dx);
+                            native_acc += static_cast<resize_t>(v01) * (one - dy) * dx;
+                            native_acc += static_cast<resize_t>(v10) * dy * (one - dx);
+                            native_acc += static_cast<resize_t>(v11) * dy * dx;
+                            acc = static_cast<OutEigenType>(native_acc);
                         }
                         else
                         {
-                            acc = (OutEigenType)v00 * (scale_y_n - dy) * (scale_x_n - dx);
-                            acc += (OutEigenType)v01 * (scale_y_n - dy) * dx;
-                            acc += (OutEigenType)v10 * dy * (scale_x_n - dx);
-                            acc += (OutEigenType)v11 * dy * dx;
+                            acc = static_cast<OutEigenType>(v00) * (static_cast<OutEigenType>(scale_y_n) - dy) *
+                                  (static_cast<OutEigenType>(scale_x_n) - dx);
+                            acc += static_cast<OutEigenType>(v01) * (static_cast<OutEigenType>(scale_y_n) - dy) * dx;
+                            acc += static_cast<OutEigenType>(v10) * dy * (static_cast<OutEigenType>(scale_x_n) - dx);
+                            acc += static_cast<OutEigenType>(v11) * dy * dx;
                         }
                     }
                     else
@@ -230,8 +234,8 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         }
                         else
                         {
-                            iy = (2 * dy >= scale_y_n) ? iy1 : iy0;
-                            ix = (2 * dx >= scale_x_n) ? ix1 : ix0;
+                            iy = (2 * dy >= static_cast<OutEigenType>(scale_y_n)) ? iy1 : iy0;
+                            ix = (2 * dx >= static_cast<OutEigenType>(scale_x_n)) ? ix1 : ix0;
                         }
                         acc = in->getTensor()(b, iy, ix, c);
                     }

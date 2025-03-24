@@ -86,7 +86,7 @@ int BinaryNodeBase<Rank, InDtype, OutDtype>::broadcast(std::vector<int>& calcula
     const std::vector<int>& output_shape = result->getShape();
 
     // calculates the multipliers for Eigen
-    for (int i = 0; i < Rank; i++)
+    for (size_t i = 0; i < Rank; i++)
     {
         bcast_a[i] = (a_shape[i] != output_shape[i] && a_shape[i] == 1) ? output_shape[i] : 1;
         bcast_b[i] = (b_shape[i] != output_shape[i] && b_shape[i] == 1) ? output_shape[i] : 1;
@@ -148,7 +148,7 @@ int OpAdd<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                int64_t res_in_64     = static_cast<int64_t>(a) + b;
+                int64_t res_in_64     = static_cast<int64_t>(a + b);
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::min());
                 REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64, "OpAdd: result not in i32 range");
@@ -158,7 +158,9 @@ int OpAdd<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a + b); };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<OutDtype>(a + b));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a + b; };
@@ -576,7 +578,9 @@ int OpMul<Rank, InDtype, OutDtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a * b); };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<OutDtype>(a * b));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a * b; };
@@ -611,7 +615,7 @@ int OpPow<Rank, Dtype>::register_fcn()
                 REQUIRE(x > 0 || y > 0, "OpPow: both x and y are less or equal to 0");
                 REQUIRE(!std::isnan(x) && !std::isnan(y), "OpPow: found NaN");
                 REQUIRE(std::isfinite(x) && std::isfinite(y), "OpPow: found non-finite number");
-                return fpTrunc<OutDtype>(powf(x, y));
+                return static_cast<OutEigenType>(fpTrunc<OutDtype>(pow(x, y)));
             };
             break;
         case TOSA_REF_TYPE_FP64:
@@ -620,7 +624,7 @@ int OpPow<Rank, Dtype>::register_fcn()
                 // ABS_ERROR bounds return 2*(1+abs(log(abs(x))*y))
                 this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {
                     OutEigenType z = log(x > (InEigenType)0 ? x : (-x)) * y;
-                    return 2 * (1.0 + (z > (OutEigenType)0 ? z : (-z)));
+                    return 2 * (1.0f + (z > (OutEigenType)0 ? z : (-z)));
                 };
             }
             else
@@ -642,7 +646,7 @@ int OpSub<Rank, Dtype>::register_fcn()
     {
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a, InEigenType b) -> OutEigenType {
-                int64_t res_in_64     = static_cast<int64_t>(a) - b;
+                int64_t res_in_64     = static_cast<int64_t>(a - b);
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<InEigenType>::min());
                 REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64, "OpSub: result not in i32 range");
@@ -652,7 +656,9 @@ int OpSub<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return fpTrunc<OutDtype>(a - b); };
+            this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<OutDtype>(a - b));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a, InEigenType b) -> OutEigenType { return a - b; };

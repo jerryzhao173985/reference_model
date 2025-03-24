@@ -225,9 +225,11 @@ inline bool checkValidBFloat(float src)
     return (*ptr & UINT32_C(0x0000ffff)) == 0;
 }
 
-template <TOSA_REF_TYPE Dtype>
-float fpTrunc(float f_in)
+template <TOSA_REF_TYPE Dtype, typename T>
+float fpTrunc(T input)
 {
+    float f_in = static_cast<float>(input);
+
     /* Truncates a float value based on the TOSA_REF_TYPE it represents.*/
     switch (Dtype)
     {

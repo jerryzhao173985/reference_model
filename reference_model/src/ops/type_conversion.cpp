@@ -808,7 +808,7 @@ CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E4M3>::CastHelper()
 {
     // fp64 data converted to fp8e5m2 (stored as fp32)
     fcn = [](double in) -> float {
-        float out = static_cast<float>(static_cast<fp8e4m3>(in));
+        float out = static_cast<float>(ct::compat::cast<fp8e4m3>(in));
         return out;
     };
 }
@@ -817,7 +817,7 @@ CastHelper<TOSA_REF_TYPE_FP64, TOSA_REF_TYPE_FP8E5M2>::CastHelper()
 {
     // fp64 data converted to fp8e5m2 (stored as fp32)
     fcn = [](double in) -> float {
-        float out = static_cast<float>(static_cast<fp8e5m2>(in));
+        float out = static_cast<float>(ct::compat::cast<fp8e5m2>(in));
         return out;
     };
 }
