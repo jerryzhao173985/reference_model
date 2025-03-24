@@ -232,4 +232,29 @@ TEST_SUITE("reference_model")
             testCast<int16_t, int8_t>(-28617, 55);
         }
     }
+
+    TEST_CASE("Cast FP to INT: Round to Nearest (Ties to Even)")
+    {
+        SUBCASE("Halfway cases (round to even)")
+        {
+            testCast<float, int8_t>(2.5f, 2);
+            testCast<float, int8_t>(3.5f, 4);
+            testCast<float, int8_t>(-2.5f, -2);
+            testCast<float, int8_t>(-3.5f, -4);
+        }
+        SUBCASE("Non-halfway cases")
+        {
+            testCast<float, int8_t>(2.3f, 2);
+            testCast<float, int8_t>(2.7f, 3);
+            testCast<float, int8_t>(-2.3f, -2);
+            testCast<float, int8_t>(-2.7f, -3);
+        }
+        SUBCASE("Boundary cases")
+        {
+            // exceeds max, clipped to int8 max
+            testCast<float, int8_t>(128.0f, 127);
+            // exceeds min, clipped to int8 min
+            testCast<float, int8_t>(-129.0f, -128);
+        }
+    }
 }    // TEST_SUITE("reference_model")
