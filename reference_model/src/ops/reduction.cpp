@@ -60,7 +60,7 @@ int ReduceNode<Rank, Dtype>::checkTensorAttributes()
         return 1;
     }
 
-    if (outputs[0]->getShape()[axis()] != 1)
+    if (outputs[0]->getShape()[static_cast<size_t>(axis())] != 1)
     {
         printNodeValidationError("ReduceOp: Output tensor shape[axis] needs to be 1.");
         return 1;

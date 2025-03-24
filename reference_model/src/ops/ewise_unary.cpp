@@ -94,7 +94,7 @@ int OpAbs<Rank, Dtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                int64_t res_in_64     = a > (InEigenType)0 ? a : -static_cast<int64_t>(a);
+                int64_t res_in_64     = a > (InEigenType)0 ? static_cast<int64_t>(a) : -static_cast<int64_t>(a);
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 REQUIRE(res_in_64 <= i32_max_in_64, "OpAbs: result not in acc type range (int32)");
                 return static_cast<OutEigenType>(res_in_64);
@@ -102,7 +102,9 @@ int OpAbs<Rank, Dtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(a > (InEigenType)0 ? a : (-a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(a > (InEigenType)0 ? a : (-a)));
+            };
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -136,7 +138,9 @@ int OpCeil<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(ceilf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(ceil(a)));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a) -> OutEigenType { return ceil(a); };
@@ -188,7 +192,7 @@ int OpCos<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(cos(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(cos(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
@@ -197,7 +201,7 @@ int OpCos<Rank, Dtype>::register_fcn()
                 // So instead we pass boundsMagnitude in place of boundsValue as the boundsMagnitude
                 // depends on the input values with a different calculation that cannot be done at validation time.
                 this->fcn = [](InEigenType a) -> OutEigenType {
-                    return 1.0 + (a > static_cast<InEigenType>(0) ? a : (-a));
+                    return 1.0f + static_cast<OutEigenType>(a > static_cast<InEigenType>(0) ? a : (-a));
                 };
             }
             else
@@ -220,13 +224,15 @@ int OpExp<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(expf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(exp(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)
             {
                 // ABS_ERROR bounds return (1+abs(a))
-                this->fcn = [](InEigenType a) -> OutEigenType { return 1.0 + (a > (InEigenType)0 ? a : (-a)); };
+                this->fcn = [](InEigenType a) -> OutEigenType {
+                    return 1.0f + static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a));
+                };
             }
             else
             {
@@ -248,7 +254,9 @@ int OpFloor<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(floorf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(floor(a)));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a) -> OutEigenType { return floor(a); };
@@ -268,7 +276,7 @@ int OpLog<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(logf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(log(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [](InEigenType a) -> OutEigenType { return log(a); };
@@ -351,18 +359,18 @@ int OpNegate<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
-                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                const int64_t input_zp_val  = static_cast<int64_t>(this->input_zp->getTensor()(0));
+                const int64_t output_zp_val = static_cast<int64_t>(this->output_zp->getTensor()(0));
                 ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
                 ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
                 InEigenType result = -(a);
-                return fpTrunc<Dtype>(result);
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(result));
             };
             break;
         case TOSA_REF_TYPE_FP64:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
-                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                const int64_t input_zp_val  = static_cast<int64_t>(this->input_zp->getTensor()(0));
+                const int64_t output_zp_val = static_cast<int64_t>(this->output_zp->getTensor()(0));
                 ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
                 ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
                 OutEigenType result = -(a);
@@ -372,11 +380,11 @@ int OpNegate<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_INT16:
         case TOSA_REF_TYPE_INT32:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
-                const int64_t output_zp_val = this->output_zp->getTensor()(0);
+                const int64_t input_zp_val  = static_cast<int64_t>(this->input_zp->getTensor()(0));
+                const int64_t output_zp_val = static_cast<int64_t>(this->output_zp->getTensor()(0));
                 ERROR_IF(input_zp_val != 0, "OpNegate: Input zero point must be zero for non int8_t data");
                 ERROR_IF(output_zp_val != 0, "OpNegate: Output zero point must be zero for non int8_t data");
-                int64_t res_in_64     = 0L - a;
+                int64_t res_in_64     = 0L - static_cast<int64_t>(a);
                 int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
                 REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64,
@@ -399,9 +407,9 @@ int OpNegate<Rank, Dtype>::register_fcn()
             break;
         case TOSA_REF_TYPE_INT8:
             this->fcn = [this](InEigenType a) -> OutEigenType {
-                const int64_t input_zp_val  = this->input_zp->getTensor()(0);
-                const int64_t output_zp_val = this->output_zp->getTensor()(0);
-                int64_t res_in_64           = 0 - (a - input_zp_val);
+                const int64_t input_zp_val  = static_cast<int64_t>(this->input_zp->getTensor()(0));
+                const int64_t output_zp_val = static_cast<int64_t>(this->output_zp->getTensor()(0));
+                int64_t res_in_64           = 0 - (static_cast<int64_t>(a) - input_zp_val);
                 int64_t i32_max_in_64       = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
                 int64_t i32_min_in_64       = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
                 REQUIRE(res_in_64 <= i32_max_in_64 && res_in_64 >= i32_min_in_64,
@@ -427,10 +435,12 @@ int OpReciprocal<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / a); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(1.0 / a));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return (1.0L / a); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(1.0L / a); };
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -447,10 +457,12 @@ int OpRsqrt<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(1.0 / sqrtf(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType {
+                return static_cast<OutEigenType>(fpTrunc<Dtype>(1.0 / sqrt(a)));
+            };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return (1.0L / sqrt(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(1.0L / sqrt(a)); };
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));
@@ -467,7 +479,7 @@ int OpSin<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_BF16:
         case TOSA_REF_TYPE_FP32:
-            this->fcn = [](InEigenType a) -> OutEigenType { return fpTrunc<Dtype>(sin(a)); };
+            this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(sin(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.abs_mode)

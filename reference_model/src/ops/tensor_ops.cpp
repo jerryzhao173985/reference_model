@@ -172,13 +172,13 @@ int check_conv_attribute(std::unique_ptr<ATTR>& attribute,
 
     ASSERT_MSG(conv_dimension == 2 || conv_dimension == 3, "Unsupported convolution dimension")
 
-    int32_t offset_d = conv_dimension == 3 ? 1 : 0;
-    int32_t ID       = conv_dimension == 3 ? input_shape[1] : 1;
-    int32_t IH       = input_shape[1 + offset_d];
-    int32_t IW       = input_shape[2 + offset_d];
-    int32_t OD       = conv_dimension == 3 ? output_shape[1] : 1;
-    int32_t OH       = output_shape[1 + offset_d];
-    int32_t OW       = output_shape[2 + offset_d];
+    size_t offset_d = conv_dimension == 3 ? 1 : 0;
+    int32_t ID      = conv_dimension == 3 ? input_shape[1] : 1;
+    int32_t IH      = input_shape[1 + offset_d];
+    int32_t IW      = input_shape[2 + offset_d];
+    int32_t OD      = conv_dimension == 3 ? output_shape[1] : 1;
+    int32_t OH      = output_shape[1 + offset_d];
+    int32_t OW      = output_shape[2 + offset_d];
 
     int32_t stride_d   = conv_dimension == 3 ? attribute->stride()[0] : 1;
     int32_t stride_y   = attribute->stride()[0 + offset_d];
@@ -356,7 +356,7 @@ int OpArgMax<Rank, Dtype>::checkTensorAttributes()
     }
 
     bool shape_check = true;
-    for (int32_t i = 0; i < input->getRank(); i++)
+    for (size_t i = 0; i < input->getRank(); i++)
     {
         if (i < attribute->axis())
         {
@@ -399,15 +399,15 @@ int OpArgMax<Rank, Dtype>::eval()
 
     for (int i = 1; i < Rank; i++)
     {
-        shuffle_indices[i] = (i <= attribute->axis()) ? i - 1 : i;
+        shuffle_indices[static_cast<size_t>(i)] = (i <= attribute->axis()) ? i - 1 : i;
     }
 
     auto dimensions = input.dimensions();
 
     Eigen::array<long, 2> matrix_dimensions;
-    matrix_dimensions[0] = dimensions[attribute->axis()];
+    matrix_dimensions[0] = dimensions[static_cast<size_t>(attribute->axis())];
     matrix_dimensions[1] = 1;
-    for (int i = 0; i < Rank; i++)
+    for (size_t i = 0; i < Rank; i++)
     {
         if (i == attribute->axis())
             continue;
@@ -449,8 +449,8 @@ int OpArgMax<Rank, Dtype>::eval()
     }
 
     Eigen::array<long, Rank - 1> output_shape;
-    DenseIndex in_idx  = 0;
-    DenseIndex out_idx = 0;
+    size_t in_idx  = 0;
+    size_t out_idx = 0;
     while (in_idx < Rank)
     {
         if (in_idx != attribute->axis())
@@ -662,7 +662,7 @@ int OpAvgPool2d<Dtype, AccDtype>::eval()
                     {
                         REQUIRE(filter_count != 0, "OpAvgPool2d number of filters should be non-zero.");
                         out_tens(ob, oh, ow, oc) =
-                            static_cast<OutEigenType>(acc / static_cast<AccEigenType>(filter_count));
+                            static_cast<OutEigenType>(acc / ct::compat::cast<AccEigenType>(filter_count));
                     }
                 }
             }
@@ -1762,8 +1762,10 @@ int OpFFT2d<Dtype>::eval()
                         int32_t ax = (static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_real_width;
 
                         // Use explicit cast to ensure intermediate calculations are completed using OutEigenType
-                        a = sign_val * 2 * M_PI *
-                            ((OutEigenType)ay / in_real_height + (OutEigenType)ax / in_real_width);
+                        a = static_cast<OutEigenType>(
+                            sign_val * 2 * M_PI *
+                            (static_cast<OutEigenType>(ay) / static_cast<OutEigenType>(in_real_height) +
+                             static_cast<OutEigenType>(ax) / static_cast<OutEigenType>(in_real_width)));
                         // Calculate weight values
                         a_cos = cos(a);
                         a_sin = sin(a);
@@ -1907,7 +1909,10 @@ int OpRFFT2d<Dtype>::eval()
                         int32_t ax = (static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_width;
 
                         // Use explicit cast to ensure intermediate calculations are completed using OutEigenType
-                        a = 2 * M_PI * ((OutEigenType)ay / in_height + (OutEigenType)ax / in_width);
+                        a = static_cast<OutEigenType>(
+                            2 * M_PI *
+                            (static_cast<OutEigenType>(ay) / static_cast<OutEigenType>(in_height) +
+                             static_cast<OutEigenType>(ax) / static_cast<OutEigenType>(in_width)));
 
                         // Calculate weight values (co-efficients)
                         a_cos = cos(a);
@@ -1937,7 +1942,7 @@ int OpRFFT2d<Dtype>::eval()
                         }
                         else if (g_func_config.tosaExtraMultiplies())
                         {
-                            sum_imag += v_ir * 0.0;
+                            sum_imag += static_cast<OutEigenType>(v_ir * 0.0);
                         }
                     }
                 }
