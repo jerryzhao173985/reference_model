@@ -20,6 +20,7 @@
 #include "quant_util.h"
 #include "template_types.h"
 #include "verify_utils.h"
+#include <cfenv>
 #include <cmath>
 
 using namespace TosaReference;
@@ -492,6 +493,28 @@ int OpCast<Rank, InDtype, OutDtype>::eval()
     return GraphNode::eval();
 }
 
+// Ensure rounding mode is reset after lambda execution
+struct ScopedFEnv
+{
+    int old_mode;
+    ScopedFEnv(int new_mode)
+    {
+        // Note: std::fegetround() can return a negative value
+        // if the rounding mode is indeterminate.
+        old_mode = std::fegetround();
+        std::fesetround(new_mode);
+    }
+    ~ScopedFEnv()
+    {
+        // Only restore the original rounding mode
+        // if it was successfully determined
+        if (old_mode >= 0)
+        {
+            std::fesetround(old_mode);
+        }
+    }
+};
+
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 CastHelper<InDtype, OutDtype>::CastHelper()
 {
@@ -575,7 +598,8 @@ CastHelper<TOSA_REF_TYPE_FP16, OutDtype>::CastHelper()
         if (h <= half_float::half(float(OutMin)))
             return OutMin;
 
-        h                = std::rint(h);
+        ScopedFEnv round_guard(FE_TONEAREST);
+        h                = static_cast<OutEigenType>(std::nearbyint(h));
         OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
 
         return out;
@@ -599,7 +623,8 @@ CastHelper<TOSA_REF_TYPE_BF16, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = static_cast<OutEigenType>(std::rint(in));
+        ScopedFEnv round_guard(FE_TONEAREST);
+        OutEigenType out = static_cast<OutEigenType>(std::nearbyint(in));
         return out;
     };
 }
@@ -631,7 +656,8 @@ CastHelper<TOSA_REF_TYPE_FP32, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = static_cast<OutEigenType>(std::rint(in));
+        ScopedFEnv round_guard(FE_TONEAREST);
+        OutEigenType out = static_cast<OutEigenType>(std::nearbyint(in));
         return out;
     };
 }
@@ -646,7 +672,8 @@ CastHelper<TOSA_REF_TYPE_FP8E4M3, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = std::rint(in);
+        ScopedFEnv round_guard(FE_TONEAREST);
+        OutEigenType out = static_cast<OutEigenType>(std::nearbyint(in));
         return out;
     };
 }
@@ -689,7 +716,8 @@ CastHelper<TOSA_REF_TYPE_FP8E5M2, OutDtype>::CastHelper()
         if (in <= float(OutMin))
             return OutMin;
 
-        OutEigenType out = std::rint(in);
+        ScopedFEnv round_guard(FE_TONEAREST);
+        OutEigenType out = static_cast<OutEigenType>(std::nearbyint(in));
         return out;
     };
 }
@@ -810,7 +838,8 @@ CastHelper<TOSA_REF_TYPE_FP64, OutDtype>::CastHelper()
                 if (in <= double(OutMin))
                     return OutMin;
 
-                OutEigenType out = static_cast<OutEigenType>(std::rint(in));
+                ScopedFEnv round_guard(FE_TONEAREST);
+                OutEigenType out = static_cast<OutEigenType>(std::nearbyint(in));
                 return out;
             };
             break;
