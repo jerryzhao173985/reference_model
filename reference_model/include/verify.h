@@ -23,6 +23,12 @@
 #include "types.h"
 #include <cstdlib>
 
+#ifdef _MSC_VER
+#define TOSA_EXPORT __declspec(dllexport)
+#else
+#define TOSA_EXPORT
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -47,10 +53,10 @@ extern "C"
     /// \param config_json Compliance configuration that indicates how and what compliance need to be performed
     ///
     /// \return True in case of successful validation else false
-    bool tvf_verify_data(const tosa_tensor_t* ref,
-                         const tosa_tensor_t* ref_bnd,
-                         const tosa_tensor_t* imp,
-                         const char* config_json);
+    TOSA_EXPORT bool tvf_verify_data(const tosa_tensor_t* ref,
+                                     const tosa_tensor_t* ref_bnd,
+                                     const tosa_tensor_t* imp,
+                                     const char* config_json);
 
 #ifdef __cplusplus
 }

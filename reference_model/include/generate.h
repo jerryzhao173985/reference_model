@@ -21,6 +21,12 @@
 
 #include <stddef.h>
 
+#ifdef _MSC_VER
+#define TOSA_EXPORT __declspec(dllexport)
+#else
+#define TOSA_EXPORT
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -36,7 +42,7 @@ extern "C"
     /// \param data User-provided buffer to store the data to
     /// \param size Size of the provided buffer in bytes
     /// \return
-    bool tgd_generate_data(const char* config_json, const char* tensor_name, void* data, size_t size);
+    TOSA_EXPORT bool tgd_generate_data(const char* config_json, const char* tensor_name, void* data, size_t size);
 
 #ifdef __cplusplus
 }
