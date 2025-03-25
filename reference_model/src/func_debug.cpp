@@ -95,13 +95,12 @@ pid_t func_print_backtrace_helper(int num_tries, int sig)
 
         dup2(STDERR_FILENO, STDOUT_FILENO);
 
-        char parent_pid[20];
-        snprintf(parent_pid, sizeof(parent_pid), "attach %d", ppid);
+        std::string parent_pid_str = "attach " + std::to_string(ppid);
         fprintf(stdout, "Caught signal %d (%s)\n", sig, strsignal(sig));
 
         execlp("gdb", "gdb", "--batch", "-n", "-ex",
                // Don't print startup messages for each thread
-               "-ex", "set print thread-events off", "-ex", parent_pid,
+               "-ex", "set print thread-events off", "-ex", parent_pid_str.c_str(),
                // Turn off pagination
                "-ex", "set height 0",
                // Print a backtrace for the current thread

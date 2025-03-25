@@ -19,7 +19,9 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <iomanip>
 #include <map>
+#include <sstream>
 #include <string>
 
 namespace tosa
@@ -277,9 +279,8 @@ int32_t ilog2(double v)
 
 void setNaNWarning(double testValue, double referenceValue, double& resultDifference, std::string& resultWarning)
 {
-    char buff[200];
-    snprintf(buff, 200, "Non-matching NaN values - ref (%g) versus test (%g).", referenceValue, testValue);
-    resultWarning.assign(buff);
+    resultWarning = "Non-matching NaN values - ref (" + std::to_string(referenceValue) + ") versus test (" +
+                    std::to_string(testValue) + ").";
     resultDifference = std::numeric_limits<double>::quiet_NaN();
 }
 
@@ -379,13 +380,11 @@ bool tosaCheckFloatBound(
 
     if (!withinBound)
     {
-        char buff[300];
-        snprintf(buff, 300,
-                 "value %.*g has a difference of %.*g compared to an error bound of +/- %.*g (range: %.*g <= ref %.*g "
-                 "<= %.*g).",
-                 DBL_DIG, testValue64, DBL_DIG, resultDifference, DBL_DIG, errorBound, DBL_DIG, referenceMin, DBL_DIG,
-                 referenceValue, DBL_DIG, referenceMax);
-        resultWarning.assign(buff);
+        std::ostringstream ossBuff;
+        ossBuff << "value " << std::setprecision(DBL_DIG) << testValue64 << " has a difference of " << resultDifference
+                << " compared to an error bound of +/- " << errorBound << " (range: " << referenceMin << " <= ref "
+                << referenceValue << " <= " << referenceMax << ").";
+        resultWarning.assign(ossBuff.str().c_str());
     }
     return withinBound;
 }
