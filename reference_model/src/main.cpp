@@ -281,26 +281,25 @@ int loadSharedLibs(std::string& custom_op_lib_path)
 
 int loadGraph(TosaSerializationHandler& tsh, json& test_desc)
 {
-    char graph_fullname[1024];
     const std::string error_msg1 = "Check \"tosa_file\" in .json specified by --tosa_desc";
     const std::string error_msg2 = " or via arguments --tosa_file & --flatbuffer_dir";
 
-    if (strlen(test_desc["tosa_file"].get<std::string>().c_str()) <= 0)
+    if (test_desc["tosa_file"].get<std::string>().size() <= 0)
     {
         FATAL_ERROR("Missing tosa_file.\n%s", error_msg1.c_str());
     }
 
-    snprintf(graph_fullname, sizeof(graph_fullname), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
-             test_desc["tosa_file"].get<std::string>().c_str());
+    std::string graph_fullname_str = g_func_config.flatbuffer_dir + "/" + test_desc["tosa_file"].get<std::string>();
 
     const char JSON_EXT[] = ".json";
     int is_json           = 0;
     {
         // look for JSON file extension
-        size_t suffix_len = strlen(JSON_EXT);
-        size_t str_len    = strlen(graph_fullname);
+        size_t suffix_len = sizeof(JSON_EXT) - 1;
+        size_t str_len    = graph_fullname_str.size();
 
-        if (str_len > suffix_len && strncasecmp(graph_fullname + (str_len - suffix_len), JSON_EXT, suffix_len) == 0)
+        if (str_len > suffix_len &&
+            strncasecmp(graph_fullname_str.c_str() + (str_len - suffix_len), JSON_EXT, suffix_len) == 0)
         {
             is_json = 1;
         }
@@ -315,18 +314,18 @@ int loadGraph(TosaSerializationHandler& tsh, json& test_desc)
                         g_func_config.operator_fbs.c_str());
         }
 
-        if (tsh.LoadFileJson(graph_fullname))
+        if (tsh.LoadFileJson(graph_fullname_str.c_str()))
         {
             FATAL_ERROR("\nError loading JSON graph file: %s\n%s%s\nCheck --operator_fbs is using correct version",
-                        graph_fullname, error_msg1.c_str(), error_msg2.c_str());
+                        graph_fullname_str.c_str(), error_msg1.c_str(), error_msg2.c_str());
         }
     }
     else
     {
-        if (tsh.LoadFileTosaFlatbuffer(graph_fullname))
+        if (tsh.LoadFileTosaFlatbuffer(graph_fullname_str.c_str()))
         {
-            FATAL_ERROR("\nError loading TOSA flatbuffer file: %s\n%s%s", graph_fullname, error_msg1.c_str(),
-                        error_msg2.c_str());
+            FATAL_ERROR("\nError loading TOSA flatbuffer file: %s\n%s%s", graph_fullname_str.c_str(),
+                        error_msg1.c_str(), error_msg2.c_str());
         }
     }
 
@@ -337,7 +336,6 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
 {
     int tensorCount = gt.getNumInputTensors();
     Tensor* tensor;
-    char filename[1024];
 
     try
     {
@@ -357,10 +355,9 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
-                     test_desc["ifm_file"][i].get<std::string>().c_str());
+            std::string filename_str = g_func_config.flatbuffer_dir + "/" + test_desc["ifm_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Loading input tensor %s from filename: %s", tensor->getName().c_str(), filename);
+            DEBUG_MED(GT, "Loading input tensor %s from filename: %s", tensor->getName().c_str(), filename_str.c_str());
 
             if (!tensor->is_allocated())
             {
@@ -368,9 +365,10 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
                 return 1;
             }
 
-            if (tensor->readFromNpyFile(filename))
+            if (tensor->readFromNpyFile(filename_str.c_str()))
             {
-                WARNING("Unable to read input tensor %s from filename: %s", tensor->getName().c_str(), filename);
+                WARNING("Unable to read input tensor %s from filename: %s", tensor->getName().c_str(),
+                        filename_str.c_str());
                 tensor->dumpTensorParams(g_func_debug.func_debug_file);
                 return 1;
             }
@@ -428,7 +426,6 @@ int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string&
 {
     int tensorCount = gt.getNumOutputTensors();
     const Tensor* tensor;
-    char filename[1024];
 
     try
     {
@@ -448,14 +445,16 @@ int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string&
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s%s", g_func_config.output_dir.c_str(), filename_prefix.c_str(),
-                     test_desc["ofm_file"][i].get<std::string>().c_str());
+            std::string filename_str =
+                g_func_config.output_dir + "/" + filename_prefix + test_desc["ofm_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Writing output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(), filename);
+            DEBUG_MED(GT, "Writing output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+                      filename_str.c_str());
 
-            if (tensor->writeToNpyFile(filename))
+            if (tensor->writeToNpyFile(filename_str.c_str()))
             {
-                WARNING("Unable to write output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(), filename);
+                WARNING("Unable to write output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+                        filename_str.c_str());
                 return 1;
             }
         }
@@ -473,7 +472,6 @@ int readVariableTensors(SubgraphTraverser& gt, json test_desc)
 {
     int tensorCount = gt.getNumVariableTensors();
     Tensor* tensor;
-    char filename[1024];
 
     try
     {
@@ -494,10 +492,11 @@ int readVariableTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.flatbuffer_dir.c_str(),
-                     test_desc["variable_file"][i].get<std::string>().c_str());
+            std::string filename_str =
+                g_func_config.flatbuffer_dir + "/" + test_desc["variable_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Loading variable tensor %s from filename: %s", tensor->getName().c_str(), filename);
+            DEBUG_MED(GT, "Loading variable tensor %s from filename: %s", tensor->getName().c_str(),
+                      filename_str.c_str());
 
             if (!tensor->is_allocated())
             {
@@ -505,9 +504,10 @@ int readVariableTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            if (tensor->readFromNpyFile(filename))
+            if (tensor->readFromNpyFile(filename_str.c_str()))
             {
-                WARNING("Unable to read variable tensor %s from filename: %s", tensor->getName().c_str(), filename);
+                WARNING("Unable to read variable tensor %s from filename: %s", tensor->getName().c_str(),
+                        filename_str.c_str());
                 tensor->dumpTensorParams(g_func_debug.func_debug_file);
                 return 1;
             }
@@ -540,7 +540,6 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
 {
     int tensorCount = gt.getNumVariableTensors();
     const Tensor* tensor;
-    char filename[1024];
 
     try
     {
@@ -561,19 +560,20 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
                 return 1;
             }
 
-            snprintf(filename, sizeof(filename), "%s/%s", g_func_config.output_dir.c_str(),
-                     test_desc["variable_file"][i].get<std::string>().c_str());
+            std::string filename_str =
+                g_func_config.output_dir + "/" + test_desc["variable_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Writing variable tensor[%d] %s to filename: %s", i, tensor->getName().c_str(), filename);
+            DEBUG_MED(GT, "Writing variable tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+                      filename_str.c_str());
             if (!tensor->is_allocated())
             {
                 WARNING("Tensor %s is no longer allocated", tensor->getName().c_str());
                 return 1;
             }
-            if (tensor->writeToNpyFile(filename))
+            if (tensor->writeToNpyFile(filename_str.c_str()))
             {
                 WARNING("Unable to write variable tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
-                        filename);
+                        filename_str.c_str());
                 return 1;
             }
         }

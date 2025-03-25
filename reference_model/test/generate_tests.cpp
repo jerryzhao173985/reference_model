@@ -82,7 +82,7 @@ void check_output(const std::vector<T>& results, const std::vector<uint32_t>& ex
         if constexpr (sizeof(T) == 4)
         {
             uint32_t r;
-            std::memcpy(&r, &results[idx], sizeof(T));
+            std::copy_n(reinterpret_cast<const char*>(&results[idx]), sizeof(T), reinterpret_cast<char*>(&r));
             check_value(true, *(uint32_t*)&results[idx], expected[idx], idx);
         }
         else
@@ -101,7 +101,7 @@ void check_output(const std::vector<T>& results, const std::vector<uint16_t>& ex
         if constexpr (sizeof(T) == 2)
         {
             uint16_t r;
-            std::memcpy(&r, &results[idx], sizeof(T));
+            std::copy_n(reinterpret_cast<const char*>(&results[idx]), sizeof(T), reinterpret_cast<char*>(&r));
             check_value(true, r, expected[idx], idx);
         }
         else
@@ -120,15 +120,15 @@ void check_output(const std::vector<T>& results, const std::vector<T>& expected)
         if constexpr (sizeof(T) == 4)
         {
             uint32_t r, e;
-            std::memcpy(&r, &results[idx], sizeof(T));
-            std::memcpy(&e, &expected[idx], sizeof(T));
+            std::copy_n(reinterpret_cast<const char*>(&results[idx]), sizeof(T), reinterpret_cast<char*>(&r));
+            std::copy_n(reinterpret_cast<const char*>(&expected[idx]), sizeof(T), reinterpret_cast<char*>(&e));
             check_value(true, r, e, idx);
         }
         else if constexpr (sizeof(T) == 2)
         {
             uint16_t r, e;
-            std::memcpy(&r, &results[idx], sizeof(T));
-            std::memcpy(&e, &expected[idx], sizeof(T));
+            std::copy_n(reinterpret_cast<const char*>(&results[idx]), sizeof(T), reinterpret_cast<char*>(&r));
+            std::copy_n(reinterpret_cast<const char*>(&expected[idx]), sizeof(T), reinterpret_cast<char*>(&e));
             check_value(true, r, e, idx);
         }
         else if constexpr (sizeof(T) == 1)
@@ -152,8 +152,8 @@ void check_not_output(const std::vector<T>& results, const std::vector<T>& expec
         if constexpr (sizeof(T) == 4)
         {
             uint32_t r, e;
-            std::memcpy(&r, &results[idx], sizeof(T));
-            std::memcpy(&e, &expected[idx], sizeof(T));
+            std::copy_n(reinterpret_cast<const char*>(&results[idx]), sizeof(T), reinterpret_cast<char*>(&r));
+            std::copy_n(reinterpret_cast<const char*>(&expected[idx]), sizeof(T), reinterpret_cast<char*>(&e));
             check_value(false, r, e, idx);
         }
         else

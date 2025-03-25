@@ -35,7 +35,7 @@
 LIBTYPE load_library_w(const char* libname)
 {
     size_t outSize;
-    size_t size        = strlen(libname) + 1;
+    auto const size{ std::string_view{ libname }.size() + 1 };
     wchar_t* l_libname = (wchar_t*)(sizeof(wchar_t) * size);
 
     mbstowcs_s(&outSize, l_libname, size, libname, size - 1);
