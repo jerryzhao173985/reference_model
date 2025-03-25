@@ -109,7 +109,7 @@ def json_to_fbbin(flatc: Path, fbs: Path, j_path: Path, o_path: Optional[Path] =
         str(fbs.absolute()),
         str(j_path.absolute()),
     ]
-    run_sh_command(verbose=False, full_cmd=cmd)
+    run_sh_command(verbose=False, full_cmd=cmd, shell_resolve=True)
 
 
 # ------------------------------------------------------------------------------

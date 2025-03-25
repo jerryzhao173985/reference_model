@@ -12,13 +12,19 @@ DEFAULT_REF_MODEL_BUILD_FLATC_PATH = Path(
 DEFAULT_REF_MODEL_BUILD_EXE_PATH = Path("reference_model")
 DEFAULT_VERIFY_BUILD_EXE_PATH = Path("reference_model/verify")
 DEFAULT_BUILD_DIR = Path("build")
+BUILD_SUB_DIR = ""
+LIBRARY_PREFIX = "lib"
+EXE_SUFFIX = ""
 
 if sys.platform == "linux":
     LIBRARY_SUFFIX = "so"
 elif sys.platform == "darwin":
     LIBRARY_SUFFIX = "dylib"
 elif sys.platform == "win32":
+    BUILD_SUB_DIR = "Release"
+    LIBRARY_PREFIX = ""
     LIBRARY_SUFFIX = "dll"
+    EXE_SUFFIX = ".exe"
 
 
 class TosaFileType(IntEnum):
@@ -34,7 +40,7 @@ class TosaFileType(IntEnum):
 
 TOSA_FILE_TYPE_TO_DETAILS = {
     TosaFileType.REF_MODEL: {
-        "name": "tosa_reference_model",
+        "name": f"tosa_reference_model{EXE_SUFFIX}",
         "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
         "build": True,
     },
@@ -49,17 +55,17 @@ TOSA_FILE_TYPE_TO_DETAILS = {
         "build": False,
     },
     TosaFileType.VERIFY_LIBRARY: {
-        "name": f"libtosa_reference_verify_lib.{LIBRARY_SUFFIX}",
+        "name": f"{LIBRARY_PREFIX}tosa_reference_verify_lib.{LIBRARY_SUFFIX}",
         "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
         "build": True,
     },
     TosaFileType.GENERATE_LIBRARY: {
-        "name": f"libtosa_reference_generate_lib.{LIBRARY_SUFFIX}",
+        "name": f"{LIBRARY_PREFIX}tosa_reference_generate_lib.{LIBRARY_SUFFIX}",
         "location": DEFAULT_REF_MODEL_BUILD_EXE_PATH,
         "build": True,
     },
     TosaFileType.VERIFY: {
-        "name": "tosa_verify",
+        "name": f"tosa_verify{EXE_SUFFIX}",
         "location": DEFAULT_VERIFY_BUILD_EXE_PATH,
         "build": True,
     },
@@ -80,9 +86,10 @@ def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
             return ref_model_path
 
         try:
+            extra_level = 1 if BUILD_SUB_DIR else 0
             if build:
                 # Look in build directory
-                search_path = ref_model_path.parents[1]
+                search_path = ref_model_path.parents[1 + extra_level]
             else:
                 # Look in reference_model directory
                 search_path = ref_model_path.parents[2]
@@ -95,6 +102,9 @@ def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
         else:
             search_path = ref_model_path
 
-    search_path = search_path / location / name
+    if build:
+        search_path = search_path / location / BUILD_SUB_DIR / name
+    else:
+        search_path = search_path / location / name
 
     return search_path

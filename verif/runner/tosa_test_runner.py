@@ -274,9 +274,10 @@ class TosaTestRunner:
                         # Move the resultFilePath to allow subsequent system under
                         # tests to create them and to test they have been created
                         # and to enable compliance testing against refmodel results
-                        resultFilePath.rename(
-                            getRunnerResultFilePath(resultFilePath, sutModule)
-                        )
+                        newPath = getRunnerResultFilePath(resultFilePath, sutModule)
+                        if newPath.is_file():
+                            newPath.unlink()
+                        resultFilePath.rename(newPath)
                         if (
                             isComplianceBoundsModeNeeded(self.testDesc)
                             and sutModule == TOSA_REFCOMPLIANCE_RUNNER
