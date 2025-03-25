@@ -2223,7 +2223,17 @@ void special_check_expected_INT(const std::vector<StorageType>& buffer,
         msg << opStr << " index buffer/expected: [" << idx << "] / [" << exidx
             << "] expected value between: " << int64_t(expected[exidx].first)
             << " and: " << int64_t(expected[exidx].second) << ", but got: " << int64_t(buffer[idx]);
-        bool withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
+
+        bool withinRange = false;
+        if constexpr (std::is_same<INT_TYPE, bool>::value)
+        {
+            withinRange = buffer[idx] >= static_cast<int>(expected[exidx].first) &&
+                          buffer[idx] <= static_cast<int>(expected[exidx].second);
+        }
+        else
+        {
+            withinRange = buffer[idx] >= expected[exidx].first && buffer[idx] <= expected[exidx].second;
+        }
 
         REQUIRE_MESSAGE(withinRange, msg.str());
 
@@ -2374,8 +2384,16 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
     const std::pair<INT_TYPE, INT_TYPE> minusTwo{ -2, -2 };
     const std::pair<INT_TYPE, INT_TYPE> max{ std::numeric_limits<INT_TYPE>::max(),
                                              std::numeric_limits<INT_TYPE>::max() };
-    const std::pair<INT_TYPE, INT_TYPE> minusMax{ -std::numeric_limits<INT_TYPE>::max(),
-                                                  -std::numeric_limits<INT_TYPE>::max() };
+    std::pair<INT_TYPE, INT_TYPE> minusMax;
+    if constexpr (std::is_same_v<INT_TYPE, bool>)
+    {
+        minusMax = { false, false };
+    }
+    else
+    {
+        minusMax = { -std::numeric_limits<INT_TYPE>::max(), -std::numeric_limits<INT_TYPE>::max() };
+    }
+
     const std::pair<INT_TYPE, INT_TYPE> lowest{ std::numeric_limits<INT_TYPE>::lowest(),
                                                 std::numeric_limits<INT_TYPE>::lowest() };
     const std::pair<INT_TYPE, INT_TYPE> random{ std::numeric_limits<INT_TYPE>::lowest(),
