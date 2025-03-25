@@ -494,7 +494,8 @@ private:
                 rawVal = static_cast<DataType>(0);
         }
 
-        if constexpr (std::is_same_v<DataType, uint8_t> || std::is_same_v<DataType, uint16_t>)
+        if constexpr (std::is_same_v<DataType, uint8_t> || std::is_same_v<DataType, uint16_t> ||
+                      TosaRefType == TOSA_REF_TYPE_BOOL)
         {
             // No negative values allowed in unsigned, return 0 instead
             return negate ? static_cast<DataType>(0) : rawVal;
