@@ -30,7 +30,7 @@ class RunShCommandError(Exception):
         super().__init__(self.message)
 
 
-def run_sh_command(full_cmd, verbose=False, capture_output=False):
+def run_sh_command(full_cmd, verbose=False, capture_output=False, shell_resolve=False):
     """Run an external shell command.
 
     full_cmd: string, or array containing shell command and its arguments
@@ -51,9 +51,10 @@ def run_sh_command(full_cmd, verbose=False, capture_output=False):
         if is_str:
             print("### Running {}".format(full_cmd))
 
+    use_shell = is_str or shell_resolve
     if capture_output:
         rc = subprocess.run(
-            full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=is_str
+            full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=use_shell
         )
         stdout = rc.stdout.decode("utf-8")
         stderr = rc.stderr.decode("utf-8")
@@ -64,7 +65,7 @@ def run_sh_command(full_cmd, verbose=False, capture_output=False):
                 print(stderr, end="")
     else:
         stdout, stderr = None, None
-        rc = subprocess.run(full_cmd, shell=is_str)
+        rc = subprocess.run(full_cmd, shell=use_shell)
 
     if rc.returncode != 0:
         raise RunShCommandError(
