@@ -107,9 +107,7 @@
         tosa::DType accumDType = tosa::DType_UNKNOWN;                                                                  \
         if (auto p = dynamic_cast<tosa::Tosa##ATTRIBUTE_NAME##Attribute*>(attribute))                                  \
         {                                                                                                              \
-            auto attr = new tosa::Tosa##ATTRIBUTE_NAME##Attribute(*p);                                                 \
-            ASSERT_MEM(attr);                                                                                          \
-            accumDType = tosa::EnumValuesDType()[attr->acc_type()];                                                    \
+            accumDType = tosa::EnumValuesDType()[p->acc_type()];                                                       \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \
