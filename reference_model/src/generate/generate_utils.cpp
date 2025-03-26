@@ -311,7 +311,7 @@ int64_t numElementsFromShape(const std::vector<int32_t>& shape)
 {
     // Rank 0 shapes have no entries and so this will return 1
     // Other ranked shapes will return the product of their dimensions
-    return std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+    return std::accumulate(std::begin(shape), std::end(shape), static_cast<int64_t>(1), std::multiplies<int64_t>());
 }
 
 size_t tensorSizeInBytesFromType(int64_t numElements, DType type)

@@ -232,7 +232,8 @@ bool createTensorMap(const std::string resultFile,
 {
     ASSERT_MEM(resultMapTensor);
 
-    const int64_t elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+    const int64_t elements =
+        std::accumulate(std::begin(shape), std::end(shape), static_cast<int64_t>(1), std::multiplies<int64_t>());
 
     uint8_t* databuf                = nullptr;    // Pointer to the buffer that will be used in tosa_tensor_t
     size_t databuf_size             = 0;

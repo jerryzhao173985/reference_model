@@ -1909,7 +1909,7 @@ TEST_CASE("positive - FP32 FP Special")
     {
         std::vector<std::pair<float, float>> expected = {
             { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
-            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { -0.0f, -0.0f },       { 0.0f, 0.0f }, { nanFloat, nanFloat }, { -mindenorm, max },
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
@@ -1918,9 +1918,9 @@ TEST_CASE("positive - FP32 FP Special")
     SUBCASE("equal, input 1")
     {
         std::vector<std::pair<float, float>> expected = {
-            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
-            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
-            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+            { inf, inf },     { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0f, 0.0f },
+            { -0.0f, -0.0f }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf },   { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
         special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
@@ -1928,7 +1928,7 @@ TEST_CASE("positive - FP32 FP Special")
     {
         std::vector<std::pair<float, float>> expected = {
             { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
-            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { -0.0f, -0.0f },       { 0.0f, 0.0f }, { nanFloat, nanFloat }, { -mindenorm, max },
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
@@ -1937,9 +1937,9 @@ TEST_CASE("positive - FP32 FP Special")
     SUBCASE("greater, input 1")
     {
         std::vector<std::pair<float, float>> expected = {
-            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
-            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
-            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+            { inf, inf },     { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0f, 0.0f },
+            { -0.0f, -0.0f }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf },   { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
         special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
@@ -1947,7 +1947,7 @@ TEST_CASE("positive - FP32 FP Special")
     {
         std::vector<std::pair<float, float>> expected = {
             { inf, inf },           { -inf, -inf }, { inf, inf },           { -inf, -inf },
-            { -0.0, -0.0 },         { 0.0, 0.0 },   { nanFloat, nanFloat }, { -mindenorm, max },
+            { -0.0f, -0.0f },       { 0.0f, 0.0f }, { nanFloat, nanFloat }, { -mindenorm, max },
             { nanFloat, nanFloat }, { inf, inf },   { nanFloat, nanFloat }, { -inf, -inf },
             { nanFloat, nanFloat }
         };
@@ -1956,9 +1956,9 @@ TEST_CASE("positive - FP32 FP Special")
     SUBCASE("greater_equal, input 1")
     {
         std::vector<std::pair<float, float>> expected = {
-            { inf, inf },   { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0, 0.0 },
-            { -0.0, -0.0 }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
-            { -inf, -inf }, { nanFloat, nanFloat }, { nanFloat, nanFloat }
+            { inf, inf },     { -inf, -inf },         { -inf, -inf },         { inf, inf }, { 0.0f, 0.0f },
+            { -0.0f, -0.0f }, { -mindenorm, max },    { nanFloat, nanFloat }, { inf, inf }, { nanFloat, nanFloat },
+            { -inf, -inf },   { nanFloat, nanFloat }, { nanFloat, nanFloat }
         };
         special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "EQUAL", "0", expected);
     }
@@ -1974,18 +1974,18 @@ TEST_CASE("positive - FP32 FP Special")
     }
     SUBCASE("maximum, input 0")
     {
-        std::vector<std::pair<float, float>> expected = { { 0.0, 0.0 }, { inf, inf }, { min, min } };
+        std::vector<std::pair<float, float>> expected = { { 0.0f, 0.0f }, { inf, inf }, { min, min } };
         special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, input 1")
     {
-        std::vector<std::pair<float, float>> expected = { { -0.0, -0.0 }, { -inf, -inf }, { -min, -min } };
+        std::vector<std::pair<float, float>> expected = { { -0.0f, -0.0f }, { -inf, -inf }, { -min, -min } };
         special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "MAXIMUM", "0", expected);
     }
     SUBCASE("maximum, startIndex 100")
     {
         // A startIndex of 100 creates an offset in the MAXIMUM op's test data (size: 6) 98 % 6 = 2
-        std::vector<std::pair<float, float>> expected = { { min, min }, { max, max }, { 1.0, max } };
+        std::vector<std::pair<float, float>> expected = { { min, min }, { max, max }, { 1.0f, max } };
         special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "MAXIMUM", "98", expected);
     }
 }
@@ -2403,7 +2403,7 @@ TEST_CASE_TEMPLATE("positive - INT SPECIAL", INT_TYPE, bool, int8_t, int16_t, in
     const std::pair<INT_TYPE, INT_TYPE> smallValues{ -2, 2 };
 
     // Used for shift operators
-    const int64_t maxShiftVal = sizeof(INT_TYPE) * 8 - 1;
+    constexpr INT_TYPE maxShiftVal = static_cast<INT_TYPE>(sizeof(INT_TYPE) * 8 - 1);
     const std::pair<INT_TYPE, INT_TYPE> randShift{ 0, maxShiftVal };
     const std::pair<INT_TYPE, INT_TYPE> maxShift{ maxShiftVal, maxShiftVal };
 
@@ -2837,7 +2837,7 @@ void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t
     update_json_template(jsonCfg, "_SHAPE_", numbers_to_string(shape));
     update_json_template(jsonCfg, "_DATA_", numbers_to_string(values));
 
-    auto elements = std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+    auto elements = std::accumulate(shape.begin(), shape.end(), static_cast<size_t>(1), std::multiplies<size_t>());
     std::vector<StorageType> expected(elements);
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {

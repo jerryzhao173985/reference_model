@@ -194,7 +194,7 @@ std::optional<VerifyConfig> parseVerifyConfig(const char* tensorName, const char
 
 int64_t numElements(const std::vector<int32_t>& shape)
 {
-    return std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+    return std::accumulate(std::begin(shape), std::end(shape), static_cast<int64_t>(1), std::multiplies<int64_t>());
 }
 
 std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& shape)
