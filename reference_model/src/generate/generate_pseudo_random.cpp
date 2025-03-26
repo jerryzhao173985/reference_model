@@ -68,21 +68,21 @@ private:
 
         // Piecewise Constant distribution for larger ranges
         // The code below needs to be careful with overflows.
-        double mid = (max / 2) + (min / 2);
+        FP mid = (max / 2) + (min / 2);
 
         // We will give a higher probability for numbers around the mid-point.
         // This looks closer to real world data than a uniform distribution
         // as we'd expect to see much more values in [-1, 1] and [-1000, 1000]
         // than a uniform distribution would suggest
-        const double small_radius = 1.;
-        const double large_radius = 1000.;
+        const FP small_radius = 1.;
+        const FP large_radius = 1000.;
 
-        const std::array<double, 7> intervals{ min, mid - large_radius, mid - small_radius,
-                                               mid, mid + small_radius, mid + large_radius,
-                                               max };
+        const std::array<FP, 7> intervals{ min, mid - large_radius, mid - small_radius,
+                                           mid, mid + small_radius, mid + large_radius,
+                                           max };
 
         // One weight for each interval in-between values in the intervals array
-        const std::array<double, 6> weights{ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
+        const std::array<FP, 6> weights{ 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
         _pwcdis = std::piecewise_constant_distribution<FP>(intervals.begin(), intervals.end(), weights.begin());
 
@@ -206,8 +206,8 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
         return false;
     }
 
-    int64_t min = std::stoll(prinfo.range[0]);
-    int64_t max = std::stoll(prinfo.range[1]);
+    DataType min = std::stoll(prinfo.range[0]);
+    DataType max = std::stoll(prinfo.range[1]);
     if (min > max)
     {
         std::swap(min, max);
