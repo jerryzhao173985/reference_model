@@ -80,6 +80,7 @@ bool verifyRescaleInexact(const CTensor* referenceTensor,
             if (unsignedData)
             {
                 WARNING("[Verifier][RI] Data-type not supported.");
+                return false;
             }
             else
             {

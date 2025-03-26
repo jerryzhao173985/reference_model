@@ -35,16 +35,16 @@ bool copyFixedDataFP(const int64_t elements,
 
     if (broadcastMode)
     {
-        for (auto t = 0; t < elements; t++)
+        for (size_t t = 0; t < elements; t++)
         {
-            outData[t] = static_cast<StorageType>(inData[0]);
+            outData[t] = ct::compat::cast<StorageType>(inData[0]);
         }
     }
     else
     {
-        for (auto t = 0; t < elements; t++)
+        for (size_t t = 0; t < elements; t++)
         {
-            outData[t] = static_cast<StorageType>(inData[t]);
+            outData[t] = ct::compat::cast<StorageType>(inData[t]);
         }
     }
     return true;
@@ -67,9 +67,9 @@ bool copyFixedDataINT(const int64_t elements,
     }
     else
     {
-        for (auto t = 0; t < elements; t++)
+        for (size_t t = 0; t < elements; t++)
         {
-            writeValue<StorageType, TosaRefType>(static_cast<int64_t>(inData[t]), t, outData);
+            writeValue<StorageType, TosaRefType>(static_cast<int64_t>(inData[t]), static_cast<int64_t>(t), outData);
         }
     }
     return true;

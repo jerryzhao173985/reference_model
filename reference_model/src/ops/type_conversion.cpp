@@ -586,7 +586,7 @@ CastHelper<TOSA_REF_TYPE_FP16, OutDtype>::CastHelper()
             return OutMin;
 
         ScopedFEnv round_guard(FE_TONEAREST);
-        h                = static_cast<OutEigenType>(std::nearbyint(h));
+        h                = static_cast<half_float::half>(std::nearbyint(h));
         OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
 
         return out;

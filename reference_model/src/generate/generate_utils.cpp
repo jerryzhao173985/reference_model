@@ -325,21 +325,21 @@ size_t tensorSizeInBytesFromType(int64_t numElements, DType type)
         case DType::DType_INT8:
         case DType::DType_FP8E4M3:
         case DType::DType_FP8E5M2:
-            return 1 * numElements;
+            return static_cast<size_t>(1 * numElements);
         case DType::DType_UINT16:
         case DType::DType_INT16:
         case DType::DType_FP16:
         case DType::DType_BF16:
-            return 2 * numElements;
+            return static_cast<size_t>(2 * numElements);
         case DType::DType_INT32:
         case DType::DType_FP32:
         case DType::DType_SHAPE:
-            return 4 * numElements;
+            return static_cast<size_t>(4 * numElements);
         case DType::DType_INT4:
             // 2x INT4 elements per byte
-            return (numElements + 1) >> 1;
+            return static_cast<size_t>((numElements + 1) >> 1);
         case DType::DType_INT48:
-            return 6 * numElements;
+            return static_cast<size_t>(6 * numElements);
         default:
             FATAL_ERROR("dtype is not supported");
             return 0;
@@ -375,7 +375,7 @@ void writeValue<int8_t, TOSA_REF_TYPE_INT4>(int64_t value, int64_t index, int8_t
         byte_half0 = data[byte_idx];
         byte_half1 = static_cast<int8_t>(value);
     }
-    data[byte_idx] = (byte_half0 & 0xF) | ((byte_half1 & 0xF) << 4);
+    data[byte_idx] = static_cast<int8_t>((byte_half0 & 0xF) | ((byte_half1 & 0xF) << 4));
 }
 
 template <>
@@ -386,7 +386,7 @@ void writeValue<int8_t, TOSA_REF_TYPE_INT48>(int64_t value, int64_t index, int8_
     for (auto i = 0; i < 6; ++i)
     {
         auto shift         = i * 8;
-        data[byte_idx + i] = (val_u64 >> shift) & 0xFF;
+        data[byte_idx + i] = static_cast<int8_t>((val_u64 >> shift) & 0xFF);
     }
 }
 

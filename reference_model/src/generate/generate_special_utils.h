@@ -83,7 +83,7 @@ public:
             return static_cast<DataType>(1.5);
 
         auto dis     = std::uniform_real_distribution<double>(static_cast<double>(min), static_cast<double>(max));
-        DataType rnd = static_cast<DataType>(dis(_gen));
+        DataType rnd = ct::compat::cast<DataType>(dis(_gen));
         return rnd;
     }
 
@@ -134,7 +134,8 @@ private:
 
     bool _checkEven(DataType val)
     {
-        if ((val != static_cast<DataType>(round(val))) || (val / 2.0 != round(val / 2.0)))
+        double val_d = static_cast<double>(val);
+        if ((val_d != round(val_d)) || (val_d / 2.0 != round(val_d / 2.0)))
         {
             WARNING("[Generator][S] Bad even integer generated - %g", static_cast<double>(val));
             return false;
@@ -144,7 +145,8 @@ private:
 
     bool _checkOdd(DataType val)
     {
-        if ((val != static_cast<DataType>(round(val))) || (val / 2.0 == round(val / 2.0)))
+        double val_d = static_cast<double>(val);
+        if ((val_d != round(val_d)) || (val_d / 2.0 == round(val_d / 2.0)))
         {
             WARNING("[Generator][S] Bad odd integer generated - %g", static_cast<double>(val));
             return false;
@@ -155,8 +157,8 @@ private:
     DataType _getFloatInteger(DataType min, DataType max, _integerTypeEnum type)
     {
         // Set min/max to integers
-        min = ceil(min);
-        max = floor(max);
+        min = ct::compat::cast<DataType>(ceil(static_cast<double>(min)));
+        max = ct::compat::cast<DataType>(floor(static_cast<double>(max)));
         if (!_rangeOk(min, max))
         {
             switch (type)
@@ -176,17 +178,18 @@ private:
         switch (type)
         {
             case Any:
-                return round(getFloat(min, max));
+                return ct::compat::cast<DataType>(round(static_cast<double>(getFloat(min, max))));
             case Odd: {
-                DataType val =
-                    static_cast<DataType>(round(round(getFloat(min, max - static_cast<DataType>(1.0))) / 2) * 2 + 1);
+                DataType val = ct::compat::cast<DataType>(
+                    round(round(static_cast<double>(getFloat(min, max - static_cast<DataType>(1.0)))) / 2.0) * 2.0 +
+                    1.0);
                 // For large values of floating point (such as with FP8) there
                 // may not be enough range to express an odd number - so check
                 return _checkOdd(val) ? val : static_cast<DataType>(3.0);
             }
             case Even: {
-                DataType val =
-                    static_cast<DataType>(round(round(getFloat(min + static_cast<DataType>(1.0), max)) / 2) * 2);
+                DataType val = ct::compat::cast<DataType>(
+                    round(round(static_cast<double>(getFloat(min + static_cast<DataType>(1.0), max))) / 2.0) * 2.0);
                 // For large values of floating point (such as with FP8) there
                 // may not be enough range to express an even number - so check
                 return _checkEven(val) ? val : static_cast<DataType>(2.0);
@@ -386,10 +389,10 @@ private:
                 rawVal = static_cast<DataType>(62);
                 break;
             case Euler:
-                rawVal = static_cast<DataType>(2.71828);
+                rawVal = ct::compat::cast<DataType>(2.71828);
                 break;
             case Pythagoras:
-                rawVal = static_cast<DataType>(1.41421);
+                rawVal = ct::compat::cast<DataType>(1.41421);
                 break;
             case MinDenorm:
                 if constexpr (!std::is_same<DataType, fp8e4m3>::value && !std::is_same<DataType, fp8e5m2>::value)
@@ -406,9 +409,17 @@ private:
                 }
                 break;
             case ULPMax: {
-                DataType max = DtypeLimits<TosaRefType>::max;
-                DataType ulp = max - nextafter(max, static_cast<DataType>(0));
-                rawVal       = ulp;
+                if constexpr (std::is_floating_point<DataType>::value)
+                {
+                    DataType max = DtypeLimits<TosaRefType>::max;
+                    DataType ulp = max - std::nextafter(max, static_cast<DataType>(0));
+                    rawVal       = ulp;
+                }
+                else
+                {
+                    // ULP doesn't make sense for integers. Return 1.
+                    rawVal = static_cast<DataType>(1);
+                }
                 break;
             }
             case AboveMaxINT8: {
