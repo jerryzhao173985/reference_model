@@ -132,9 +132,9 @@ public:
         float v        = s0 < 0 ? -0.75f : 0.75f;
         v += 0.25f * s1;
         if (_p != P2)
-            return (_B / std::sqrt(_KS + 1)) * v;
+            return static_cast<float>((_B / std::sqrt(_KS + 1)) * v);
         else
-            return (_B * _B / (_KS + 1)) * v;
+            return (_B * _B / static_cast<float>(_KS + 1)) * v;
     }
     uint32_t nextIndex() override
     {
@@ -165,7 +165,7 @@ public:
     {
         const float s = _set_data();
         if (_p != P2)
-            return k == 0 ? 1.f : s / std::sqrt(_KS);
+            return k == 0 ? 1.f : static_cast<float>(s / std::sqrt(_KS));
         else
             return 0.f;
     }
@@ -241,7 +241,7 @@ public:
             }
             else
             {
-                return s0 < 0 ? 0.f : (_B / std::sqrt(_KS)) * s1;
+                return s0 < 0 ? 0.f : static_cast<float>((_B / std::sqrt(_KS)) * s1);
             }
         else if (_p == P1)
             if (k == _KS / 2)
@@ -250,7 +250,7 @@ public:
             }
             else
             {
-                return s0 < 0 ? (_B / std::sqrt(_KS)) * s1 : 0.f;
+                return s0 < 0 ? static_cast<float>((_B / std::sqrt(_KS)) * s1) : 0.f;
             }
         else
             return 0.f;
@@ -285,7 +285,7 @@ public:
         unused(k);
         const float s = _set_data();
         if (_p != P2)
-            return (_B / std::sqrt(_KS + 1)) * s;
+            return static_cast<float>((_B / std::sqrt(_KS + 1)) * s);
         else
             return 0.f;
     }

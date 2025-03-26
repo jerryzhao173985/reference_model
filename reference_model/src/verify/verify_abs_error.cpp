@@ -59,7 +59,7 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
         {
             valueBound = std::max(cfg->lowerBound / boundsValue, valueBound);
         }
-        errorBound = exp2(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor) * valueBound;
+        errorBound = exp2(static_cast<int32_t>(-AccPrecision<OutType>::normal_frac / cfg->normalDivisor)) * valueBound;
         errorBound *= boundsValue;
     }
     // TODO: If this function proves to no longer be generic,

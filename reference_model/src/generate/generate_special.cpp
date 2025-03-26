@@ -58,10 +58,10 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
         // When no special test set is defined, if an op has an entry in testValues
         // we use its op specific special test values, otherwise default values are used
         vals       = opTestVals.at(cfg.opType);
-        inputIndex = cfg.inputPos;
+        inputIndex = static_cast<size_t>(cfg.inputPos);
     }
 
-    auto rng     = RandomGen<DataType>(fsinfo.rngSeed);
+    auto rng     = RandomGen<DataType>(static_cast<uint64_t>(fsinfo.rngSeed));
     const auto T = numElementsFromShape(cfg.shape);
     // Make sure start index is within the number of elements
     // for modes like repeat last value
@@ -75,18 +75,18 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
                 // Repeat the last value in the test set
                 valsIndex = t - startIndex;
                 if (valsIndex < 0 || valsIndex >= static_cast<int64_t>(vals.size()))
-                    valsIndex = vals.size() - 1;
+                    valsIndex = static_cast<int64_t>(vals.size() - 1);
                 break;
             case SpecialTestSetMode::REPEAT_ALL_VALUES:
                 // Repeat all the values in the test set
-                valsIndex = (t + startIndex) % vals.size();
+                valsIndex = (t + startIndex) % static_cast<int64_t>(vals.size());
                 break;
             default:
                 ASSERT_MSG(false, "Unknown test set repeat mode");
                 valsIndex = 0;
                 break;
         }
-        auto value = vals[valsIndex].at(inputIndex).evaluate<TosaRefType, DataType>(rng);
+        auto value = vals[static_cast<size_t>(valsIndex)].at(inputIndex).evaluate<TosaRefType, DataType>(rng);
         if constexpr (std::is_integral<StorageType>())
         {
             // Support for packed formats like INT4 & INT48

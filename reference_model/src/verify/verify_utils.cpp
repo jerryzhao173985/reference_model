@@ -424,7 +424,7 @@ bool validateData(const double* referenceData,
             }
             else if (std::abs(difference) == 0.0)
             {
-                auto pos = indexToPosition(i, shape);
+                auto pos = indexToPosition(static_cast<int64_t>(i), shape);
                 WARNING("[Verifier][%s] Invalid error bound, no difference found. Location: %s", modeStr.c_str(),
                         positionToString(pos).c_str());
                 return false;
@@ -433,7 +433,7 @@ bool validateData(const double* referenceData,
     }
     if (!compliant)
     {
-        auto pos = indexToPosition(worstIndex, shape);
+        auto pos = indexToPosition(static_cast<int64_t>(worstIndex), shape);
         WARNING("[Verifier][%s] Largest deviance at location %s: %s", modeStr.c_str(), positionToString(pos).c_str(),
                 worstWarning.c_str());
     }
