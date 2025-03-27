@@ -171,8 +171,20 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
 
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, i32databuf);
             break;
+        case DType_SHAPE: {
+            uint32_t read_elements = elements;
+            // Handle SHAPE special case of [0] where the buffer size
+            // should be 1, but the elements expected is 0
+            if (elements == 0 && getRank() == 1)
+                read_elements = 1;
+
+            i64databuf = (int64_t*)calloc(sizeof(int64_t), read_elements);
+            ASSERT_MEM(i64databuf);
+
+            nperror = NumpyUtilities::readFromNpyFile(filename, read_elements, i64databuf);
+            break;
+        }
         case DType_INT48:
-        case DType_SHAPE:
             i64databuf = (int64_t*)calloc(sizeof(int64_t), elements);
             ASSERT_MEM(i64databuf);
 

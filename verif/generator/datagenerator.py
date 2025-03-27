@@ -11,6 +11,8 @@ import schemavalidation.schemavalidation as sch
 from ml_dtypes import bfloat16
 from ml_dtypes import float8_e4m3fn
 from ml_dtypes import float8_e5m2
+from serializer.numpy_utils import save_npy
+from tosa.DType import DType
 
 
 class GenerateError(Exception):
@@ -166,6 +168,9 @@ class GenerateLibrary:
         elif dtype == "BOOL":
             # Convert from bytes back to bool
             arr = np.frombuffer(arr, bool)
+        elif dtype == "SHAPE":
+            # Convert int32 to expected int64
+            arr = arr.astype(np.int64)
 
         arr = np.reshape(arr, shape)
 
@@ -210,8 +215,16 @@ class GenerateLibrary:
         """Generate the named tensor data and save it in numpy format."""
         arr = self._data_gen_array(json_config, ifm_name)
 
+        try:
+            dtype_name = json_config["tensors"][ifm_name]["data_type"]
+            dtype = getattr(DType, dtype_name)
+        except (KeyError, AttributeError) as e:
+            raise GenerateError(
+                f"Missing/incorrect data type in json config for input {ifm_name} - {repr(e)}"
+            )
+
         file_name = test_path / ifm_file
-        np.save(file_name, arr)
+        save_npy(file_name, arr, dtype)
 
     def write_numpy_files(self, test_path: Path):
         """Write out all the desc.json input tensors to numpy data files."""

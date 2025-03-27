@@ -111,7 +111,7 @@ def parse_args(argv):
     parser.add_argument(
         "--lazy-data-generation",
         action="store_true",
-        help="Enable lazy data generation (only for tosa-mi)",
+        help="Enable lazy data generation",
     )
     parser.add_argument(
         "-v", "--verbose", dest="verbose", action="store_true", help="Verbose operation"

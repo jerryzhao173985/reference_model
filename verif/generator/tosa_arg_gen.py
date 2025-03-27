@@ -1277,12 +1277,44 @@ class TosaTensorValuesGen:
     def tvgCondIf(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        dtype = dtypeList[0]
+        op = testGen.TOSA_OP_LIST[opName]
+
+        # Work out conditional tensor details
+        cond_data = [argsDict["condition"]]
+        if error_name == ErrorIf.CondIfCondNotMatchingBool:
+            cond_type = gtu.get_wrong_output_type(op, rng, DType.BOOL)
+        else:
+            cond_type = DType.BOOL
+        if error_name == ErrorIf.CondIfCondShapeNotSizeOne:
+            choice = rng.choice([1, 2])
+            if choice == 1:
+                cond_shape = [2]
+            else:
+                cond_shape = [1, 2]
+            # Extend data to match
+            cond_data = cond_data * gtu.product(cond_shape)
+        else:
+            # Must be of size 1, but choose a rank up to max
+            rank = rng.randInt(low=0, high=(gtu.MAX_TENSOR_RANK + 1))
+            cond_shape = [1] * rank
+
+        # Add conditional tensor to lists
+        assert len(shapeList) == 2, "Unexpected number of tensors for conditional op"
+        newShapeList = shapeList.copy()
+        newShapeList.append(cond_shape)
+        newDtypeList = dtypeList.copy()
+        newDtypeList.append(cond_type)
+        argsDict["fixed_data"] = [None, None, cond_data]
+        argsDict["p_count"] = op["operands"][0]
+        # Add extra tensor for the conditional
+        argsDict["c_count"] = op["operands"][1] + 1
+
         if opName == "cond_if_const":
             # We don't want to serialize the tensors until build_cond_if_const
             argsDict["serialization"] = False
         else:
             assert opName == "cond_if_binary", f"Unexpected COND_IF op {opName}"
+            dtype = dtypeList[0]
             if dtype == DType.INT32:
                 # Limit data range to avoid saturation in add/sub
                 argsDict["data_range"] = rng.dTypeRange(DType.INT16)
@@ -1298,7 +1330,7 @@ class TosaTensorValuesGen:
                 ), f"No COND_IF binary generation support for Dtype: {testGen.typeStr(dtype)}"
 
         return TosaTensorValuesGen.tvgLazyGenDefault(
-            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+            testGen, rng, opName, newDtypeList, newShapeList, argsDict, error_name
         )
 
     @staticmethod
@@ -1391,31 +1423,33 @@ class TosaTensorValuesGen:
     def tvgArithmeticRightShift(
         testGen, rng, opName, dtypeList, shapeList, argsDict, error_name=None
     ):
-        op = testGen.TOSA_OP_LIST[opName]
-        pCount, cCount = op["operands"]
-        # Force value of operand[1] to be within [0, num_bits]
-        assert (
-            pCount == 2 and cCount == 0
-        ), "Op.ArithmeticRightShift must have 2 placeholders, 0 consts"
+        # Default to the data range for the input type
+        data_range_list = [None] * len(shapeList)
 
-        tens_ser_list = []
-        for idx, shape in enumerate(shapeList[:]):
-            if idx == 1:
-                if dtypeList[idx] == DType.INT8:
-                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 8))
-                elif dtypeList[idx] == DType.INT16:
-                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 16))
-                elif dtypeList[idx] == DType.INT32:
-                    arr = rng.randTensor(shape, dtypeList[idx], data_range=(0, 32))
-                elif error_name == ErrorIf.WrongInputType:
-                    arr = rng.randTensor(shape, DType.INT32, data_range=(0, 8))
-                else:
-                    raise Exception("OpArithmeticRightShift: invalid input dtype")
-            else:
-                arr = rng.randTensor(shape, dtypeList[idx])
-            tens_ser_list.append(testGen.ser.addPlaceholder(shape, dtypeList[idx], arr))
+        # But restrict the data range for the shift input (the second input)
+        # based on the data type and error_if
+        shift_dtype = dtypeList[1]
 
-        return TosaTensorValuesGen.TVGInfo(tens_ser_list, None)
+        # NOTE: Data range is high inclusive when using data generator lib
+        if shift_dtype == DType.INT8:
+            data_range = (0, 7)
+        elif shift_dtype == DType.INT16:
+            data_range = (0, 15)
+        elif shift_dtype == DType.INT32:
+            data_range = (0, 31)
+        elif error_name == ErrorIf.WrongInputType:
+            # Choose a range that will always be ok
+            data_range = (0, 7)
+        else:
+            raise ValueError("OpArithmeticRightShift: invalid input dtype")
+
+        # Set up the data range for the shift tensor
+        data_range_list[1] = {"range": data_range}
+        argsDict["data_range_list"] = data_range_list
+
+        return TosaTensorValuesGen.tvgLazyGenDefault(
+            testGen, rng, opName, dtypeList, shapeList, argsDict, error_name
+        )
 
     @staticmethod
     def tvgReshape(

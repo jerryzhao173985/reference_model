@@ -646,6 +646,7 @@
     "arithmetic_right_shift": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -944,6 +945,7 @@
     "bitwise_not": {
         "group": "ew_unary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -1721,6 +1723,7 @@
     "clz": {
         "group": "ew_unary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -2087,6 +2090,7 @@
     "cond_if": {
         "group": "control_flow",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen"
         ],
         "generation": {
@@ -4621,6 +4625,7 @@
     "intdiv": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -4771,6 +4776,7 @@
     "logical_and": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -4826,6 +4832,7 @@
     "logical_left_shift": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -4889,6 +4896,7 @@
     "logical_not": {
         "group": "ew_unary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -4947,6 +4955,7 @@
     "logical_or": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -5002,6 +5011,7 @@
     "logical_right_shift": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -5065,6 +5075,7 @@
     "logical_xor": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -6640,6 +6651,7 @@
     "reduce_all": {
         "group": "reduction",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -6699,6 +6711,7 @@
     "reduce_any": {
         "group": "reduction",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -9268,6 +9281,7 @@
     "table": {
         "group": "ew_binary",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen",
             "random_const_inputs"
         ],
@@ -10168,6 +10182,7 @@
     "while_loop": {
         "group": "control_flow",
         "support_for": [
+            "lazy_data_gen",
             "stable_random_gen"
         ],
         "generation": {
