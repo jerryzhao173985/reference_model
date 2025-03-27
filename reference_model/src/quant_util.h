@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2023, ARM Limited.
+// Copyright (c) 2020-2023, 2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ public:
 
     static int32_t apply_scale_32(int32_t value, int32_t multiplier, int32_t shift, bool double_round = true)
     {
+        // Values thrown in this function are meant to be caught and forwarded to a REQUIRE
         if (multiplier < 0)
         {
             std::string desc = "apply_scale_32() error: multiplier should >= 0 but is " + std::to_string(multiplier);

@@ -27,6 +27,29 @@ using namespace TosaReference;
 using namespace Eigen;
 using namespace tosa;
 
+// Ensure rounding mode is reset after lambda execution
+// Used in CAST and RESCALE
+struct ScopedFEnv
+{
+    int old_mode;
+    ScopedFEnv(int new_mode)
+    {
+        // Note: std::fegetround() can return a negative value
+        // if the rounding mode is indeterminate.
+        old_mode = std::fegetround();
+        std::fesetround(new_mode);
+    }
+    ~ScopedFEnv()
+    {
+        // Only restore the original rounding mode
+        // if it was successfully determined
+        if (old_mode >= 0)
+        {
+            std::fesetround(old_mode);
+        }
+    }
+};
+
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 OpRescale<Rank, InDtype, OutDtype>::OpRescale(SubgraphTraverser* sgt_, TosaAttributeBase* attribute_, uint64_t id_)
     : GraphNode(sgt_, Op_RESCALE, id_)
@@ -310,85 +333,71 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     int32_t value_multiplier = multiplier[0];
     int32_t value_shift      = shift[0];
 
+    const ScopedFEnv nearest_round{ FE_TONEAREST };
+
     // unaryExpr function for RESCALE
     auto rescale_func = [=, &value_multiplier, &value_shift](InEigenType in_val) -> OutEigenType {
-        int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
+        const int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
 
+        int32_t scaled;
         if (!inexact_round)
         {
-            int32_t scaled;
             if (scale32)
                 scaled = TosaReference::QuantUtil::apply_scale_32(static_cast<int32_t>(input_zp_shifted),
                                                                   value_multiplier, value_shift, double_round);
             else
                 scaled = TosaReference::QuantUtil::apply_scale_16(input_zp_shifted,
                                                                   static_cast<int16_t>(value_multiplier), value_shift);
-
-            int64_t res_in_64 = static_cast<int64_t>(scaled) + output_zp_extended;
-            int64_t i32_max_in_64, i32_min_in_64;
-            i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
-            i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
-
-            if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
-            {
-                std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
-                                   std::to_string(output_zp_extended) + "] not in " +
-                                   ((output_unsigned) ? "unsigned" : "signed") + " i32 range";
-                throw desc;
-            }
-
-            // Treat the output values as unsigned if `output_unsigned` is true.
-            int32_t clipped_val =
-                (output_unsigned)
-                    ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64), QMin_u, QMax_u, this->parent_sgt)
-                    : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64), QMin_s, QMax_s, this->parent_sgt);
-
-            OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
-            return out_val;
+        }
+        else if (!g_func_config.precise_mode)
+        {
+            // INEXACT ROUND using FP32 maths
+            const float res_f32 = static_cast<float>(input_zp_shifted) * static_cast<float>(value_multiplier) *
+                                  std::exp2(static_cast<float>(-value_shift));
+            scaled = static_cast<int32_t>(std::rint(res_f32));
         }
         else
         {
-            if (!g_func_config.precise_mode)
+            // INEXACT ROUND Precision calculation using FP64 maths
+            double out_ref = static_cast<double>(input_zp_shifted) * static_cast<double>(value_multiplier) *
+                             std::exp2(static_cast<double>(-value_shift));
+
+            if (g_func_config.compliance_mode)
             {
-                // INEXACT ROUND using FP32 maths
-                float res_f32 = static_cast<float>(input_zp_shifted) * static_cast<float>(value_multiplier) *
-                                std::exp2(static_cast<float>(-value_shift));
-                res_f32 += static_cast<float>(output_zp_extended);
-                float clipped_f32    = (output_unsigned)
-                                           ? applyClip<float, float>(res_f32, static_cast<float>(QMin_u),
-                                                                  static_cast<float>(QMax_u), this->parent_sgt)
-                                           : applyClip<float, float>(res_f32, static_cast<float>(QMin_s),
-                                                                  static_cast<float>(QMax_s), this->parent_sgt);
-                OutEigenType out_val = static_cast<OutEigenType>(std::rint(clipped_f32));
-                return out_val;
+                // Alter result to be min or max of error bound limits depending on mode
+                // In the normal (first) pass of precise mode - choose the minimum
+                // In the bounds (second) pass of precise mode - choose the maximum
+                const double err_bnd = 0.5 + 3 * std::abs(out_ref) * std::exp2(-23 /*-normal_frac<fp32>()*/ - 1);
+
+                // Force the rounding depending on minimum/maximum value
+                out_ref = (g_func_config.bounds_mode) ? std::floor(out_ref + err_bnd) : std::ceil(out_ref - err_bnd);
             }
-            else
-            {
-                // INEXACT ROUND Precision calculation using FP64 maths
-                double res_f64 = static_cast<double>(input_zp_shifted) * static_cast<double>(value_multiplier) *
-                                 std::exp2(static_cast<double>(-value_shift));
 
-                res_f64 += static_cast<double>(output_zp_extended);
-
-                if (g_func_config.compliance_mode)
-                {
-                    // Alter result to be min or max of error bound limits depending on mode
-                    // In the normal (first) pass of precise mode - choose the minimum
-                    // In the bounds (second) pass of precise mode - choose the maximum
-                    double err_bnd = 0.5 + 3 * std::abs(res_f64) * std::exp2(-23 /*-normal_frac<fp32>()*/ - 1);
-
-                    // Force the rounding depending on minimum/maximum value
-                    res_f64 =
-                        (g_func_config.bounds_mode) ? std::floor(res_f64 + err_bnd) : std::ceil(res_f64 - err_bnd);
-                }
-
-                double clipped_f64   = (output_unsigned)
-                                           ? applyClip<double, double>(res_f64, QMin_u, QMax_u, this->parent_sgt)
-                                           : applyClip<double, double>(res_f64, QMin_s, QMax_s, this->parent_sgt);
-                OutEigenType out_val = static_cast<OutEigenType>(std::rint(clipped_f64));
-                return out_val;
-            }
+            scaled = static_cast<int32_t>(out_ref);
         }
+
+        const int64_t res_in_64     = static_cast<int64_t>(scaled) + output_zp_extended;
+        const int64_t i32_max_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::max());
+        const int64_t i32_min_in_64 = static_cast<int64_t>(std::numeric_limits<int32_t>::min());
+
+        if (res_in_64 > i32_max_in_64 || res_in_64 < i32_min_in_64)
+        {
+            std::string desc = "scaling result [" + std::to_string(scaled) + "] plus output_zp [" +
+                               std::to_string(output_zp_extended) + "] not in " +
+                               ((output_unsigned) ? "unsigned" : "signed") + " i32 range";
+
+            // This exception will be caught and turned into a REQUIRE
+            throw desc;
+        }
+
+        // Treat the output values as unsigned if `output_unsigned` is true.
+        int32_t clipped_val =
+            (output_unsigned)
+                ? applyClip<int32_t, uint32_t>(static_cast<int32_t>(res_in_64), QMin_u, QMax_u, this->parent_sgt)
+                : applyClip<int32_t, int32_t>(static_cast<int32_t>(res_in_64), QMin_s, QMax_s, this->parent_sgt);
+
+        OutEigenType out_val = static_cast<OutEigenType>(clipped_val);
+        return out_val;
     };
 
     if (per_channel)
@@ -492,28 +501,6 @@ int OpCast<Rank, InDtype, OutDtype>::eval()
 
     return GraphNode::eval();
 }
-
-// Ensure rounding mode is reset after lambda execution
-struct ScopedFEnv
-{
-    int old_mode;
-    ScopedFEnv(int new_mode)
-    {
-        // Note: std::fegetround() can return a negative value
-        // if the rounding mode is indeterminate.
-        old_mode = std::fegetround();
-        std::fesetround(new_mode);
-    }
-    ~ScopedFEnv()
-    {
-        // Only restore the original rounding mode
-        // if it was successfully determined
-        if (old_mode >= 0)
-        {
-            std::fesetround(old_mode);
-        }
-    }
-};
 
 template <TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 CastHelper<InDtype, OutDtype>::CastHelper()
