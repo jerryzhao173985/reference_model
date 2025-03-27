@@ -242,7 +242,7 @@ def workerThread(task_queue, runnerList, complianceRunner, args, result_queue):
                         # Convert or generate the required data files
                         runner.readyDataFiles()
                     except Exception as e:
-                        msg = f"Failed to ready test files error: {e}"
+                        msg = f"Failed to ready test files for {runnerName}, test {test_path}, error: {e}"
                         raise e
 
                     try:

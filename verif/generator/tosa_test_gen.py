@@ -174,32 +174,6 @@ class TosaTestGen:
         with path_desc.open("w") as fd:
             json.dump(desc, fd, indent=1)
 
-    def buildPlaceholderTensors(self, rng, shape_list, dtype_list):
-        placeholders = []
-
-        assert len(shape_list) == len(dtype_list)
-
-        arr = None
-        for idx, shape in enumerate(shape_list):
-            if not self.args.lazy_data_gen:
-                arr = rng.randTensor(shape, dtype_list[idx])
-            placeholders.append(self.ser.addPlaceholder(shape, dtype_list[idx], arr))
-
-        return placeholders
-
-    def buildConstTensors(self, rng, shape_list, dtype_list):
-        consts = []
-
-        assert len(shape_list) == len(dtype_list)
-
-        arr = None
-        for idx, shape in enumerate(shape_list):
-            if not self.args.lazy_data_gen:
-                arr = rng.randTensor(shape, dtype_list[idx])
-            consts.append(self.ser.addConst(shape, dtype_list[idx], arr))
-
-        return consts
-
     def makeShape(self, rng, rank):
         if self.targetted_shape:
             return np.int32(self.targetted_shape)
@@ -2310,28 +2284,6 @@ class TosaTestGen:
 
         return TosaTestGen.BuildInfo(result_tensor, compliance)
 
-    def _get_condition_tensor(self, rng, op, cond, error_name):
-        if error_name == ErrorIf.CondIfCondNotMatchingBool:
-            cond_type = gtu.get_wrong_output_type(op, rng, DType.BOOL)
-        else:
-            cond_type = DType.BOOL
-        if error_name == ErrorIf.CondIfCondShapeNotSizeOne:
-            choice = rng.choice([1, 2])
-            if choice == 1:
-                cond_shape = [2]
-            else:
-                cond_shape = [1, 2]
-        else:
-            # Must be of size 1, but choose a rank up to max
-            rank = rng.randInt(low=0, high=(gtu.MAX_TENSOR_RANK + 1))
-            if rank == 0:
-                cond_shape = []
-            else:
-                cond_shape = [1] * rank
-
-        cond_tens = self.ser.addConst(cond_shape, cond_type, [cond])
-        return cond_tens
-
     def build_cond_if_const(
         self,
         rng,
@@ -2346,14 +2298,16 @@ class TosaTestGen:
         # instead we have access to the generated data to serialize into the
         # different blocks
         assert len(inputs) == 0
-        assert len(args_dict["tensor_data"]) == 2
+        # NOTE: Extra tensor expected for conditional
+        assert len(args_dict["tensor_data"]) == 3
         then_tdata = args_dict["tensor_data"][0]
         else_tdata = args_dict["tensor_data"][1]
-
-        cond = args_dict["condition"]
+        cond_tdata = args_dict["tensor_data"][2]
 
         # Condition tensor
-        cond_tens = self._get_condition_tensor(rng, op, cond, error_name)
+        cond_tens = self.ser.addConst(
+            cond_tdata["shape"], cond_tdata["dtype"], cond_tdata["data"]
+        )
 
         # Add the result tensor based on one of the outputs
         out_shape = then_tdata["shape"]
@@ -2419,7 +2373,9 @@ class TosaTestGen:
         # Because we have added the tensors late, we need to update the
         # data generation meta data, in case we have lazy data gen enabled
         dg_tens_meta = {}
-        for tdata, tens in zip(args_dict["tensor_data"], [then_tens, else_tens]):
+        for tdata, tens in zip(
+            args_dict["tensor_data"], [then_tens, else_tens, cond_tens]
+        ):
             if "meta" in tdata:
                 dg_tens_meta[tens.name] = tdata["meta"]
 
@@ -2437,13 +2393,9 @@ class TosaTestGen:
     ):
         # For cond_if with a binary op in the then/else blocks, take a and b and
         # alternately add or subtract them based on the condition
-        assert len(inputs) == 2
-        a, b = inputs
-
-        cond = args_dict["condition"]
-
-        # Condition tensor
-        cond_tens = self._get_condition_tensor(rng, op, cond, error_name)
+        assert len(inputs) == 3
+        # NOTE: Extra tensor expected for conditional
+        a, b, cond = inputs
 
         result_tensor = self.ser.addOutput(a.shape, a.dtype)
 
@@ -2467,7 +2419,7 @@ class TosaTestGen:
 
         # Finally, build the op and the two blocks
         self.ser.addOperator(
-            op["op"], [cond_tens.name, a.name, b.name], [result_tensor.name], attr
+            op["op"], [cond.name, a.name, b.name], [result_tensor.name], attr
         )
 
         if a.dtype in (DType.FP32, DType.BF16, DType.FP16, DType.INT32):
@@ -2523,7 +2475,7 @@ class TosaTestGen:
             a=a,
             b=b,
             basicBlocks=self.ser.currRegion.basicBlocks,
-            cond=cond_tens,
+            cond=cond,
         ):
             return None
 
@@ -2956,6 +2908,12 @@ class TosaTestGen:
             op = self.TOSA_OP_LIST[opName]
         except KeyError:
             raise Exception("Cannot find op with name {}".format(opName))
+
+        if self.args.lazy_data_gen and opName == "cond_if_const":
+            logger.warning(
+                f"{opName} tests are currently not supported by lazy_data_gen"
+            )
+            return []
 
         if not self.args.stable_rng:
             # Initialize a new random number generator per op

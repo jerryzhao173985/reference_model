@@ -18,7 +18,7 @@ MAX_TENSOR_RANK = 6
 # - str: filename abbreviation
 # - width: number of bytes needed for type
 # - fullset: precalculated number of possible values in the data type's range, equal to 2^width
-# - json: JSON type string
+# - json: JSON type string - should match DType name
 DTYPE_ATTRIBUTES = {
     DType.BOOL: {"str": "b", "width": 1, "fullset": 2, "json": "BOOL"},
     DType.INT4: {"str": "i4", "width": 4, "fullset": 16, "json": "INT4"},

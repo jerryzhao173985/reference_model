@@ -83,18 +83,6 @@ def _run_sh_command(args, cwd, full_cmd):
     return (rc.stdout, rc.stderr)
 
 
-def _supports_for_enabled(profile_ext):
-    # The "supports_for" part of the config only works for MI and related extensions
-    # TODO - Update with TosaProINT etc in future
-    return profile_ext in (
-        TosaProfiles.TosaProFP,
-        TosaProfiles.TosaExtFP8E4M3,
-        TosaProfiles.TosaExtFP8E5M2,
-        TosaProfiles.TosaExtBF16,
-        TosaProfiles.TosaExtFFT,
-    )
-
-
 def build_op_tests(
     args,
     test_type,
@@ -136,9 +124,8 @@ def build_op_tests(
     if args.tests_list_file is not None:
         build_cmd_base.append("--list-tests")
 
-    if _supports_for_enabled(profile_ext):
-        if "lazy_data_gen" in supports and args.lazy_data_generation:
-            build_cmd_base.append("--lazy-data-generation")
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        build_cmd_base.append("--lazy-data-generation")
 
     if "stable_random_gen" in supports and not args.global_random_generation:
         build_cmd_base.append("--stable-random-generation")
@@ -270,10 +257,9 @@ def generate_results(
     args, profile_ext, operator, op_build_dir, supports=[], tests=None
 ):
     """Run tests on reference model and save result to the test directory."""
-    if _supports_for_enabled(profile_ext):
-        if "lazy_data_gen" in supports and args.lazy_data_generation:
-            logger.info("Skipping running tests due to lazy data gen")
-            return
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        logger.info("Skipping running tests due to lazy data gen")
+        return
 
     num_cores = args.num_cores
 
@@ -360,9 +346,9 @@ def convert_tests(
     if tags is not None:
         for tag in tags:
             c2c_args_base.extend(["--tag", tag])
-    if _supports_for_enabled(profile_ext):
-        if "lazy_data_gen" in supports and args.lazy_data_generation:
-            c2c_args_base.append("--lazy-data-generation")
+    if "lazy_data_gen" in supports and args.lazy_data_generation:
+        lazy_data_gen = True
+        c2c_args_base.append("--lazy-data-generation")
     c2c_args_base.append("--output-directory")
 
     c2c_args_list = []
@@ -384,10 +370,16 @@ def convert_tests(
         c2c_args_list.append(c2c_args)
 
     if len(c2c_args_list) == 0:
-        logger.error(
-            f"No tests found for {operator}. Nothing to convert in {op_build_dir}"
-        )
-        raise (GenConformanceError())
+        if lazy_data_gen:
+            # TODO - remove this when all lazy_gen_tests can be produced
+            logger.warning(
+                f"Tests missing for {operator} in {op_build_dir}. See verbose output for more info."
+            )
+        else:
+            logger.error(
+                f"No tests found for {operator}. Nothing to convert in {op_build_dir}"
+            )
+            raise (GenConformanceError())
 
     job_pool = mp.Pool(args.num_cores)
 
