@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Arm Limited.
+# Copyright (c) 2021-2025 Arm Limited.
 # SPDX-License-Identifier: Apache-2.0
 
 [build-system]
@@ -6,7 +6,7 @@ requires = [
     "setuptools>=42",
     "wheel",
     "setuptools_scm[toml]>=6.0",
-    "cmake"
+    "cmake<4.0"
 ]
 build-backend = "setuptools.build_meta"
 
