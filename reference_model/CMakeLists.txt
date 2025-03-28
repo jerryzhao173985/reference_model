@@ -37,6 +37,35 @@ get_target_property(NLOHMANN_JSON_INCLUDES nlohmann_json INTERFACE_INCLUDE_DIREC
 get_target_property(PYBIND11_INCLUDES pybind11_headers INTERFACE_INCLUDE_DIRECTORIES)
 get_target_property(SERIALIZATION_INCLUDES tosa_serialization_lib INTERFACE_INCLUDE_DIRECTORIES)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+  set(CXX_FLAGS
+      -Wformat=2 -Wconversion -Wimplicit-fallthrough
+      -Wformat-security
+      -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
+      -D_GLIBCXX_ASSERTIONS
+      -fstack-clash-protection -fstack-protector-strong
+      -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing
+      -fcf-protection=full)
+
+  set(LINKER_FLAGS
+      -Wl,-z,nodlopen -Wl,-z,noexecstack
+      -Wl,-z,relro -Wl,-z,now
+      -Wl,--as-needed -Wl,--no-copy-dt-needed-entries
+      -pie)
+else()
+  # TODO: Add compiler flags for non-linux systems
+  set(CXX_FLAGS "")
+  set(LINKER_FLAGS "")
+endif()
+
+# Apply flags only target
+function(apply_flags target)
+    if (TARGET ${target})
+        target_compile_options(${target} PRIVATE "${CXX_FLAGS}")
+        target_link_options(${target} PRIVATE ${LINKER_FLAGS})
+    endif()
+endfunction()
+
 # Common sources required for TOSA Reference Model library, executable and unit tests
 set(CXX_SOURCE
     src/func_debug.cpp
@@ -87,10 +116,8 @@ set(PUBLIC_INCLUDE_DIRS
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
 )
+
 set(PRIVATE_INCLUDE_DIRS
-    include
-    src/verify
-    src
     ${FLATBUFFERS_INCLUDES}
     ${EIGEN_INCLUDES}
     ${SERIALIZATION_INCLUDES}
@@ -106,11 +133,17 @@ if(MSVC)
   target_compile_options(tosa_reference_model_lib PRIVATE /bigobj)
 endif()
 
+apply_flags(tosa_reference_model_lib)
+
 target_include_directories(tosa_reference_model_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
-    ${PRIVATE_INCLUDE_DIRS}
+    include
+    src/verify
+    src
 )
 
 target_link_libraries(tosa_reference_model_lib
@@ -153,11 +186,26 @@ add_library(tosa_reference_verify_lib SHARED
   src/verify/verify_config.cpp
   src/func_debug.cpp
 )
+
+# Linker flags specific to shared lib
+set(LINKER_FLAGS_SHARED_LIB
+    -Wl,-z,noexecstack
+    -Wl,-z,relro -Wl,-z,now
+    -Wl,--as-needed -Wl,--no-copy-dt-needed-entries
+    -fPIC)
+
+target_compile_options(tosa_reference_verify_lib PRIVATE ${CXX_FLAGS})
+target_link_options(tosa_reference_verify_lib PRIVATE ${LINKER_FLAGS_SHARED_LIB})
+
 target_include_directories(tosa_reference_verify_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
-    ${PRIVATE_INCLUDE_DIRS}
+    include
+    src/verify
+    src
 )
 
 # Build TOSA generator library
@@ -175,11 +223,19 @@ add_library(tosa_reference_generate_lib SHARED
   src/generate/generate_config.cpp
   src/func_debug.cpp
 )
+
+target_compile_options(tosa_reference_generate_lib PRIVATE ${CXX_FLAGS})
+target_link_options(tosa_reference_generate_lib PRIVATE ${LINKER_FLAGS_SHARED_LIB})
+
 target_include_directories(tosa_reference_generate_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
-    ${PRIVATE_INCLUDE_DIRS}
+    include
+    src/verify
+    src
 )
 
 # Build TOSA Refererence Model executable
@@ -197,12 +253,17 @@ if(MSVC)
   target_compile_options(tosa_reference_model PRIVATE /Ob0)
   target_compile_options(tosa_reference_model PRIVATE /bigobj)
 endif()
+  apply_flags(tosa_reference_model)
 
   target_include_directories(tosa_reference_model
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${PRIVATE_INCLUDE_DIRS}
+      include
+      src/verify
+      src
   )
 
   target_link_libraries(tosa_reference_model
@@ -247,13 +308,19 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
     target_compile_options(unit_tests PRIVATE /Ob0)
     target_compile_options(unit_tests PRIVATE /bigobj)
   endif()
+  apply_flags(unit_tests)
 
   target_include_directories(unit_tests
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${DOCTEST_DIR}>"
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${PRIVATE_INCLUDE_DIRS}
       ${TEST_INCLUDE_DIRS}
+      include
+      src/verify
+      src
     )
 
   # GCC-8 and below require explicit linking against stdc++fs
@@ -281,11 +348,17 @@ if(BUILD_MODEL_RUNNER_SAMPLE)
 
   add_executable(model_runner_sample ${CXX_SOURCE_SAMPLE})
 
+  apply_flags(model_runner_sample)
+
   target_include_directories(model_runner_sample
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${PRIVATE_INCLUDE_DIRS}
+      include
+      src/verify
+      src
   )
 
   target_link_libraries(model_runner_sample
@@ -316,11 +389,17 @@ if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
 
   set_target_properties(py_tosa_reference_model PROPERTIES OUTPUT_NAME tosa_reference_model)
 
+  apply_flags(py_tosa_reference_model)
+
   target_include_directories(py_tosa_reference_model
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
-      ${PRIVATE_INCLUDE_DIRS}
+      include
+      src/verify
+      src
   )
 
   target_link_libraries(py_tosa_reference_model PRIVATE tosa_reference_model_lib)

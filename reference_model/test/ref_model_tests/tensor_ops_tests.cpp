@@ -273,8 +273,8 @@ void testTransposeConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weigh
     constexpr DType weightDtype = DType_INT8;
     constexpr DType outDtype    = DType_INT32;
 
-    const int IN_HEIGHT = 2;
-    const int IN_WIDTH  = 2;
+    const size_t IN_HEIGHT = 2;
+    const size_t IN_WIDTH  = 2;
 
     REQUIRE_MESSAGE(inVals.size() == IN_HEIGHT * IN_WIDTH,
                     "Unit test construction error: testTransposeConv2d assumes the inVals has ", IN_HEIGHT * IN_WIDTH,
@@ -296,32 +296,32 @@ void testTransposeConv2d(std::vector<int8_t>& inVals, std::vector<int8_t>& weigh
                                              /* acc_type */ DType_INT32);
 
     // Formula: OH = (IH - 1) * stride_y + out_pad_top + out_pad_bottom + KH
-    const int OUT_HEIGHT = IN_HEIGHT * 2 - 1;
+    const size_t OUT_HEIGHT = IN_HEIGHT * 2 - 1;
     // Formula: OW = (IW - 1) * stride_x + out_pad_left + out_pad_right + KW
-    const int OUT_WIDTH = IN_WIDTH * 2 - 1;
+    const size_t OUT_WIDTH = IN_WIDTH * 2 - 1;
 
     tb.addOp(Op_TRANSPOSE_CONV2D, Attribute_TransposeConv2dAttribute, &attr);
 
     tb.initializeRunner();
 
     std::vector<int32_t> expectedOutTensor(9, 0);
-    for (int outRow = 0; outRow < OUT_HEIGHT; outRow++)
+    for (size_t outRow = 0; outRow < OUT_HEIGHT; outRow++)
     {
-        for (int outCol = 0; outCol < OUT_WIDTH; outCol++)
+        for (size_t outCol = 0; outCol < OUT_WIDTH; outCol++)
         {
             int32_t value = 0;
 
-            for (int kRow = 0; kRow < IN_HEIGHT; kRow++)
+            for (size_t kRow = 0; kRow < IN_HEIGHT; kRow++)
             {
-                for (int kCol = 0; kCol < IN_WIDTH; kCol++)
+                for (size_t kCol = 0; kCol < IN_WIDTH; kCol++)
                 {
-                    int inRow = outRow - kRow;
-                    int inCol = outCol - kCol;
+                    size_t inRow = outRow - kRow;
+                    size_t inCol = outCol - kCol;
 
                     if (inRow >= 0 && inRow < IN_HEIGHT && inCol >= 0 && inCol < IN_WIDTH)
                     {
-                        int inIdx     = inRow * IN_HEIGHT + inCol;
-                        int weightIdx = kRow * IN_WIDTH + kCol;
+                        size_t inIdx     = inRow * IN_HEIGHT + inCol;
+                        size_t weightIdx = kRow * IN_WIDTH + kCol;
 
                         value += (static_cast<int32_t>(inVals[inIdx]) - static_cast<int32_t>(inZp)) *
                                  (static_cast<int32_t>(weightVals[weightIdx]) - static_cast<int32_t>(weightZp));
@@ -455,9 +455,9 @@ void testMatMul(std::vector<int8_t>& aVals, std::vector<int8_t>& bVals, int8_t a
     constexpr DType bZpDtype = DType_INT8;
     constexpr DType outDtype = DType_INT32;
 
-    const int H = 2;
-    const int C = 2;
-    const int W = 2;
+    const size_t H = 2;
+    const size_t C = 2;
+    const size_t W = 2;
 
     REQUIRE_MESSAGE(aVals.size() == H * C, "Unit test construction error: testMatMulOverflow assumes the aVals has ",
                     H * C, " elements");
@@ -477,12 +477,12 @@ void testMatMul(std::vector<int8_t>& aVals, std::vector<int8_t>& bVals, int8_t a
 
     std::vector<int32_t> expectedOutVal(H * W, 0);
 
-    for (int row = 0; row < H; ++row)
+    for (size_t row = 0; row < H; ++row)
     {
-        for (int col = 0; col < W; ++col)
+        for (size_t col = 0; col < W; ++col)
         {
             int32_t dotProduct = 0;
-            for (int k = 0; k < C; ++k)
+            for (size_t k = 0; k < C; ++k)
             {
                 int32_t aValue = static_cast<int32_t>(aVals[row * C + k]) - static_cast<int32_t>(aZp);
                 int32_t bValue = static_cast<int32_t>(bVals[k * W + col]) - static_cast<int32_t>(bZp);
@@ -557,7 +557,7 @@ void testAvgPool2d(std::vector<int8_t>& inVals, int8_t inZp, int8_t outZp)
     int8_t shift       = 32;
     int32_t multiplier = (1 << 30) + 1;
     // apply_scale_32(sum, multiplier, shift, /* double_round */ false); (spec)
-    int64_t round  = 1LL << (shift - 1);
+    int64_t round  = static_cast<int64_t>(1LL << (shift - 1));
     int64_t result = (static_cast<int64_t>(sum) * multiplier) + round;
     result >>= shift;
     int32_t final_result = static_cast<int32_t>(result);

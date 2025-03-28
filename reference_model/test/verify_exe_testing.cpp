@@ -51,9 +51,9 @@ std::string getVerifyFileLocation()
 #else
 #error Unknown OS
 #endif    // __linux__
-    std::string exe_path = std::string(res, (count > 0) ? count : 0);
+    std::string exe_path = std::string(res, (count > 0) ? static_cast<size_t>(count) : 0);
 
-    int adjust = std::string("/unit_tests").length();
+    size_t adjust = std::string("/unit_tests").length();
     return exe_path.substr(0, exe_path.length() - adjust) + "/verify/tosa_verify";
 }
 #endif    // __unix__
@@ -92,7 +92,8 @@ void createMockNumpyFiles(const std::string& refName,
                           const std::vector<int32_t>& shape,
                           std::vector<refT>& refData)
 {
-    const auto elements = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>());
+    const size_t elements =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<int64_t>()));
     // Make sure we have the right amount of data
     refData.resize(elements);
     // Create a copy of the data in the implementation data type

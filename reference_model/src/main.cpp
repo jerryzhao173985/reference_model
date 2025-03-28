@@ -191,7 +191,7 @@ int main(int argc, char** argv)
             // make sure output tensor is evaluated and show its value
             int num_output_tensors = main_gt.getNumOutputTensors();
             bool all_output_valid  = true;
-            for (int i = 0; i < num_output_tensors; i++)
+            for (uint32_t i = 0; i < num_output_tensors; i++)
             {
                 const Tensor* ct = main_gt.getOutputTensor(i);
                 ASSERT_MEM(ct);
@@ -347,7 +347,7 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
             return 1;
         }
 
-        for (int i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < tensorCount; i++)
         {
             tensor = gt.getInputTensorByName(test_desc["ifm_name"][i].get<std::string>());
             if (!tensor)
@@ -427,7 +427,7 @@ int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string&
             return 1;
         }
 
-        for (int i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < tensorCount; i++)
         {
             tensor = gt.getOutputTensorByName(test_desc["ofm_name"][i].get<std::string>());
             if (!tensor)
@@ -439,12 +439,12 @@ int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string&
             std::string filename_str =
                 g_func_config.output_dir + "/" + filename_prefix + test_desc["ofm_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Writing output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+            DEBUG_MED(GT, "Writing output tensor[%zu] %s to filename: %s", i, tensor->getName().c_str(),
                       filename_str.c_str());
 
             if (tensor->writeToNpyFile(filename_str.c_str()))
             {
-                WARNING("Unable to write output tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+                WARNING("Unable to write output tensor[%zu] %s to filename: %s", i, tensor->getName().c_str(),
                         filename_str.c_str());
                 return 1;
             }
@@ -474,7 +474,7 @@ int readVariableTensors(SubgraphTraverser& gt, json test_desc)
             return 1;
         }
 
-        for (int i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < tensorCount; i++)
         {
             tensor = gt.getVariableTensorByName(test_desc["variable_name"][i].get<std::string>());
             if (!tensor)
@@ -542,7 +542,7 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
             return 1;
         }
 
-        for (int i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < tensorCount; i++)
         {
             tensor = gt.getVariableTensorByName(test_desc["variable_name"][i].get<std::string>());
             if (!tensor)
@@ -554,7 +554,7 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
             std::string filename_str =
                 g_func_config.output_dir + "/" + test_desc["variable_file"][i].get<std::string>();
 
-            DEBUG_MED(GT, "Writing variable tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+            DEBUG_MED(GT, "Writing variable tensor[%zu] %s to filename: %s", i, tensor->getName().c_str(),
                       filename_str.c_str());
             if (!tensor->is_allocated())
             {
@@ -563,7 +563,7 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
             }
             if (tensor->writeToNpyFile(filename_str.c_str()))
             {
-                WARNING("Unable to write variable tensor[%d] %s to filename: %s", i, tensor->getName().c_str(),
+                WARNING("Unable to write variable tensor[%zu] %s to filename: %s", i, tensor->getName().c_str(),
                         filename_str.c_str());
                 return 1;
             }

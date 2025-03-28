@@ -93,11 +93,11 @@ public:
     {
         _tensor.name      = _name.c_str();
         _tensor.data_type = dataType;
-        _tensor.num_dims  = _shape.size();
+        _tensor.num_dims  = static_cast<int32_t>(_shape.size());
         _tensor.shape     = _shape.data();
         _tensor.data      = data;
-        _tensor.size =
-            std::accumulate(_tensor.shape, std::next(_tensor.shape, _tensor.num_dims), 1, std::multiplies<>());
+        _tensor.size      = static_cast<size_t>(
+            std::accumulate(_tensor.shape, std::next(_tensor.shape, _tensor.num_dims), 1, std::multiplies<>()));
     };
 
     const tosa_tensor_t* cTensor() const
@@ -192,7 +192,7 @@ auto reduceProductTolerance(uint64_t M, uint64_t N, const std::vector<FP>& resul
 {
     const auto error     = reduceProductError(M, N);
     auto tolerances_fp64 = std::vector<FP>(results.size());
-    for (unsigned i = 0, end = results.size(); i < end; ++i)
+    for (size_t i = 0, end = results.size(); i < end; ++i)
     {
         tolerances_fp64[i] = std::abs(results[i]) * error;
     }
@@ -345,8 +345,9 @@ TEST_CASE("positive - exact")
         }
     })";
 
-    const auto shape        = std::vector<int32_t>{ 8, 8, 8 };
-    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    const auto shape = std::vector<int32_t>{ 8, 8, 8 };
+    const size_t elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount);
@@ -367,7 +368,7 @@ TEST_CASE("positive - exact")
         auto otherData_fp32 = std::vector<float>(elementCount);
         std::generate(std::begin(otherData_fp32), std::end(otherData_fp32), [&, i = 0]() mutable {
             auto oldIndex = i++;
-            return oldIndex % 2 ? data_fp32[oldIndex] : static_cast<float>(oldIndex);
+            return oldIndex % 2 ? data_fp32[static_cast<size_t>(oldIndex)] : static_cast<float>(oldIndex);
         });
 
         const auto referenceTensor =
@@ -385,7 +386,7 @@ TEST_CASE("positive - exact")
         auto denormZeroData_fp32 = std::vector<float>(elementCount);
         float min                = std::numeric_limits<float>::min();
         float denorm             = min;    // Start at minimum and get smaller
-        for (auto idx = 0; idx < elementCount; idx++)
+        for (size_t idx = 0; idx < elementCount; idx++)
         {
             if (idx % 2)
             {
@@ -419,7 +420,7 @@ TEST_CASE("positive - exact")
         auto normData_fp64     = std::vector<double>(elementCount);
         auto normZeroData_fp32 = std::vector<float>(elementCount);
         float min              = std::numeric_limits<float>::min();
-        for (auto idx = 0; idx < elementCount; idx++)
+        for (size_t idx = 0; idx < elementCount; idx++)
         {
             normData_fp64[idx] = static_cast<double>(min);
             if (idx % 2)
@@ -460,10 +461,11 @@ TEST_CASE("positive - reduce product")
         }
     })";
 
-    const auto inputShape    = std::vector<int32_t>{ 8, 8, 8 };
-    const auto outputShape   = std::vector<int32_t>{ 8, 8, 1 };
-    const auto reductionSize = inputShape[2];
-    const auto elementCount  = std::accumulate(std::begin(inputShape), std::end(inputShape), 1, std::multiplies<>());
+    const auto inputShape      = std::vector<int32_t>{ 8, 8, 8 };
+    const auto outputShape     = std::vector<int32_t>{ 8, 8, 1 };
+    const size_t reductionSize = static_cast<size_t>(inputShape[2]);
+    const size_t elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(inputShape), std::end(inputShape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32. This will be the "result" of our
     // dot product. Here we "reduced" over the z-axis of our shape.
@@ -543,8 +545,9 @@ TEST_CASE("positive - ulp")
         }
     })";
 
-    const auto shape        = std::vector<int32_t>{ 8, 8, 8 };
-    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    const auto shape = std::vector<int32_t>{ 8, 8, 8 };
+    const size_t elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
@@ -644,8 +647,9 @@ TEST_CASE("positive - abs error")
         }
     })";
 
-    const auto shape        = std::vector<int32_t>{ 4, 4, 4 };
-    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    const auto shape = std::vector<int32_t>{ 4, 4, 4 };
+    const size_t elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
@@ -741,14 +745,15 @@ TEST_CASE("positive - relative")
         }
     })";
 
-    const auto shape        = std::vector<int32_t>{ 3, 3, 3 };
-    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    const auto shape = std::vector<int32_t>{ 3, 3, 3 };
+    const size_t elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
     std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
 
-    float scale     = 0.0006;
+    float scale     = 0.0006f;
     float max       = 0.0;
     float ulp_bound = 20.0;
 
@@ -765,8 +770,8 @@ TEST_CASE("positive - relative")
 
     float errBound = max * scale;
     // Use 10% error margin to test due to using v.large values in our random data
-    float insideErrBound  = errBound * 0.9;
-    float outsideErrBound = errBound * 1.1;
+    float insideErrBound  = errBound * 0.9f;
+    float outsideErrBound = errBound * 1.1f;
 
     SUBCASE("inside")
     {
@@ -969,31 +974,35 @@ TEST_CASE_TEMPLATE("subnormal handling non-fp8 - ulp", FP_TYPE, float, binary16,
 
     SUBCASE("positive subnormal reference disallows negative subnormal")
     checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -dtype_denorm_min, false);
-    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * .5, false);
-    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * .5, false, /* ulp */ 3);
-    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * .1, false);
-    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * .1, false, /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * ct::compat::cast<FP_TYPE>(.5), false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .5, -dtype_norm_min * ct::compat::cast<FP_TYPE>(.5), false,
+                                  /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * ct::compat::cast<FP_TYPE>(.1), false);
+    checkULPVerification<FP_TYPE>(double(dtype_norm_min) * .1, -dtype_norm_min * ct::compat::cast<FP_TYPE>(.1), false,
+                                  /* ulp */ 3);
 
     SUBCASE("negative subnormal reference disallows positive subnormal")
     checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), dtype_denorm_min, false);
-    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * .5, false);
-    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * .5, false, /* ulp */ 3);
-    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * .1, false);
-    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * .1, false, /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * ct::compat::cast<FP_TYPE>(.5), false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .5, dtype_norm_min * ct::compat::cast<FP_TYPE>(.5), false,
+                                  /* ulp */ 3);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * ct::compat::cast<FP_TYPE>(.1), false);
+    checkULPVerification<FP_TYPE>(-double(dtype_norm_min) * .1, dtype_norm_min * ct::compat::cast<FP_TYPE>(.1), false,
+                                  /* ulp */ 3);
 
     // Specifically covering a previous bug which allowed all subnormal values
     // when the reference was a subnormal input
     SUBCASE("positive subnormal reference disallows high-error subnormals")
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, dtype_denorm_min * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -dtype_denorm_min * 8, false, /* ulp */ 2);
 
     SUBCASE("negative subnormal reference disallows high-error subnormals")
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, dtype_denorm_min * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -dtype_denorm_min * 8, false, /* ulp */ 2);
 };
 
 TEST_CASE_TEMPLATE("subnormal handling fp8 - ulp", FP_TYPE, fp8_e5m2, fp8_e4m3)
@@ -1033,16 +1042,16 @@ TEST_CASE_TEMPLATE("subnormal handling fp8 - ulp", FP_TYPE, fp8_e5m2, fp8_e4m3)
     // Specifically covering a previous bug which allowed all subnormal values when the
     // reference was a subnormal input
     SUBCASE("positive subnormal reference disallows high-error subnormals")
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
-    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min), -dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, dtype_denorm_min * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(double(dtype_denorm_min) * 4, -dtype_denorm_min * 8, false, /* ulp */ 2);
 
     SUBCASE("negative subnormal reference disallows high-error subnormals")
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -double(dtype_denorm_min) * 8, false, /* ulp */ 4);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, double(dtype_denorm_min) * 8, false, /* ulp */ 2);
-    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -double(dtype_denorm_min) * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min), -dtype_denorm_min * 8, false, /* ulp */ 4);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, dtype_denorm_min * 8, false, /* ulp */ 2);
+    checkULPVerification<FP_TYPE>(-double(dtype_denorm_min) * 4, -dtype_denorm_min * 8, false, /* ulp */ 2);
 }
 
 TEST_SUITE_END();    // verify

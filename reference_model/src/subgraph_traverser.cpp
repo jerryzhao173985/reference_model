@@ -81,7 +81,7 @@ SubgraphTraverser::~SubgraphTraverser()
 
 int SubgraphTraverser::getNumInputTensors() const
 {
-    return inputTensors.size();
+    return static_cast<int>(inputTensors.size());
 }
 
 TosaReference::Tensor* SubgraphTraverser::getInputTensor(const unsigned int idx) const
@@ -104,7 +104,7 @@ TosaReference::Tensor* SubgraphTraverser::getInputTensorByName(const std::string
 
 int SubgraphTraverser::getNumOutputTensors() const
 {
-    return outputTensors.size();
+    return static_cast<int>(outputTensors.size());
 }
 
 TosaReference::Tensor* SubgraphTraverser::getOutputTensor(const unsigned int idx) const
@@ -127,7 +127,7 @@ TosaReference::Tensor* SubgraphTraverser::getOutputTensorByName(const std::strin
 
 int SubgraphTraverser::getNumVariableTensors() const
 {
-    return variableTensors.size();
+    return static_cast<int>(variableTensors.size());
 }
 
 TosaReference::Tensor* SubgraphTraverser::getVariableTensor(const unsigned int idx) const
@@ -172,7 +172,7 @@ int SubgraphTraverser::registerVariableTensor(Tensor* tensor)
 
 int SubgraphTraverser::initializeGraph()
 {
-    int idx = 0;
+    uint64_t idx = 0;
 
     std::vector<TosaSerializationTensor*> ser_tensor_vec;
     // Get all the serialized tensors from TosaSerializationHandler.
@@ -205,9 +205,9 @@ int SubgraphTraverser::initializeGraph()
         TOSA_REF_TYPE output_dtype = TOSA_REF_TYPE_UNKNOWN;
         TOSA_REF_TYPE weight_dtype = TOSA_REF_TYPE_UNKNOWN;
         TOSA_REF_TYPE bias_dtype   = TOSA_REF_TYPE_UNKNOWN;
-        uint32_t input_rank        = 0;
-        uint32_t output_rank       = 0;
-        uint32_t weight_rank       = 0;
+        int32_t input_rank         = 0;
+        int32_t output_rank        = 0;
+        int32_t weight_rank        = 0;
         int32_t input_index        = -1;
         int32_t weight_index       = -1;
         int32_t bias_index         = -1;
@@ -242,7 +242,7 @@ int SubgraphTraverser::initializeGraph()
                 "SubgraphTraverser::initializeGraph(): Op=%s, input_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], input_index);
 
-            std::string input_name                = op->GetInputTensorNames()[input_index];
+            std::string input_name                = op->GetInputTensorNames()[static_cast<size_t>(input_index)];
             TosaSerializationTensor* input_tensor = nullptr;
             for (auto ser_tensor : ser_tensor_vec)
             {
@@ -257,7 +257,7 @@ int SubgraphTraverser::initializeGraph()
                 "SubgraphTraverser::initializeGraph(): fail to get input tensor %s from TosaSerializationHandler",
                 input_name.c_str());
             input_dtype = ConvertDType(input_tensor->GetDtype());
-            input_rank  = input_tensor->GetShape().size();
+            input_rank  = static_cast<int32_t>(input_tensor->GetShape().size());
         }
 
         if (weight_index != -1)
@@ -266,7 +266,7 @@ int SubgraphTraverser::initializeGraph()
                 (size_t)weight_index >= op->GetInputTensorNames().size(),
                 "SubgraphTraverser::initializeGraph(): Op=%s, weight_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], weight_index);
-            std::string weight_name                = op->GetInputTensorNames()[weight_index];
+            std::string weight_name                = op->GetInputTensorNames()[static_cast<size_t>(weight_index)];
             TosaSerializationTensor* weight_tensor = nullptr;
             for (auto ser_tensor : ser_tensor_vec)
             {
@@ -281,7 +281,7 @@ int SubgraphTraverser::initializeGraph()
                 "SubgraphTraverser::initializeGraph(): fail to get weight tensor %s from TosaSerializationHandler",
                 weight_name.c_str());
             weight_dtype = ConvertDType(weight_tensor->GetDtype());
-            weight_rank  = weight_tensor->GetShape().size();
+            weight_rank  = static_cast<int32_t>(weight_tensor->GetShape().size());
         }
 
         SUBGRAPH_ERROR_IF(op->GetOutputTensorNames().size() == 0,
@@ -294,7 +294,7 @@ int SubgraphTraverser::initializeGraph()
             "SubgraphTraverser::initializeGraph(): fail to get output tensor %s from TosaSerializationHandler",
             output_name.c_str());
         output_dtype = ConvertDType(output_tensor->GetDtype());
-        output_rank  = output_tensor->GetShape().size();
+        output_rank  = static_cast<int32_t>(output_tensor->GetShape().size());
 
         if (bias_index != -1)
         {
@@ -302,7 +302,7 @@ int SubgraphTraverser::initializeGraph()
                 (size_t)bias_index >= op->GetInputTensorNames().size(),
                 "SubgraphTraverser::initializeGraph(): Op=%s, bias_index %d must be within [0, num_input - 1]",
                 EnumNamesOp()[op->GetOp()], bias_index);
-            std::string bias_name                = op->GetInputTensorNames()[bias_index];
+            std::string bias_name                = op->GetInputTensorNames()[static_cast<size_t>(bias_index)];
             TosaSerializationTensor* bias_tensor = nullptr;
             for (auto ser_tensor : ser_tensor_vec)
             {
@@ -324,7 +324,7 @@ int SubgraphTraverser::initializeGraph()
                 EnumNamesOp()[op->GetOp()], EnumNameTOSAREFTYPE(bias_dtype), EnumNameTOSAREFTYPE(output_dtype));
         }
 
-        DEBUG_INFO(GT, "Creating operator id_%03u, %8s, %zu input tensors, %zu output tensors", idx,
+        DEBUG_INFO(GT, "Creating operator id_%03lu, %8s, %zu input tensors, %zu output tensors", idx,
                    EnumNamesOp()[op->GetOp()], op->GetInputTensorNames().size(), op->GetOutputTensorNames().size());
 
         GraphNode* node = nullptr;
@@ -914,7 +914,8 @@ int SubgraphTraverser::addTensor(const TosaSerializationTensor* ts)
     if (!tensor)
     {
         DEBUG_INFO(GT, "Creating tensor %s", ts->GetName().c_str());
-        tensor = TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(), ts->GetShape().size());
+        tensor = TensorFactory::newTensor(ts->GetName(), ts->GetDtype(), ts->GetShape(),
+                                          static_cast<uint32_t>(ts->GetShape().size()));
 
         SUBGRAPH_ERROR_IF(!tensor, "SubgraphTraverser::initializeGraph(): Unsupported tensor name=%s, type=%s, rank=%d",
                           ts->GetName().c_str(), EnumNameDType(ts->GetDtype()), (int)ts->GetShape().size());

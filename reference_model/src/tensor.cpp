@@ -703,8 +703,8 @@ int TosaReference::TensorTemplate<T>::copyValueFrom(TosaReference::Tensor* src)
             return 1;                                                                                                  \
         }                                                                                                              \
                                                                                                                        \
-        const uint32_t src_rank       = src->getRank();                                                                \
-        const uint32_t dst_rank       = this->getRank();                                                               \
+        const uint32_t src_rank       = static_cast<uint32_t>(src->getRank());                                         \
+        const uint32_t dst_rank       = static_cast<uint32_t>(this->getRank());                                        \
         const TOSA_REF_TYPE src_dtype = src->getDtype();                                                               \
         const TOSA_REF_TYPE dst_dtype = this->getDtype();                                                              \
         bool tensor_match             = true;                                                                          \
@@ -814,6 +814,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
                         EnumNameTOSAREFTYPE(getDtype()));
                 return -2;
             }
+            [[fallthrough]];
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP16:
         case TOSA_REF_TYPE_FP32:
@@ -849,6 +850,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
                         EnumNameTOSAREFTYPE(getDtype()));
                 return -2;
             }
+            [[fallthrough]];
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP16:
             if (vals.size() != elements)
@@ -889,6 +891,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<bf16> vals)
                         EnumNameTOSAREFTYPE(getDtype()));
                 return -2;
             }
+            [[fallthrough]];
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_BF16:
             if (vals.size() != elements)
@@ -926,6 +929,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<fp8e4m3> vals)
                         EnumNameTOSAREFTYPE(getDtype()));
                 return -2;
             }
+            [[fallthrough]];
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP8E4M3:
             if (vals.size() != elements)
@@ -963,6 +967,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<fp8e5m2> vals)
                         EnumNameTOSAREFTYPE(getDtype()));
                 return -2;
             }
+            [[fallthrough]];
             // continue with setting float vals in the tensor
         case TOSA_REF_TYPE_FP8E5M2:
             if (vals.size() != elements)
@@ -3386,7 +3391,7 @@ int TosaReference::Tensor0<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<uint8_t>((*tensor)(0));
 
     return 0;
 }
@@ -3406,7 +3411,7 @@ int TosaReference::Tensor1<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<uint8_t>((*tensor)(i0));
     }
 
     return 0;
@@ -3429,7 +3434,7 @@ int TosaReference::Tensor2<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<uint8_t>((*tensor)(i0, i1));
         }
     }
 
@@ -3455,7 +3460,7 @@ int TosaReference::Tensor3<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<uint8_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -3484,7 +3489,7 @@ int TosaReference::Tensor4<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<uint8_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -3516,7 +3521,7 @@ int TosaReference::Tensor5<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<uint8_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -3551,7 +3556,7 @@ int TosaReference::Tensor6<int32_t>::getTensorValueUInt8(const size_t bufLen, ui
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<uint8_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
@@ -3577,7 +3582,7 @@ int TosaReference::Tensor0<int32_t>::getTensorValueInt8(const size_t bufLen, int
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<int8_t>((*tensor)(0));
 
     return 0;
 }
@@ -3597,7 +3602,7 @@ int TosaReference::Tensor1<int32_t>::getTensorValueInt8(const size_t bufLen, int
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<int8_t>((*tensor)(i0));
     }
 
     return 0;
@@ -3620,7 +3625,7 @@ int TosaReference::Tensor2<int32_t>::getTensorValueInt8(const size_t bufLen, int
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<int8_t>((*tensor)(i0, i1));
         }
     }
 
@@ -3646,7 +3651,7 @@ int TosaReference::Tensor3<int32_t>::getTensorValueInt8(const size_t bufLen, int
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<int8_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -3675,7 +3680,7 @@ int TosaReference::Tensor4<int32_t>::getTensorValueInt8(const size_t bufLen, int
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<int8_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -3707,7 +3712,7 @@ int TosaReference::Tensor5<int32_t>::getTensorValueInt8(const size_t bufLen, int
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<int8_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -3742,7 +3747,7 @@ int TosaReference::Tensor6<int32_t>::getTensorValueInt8(const size_t bufLen, int
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<int8_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
@@ -3767,7 +3772,7 @@ int TosaReference::Tensor0<int32_t>::getTensorValueUInt16(const size_t bufLen, u
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<uint16_t>((*tensor)(0));
 
     return 0;
 }
@@ -3787,7 +3792,7 @@ int TosaReference::Tensor1<int32_t>::getTensorValueUInt16(const size_t bufLen, u
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<uint16_t>((*tensor)(i0));
     }
 
     return 0;
@@ -3810,7 +3815,7 @@ int TosaReference::Tensor2<int32_t>::getTensorValueUInt16(const size_t bufLen, u
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<uint16_t>((*tensor)(i0, i1));
         }
     }
 
@@ -3836,7 +3841,7 @@ int TosaReference::Tensor3<int32_t>::getTensorValueUInt16(const size_t bufLen, u
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<uint16_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -3865,7 +3870,7 @@ int TosaReference::Tensor4<int32_t>::getTensorValueUInt16(const size_t bufLen, u
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<uint16_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -3897,7 +3902,7 @@ int TosaReference::Tensor5<int32_t>::getTensorValueUInt16(const size_t bufLen, u
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<uint16_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -3932,7 +3937,7 @@ int TosaReference::Tensor6<int32_t>::getTensorValueUInt16(const size_t bufLen, u
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<uint16_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
@@ -3957,7 +3962,7 @@ int TosaReference::Tensor0<int32_t>::getTensorValueInt16(const size_t bufLen, in
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<int16_t>((*tensor)(0));
 
     return 0;
 }
@@ -3977,7 +3982,7 @@ int TosaReference::Tensor1<int32_t>::getTensorValueInt16(const size_t bufLen, in
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<int16_t>((*tensor)(i0));
     }
 
     return 0;
@@ -4000,7 +4005,7 @@ int TosaReference::Tensor2<int32_t>::getTensorValueInt16(const size_t bufLen, in
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<int16_t>((*tensor)(i0, i1));
         }
     }
 
@@ -4026,7 +4031,7 @@ int TosaReference::Tensor3<int32_t>::getTensorValueInt16(const size_t bufLen, in
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<int16_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -4055,7 +4060,7 @@ int TosaReference::Tensor4<int32_t>::getTensorValueInt16(const size_t bufLen, in
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<int16_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -4087,7 +4092,7 @@ int TosaReference::Tensor5<int32_t>::getTensorValueInt16(const size_t bufLen, in
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<int16_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -4122,7 +4127,7 @@ int TosaReference::Tensor6<int32_t>::getTensorValueInt16(const size_t bufLen, in
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<int16_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
@@ -4147,7 +4152,7 @@ int TosaReference::Tensor0<int32_t>::getTensorValueInt32(const size_t bufLen, in
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<int32_t>((*tensor)(0));
 
     return 0;
 }
@@ -4167,7 +4172,7 @@ int TosaReference::Tensor1<int32_t>::getTensorValueInt32(const size_t bufLen, in
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<int32_t>((*tensor)(i0));
     }
 
     return 0;
@@ -4190,7 +4195,7 @@ int TosaReference::Tensor2<int32_t>::getTensorValueInt32(const size_t bufLen, in
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<int32_t>((*tensor)(i0, i1));
         }
     }
 
@@ -4216,7 +4221,7 @@ int TosaReference::Tensor3<int32_t>::getTensorValueInt32(const size_t bufLen, in
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<int32_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -4245,7 +4250,7 @@ int TosaReference::Tensor4<int32_t>::getTensorValueInt32(const size_t bufLen, in
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<int32_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -4277,7 +4282,7 @@ int TosaReference::Tensor5<int32_t>::getTensorValueInt32(const size_t bufLen, in
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<int32_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -4312,7 +4317,7 @@ int TosaReference::Tensor6<int32_t>::getTensorValueInt32(const size_t bufLen, in
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<int32_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
@@ -4337,7 +4342,7 @@ int TosaReference::Tensor0<int64_t>::getTensorValueInt64(const size_t bufLen, in
 
     ASSERT_MSG((size_t)totalVals == bufLen, "Output buffer and tensor size do not match");
 
-    vals[0] = (*tensor)(0);
+    vals[0] = static_cast<int64_t>((*tensor)(0));
 
     return 0;
 }
@@ -4357,7 +4362,7 @@ int TosaReference::Tensor1<int64_t>::getTensorValueInt64(const size_t bufLen, in
 
     for (int i0 = 0; i0 < shape[0]; i0++)
     {
-        vals[idx++] = (*tensor)(i0);
+        vals[idx++] = static_cast<int64_t>((*tensor)(i0));
     }
 
     return 0;
@@ -4380,7 +4385,7 @@ int TosaReference::Tensor2<int64_t>::getTensorValueInt64(const size_t bufLen, in
     {
         for (int i1 = 0; i1 < shape[1]; i1++)
         {
-            vals[idx++] = (*tensor)(i0, i1);
+            vals[idx++] = static_cast<int64_t>((*tensor)(i0, i1));
         }
     }
 
@@ -4406,7 +4411,7 @@ int TosaReference::Tensor3<int64_t>::getTensorValueInt64(const size_t bufLen, in
         {
             for (int i2 = 0; i2 < shape[2]; i2++)
             {
-                vals[idx++] = (*tensor)(i0, i1, i2);
+                vals[idx++] = static_cast<int64_t>((*tensor)(i0, i1, i2));
             }
         }
     }
@@ -4435,7 +4440,7 @@ int TosaReference::Tensor4<int64_t>::getTensorValueInt64(const size_t bufLen, in
             {
                 for (int i3 = 0; i3 < shape[3]; i3++)
                 {
-                    vals[idx++] = (*tensor)(i0, i1, i2, i3);
+                    vals[idx++] = static_cast<int64_t>((*tensor)(i0, i1, i2, i3));
                 }
             }
         }
@@ -4467,7 +4472,7 @@ int TosaReference::Tensor5<int64_t>::getTensorValueInt64(const size_t bufLen, in
                 {
                     for (int i4 = 0; i4 < shape[4]; i4++)
                     {
-                        vals[idx++] = (*tensor)(i0, i1, i2, i3, i4);
+                        vals[idx++] = static_cast<int64_t>((*tensor)(i0, i1, i2, i3, i4));
                     }
                 }
             }
@@ -4502,7 +4507,7 @@ int TosaReference::Tensor6<int64_t>::getTensorValueInt64(const size_t bufLen, in
                     {
                         for (int i5 = 0; i5 < shape[5]; i5++)
                         {
-                            vals[idx++] = (*tensor)(i0, i1, i2, i3, i4, i5);
+                            vals[idx++] = static_cast<int64_t>((*tensor)(i0, i1, i2, i3, i4, i5));
                         }
                     }
                 }
