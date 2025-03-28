@@ -88,7 +88,7 @@ TEST_SUITE("reference_model")
         SUBCASE("rank 4 -> rank 1")
         {
             std::vector<T> inVals = {
-                T(0), T(0), T(15), T(12), T(55), T(20), T(-10), T(-105), T(55.5), T(-1), T(-2.75), T(-12.12),
+                T(0), T(0), T(15), T(12), T(55), T(20), T(-10), T(-105), T(55.5f), T(-1), T(-2.75f), T(-12.12f),
             };
             std::vector<int32_t> rank4 = { 2, 2, 1, 3 };
             std::vector<int32_t> rank1 = { 12 };
@@ -99,7 +99,7 @@ TEST_SUITE("reference_model")
         SUBCASE("rank 1 -> rank 4")
         {
             std::vector<T> inVals = {
-                T(0), T(0), T(15), T(12), T(55), T(20), T(-10), T(-105), T(55.5), T(-1), T(-2.75), T(-12.12),
+                T(0), T(0), T(15), T(12), T(55), T(20), T(-10), T(-105), T(55.5f), T(-1), T(-2.75f), T(-12.12f),
             };
             std::vector<int32_t> rank1 = { 12 };
             std::vector<int32_t> rank4 = { 2, 2, 1, 3 };

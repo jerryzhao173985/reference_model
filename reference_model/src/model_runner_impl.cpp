@@ -93,7 +93,7 @@ GraphStatus ModelRunnerImpl::run()
             // Make sure output tensor is evaluated and show its value
             int num_output_tensors = _main_gt->getNumOutputTensors();
             bool all_output_valid  = true;
-            for (int i = 0; i < num_output_tensors; i++)
+            for (uint32_t i = 0; i < num_output_tensors; i++)
             {
                 const Tensor* ct = _main_gt->getOutputTensor(i);
                 ASSERT_MEM(ct);
@@ -182,15 +182,15 @@ int ModelRunnerImpl::setInputForPrecMode(Tensor* tensor, std::string input_name,
     switch (ser_dtype)
     {
         case DType::DType_FP16: {
-            auto typed_ptr     = reinterpret_cast<half_float::half*>(raw_ptr);
-            const int elements = size / sizeof(half_float::half);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
+            const size_t elements = size / sizeof(half_float::half);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case DType::DType_FP32: {
-            auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
-            const int elements = size / sizeof(float);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<float*>(raw_ptr);
+            const size_t elements = size / sizeof(float);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         default:
@@ -220,33 +220,33 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
     switch (tensor->getDtype())
     {
         case TOSA_REF_TYPE_FP16: {
-            auto typed_ptr     = reinterpret_cast<half_float::half*>(raw_ptr);
-            const int elements = size / sizeof(half_float::half);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
+            const size_t elements = size / sizeof(half_float::half);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP32: {
-            auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
-            const int elements = size / sizeof(float);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<float*>(raw_ptr);
+            const size_t elements = size / sizeof(float);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_BF16: {
-            auto typed_ptr     = reinterpret_cast<bf16*>(raw_ptr);
-            const int elements = size / sizeof(bf16);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<bf16*>(raw_ptr);
+            const size_t elements = size / sizeof(bf16);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP8E4M3: {
-            auto typed_ptr     = reinterpret_cast<fp8e4m3*>(raw_ptr);
-            const int elements = size / sizeof(fp8e4m3);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<fp8e4m3*>(raw_ptr);
+            const size_t elements = size / sizeof(fp8e4m3);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP8E5M2: {
-            auto typed_ptr     = reinterpret_cast<fp8e5m2*>(raw_ptr);
-            const int elements = size / sizeof(fp8e5m2);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<fp8e5m2*>(raw_ptr);
+            const size_t elements = size / sizeof(fp8e5m2);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP64:
@@ -256,39 +256,39 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
             }
             else
             {
-                auto typed_ptr     = reinterpret_cast<double*>(raw_ptr);
-                const int elements = size / sizeof(double);
-                status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+                auto typed_ptr        = reinterpret_cast<double*>(raw_ptr);
+                const size_t elements = size / sizeof(double);
+                status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             }
             break;
         case TOSA_REF_TYPE_INT8: {
-            auto typed_ptr     = reinterpret_cast<int8_t*>(raw_ptr);
-            const int elements = size / sizeof(int8_t);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int8_t*>(raw_ptr);
+            const size_t elements = size / sizeof(int8_t);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_INT16: {
-            auto typed_ptr     = reinterpret_cast<int16_t*>(raw_ptr);
-            const int elements = size / sizeof(int16_t);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int16_t*>(raw_ptr);
+            const size_t elements = size / sizeof(int16_t);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_INT32: {
-            auto typed_ptr     = reinterpret_cast<int*>(raw_ptr);
-            const int elements = size / sizeof(int);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int*>(raw_ptr);
+            const size_t elements = size / sizeof(int);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_BOOL: {
-            auto typed_ptr     = reinterpret_cast<unsigned char*>(raw_ptr);
-            const int elements = size / sizeof(unsigned char);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<unsigned char*>(raw_ptr);
+            const size_t elements = size / sizeof(unsigned char);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_SHAPE: {
-            auto typed_ptr     = reinterpret_cast<int64_t*>(raw_ptr);
-            const int elements = size / sizeof(int64_t);
-            status             = setInput(input_name, ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int64_t*>(raw_ptr);
+            const size_t elements = size / sizeof(int64_t);
+            status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
         default:
@@ -346,63 +346,63 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
     switch (tensor->getDtype())
     {
         case TOSA_REF_TYPE_FP16: {
-            auto typed_ptr     = reinterpret_cast<half_float::half*>(raw_ptr);
-            const int elements = size / sizeof(half_float::half);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
+            const size_t elements = size / sizeof(half_float::half);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP32: {
-            auto typed_ptr     = reinterpret_cast<float*>(raw_ptr);
-            const int elements = size / sizeof(float);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<float*>(raw_ptr);
+            const size_t elements = size / sizeof(float);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_BF16: {
-            auto typed_ptr     = reinterpret_cast<bf16*>(raw_ptr);
-            const int elements = size / sizeof(bf16);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<bf16*>(raw_ptr);
+            const size_t elements = size / sizeof(bf16);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP8E4M3: {
-            auto typed_ptr     = reinterpret_cast<fp8e4m3*>(raw_ptr);
-            const int elements = size / sizeof(fp8e4m3);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<fp8e4m3*>(raw_ptr);
+            const size_t elements = size / sizeof(fp8e4m3);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP8E5M2: {
-            auto typed_ptr     = reinterpret_cast<fp8e5m2*>(raw_ptr);
-            const int elements = size / sizeof(fp8e5m2);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<fp8e5m2*>(raw_ptr);
+            const size_t elements = size / sizeof(fp8e5m2);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_FP64: {
-            auto typed_ptr     = reinterpret_cast<double*>(raw_ptr);
-            const int elements = size / sizeof(double);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<double*>(raw_ptr);
+            const size_t elements = size / sizeof(double);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_BOOL: {
-            auto typed_ptr     = reinterpret_cast<unsigned char*>(raw_ptr);
-            const int elements = size / sizeof(unsigned char);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<unsigned char*>(raw_ptr);
+            const size_t elements = size / sizeof(unsigned char);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_INT8: {
-            auto typed_ptr     = reinterpret_cast<int8_t*>(raw_ptr);
-            const int elements = size / sizeof(int8_t);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int8_t*>(raw_ptr);
+            const size_t elements = size / sizeof(int8_t);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_INT16: {
-            auto typed_ptr     = reinterpret_cast<int16_t*>(raw_ptr);
-            const int elements = size / sizeof(int16_t);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int16_t*>(raw_ptr);
+            const size_t elements = size / sizeof(int16_t);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         case TOSA_REF_TYPE_INT32: {
-            auto typed_ptr     = reinterpret_cast<int*>(raw_ptr);
-            const int elements = size / sizeof(int);
-            status             = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
+            auto typed_ptr        = reinterpret_cast<int*>(raw_ptr);
+            const size_t elements = size / sizeof(int);
+            status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
         default:

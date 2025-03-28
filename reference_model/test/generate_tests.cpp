@@ -59,7 +59,7 @@ std::string numbers_to_string(const std::vector<T> numbers)
 }
 
 template <typename T>
-void check_value(bool match, T result, T expected, uint32_t idx)
+void check_value(bool match, T result, T expected, size_t idx)
 {
     std::stringstream msg;
     msg << "index: " << idx << " expected: 0x" << std::hex << uint32_t(expected) << " got: 0x" << uint32_t(result);
@@ -387,7 +387,7 @@ void conv2d_test_FP32(const std::string tosaName[3],
 
     std::vector<float> buffer(tosaElements[param]);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 4));
-    std::vector<float> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+    std::vector<float> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())), buffer.end());
     check_output<float>(last_three, lastExpected);
 }
 
@@ -803,9 +803,9 @@ TEST_CASE("positive - INT32 pseudo random")
         for (int32_t n = 0; n < 2; ++n)
         {
             set.assign(10, false);
-            for (int32_t i = 0; i < 10; ++i)
+            for (size_t i = 0; i < 10; ++i)
             {
-                auto idx = bufferP1[i];
+                size_t idx = static_cast<size_t>(bufferP1[i]);
                 // Check that the values in the buffer only occur once
                 REQUIRE(!set[idx]);
                 set[idx] = true;
@@ -1296,7 +1296,8 @@ void transpose_conv2d_test_FP16(const std::string tosaName[3],
 
     std::vector<half_float::half> buffer(tosaElements[param]);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
-    std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+    std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
+                                             buffer.end());
     check_output<half_float::half>(last_three, lastExpected);
 }
 
@@ -1807,7 +1808,8 @@ TEST_CASE("positive - FP16 full range")
         std::vector<uint16_t> expected = { 0, 0, 0 };
         check_output<half_float::half>(buffer, expected);
 
-        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
+                                                 buffer.end());
         // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
         std::vector<uint16_t> last_expected = { 45005, 45006, 45007 };
         check_output<half_float::half>(last_three, last_expected);
@@ -1823,7 +1825,8 @@ TEST_CASE("positive - FP16 full range")
         std::vector<uint16_t> expected = { 0, 0, 0 };
         check_output<half_float::half>(buffer, expected);
 
-        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, buffer.size()), buffer.end());
+        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
+                                                 buffer.end());
         // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
         std::vector<uint16_t> last_expected = { 45105, 45106, 45107 };
         check_output<half_float::half>(last_three, last_expected);
@@ -2091,7 +2094,7 @@ TEST_CASE("positive - FP16 FP Special")
     const size_t tosaElements         = 3 * 6 * 4;
     const half_float::half max        = std::numeric_limits<half_float::half>::max();
     const half_float::half min        = std::numeric_limits<half_float::half>::min();
-    const half_float::half pythagoras = half_float::half(1.41421);
+    const half_float::half pythagoras = ct::compat::cast<half_float::half>(1.41421);
     const half_float::half two        = half_float::half(2.0);
     const half_float::half ulpmax     = half_float::half(32.0);    // max - nextafter(max, 0.0)
     const half_float::half inf        = std::numeric_limits<half_float::half>::infinity();
@@ -2837,7 +2840,7 @@ void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t
     update_json_template(jsonCfg, "_SHAPE_", numbers_to_string(shape));
     update_json_template(jsonCfg, "_DATA_", numbers_to_string(values));
 
-    auto elements = std::accumulate(shape.begin(), shape.end(), static_cast<size_t>(1), std::multiplies<size_t>());
+    size_t elements = static_cast<size_t>(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()));
     std::vector<StorageType> expected(elements);
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {

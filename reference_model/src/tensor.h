@@ -110,12 +110,12 @@ public:
     uint32_t getDimSize(size_t dim) const
     {
         assert(dim < this->shape.size() && "Invalid dimension to getDimSize()");
-        return this->shape[dim];
+        return static_cast<uint32_t>(this->shape[dim]);
     }
 
     void setDimSize(size_t dim, uint32_t new_size)
     {
-        this->shape[dim] = new_size;
+        this->shape[dim] = static_cast<int>(new_size);
         return;
     }
 
@@ -130,7 +130,7 @@ public:
 
     int getShapeValueSize() const
     {
-        return this->shapeValue.size();
+        return static_cast<int>(this->shapeValue.size());
     }
 
     std::string getShapeValueAsString() const
@@ -157,11 +157,11 @@ public:
 
     const uint32_t getElementCount() const
     {
-        uint32_t elements = 1;
+        int32_t elements = 1;
         for (size_t i = 0; i < shape.size(); i++)
             elements *= shape[i];
 
-        return elements;
+        return static_cast<uint32_t>(elements);
     }
 
     // Comparison of rank and type with other tensors
@@ -257,7 +257,7 @@ public:
 
     const int getRank() const
     {
-        return shape.size();
+        return static_cast<int>(shape.size());
     }
 
     const TOSA_REF_TYPE getDtype() const
