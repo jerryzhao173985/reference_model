@@ -409,16 +409,17 @@ private:
                 }
                 break;
             case ULPMax: {
-                if constexpr (std::is_floating_point<DataType>::value)
-                {
-                    DataType max = DtypeLimits<TosaRefType>::max;
-                    DataType ulp = max - std::nextafter(max, static_cast<DataType>(0));
-                    rawVal       = ulp;
-                }
-                else
+                if constexpr (std::is_integral<DataType>::value)
                 {
                     // ULP doesn't make sense for integers. Return 1.
                     rawVal = static_cast<DataType>(1);
+                }
+                else
+                {
+                    DataType max = DtypeLimits<TosaRefType>::max;
+                    // Use the nextafter associated with the DataType (do not force using std)
+                    DataType ulp = max - nextafter(max, static_cast<DataType>(0));
+                    rawVal       = ulp;
                 }
                 break;
             }
