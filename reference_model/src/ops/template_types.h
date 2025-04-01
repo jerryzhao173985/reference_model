@@ -1,5 +1,5 @@
 
-// Copyright (c) 2020-2024, ARM Limited.
+// Copyright (c) 2020-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 
 #include "dtype.h"
 #include "half.hpp"
-#include <Eigen/CXX11/Tensor>
 #include <Eigen/Core>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace tosa;
 

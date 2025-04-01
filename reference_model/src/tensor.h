@@ -21,8 +21,8 @@
 #include "model_common.h"
 #include "ops/template_types.h"
 #include "tosa_serialization_handler.h"
-#include <Eigen/CXX11/Tensor>
 #include <list>
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;

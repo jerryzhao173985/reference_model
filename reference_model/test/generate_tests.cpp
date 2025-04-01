@@ -15,7 +15,7 @@
 #include "half.hpp"
 #include "test_utils.h"
 
-#include <doctest.h>
+#include <doctest/doctest.h>
 
 #include <array>
 #include <numeric>

@@ -25,11 +25,11 @@
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
 
-#include <Eigen/CXX11/Tensor>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #if defined(__linux__) || defined(__APPLE__)
 #include <dlfcn.h>

@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.16)
 
-# Copyright (c) 2023-2024, ARM Limited.
+# Copyright (c) 2023-2025, ARM Limited.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License");
 #    you may not use this file except in compliance with the License.
@@ -23,17 +23,18 @@ add_library(tosa_example_plugin SHARED
     custom_op_example.cpp
 )
 
+get_target_property(SERIALIZATION_INCLUDES tosa_serialization_lib INTERFACE_INCLUDE_DIRECTORIES)
+
 target_include_directories(tosa_example_plugin
     PUBLIC
-        ${PUBLIC_INCLUDE_DIRS}
-        "../../thirdparty/serialization_lib/include"
-        "../../thirdparty/serialization_lib/third_party/flatbuffers/include"
-        "../../thirdparty/serialization_lib/third_party/half/include"
-        "../../thirdparty/eigen/"
-        "../../thirdparty/eigen/unsupported"
+        ${SERIALIZATION_INCLUDES}
         "../include"
         "../src"
         "../src/ops"
-    PRIVATE
-        ${PRIVATE_INCLUDE_DIRS}
+)
+
+target_link_libraries(tosa_example_plugin
+  PRIVATE
+    eigen
+    flatbuffers
 )
