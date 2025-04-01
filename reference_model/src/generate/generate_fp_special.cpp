@@ -30,6 +30,8 @@ const TestValues conditionalOpsTestVals{
 
 const TestValues addTestVals{ { SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max), SValue(SVE::Max) },
                               { -SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
+                              { SValue(SVE::Max), SValue(SVE::ULPMax) },
+                              { -SValue(SVE::ULPMax), -SValue(SVE::Max) },
                               { SValue(SVE::Inf), -SValue(SVE::Inf) },
                               { SValue(SVE::Inf), SValue(SVE::Inf) },
                               { -SValue(SVE::Inf), -SValue(SVE::Inf) },
@@ -40,6 +42,8 @@ const TestValues addTestVals{ { SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max), SV
 
 const TestValues subTestVals{ { SValue(SVE::Max), -SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
                               { -SValue(SVE::Max), SValue(SVE::RndFloat, SVE::ULPMax, SVE::Max) },
+                              { SValue(SVE::Max), -SValue(SVE::ULPMax) },
+                              { -SValue(SVE::ULPMax), SValue(SVE::Max) },
                               { SValue(SVE::Inf), SValue(SVE::Inf) },
                               { -SValue(SVE::Inf), -SValue(SVE::Inf) },
                               { SValue(SVE::Inf), -SValue(SVE::Inf) },

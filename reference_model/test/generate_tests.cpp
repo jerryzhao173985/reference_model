@@ -1964,12 +1964,12 @@ TEST_CASE("positive - FP32 FP Special")
     }
     SUBCASE("add, input 0")
     {
-        std::vector<std::pair<float, float>> expected = { { ulpmax, max }, { -max, -max }, { inf, inf } };
+        std::vector<std::pair<float, float>> expected = { { ulpmax, max }, { -max, -max }, { max, max } };
         special_test_FP32(tosaName0, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("add, input 1")
     {
-        std::vector<std::pair<float, float>> expected = { { max, max }, { -max, -ulpmax }, { -inf, -inf } };
+        std::vector<std::pair<float, float>> expected = { { max, max }, { -max, -ulpmax }, { ulpmax, ulpmax } };
         special_test_FP32(tosaName1, tosaElements, templateJsonCfg, "ADD", "0", expected);
     }
     SUBCASE("maximum, input 0")
@@ -2093,6 +2093,8 @@ TEST_CASE("positive - FP16 FP Special")
     const half_float::half min        = std::numeric_limits<half_float::half>::min();
     const half_float::half pythagoras = half_float::half(1.41421);
     const half_float::half two        = half_float::half(2.0);
+    const half_float::half ulpmax     = half_float::half(32.0);    // max - nextafter(max, 0.0)
+    const half_float::half inf        = std::numeric_limits<half_float::half>::infinity();
 
     SUBCASE("pow, input 0")
     {
@@ -2109,6 +2111,22 @@ TEST_CASE("positive - FP16 FP Special")
                                                                                 { two, max } };
         std::vector<valueType> expectedValueType                            = { Float, Float, Float };
         special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
+    }
+    SUBCASE("sub, input 0")
+    {
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { max, max },
+                                                                                { -ulpmax, -ulpmax },
+                                                                                { inf, inf } };
+        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "SUB", "2", expected, expectedValueType);
+    }
+    SUBCASE("sub, input 1")
+    {
+        std::vector<std::pair<half_float::half, half_float::half>> expected = { { -ulpmax, -ulpmax },
+                                                                                { max, max },
+                                                                                { inf, inf } };
+        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "SUB", "2", expected, expectedValueType);
     }
 }
 
