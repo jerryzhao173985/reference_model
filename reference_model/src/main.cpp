@@ -30,23 +30,6 @@
 #include <nlohmann/json.hpp>
 #include <stdio.h>
 #include <unsupported/Eigen/CXX11/Tensor>
-
-#if defined(__linux__) || defined(__APPLE__)
-#include <dlfcn.h>
-#define LIBTYPE void*
-#define OPENLIB(libname) dlopen((libname), RTLD_LAZY)
-#define LIBFUNC(lib, fn) dlsym((lib), (fn))
-#define CLOSELIB(lib) dlclose((lib))
-#elif _WIN32
-#define NOMINMAX
-#include <windows.h>
-#define LIBTYPE HINSTANCE
-#define OPENLIB(libname) load_library_w(libname)
-#define LIBFUNC(lib, fn) GetProcAddress((lib), (fn))
-#define CLOSELIB(lib) FreeLibrary((lib))
-
-#endif
-
 #ifdef _WIN32
 #include <ctype.h>
 #define strncasecmp _strnicmp

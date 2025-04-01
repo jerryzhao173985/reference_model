@@ -16,16 +16,19 @@
 #include "load_library.h"
 #include <string>
 
-LIBTYPE load_library_w(const char* libname)
+HMODULE load_library_w(const char* libname)
 {
-    size_t outSize;
-    auto const size{ std::string_view{ libname }.size() + 1 };
-    wchar_t* l_libname = (wchar_t*)(sizeof(wchar_t) * size);
+    HMODULE handle = NULL;
+    int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, libname, -1, nullptr, 0);
+    if (sizeNeeded == 0)
+    {
+        return handle;
+    }
 
-    mbstowcs_s(&outSize, l_libname, size, libname, size - 1);
+    std::wstring wideStr(sizeNeeded, 0);
+    MultiByteToWideChar(CP_UTF8, 0, libname, -1, &wideStr[0], sizeNeeded);
 
-    auto lib = LoadLibraryW(l_libname);
+    handle = LoadLibraryW(wideStr.c_str());
 
-    free(l_libname);
-    return lib;
+    return handle;
 }

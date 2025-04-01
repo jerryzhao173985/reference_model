@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023, 2025 ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -15,6 +15,12 @@
 #include "custom_op_interface.h"
 #include "custom_registry.h"
 #include <vector>
+
+#ifdef _MSC_VER
+#define TOSA_EXPORT __declspec(dllexport)
+#else
+#define TOSA_EXPORT
+#endif
 
 using namespace tosa;
 
@@ -84,7 +90,7 @@ CustomOpInterface* customOpExample()
     return customOp_ptr;
 }
 
-extern "C" int getCustomOpCreationFuncs(registration_callback_t registration_func)
+extern "C" TOSA_EXPORT int getCustomOpCreationFuncs(registration_callback_t registration_func)
 {
     std::string domain_name   = "ExampleDomain";
     std::string operator_name = "ExampleOp";

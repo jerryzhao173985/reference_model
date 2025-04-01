@@ -19,6 +19,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+if(MSVC)
+  add_compile_options("/Zc:preprocessor")
+endif()
+
 add_library(tosa_example_plugin SHARED
     custom_op_example.cpp
 )
