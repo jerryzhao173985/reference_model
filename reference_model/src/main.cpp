@@ -25,11 +25,11 @@
 #include "subgraph_traverser.h"
 #include "tosa_serialization_handler.h"
 
-#include <Eigen/CXX11/Tensor>
 #include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #ifdef _WIN32
 #include <ctype.h>

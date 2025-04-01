@@ -31,54 +31,11 @@ include(CMakePrintHelpers)
 
 set(BASE_REF_DIR ${PROJECT_SOURCE_DIR}/../../..)
 
-# If Serialization Library path is specified, look for library so it doesn't have to be built again.
-# Otherwise, set the Serialization Library related paths to thirdparty directory.
-if(SERIALIZATION_DIR)
-  find_library(SERIALIZATION_LIB
-               NAMES libtosa_serialization_lib.a tosa_serialization_lib
-               NO_DEFAULT_PATH
-               HINTS ${SERIALIZATION_DIR}
-               PATH_SUFFIXES lib)
-
-  if(NOT SERIALIZATION_LIB)
-    message(FATAL_ERROR "TOSA Serialization Library location was specified but not found at: ${SERIALIZATION_LIB_DIR}")
-  endif()
-else()
-  # Build from third party directory if not found.
-  set(SERIALIZATION_LIB tosa_serialization_lib)
-  set(SERIALIZATION_DIR ${BASE_REF_DIR}/thirdparty/serialization_lib)
-endif()
-
-# If Flatbuffers, Eigen, Half path isn't specified, set to thirdparty directory.
-if(NOT FLATBUFFERS_DIR)
-  set(FLATBUFFERS_DIR ${BASE_REF_DIR}/thirdparty/serialization_lib/third_party/flatbuffers/)
-endif()
-
-if(NOT EIGEN_DIR)
-  set(EIGEN_DIR ${BASE_REF_DIR}/thirdparty/eigen/)
-endif()
-
-if(NOT HALF_DIR)
-  set(HALF_DIR ${BASE_REF_DIR}/thirdparty/serialization_lib/third_party/half)
-endif()
-
-if(NOT JSON_DIR)
-  set(JSON_DIR ${BASE_REF_DIR}/thirdparty/json)
-endif()
-
-include_directories(${BASE_REF_DIR}/reference_model/include)
-
 set(PRIVATE_INCLUDE_DIRS
+    ${BASE_REF_DIR}/reference_model/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../include
-    ${FLATBUFFERS_DIR}/include
-    ${EIGEN_DIR}
-    ${EIGEN_DIR}/unsupported/
-    ${SERIALIZATION_DIR}/include
-    ${HALF_DIR}/include
-    ${JSON_DIR}/single_include
     ${CMAKE_CURRENT_SOURCE_DIR}/..
     ${CMAKE_CURRENT_SOURCE_DIR}/../generate
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../_deps/cxxopts-src/include
 )
 
 add_executable(tosa_verify
@@ -106,9 +63,12 @@ target_include_directories(tosa_verify
 
 target_link_libraries(tosa_verify
   PRIVATE
-    ${SERIALIZATION_LIB}
+    tosa_serialization_lib
     ${CMAKE_DL_LIBS}
     cxxopts
+    eigen
+    flatbuffers
+    nlohmann_json
 )
 
 install(TARGETS tosa_verify DESTINATION bin)

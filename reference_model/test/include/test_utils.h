@@ -21,7 +21,7 @@
 
 // Remove conflicting REQUIRE definition between doctest and reference_model
 #undef REQUIRE
-#include "doctest.h"
+#include "doctest/doctest.h"
 
 using namespace ct;
 using namespace tosa;

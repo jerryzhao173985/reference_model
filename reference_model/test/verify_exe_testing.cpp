@@ -12,7 +12,7 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
-#include "doctest.h"
+#include "doctest/doctest.h"
 #include "tensor.h"
 #include "verify.h"
 #include <filesystem>

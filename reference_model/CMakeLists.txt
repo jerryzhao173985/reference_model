@@ -31,46 +31,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   set(CMAKE_CXX_FLAGS "-Wall -Wno-ignored-attributes")
 endif()
 
-# If Serialization Library path is specified, look for library so it doesn't have to be built again.
-# Otherwise, set the Serialization Library related paths to thirdparty directory.
-if(SERIALIZATION_DIR)
-  find_library(SERIALIZATION_LIB
-               NAMES libtosa_serialization_lib.a tosa_serialization_lib
-               NO_DEFAULT_PATH
-               HINTS ${SERIALIZATION_DIR}
-               PATH_SUFFIXES lib)
-
-  if(NOT SERIALIZATION_LIB)
-    message(FATAL_ERROR "TOSA Serialization Library location was specified but not found at: ${SERIALIZATION_LIB_DIR}")
-  endif()
-else()
-  # Build from third party directory if not found.
-  set(SERIALIZATION_LIB tosa_serialization_lib)
-  set(SERIALIZATION_DIR "../thirdparty/serialization_lib/")
-endif()
-
-# If Flatbuffers, Eigen, Half path isn't specified, set to thirdparty directory.
-if(NOT FLATBUFFERS_DIR)
-  set(FLATBUFFERS_DIR "../thirdparty/serialization_lib/third_party/flatbuffers/")
-endif()
-
-if(NOT EIGEN_DIR)
-  set(EIGEN_DIR "../thirdparty/eigen/")
-endif()
-
-if(NOT HALF_DIR)
-  set(HALF_DIR "../thirdparty/serialization_lib/third_party/half")
-endif()
-
-if(NOT JSON_DIR)
-  set(JSON_DIR "../thirdparty/json")
-endif()
-
-if(NOT PYBIND11_DIR)
-  set(PYBIND11_DIR "../thirdparty/pybind11")
-endif()
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+get_target_property(EIGEN_INCLUDES eigen INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(FLATBUFFERS_INCLUDES flatbuffers INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(NLOHMANN_JSON_INCLUDES nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(PYBIND11_INCLUDES pybind11_headers INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(SERIALIZATION_INCLUDES tosa_serialization_lib INTERFACE_INCLUDE_DIRECTORIES)
 
 # Common sources required for TOSA Reference Model library, executable and unit tests
 set(CXX_SOURCE
@@ -123,15 +88,14 @@ set(PUBLIC_INCLUDE_DIRS
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SRC_DIR}/include>
 )
 set(PRIVATE_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/verify
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${FLATBUFFERS_DIR}/include
-    ${EIGEN_DIR}
-    ${EIGEN_DIR}/unsupported/
-    ${SERIALIZATION_DIR}/include
-    ${HALF_DIR}/include
-    ${JSON_DIR}/single_include
-    ${PYBIND11_DIR}/include
+    include
+    src/verify
+    src
+    ${FLATBUFFERS_INCLUDES}
+    ${EIGEN_INCLUDES}
+    ${SERIALIZATION_INCLUDES}
+    ${NLOHMANN_JSON_INCLUDES}
+    ${PYBIND11_INCLUDES}
 )
 
 # Build TOSA Reference Model library
@@ -151,7 +115,7 @@ target_include_directories(tosa_reference_model_lib
 
 target_link_libraries(tosa_reference_model_lib
   PRIVATE
-    ${SERIALIZATION_LIB}
+    tosa_serialization_lib
 )
 
 set(PUBLIC_HEADERS)
@@ -243,7 +207,7 @@ endif()
 
   target_link_libraries(tosa_reference_model
     PRIVATE
-      ${SERIALIZATION_LIB}
+      tosa_serialization_lib
       nlohmann_json::nlohmann_json
       cxxopts
       ${CMAKE_DL_LIBS}
@@ -256,14 +220,8 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   # Set definition so unit tests can find examples directory.
   add_definitions(-DPROJECT_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
-  # Set doctest location if not specified.
-  if(NOT DOCTEST_DIR)
-    set(DOCTEST_DIR "../thirdparty/doctest/doctest")
-  endif()
-
   set(TEST_INCLUDE_DIRS
     test/include
-    ${DOCTEST_DIR}
   )
 
   # Sources only required for unit tests.
@@ -304,7 +262,8 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   set(is_gnu_8_or_below "$<AND:${is_gnu},${is_8_or_below}>")
   target_link_libraries(unit_tests
     PRIVATE
-      ${SERIALIZATION_LIB}
+      tosa_serialization_lib
+      doctest
       "$<${is_gnu_8_or_below}:stdc++fs>"
   )
 endif()
@@ -331,7 +290,7 @@ if(BUILD_MODEL_RUNNER_SAMPLE)
 
   target_link_libraries(model_runner_sample
     PRIVATE
-      ${SERIALIZATION_LIB}
+      tosa_serialization_lib
   )
 endif()
 
