@@ -11,8 +11,9 @@ import conformance.model_files as cmf
 import generator.tosa_test_select as tts
 from conformance.tosa_profiles import TosaProfiles
 from generator.tosa_test_gen import TosaTestGen
-from serializer.tosa_serializer import dtype_str_to_val
-from serializer.tosa_serializer import DTypeNames
+from serializer.tosa_serializer_utils import dtype_str_to_val
+from serializer.tosa_serializer_utils import DTypeNames
+
 
 OPTION_FP_VALUES_RANGE = "--fp-values-range"
 

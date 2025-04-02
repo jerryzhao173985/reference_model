@@ -606,25 +606,39 @@ pre-commit run --all
 
 The serialization library, inside the `python` folder, provides functions for loading and saving `.npy` files while handling the custom data types `float8_e5m2`, `float8_e4m3fn`, `bfloat16` and `int4` from `ml_dtypes`. It ensures compatibility with NumPy, which does not natively support these types.
 
-- `load_npy(file_name, dtype)`: Loads a `.npy` file and converts it to the specified custom dtype.
-- `save_npy(file_name, vals, dtype)`: Saves an array as a `.npy` file while ensuring proper bitcasting for unsupported NumPy types.
+- `load_npy(file_name, dtype)`: Loads a .npy file and converts its data to the
+  specified custom dtype. This function verifies that the stored data has the
+  expected serialization type, then returns the array viewed as the internal
+  (compute) type for that custom dtype.
+
+- `save_npy(file_name, vals, dtype)`: Saves an array to a .npy file after
+  verifying that its data type matches the expected compute type for the
+  specified custom dtype. For TOSA dtypes that require special bitcasting
+  for serialization, the array is viewed as the appropriate storage type before
+  saving.
 
 ### Usage Example
 ```python
 import numpy as np
-import serializer.tosa_serializer as ts
 from serializer.numpy_utils import save_npy, load_npy
+from tosa.DType import DType
 import ml_dtypes
 
-dtype_str = "FP8E4M3"
-dtype = ts.dtype_str_to_val(dtype_str)
+# You could give the TOSA dtype in two ways:
+dtype_str = "FP8E4M3"      # As a string
+dtype_val = DType.FP8E4M3    # As a TOSA DType constant
 
 original_data = np.array([0, -4, -7, 2, 6, 2], dtype=ml_dtypes.float8_e4m3fn)
 
 file_path = "example.npy"
 
-save_npy(file_path, original_data, dtype)
-loaded_data = load_npy(file_path, dtype)
+# Save and load using a string input:
+save_npy(file_path, original_data, dtype_str)
+loaded_data_str = load_npy(file_path, dtype_str)
+
+# Save and load using a DType input:
+save_npy(file_path, original_data, dtype_val)
+loaded_data_val = load_npy(file_path, dtype_val)
 ```
 
 ## License
