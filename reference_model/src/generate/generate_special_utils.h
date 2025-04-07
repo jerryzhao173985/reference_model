@@ -414,11 +414,17 @@ private:
                     // ULP doesn't make sense for integers. Return 1.
                     rawVal = static_cast<DataType>(1);
                 }
+                else if constexpr (std::is_same_v<DataType, half>)
+                {
+                    DataType max = DtypeLimits<TosaRefType>::max;
+                    // Do not use std::nextafter, instead use the one associated with the DataType
+                    DataType ulp = max - nextafter(max, static_cast<DataType>(0));
+                    rawVal       = ulp;
+                }
                 else
                 {
                     DataType max = DtypeLimits<TosaRefType>::max;
-                    // Use the nextafter associated with the DataType (do not force using std)
-                    DataType ulp = max - nextafter(max, static_cast<DataType>(0));
+                    DataType ulp = max - std::nextafter(max, static_cast<DataType>(0));
                     rawVal       = ulp;
                 }
                 break;
