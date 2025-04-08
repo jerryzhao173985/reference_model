@@ -4708,7 +4708,7 @@ int TosaReference::Tensor6<bool>::getTensorValueBool(const size_t bufLen, bool* 
     int TosaReference::Tensor##rank<dtype>::allocate()                                                                 \
     {                                                                                                                  \
         ASSERT_MSG(tensor == nullptr, "Error: double allocate Eigen tensor");                                          \
-        std::array<Eigen::DenseIndex, rank> arrshape;                                                                  \
+        std::array<Eigen::DenseIndex, rank> arrshape{};                                                                \
         std::copy_n(shape.begin(), rank, arrshape.begin());                                                            \
         tensor = new ETensor##rank<dtype>(arrshape);                                                                   \
                                                                                                                        \
