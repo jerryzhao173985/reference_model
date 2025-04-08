@@ -198,7 +198,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             FATAL_ERROR("readFromNpyFile: IO error reading file: %s", filename);
         case NumpyUtilities::FILE_TYPE_MISMATCH:
             FATAL_ERROR("readFromNpyFile: Tensor type %s and Numpy file type mismatch for tensor %s filename %s",
-                        EnumNameTOSAREFTYPE(getDtype()), getName().c_str(), filename);
+                        EnumNameDType(serialization_dtype), getName().c_str(), filename);
         case NumpyUtilities::HEADER_PARSE_ERROR:
             FATAL_ERROR("Numpy header parsing error for file: %s", filename);
         case NumpyUtilities::BUFFER_SIZE_MISMATCH:
