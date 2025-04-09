@@ -94,6 +94,7 @@ struct AbsErrorVerifyInfo
     double normalDivisor{ 1.0 };
     bool boundAsMagnitude{ false };
     double maxCompare{ 0.0 };    // One value to compare against, before deciding absolute error-bound
+    double baseBound{ 0.0 };
 };
 
 /// \brief relative verification meta-data

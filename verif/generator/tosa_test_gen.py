@@ -297,10 +297,19 @@ class TosaTestGen:
             compliance_tens["reduce_product_info"] = {"n": argsDict["n"]}
         elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
             mode = gtu.ComplianceMode.ABS_ERROR
+            abs_error_info = {}
             if "abs_error_lower_bound" in op_compliance:
-                compliance_tens["abs_error_info"] = {
-                    "lower_bound": op["compliance"]["abs_error_lower_bound"]
-                }
+                abs_error_info["lower_bound"] = op_compliance["abs_error_lower_bound"]
+            if "abs_error_base_bounds" in op_compliance:
+                if inputType not in op_compliance["abs_error_base_bounds"]:
+                    raise ValueError(
+                        f"Missing data type {self.typeStr(inputType)} from abs_error_base_bounds in op {op['op']}"
+                    )
+                abs_error_info["base_bound"] = op_compliance["abs_error_base_bounds"][
+                    inputType
+                ]
+            if abs_error_info:
+                compliance_tens["abs_error_info"] = abs_error_info
         elif op["op"] in (Op.SIN, Op.COS):
             mode = gtu.ComplianceMode.ABS_ERROR
             normal_divisor = op_compliance.get("abs_error_normal_divisor", 1)
@@ -4539,6 +4548,13 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": EW_UNARY_DATAGEN,
+            "compliance": {
+                "abs_error_base_bounds": {
+                    DType.FP32: 3,
+                    DType.FP16: 1,
+                    DType.BF16: 1,
+                },
+            },
         },
         "floor": {
             "op": Op.FLOOR,

@@ -47,6 +47,8 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
     {
         // Use the referenceValue as the magnitude
         boundsMagnitude = referenceValue;
+        // Add the base error bound to the bounds value
+        boundsValue += cfg->baseBound;
     }
 
     double errorBound = 0.0;
