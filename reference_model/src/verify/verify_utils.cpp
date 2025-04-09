@@ -100,6 +100,10 @@ void from_json(const nlohmann::json& j, AbsErrorVerifyInfo& absErrorInfo)
     {
         j.at("max_compare").get_to(absErrorInfo.maxCompare);
     }
+    if (j.contains("base_bound"))
+    {
+        j.at("base_bound").get_to(absErrorInfo.baseBound);
+    }
 }
 
 void from_json(const nlohmann::json& j, RelativeVerifyInfo& rInfo)
@@ -139,6 +143,7 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
     cfg.absErrorInfo.lowerBound       = 0;
     cfg.absErrorInfo.normalDivisor    = 1;
     cfg.absErrorInfo.boundAsMagnitude = false;
+    cfg.absErrorInfo.baseBound        = 0;
     if (j.contains("abs_error_info"))
     {
         j.at("abs_error_info").get_to(cfg.absErrorInfo);

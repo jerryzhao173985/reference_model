@@ -99,6 +99,10 @@
                                 "max_compare": {
                                     "description": "a value used for max-comparison in error-bounds",
                                     "type": "number"
+                                },
+                                "base_bound": {
+                                    "description": "base bound value for error bounds (not used with bound as magnitude)",
+                                    "type": "number"
                                 }
                             },
                             "additionalProperties": false
