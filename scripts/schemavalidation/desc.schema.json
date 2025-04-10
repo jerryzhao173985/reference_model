@@ -45,6 +45,10 @@
                 "type": "string"
             }
         },
+        "terminate_early": {
+            "description": "when set the test will terminate early on REQUIRE failures, it will not be overridden by the reference_model command-line option",
+            "type": "boolean"
+        },
         "expected_failure": {
             "description": "if the test is expected to fail - used for test filtering",
             "type": "boolean"
@@ -52,19 +56,6 @@
         "expected_failure_desc": {
             "description": "summary of expected failure test",
             "type": "string"
-        },
-        "expected_return_code": {
-            "description": "DEPRECATED (unused): expected return code from ref-model",
-            "type": "integer"
-        },
-        "expected_result_file": {
-            "description": "DEPRECATED: list of expected result files, one for each tensor in ofm_name",
-            "type": "array",
-            "minItems": 1,
-            "items": {
-                "description": "file name",
-                "type": "string"
-            }
         },
         "profile": {
             "description": "DEPRECATED",

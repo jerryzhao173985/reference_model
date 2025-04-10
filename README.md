@@ -99,7 +99,7 @@ The inputs to the *TOSA Reference Model* consist of a FlatBuffers file
 containing the serialized subgraph, a JSON test descriptor that describes
 a sequence of name, shape and NumPy file for each input and output tensor.
 
-The JSON test descriptor must have the following field:
+The JSON test descriptor (`desc.json`) must have the following fields:
 * tosa_file:
     type: string.
     TOSA flatbuffer file location.
@@ -115,19 +115,15 @@ The JSON test descriptor must have the following field:
 * ofm_file:
     type: list(string).
     Output NumPy array file location.
-* expected_failure:
-    type: boolean.
-    Is this test expected to fail in runtime.
-* expected_return_code:
-    type: int
-    The expected return code of the reference model i
-    (0 = VALID, 1 = ERROR, 2 = UNPREDICTABLE)
 
-The JSON test descriptor may contain the following optional field:
-* terminate_early:
-    type: boolean.
-    If set, the test will terminate early on REQUIRE() failures.
-    This value will not be overridden by the --terminate_early command-line option.
+The JSON test descriptor may contain optional fields, the main ones are listed here:
+* expected_failure - Is this test expected to fail in runtime?
+* expected_failure_desc - Description of the expected test failure.
+* test_requirements - Which profiles and extensions this test is valid for.
+* meta - Meta data for the data generator and compliance verify libraries.
+* terminate_early - If set, the test will terminate early on REQUIRE() failures.
+
+Please refer to the `desc.schema.json` file (in `scripts/schemavalidation`) for the other fields and more details.
 
 Note by default, all the files specified by "tosa_file", "ifm_file",
 "ofm_file" are relative to desc.json. This could be overwritten by
