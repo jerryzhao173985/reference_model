@@ -441,7 +441,7 @@ class TosaErrorValidator:
             overall_result &= expected_result
 
             if expected_result and error_result:
-                serializer.setExpectedReturnCode(2, True, desc=error_reason)
+                serializer.setExpectedFailure(error_reason)
             elif error_result:  # and not expected_result
                 logger.error(
                     f"Unexpected ERROR_IF: Op: {gtu.valueToName(Op, kwargs['op']['op'])}"

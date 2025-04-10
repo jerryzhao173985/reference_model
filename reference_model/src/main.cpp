@@ -714,7 +714,12 @@ int initTestDesc(json& test_desc)
             WARNING("terminate_early is not a boolean in the JSON file.");
             return 1;
         }
-        g_func_config.terminate_early = test_desc["terminate_early"].get<bool>();
+        bool terminate_early = test_desc["terminate_early"].get<bool>();
+        if (terminate_early != g_func_config.terminate_early)
+        {
+            WARNING("terminate_early set in JSON file - this overrides command line option.");
+        }
+        g_func_config.terminate_early = terminate_early;
     }
 
     return 0;
