@@ -61,7 +61,6 @@ class TosaTestGen:
         self.createDynamicOpLists()
         self.initOpListDefaults()
         self.quantGen = TosaQuantGen()
-        self.global_rng = None
         # Force makeShape to do a specific starting shape
         self.targetted_shape = None
         # JSON schema validation
@@ -96,16 +95,16 @@ class TosaTestGen:
                 args.tensor_fp_value_range,
                 TosaTensorValuesGen.TVG_HIGH_VALUE[dtype],
             )
-        self.resetGlobalRNG()
+        # Set up a random number generator for the test selection later
+        self.testSelect_rng = TosaRandomGenerator(
+            self.random_seed, self.random_dtype_range
+        )
 
         # Work out if we are producing all tests - this will effect ERROR_IF test
         # creation checking which we can only do when all tests are being created
         all_profiles = all(p in args.profile for p in TosaProfiles.profiles())
         all_extensions = all(e in args.extension for e in TosaProfiles.extensions())
         self.all_tests_mode = all_profiles and all_extensions
-
-    def resetGlobalRNG(self):
-        self.global_rng = TosaRandomGenerator(self.random_seed, self.random_dtype_range)
 
     def createSerializer(self, opName, testPath):
         self.testPath = os.path.join(opName, testPath)
@@ -2915,10 +2914,6 @@ class TosaTestGen:
             )
             return []
 
-        if not self.args.stable_rng:
-            # Initialize a new random number generator per op
-            self.resetGlobalRNG()
-
         _, tgen_fcn, _, agen_fcn = op["build_fcn"]
 
         assert tgen_fcn
@@ -2968,14 +2963,11 @@ class TosaTestGen:
                             continue
                         self.setTargetShape(shape)
                         typeStr = self.typeStr(t)
-                        if self.args.stable_rng:
-                            shape_rng = TosaHashRandomGenerator(
-                                self.random_seed,
-                                [opName, r, typeStr],
-                                self.random_dtype_range,
-                            )
-                        else:
-                            shape_rng = self.global_rng
+                        shape_rng = TosaHashRandomGenerator(
+                            self.random_seed,
+                            [opName, r, typeStr],
+                            self.random_dtype_range,
+                        )
                         shapeList = tgen_fcn(self, shape_rng, op, r, error_name)
 
                         shapeStr = self.shapeStr(shapeList[0])
@@ -2984,14 +2976,11 @@ class TosaTestGen:
                         #   str_args - arguments of test in string form for test name
                         #   args_dict - dictionary of arguments and other test related data
                         argList = []
-                        if self.args.stable_rng:
-                            arg_rng = TosaHashRandomGenerator(
-                                self.random_seed,
-                                [opName, shapeStr, typeStr],
-                                self.random_dtype_range,
-                            )
-                        else:
-                            arg_rng = self.global_rng
+                        arg_rng = TosaHashRandomGenerator(
+                            self.random_seed,
+                            [opName, shapeStr, typeStr],
+                            self.random_dtype_range,
+                        )
 
                         argList = agen_fcn(
                             self, arg_rng, opName, shapeList, t, error_name
@@ -3127,12 +3116,9 @@ class TosaTestGen:
         # Build the random tensor operands and the test
 
         # Set the random number generator
-        if self.args.stable_rng:
-            build_rng = TosaHashRandomGenerator(
-                self.random_seed, [testStr], self.random_dtype_range
-            )
-        else:
-            build_rng = self.global_rng
+        build_rng = TosaHashRandomGenerator(
+            self.random_seed, [testStr], self.random_dtype_range
+        )
 
         if qgen is not None:
             qinfo = qgen(
