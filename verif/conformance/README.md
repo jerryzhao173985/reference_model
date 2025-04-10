@@ -16,9 +16,8 @@ Each operator entry contains:
 
 * "group" - name of the group this operator is in, in the spec
 * "gen_filter" - optional filter string for op to give to tosa_verif_build_tests - defaults to "^opname$"
-* "support_for" - optional list of supported creation modes (for FP tests only) out of:
+* "support_for" - optional list of supported creation modes out of:
     * lazy_data_gen - data generation just before test run
-    * stable_random_gen - more stable method of generation of tests
     * random_const_inputs - random choice of const or input tensor per op
 * "generation" - dictionary of test generation details - see below
 * "selection" - dictionary of test selection details - see below

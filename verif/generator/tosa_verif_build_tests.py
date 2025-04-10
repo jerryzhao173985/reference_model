@@ -81,13 +81,6 @@ def parseArgs(argv):
         help="Random seed for test generation",
     )
 
-    parser.add_argument(
-        "--stable-random-generation",
-        dest="stable_rng",
-        action="store_true",
-        help="Produces less variation (when the test-generator changes) in the test output using the same options",
-    )
-
     filter_group.add_argument(
         "--filter",
         dest="filter",
@@ -448,7 +441,7 @@ def main(argv=None):
             # and select the per op tests from it, and then filter to the
             # profiles and extensions requested
             tests = testList.select(
-                rng=ttg.global_rng,
+                rng=ttg.testSelect_rng,
                 profiles_chosen=args.profile,
                 extensions_chosen=args.extension,
             )

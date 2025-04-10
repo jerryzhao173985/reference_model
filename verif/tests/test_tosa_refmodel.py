@@ -199,6 +199,15 @@ def test_refmodel_simple_op(tosaTest):
         ofm_file = test_dir / OUTPUT_OFM_FILE
         assert ofm_file.is_file()
 
+        def _convert_tensor(tensor):
+            if tensor.dtype.name == "void16":
+                return tensor.view(bfloat16)
+            elif tensor.dtype.name == "void8":
+                return tensor.view(float8_e4m3fn)
+            elif tensor.dtype.name == "uint8":
+                return tensor.view(float8_e5m2)
+            return tensor
+
         # Load inputs for Numpy
         with desc_file.open("r") as fp:
             test_desc = json.load(fp)
@@ -207,24 +216,19 @@ def test_refmodel_simple_op(tosaTest):
         for input_name in test_desc["ifm_file"]:
             input_file = test_dir / input_name
             assert input_file.is_file()
-            tensors.append(np.load(str(input_file)))
+            tensor = np.load(str(input_file))
+            tensors.append(_convert_tensor(tensor))
 
         # Load constants for Numpy
         const_files = sorted(test_dir.glob(OUTPUT_CONST_GLOB))
         consts = []
         for const_file in const_files:
             assert const_file.is_file()
-            consts.append(np.load(str(const_file)))
+            tensor = np.load(str(const_file))
+            consts.append(_convert_tensor(tensor))
 
         # Check if the data is from FP special datagen which can give invalid results
         fp_special_data = test_dir.match("*_fs")
-
-        if tensors[0].dtype.name == "void16":
-            tensors[0] = tensors[0].view(bfloat16)
-        elif tensors[0].dtype.name == "void8":
-            tensors[0] = tensors[0].view(float8_e4m3fn)
-        elif tensors[0].dtype.name == "uint8":
-            tensors[0] = tensors[0].view(float8_e5m2)
 
         # Perform Numpy operation
         if op_name == "abs":
@@ -232,12 +236,6 @@ def test_refmodel_simple_op(tosaTest):
             result = np.abs(tensors[0])
         elif op_name == "add":
             assert len(tensors) == 2
-            if tensors[1].dtype.name == "void16":
-                tensors[1] = tensors[1].view(bfloat16)
-            elif tensors[1].dtype.name == "void8":
-                tensors[1] = tensors[1].view(float8_e4m3fn)
-            elif tensors[0].dtype.name == "uint8":
-                tensors[1] = tensors[1].view(float8_e5m2)
             if fp_special_data:
                 with np.errstate(invalid="ignore"):
                     result = np.add(tensors[0], tensors[1])
@@ -245,12 +243,6 @@ def test_refmodel_simple_op(tosaTest):
                 result = np.add(tensors[0], tensors[1])
         elif op_name == "concat":
             assert len(consts) == 1
-            if consts[0].dtype.name == "void16":
-                consts[0] = consts[0].view(bfloat16)
-            elif consts[0].dtype.name == "void8":
-                consts[0] = consts[0].view(float8_e4m3fn)
-            elif consts[0].dtype.name == "uint8":
-                consts[0] = consts[0].view(float8_e5m2)
             # Get axis from test directory name
             match = re.search(r"axis([0-9]+)", test_dir.name)
             assert match is not None

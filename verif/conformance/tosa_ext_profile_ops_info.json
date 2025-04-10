@@ -3,7 +3,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -140,7 +139,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -298,7 +296,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -647,7 +644,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -711,8 +707,7 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -883,7 +878,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -946,7 +940,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1009,7 +1002,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1072,7 +1064,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1135,7 +1126,6 @@
         "group": "type_conversion",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1457,7 +1447,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1549,7 +1538,6 @@
         "group": "activation",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1724,7 +1712,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -1782,8 +1769,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -2090,8 +2076,7 @@
     "cond_if": {
         "group": "control_flow",
         "support_for": [
-            "lazy_data_gen",
-            "stable_random_gen"
+            "lazy_data_gen"
         ],
         "generation": {
             "standard": {
@@ -2225,8 +2210,7 @@
     "const": {
         "group": "data_nodes",
         "support_for": [
-            "lazy_data_gen",
-            "stable_random_gen"
+            "lazy_data_gen"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -2524,8 +2508,7 @@
     "const_shape": {
         "group": "shape",
         "support_for": [
-            "lazy_data_gen",
-            "stable_random_gen"
+            "lazy_data_gen"
         ],
         "generation": {
             "standard": {
@@ -2575,7 +2558,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -2859,7 +2841,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3081,7 +3062,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3173,7 +3153,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3389,8 +3368,7 @@
         "group": "comparison",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -3536,7 +3514,6 @@
         "group": "activation",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3628,7 +3605,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3720,7 +3696,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3759,7 +3734,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -3851,8 +3825,7 @@
         "group": "scatter_gather",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -4015,8 +3988,7 @@
         "group": "comparison",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -4172,8 +4144,7 @@
         "group": "comparison",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -4318,7 +4289,6 @@
         "group": "data_nodes",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4626,7 +4596,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4685,7 +4654,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4777,7 +4745,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4833,7 +4800,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4897,7 +4863,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -4956,7 +4921,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5012,7 +4976,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5076,7 +5039,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5132,7 +5094,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5304,8 +5265,7 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -5470,7 +5430,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5628,7 +5587,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5785,7 +5743,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -5975,7 +5932,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -6118,8 +6074,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -6470,7 +6425,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -6560,7 +6514,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -6652,7 +6605,6 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -6712,7 +6664,6 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -6771,8 +6722,7 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -6929,8 +6879,7 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7087,8 +7036,7 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-fp": {
@@ -7195,8 +7143,7 @@
         "group": "reduction",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7388,8 +7335,7 @@
         "group": "type_conversion",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7506,8 +7452,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -7827,8 +7772,7 @@
         "group": "image",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -7952,8 +7896,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -8181,7 +8124,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -8220,7 +8162,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -8312,8 +8253,7 @@
         "group": "scatter_gather",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int": {
@@ -8461,7 +8401,6 @@
         "group": "ew_ternary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -8661,7 +8600,6 @@
         "group": "activation",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -8753,7 +8691,6 @@
         "group": "ew_unary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -8845,8 +8782,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -9123,7 +9059,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -9282,7 +9217,6 @@
         "group": "ew_binary",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -9378,7 +9312,6 @@
         "group": "activation",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -9481,8 +9414,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -9737,8 +9669,7 @@
         "group": "data_layout",
         "support_for": [
             "lazy_data_gen",
-            "random_const_inputs",
-            "stable_random_gen"
+            "random_const_inputs"
         ],
         "generation": {
             "tosa-pro-int-pro-fp": {
@@ -9961,7 +9892,6 @@
         "group": "tensor",
         "support_for": [
             "lazy_data_gen",
-            "stable_random_gen",
             "random_const_inputs"
         ],
         "generation": {
@@ -10182,8 +10112,7 @@
     "while_loop": {
         "group": "control_flow",
         "support_for": [
-            "lazy_data_gen",
-            "stable_random_gen"
+            "lazy_data_gen"
         ],
         "generation": {
             "tosa-pro-int": {
