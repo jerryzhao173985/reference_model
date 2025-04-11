@@ -1,12 +1,16 @@
 #!/bin/bash -x
 
-# Copyright (c) 2022 Arm Limited.
+# SPDX-FileCopyrightText: Copyright 2022, 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # This script runs the given example networks against the TOSA
 # reference model as a reference for using the reference model.
 
 set -e
+
+# Assumes the reference model is already built in ../build. If that is not
+# the case then add its location to PATH before calling this script.
+PATH="${PATH}:../build/reference_model"
 
 run_test()
 {
@@ -15,9 +19,7 @@ run_test()
 
    echo "####  RUNNING EXAMPLE ${FRAMEWORK} ${TEST}"
 
-   # Assumes the reference model is already built in ../build
-
-   ../build/reference_model/tosa_reference_model \
+   tosa_reference_model \
       --test_desc=../examples/${TEST}/flatbuffer-${FRAMEWORK}/desc.json \
       --ofm_file=out.npy
     python3 -c "import sys; import numpy as np; a = np.load(sys.argv[1]); b = np.load(sys.argv[2]); sys.exit(int((a != b).all()));" \
