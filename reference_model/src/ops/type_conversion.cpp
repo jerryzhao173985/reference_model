@@ -216,6 +216,46 @@ static int64_t sign_extend(uint16_t val)
     return static_cast<int64_t>(*rval);
 }
 
+template <TOSA_REF_TYPE Dtype, typename EigenType>
+int64_t value_extend64_impl(EigenType val, bool unsigned_val)
+{
+    int64_t val_extended;
+    switch (GetNumBits<Dtype>::value)
+    {
+        case 8:
+            val_extended =
+                (unsigned_val) ? zero_extend(static_cast<int8_t>(val)) : sign_extend(static_cast<uint8_t>(val & 0xFF));
+            break;
+        case 16:
+            val_extended = (unsigned_val) ? zero_extend(static_cast<int16_t>(val))
+                                          : sign_extend(static_cast<uint16_t>(val & 0xFFFF));
+            break;
+        case 32:
+            val_extended = (unsigned_val) ? zero_extend(static_cast<int32_t>(val)) : static_cast<int64_t>(val);
+            break;
+        case 48:
+            if (unsigned_val)
+            {
+                val_extended = static_cast<int64_t>(val) & 0x0000FFFFFFFFFFFF;
+            }
+            else
+            {
+                // sign extend i48 to i64
+                val_extended = static_cast<int64_t>(val);
+                if (val_extended & 0x800000000000)
+                {
+                    // in_val contains negative i48, sign extend to i64
+                    val_extended |= 0xFFFF000000000000;
+                }
+            }
+            break;
+        default:
+            val_extended = static_cast<int64_t>(val);
+            break;
+    }
+    return val_extended;
+}
+
 template <int Rank, TOSA_REF_TYPE InDtype, TOSA_REF_TYPE OutDtype>
 int OpRescale<Rank, InDtype, OutDtype>::eval()
 {
@@ -235,46 +275,8 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
     const bool input_unsigned  = attribute->input_unsigned();
     const bool output_unsigned = attribute->output_unsigned();
 
-    auto value_extend64 = [=](InEigenType val, bool unsigned_val) -> int64_t {
-        int64_t val_extended;
-        switch (GetNumBits<InDtype>::value)
-        {
-            case 8:
-                val_extended = (unsigned_val) ? zero_extend(static_cast<int8_t>(val))
-                                              : sign_extend(static_cast<uint8_t>(val & 0xFF));
-                break;
-            case 16:
-                val_extended = (unsigned_val) ? zero_extend(static_cast<int16_t>(val))
-                                              : sign_extend(static_cast<uint16_t>(val & 0xFFFF));
-                break;
-            case 32:
-                val_extended = (unsigned_val) ? zero_extend(static_cast<int32_t>(val)) : static_cast<int64_t>((val));
-                break;
-            case 48:
-                if (unsigned_val)
-                {
-                    val_extended = static_cast<int64_t>(val) & 0x0000FFFFFFFFFFFF;
-                }
-                else
-                {
-                    // sign extend i48 to i64
-                    val_extended = static_cast<int64_t>(val);
-                    if (val_extended & 0x800000000000)
-                    {
-                        // in_val contains negative i48, sign extend to i64
-                        val_extended |= 0xFFFF000000000000;
-                    }
-                }
-                break;
-            default:
-                val_extended = static_cast<int64_t>(val);
-                break;
-        }
-        return val_extended;
-    };
-
-    int64_t output_zp_extended = value_extend64(output_zp, output_unsigned);
-    int64_t input_zp_extended  = value_extend64(input_zp, input_unsigned);
+    int64_t output_zp_extended = value_extend64_impl<OutDtype>(output_zp, output_unsigned);
+    int64_t input_zp_extended  = value_extend64_impl<InDtype>(input_zp, input_unsigned);
 
     // uint16 values can have zero_point 0 or 32768
     // int8/uint8 can have zero point within their valid range
@@ -337,7 +339,7 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
     // unaryExpr function for RESCALE
     auto rescale_func = [=, &value_multiplier, &value_shift](InEigenType in_val) -> OutEigenType {
-        const int64_t input_zp_shifted = value_extend64(in_val, input_unsigned) - input_zp_extended;
+        const int64_t input_zp_shifted = value_extend64_impl<InDtype>(in_val, input_unsigned) - input_zp_extended;
 
         int32_t scaled;
         if (!inexact_round)
