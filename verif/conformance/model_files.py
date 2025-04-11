@@ -46,7 +46,7 @@ TOSA_FILE_TYPE_TO_DETAILS = {
     TosaFileType.FLATC: {
         "name": "flatc",
         "location": DEFAULT_REF_MODEL_BUILD_FLATC_PATH,
-        "build": True,
+        "build": False,
     },
     TosaFileType.VERIFY_LIBRARY: {
         "name": f"libtosa_reference_verify_lib.{LIBRARY_SUFFIX}",

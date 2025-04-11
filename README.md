@@ -326,7 +326,7 @@ This is an example using the default locations:
 ```bash
 tosa_verif_conformance_generator \
   --ref-model-path reference_model/build/reference_model/tosa_reference_model \
-  --flatc-path reference_model/build/thirdparty/serialization_lib/third_party/flatbuffers/flatc \
+  --flatc-path reference_model/thirdparty/serialization_lib/third_party/flatbuffers/flatc \
   --schema-path reference_model/thirdparty/serialization_lib/schema/tosa.fbs \
   --operators abs
 ```
@@ -558,10 +558,12 @@ After following the reference model compilation instructions, you can build
 the FlatBuffers tool using:
 
 ``` bash
-# After compiling the reference model (in the build directory)
-cd thirdparty/serialization_lib/third_party/flatbuffers
-make flatc
+# After configuring the reference model (in the build directory)
+cmake --build build --target tosa_third_party_flatbuffers_flatc
 ```
+
+This will output the `flatc` executable to the
+`thirdparty/serialization_lib/third_party/flatbuffers` directory.
 
 ### Python bindings for the ModelRunner API
 As another alternative to the `tosa_reference_model` executable, Python bindings are provided which can be used to invoke the TOSA Reference Model easily within Python. Example usage can be found in `reference_model/python_bindings/example.py`. The Python bindings can be built by running `pip install .` from the repository's root directory, which automatically runs CMake and then installs a Python package `tosa_reference_model`. See the docstring in `reference_model/python_bindings/python_bindings.cpp` or use Python's built-in `help()` for more information.
