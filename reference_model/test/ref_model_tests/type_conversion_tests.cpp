@@ -102,6 +102,56 @@ void testCast(IN_TYPE in, OUT_TYPE expected)
     compareOutput<OUT_TYPE>(expectedOut, actualOut);
 }
 
+template <typename IN_TYPE, typename OUT_TYPE>
+void testRescale(IN_TYPE input,
+                 OUT_TYPE expected_output,
+                 int16_t multiplier,
+                 int8_t shift,
+                 IN_TYPE input_zp     = 0,
+                 OUT_TYPE output_zp   = 0,
+                 bool output_unsigned = false)
+{
+    RefModelTestBuilder tb{};
+    constexpr DType inDtype  = NativeType2DType<IN_TYPE>();
+    constexpr DType outDtype = NativeType2DType<OUT_TYPE>();
+
+    // Inputs
+    tb.addInput({ 1 }, inDtype);        // input tensor
+    tb.addInput({ 1 }, DType_INT16);    // multiplier
+    tb.addInput({ 1 }, DType_INT8);     // shift
+    tb.addInput({ 1 }, inDtype);        // input_zp
+    tb.addInput({ 1 }, outDtype);       // output_zp
+
+    // Output
+    tb.addOutput({ 1 }, outDtype);
+
+    // Attributes
+    auto attr = TosaRescaleAttribute(/* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                     /* per_channel */ false, /* input_unsigned */ false,
+                                     /* output_unsigned */ output_unsigned);
+    tb.addOp(Op_RESCALE, Attribute_RescaleAttribute, &attr);
+    tb.initializeRunner();
+
+    std::vector<IN_TYPE> inputVal      = { input };
+    std::vector<int16_t> multiplierVal = { multiplier };
+    std::vector<int8_t> shiftVal       = { shift };
+    std::vector<IN_TYPE> inputZpVal    = { input_zp };
+    std::vector<OUT_TYPE> outputZpVal  = { output_zp };
+    std::vector<OUT_TYPE> expectedVal  = { expected_output };
+
+    // Set inputs
+    tb.setInput(inputVal);
+    tb.setInput(multiplierVal);
+    tb.setInput(shiftVal);
+    tb.setInput(inputZpVal);
+    tb.setInput(outputZpVal);
+
+    // Run and compare
+    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
+    auto actualOut = tb.getOutput<OUT_TYPE>(0, expectedVal.size());
+    compareOutput<OUT_TYPE>(expectedVal, actualOut);
+}
+
 TEST_SUITE("reference_model")
 {
     TEST_CASE("CAST FP SPECIAL")
@@ -255,6 +305,19 @@ TEST_SUITE("reference_model")
             testCast<float, int8_t>(128.0f, 127);
             // exceeds min, clipped to int8 min
             testCast<float, int8_t>(-129.0f, -128);
+        }
+    }
+
+    TEST_CASE("RESCALE Op")
+    {
+        SUBCASE("Test value_extend64_impl of output_zp")
+        {
+            // Expect: (65 - 1) * 4 >> 2 + 32768 = 32832
+            // this test catches reported bugs where output_zp was incorrectly using IN_TYPE
+            testRescale<int8_t, uint16_t>(/* inputVals */ 65, /* expectedVals */ 32832,
+                                          /* multiplier */ 4, /* shift */ 2,
+                                          /* input_zp */ 1, /* output_zp */ 32768,
+                                          /* output_unsigned */ true);
         }
     }
 }    // TEST_SUITE("reference_model")
