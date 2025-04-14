@@ -19,21 +19,8 @@ from runner.tosa_test_presets import TOSA_REFCOMPLIANCE_RUNNER
 
 
 def isComplianceBoundsModeNeeded(testDesc):
-    """Checks the test descriptor for compliance modes that need a bounds file."""
-    if (
-        "meta" in testDesc
-        and "compliance" in testDesc["meta"]
-        and "tensors" in testDesc["meta"]["compliance"]
-    ):
-        for _, t in testDesc["meta"]["compliance"]["tensors"].items():
-            if "mode" in t and t["mode"] in (
-                "DOT_PRODUCT",
-                "ABS_ERROR",
-                "FP_SPECIAL",
-                "RESCALE_INEXACT",
-            ):
-                return True
-        return False
+    """Checks the test descriptor for whether verification need a bounds file."""
+    return testDesc.get("test_requirements", {}).get("bounds_file_required", False)
 
 
 def getRunnerResultFilePath(resultFilePath, sutModule):

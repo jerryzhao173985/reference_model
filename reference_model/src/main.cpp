@@ -419,22 +419,12 @@ const std::string getResultFilenamePrefix()
     return g_func_config.bounds_mode ? "bounds_" : "";
 }
 
-// returns true if test_desc contains a "meta" object containing a "compliance"
-// object which contains "tensors" and one of those has a "mode" whose value is
-// "DOT_PRODUCT" or "ABS_ERROR" or "FP_SPECIAL" or "RESCALE_INEXACT"
+// returns true if test_desc indicates that a boudns file is required for this test
 bool isComplianceBoundsModeNeeded(json& test_desc)
 {
-    if (test_desc.contains("meta") && test_desc["meta"].contains("compliance") &&
-        test_desc["meta"]["compliance"].contains("tensors"))
+    if (test_desc.contains("test_requirements") && test_desc["test_requirements"].contains("bounds_file_required"))
     {
-        for (auto t : test_desc["meta"]["compliance"]["tensors"])
-        {
-            if (t.contains("mode") && (t["mode"] == "DOT_PRODUCT" || t["mode"] == "ABS_ERROR" ||
-                                       t["mode"] == "FP_SPECIAL" || t["mode"] == "RESCALE_INEXACT"))
-            {
-                return true;
-            }
-        }
+        return test_desc["test_requirements"]["bounds_file_required"];
     }
     return false;
 }
