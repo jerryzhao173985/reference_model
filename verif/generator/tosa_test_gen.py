@@ -3175,10 +3175,23 @@ class TosaTestGen:
                 result, TosaTestGen.BuildInfo
             ), f"{opName} produced invalid build test result"
 
+            # Whether the call to tosa_verify needs bounds files to be passed
+            requires_bounds_file = False
+
             # Add the compliance meta data (if any)
             compliance = result.getComplianceInfo()
             if compliance:
                 tensMeta["compliance"] = compliance
+
+                for t in compliance["tensors"].values():
+                    if "mode" in t and t["mode"] in (
+                        "DOT_PRODUCT",
+                        "ABS_ERROR",
+                        "FP_SPECIAL",
+                        "RESCALE_INEXACT",
+                    ):
+                        requires_bounds_file = True
+
             # Add late serialized tensors (like cond_if_const)
             dataGenTensors = result.getDataGenTensors()
             if "data_gen" in tensMeta and dataGenTensors is not None:
@@ -3192,6 +3205,7 @@ class TosaTestGen:
             ), f"{opName} is missing profile/extension requirements"
             testRequirements = {
                 "profiles_supported": sorted(profiles_supported),
+                "bounds_file_required": requires_bounds_file,
             }
             if extensions_required:
                 testRequirements["extensions_required"] = sorted(extensions_required)

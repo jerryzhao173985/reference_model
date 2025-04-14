@@ -104,6 +104,10 @@
                         "description": "extension name such as tosa-ext-int16",
                         "type": "string"
                     }
+                },
+                "bounds_file_required": {
+                  "description": "whether bounds files are required for verification",
+                  "type": "boolean"
                 }
             },
             "additionalProperties": false,
