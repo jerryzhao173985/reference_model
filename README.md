@@ -619,7 +619,44 @@ This will output the `flatc` executable to the
 `thirdparty/serialization_lib/third_party/flatbuffers` directory.
 
 ### Python bindings for the ModelRunner API
-As another alternative to the `tosa_reference_model` executable, Python bindings are provided which can be used to invoke the TOSA Reference Model easily within Python. Example usage can be found in `reference_model/python_bindings/example.py`. The Python bindings can be built by running `pip install .` from the repository's root directory, which automatically runs CMake and then installs a Python package `tosa_reference_model`. See the docstring in `reference_model/python_bindings/python_bindings.cpp` or use Python's built-in `help()` for more information.
+
+Python bindings are provided as an alternative to the `tosa_reference_model` executable,
+enabling direct invocation of the TOSA Reference Model from Python.
+This enables integration with Python-based workflows.
+
+The bindings expose the model execution functionality through
+a single entry-point `run()` from Python.
+
+Bindings are implemented using [pybind11](https://github.com/pybind/pybind11).
+
+#### Building the Bindings
+
+The bindings are **not built by default**. You can enable them via CMake or
+the pip-based install path.
+
+Using CMake
+
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TOSA_REFERENCE_MODEL_PYBIND=ON ..
+```
+
+Using pip
+```bash
+BUILD_PYBIND=1 pip install .
+```
+
+#### Using the Python Bindings
+Once built and installed, the bindings can be used as follows:
+
+```python
+import tosa_reference_model
+
+outputs, status = tosa_reference_model.run(
+    tosa_binary=<serialized_model_data>,
+    inputs=<list_of_inputs>
+)
+```
+See `reference_model/python_bindings/example.py` for a complete example.
 
 ## Pre Commit Checks
 
