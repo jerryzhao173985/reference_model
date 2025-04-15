@@ -175,7 +175,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             uint32_t read_elements = elements;
             // Handle SHAPE special case of [0] where the buffer size
             // should be 1, but the elements expected is 0
-            if (elements == 0 and getRank() == 1)
+            if (elements == 0 && getRank() == 1)
                 read_elements = 1;
 
             i64databuf = (int64_t*)calloc(sizeof(int64_t), read_elements);
