@@ -93,7 +93,7 @@ def parseArgs(argv):
         type=Path,
         help=(
             "Path to flatc executable. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_BUILD_FLATC_PATH}` in parent directory of `ref-model-path`"
+            f"`{cmf.DEFAULT_REF_MODEL_FLATC_PATH}` in parent directory of `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -362,8 +362,9 @@ def main(argv=None):
 
     # Set up some defaults
     if args.ref_model_path is None:
+        # Assume we can find it in a local build directory
         args.ref_model_path = cmf.find_tosa_file(
-            cmf.TosaFileType.REF_MODEL, Path("reference_model"), False
+            cmf.TosaFileType.REF_MODEL, None, False
         )
     if args.generate_lib_path is None:
         args.generate_lib_path = cmf.find_tosa_file(
