@@ -275,7 +275,8 @@ source scripts/py-dev-env.sh
 
 ### TOSA Conformance Generator
 
-This script enables creation of part or all of the *TOSA conformance tests*, to enable running of these tests against the reference model or implementation.
+This script enables creation of part or all of the *TOSA conformance tests*,
+to enable running of these tests against the reference model or implementation.
 
 The Conformance Tests comprise of a wide coverage of tests for all TOSA
 operators created by using the Unit Test Builder.
@@ -289,8 +290,10 @@ command `flatc` - please follow the section on the FlatBuffers compiler below.
 
 These are the main script options for controlling the types of tests produced:
 
-* `--profile` - controls the TOSA profile, `tosa-bi` - for base inference integer tests (the default), `tosa-mi` - for the main inference floating point tests, or `all` - for both.
-* `--extension` - controls the TOSA extensions to create tests for, or `all` - for all extensions. See `--help` output for full list of extensions.
+* `--profile` - controls the TOSA profile, `tosa-pro-int` - for the integer profile tests,
+`tosa-pro-fp` - for the floating point profile tests, or `all` - for both (the default).
+* `--extension` - controls the TOSA extensions to create tests for, or `all` - for all extensions.
+By default no extensions will be enabled. See `--help` output for full list of extensions.
 * `--test-type` - selects `positive`, `negative` or `both` types of test.
 * `--output-type` - selects the output file type between `json`, `binary` or `both`.
 The default - `json` - converts NumPy data files and flatbuffer files into JSON for
@@ -302,7 +305,6 @@ An example to create all the possible TOSA operator unit tests for ADD and SUB:
 tosa_verif_conformance_generator \
   --profile all                  \
   --extension all                \
-  --ref-model-path reference_model/build/reference_model/tosa_reference_model \
   --operators add sub
 ```
 
@@ -310,8 +312,9 @@ The above command will create some temporary files in a `conformance_build`
 directory, but will output the conformance unit tests into a `conformance`
 directory.
 
-If you have a different build directory for the reference model, you may have
-to supply one or more of the following options for path locations:
+If you have a different build directory (from the local `build` directory) for the
+reference model, you may have to supply one or more of the following options for path
+locations:
 
 * `--ref-model-path` - path to the `tosa_reference_model` executable.
 * `--schema-path` or `--operator-fbs` - path to the TOSA flatbuffer schema file (`tosa.fbs`)
@@ -327,18 +330,19 @@ tosa_verif_conformance_generator \
   --operators abs
 ```
 
-This next example will create all the TOSA BI conformance tests with no extensions, using different temporary build and output directories:
+This next example will create all the integer profile TOSA conformance tests
+with no extensions, using different temporary build and output directories:
 
 ```bash
 tosa_verif_conformance_generator \
-  --ref-model-path reference_model/build/reference_model/tosa_reference_model \
+  --profile tosa-pro-int         \
   --build-directory tmp_build    \
   --output-directory conf_tests
 ```
 
-Use the Unit Test Runner to run the conformance tests on the reference model,
-or extend the runner to also test against your implementation (System Under
-Test) - see those sections below for more information.
+See the Unit Test Runner section below on how to run the conformance tests against
+the reference model, and then read the System Under Test section on how to extend
+the test runner to test against your implementation.
 
 ### Unit Test Builder
 
@@ -350,7 +354,7 @@ The test builder is invoked by `tosa_verif_build_tests`.  The
 builder generates test outputs in `./vtest/<operator_name>/` by
 default.  To restrict test generation to particular regular expression
 wildcard, use the `--filter ` argument.  The tool can be run with no
-arguments to generate all tests.
+arguments to generate a very large set of default example tests.
 
 Inputs and certain attributes are created using a random number
 generator, while others are exhaustive (within reasonable bounds)
@@ -375,30 +379,38 @@ Test.
 #### Selecting tests
 
 The `--test` or `-t` option is used to specify a directory containing
-a test. Shell wildcards can be used to run more than one test at a time.
+one or more tests. The `--recursive` or `-r` option will run all the tests
+that can be found in the specified directory.
+
 Tests will be run sequentially by default, but you may control how
 many tests are run in parallel using the `--jobs` or `-j` switch.
 
-For example, to run all of the TOSA add operator tests on the reference
-model, eight at a time:
+For example, to run all of the TOSA conformance tests on the
+reference model, eight at a time:
 
 ``` bash
-tosa_verif_run_tests -t vtest/add/add* -j 8
+tosa_verif_run_tests -t conformance -r -j 8
 ```
 
-The default location that is used for the reference model is
-`reference_model/build/reference_model/tosa_reference_model`, use the option
-`--ref-model-path` if you run this from a different location.
+This will run the tests on the reference model in both precise mode and
+normal mode and then check the results are as expected. To replace the
+normal mode reference model with your implementation - please see the
+System Under Test section below.
 
-You can also supply a list of tests in a file, one per line, using the
-`--test-list` or `-T` option. Alternatively use `--recursive` or `-r` to
-run all the tests that can be found in the specified `-t` directory.
+The default location that is used for the reference model is in the local
+`build` directory, use the option `--ref-model-path` if you want to specify
+a different binary or run this from an alternate location.
+
+Shell wildcards can be used to specify tests instead of using the recursive
+option, or you can instead supply a list of tests in a file, one per line, using
+the `--test-list` or `-T` option.
 
 Finally you can choose the type of test to run - positive, negative or both
-(default) -using the `test-type` option. To only run the positive tests:
+(default) - using the `test-type` option. To only run the positive ADD operator
+tests:
 
 ```bash
-tosa_verif_run_tests --test-type positive -t vtest/*/*
+tosa_verif_run_tests --test-type positive -t conformance/operators/ew_binary/add/add*
 ```
 
 #### Verbosity

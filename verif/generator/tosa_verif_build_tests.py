@@ -354,8 +354,9 @@ def main(argv=None):
 
     if not args.lazy_data_gen:
         if args.generate_lib_path is None:
+            # Assume its in a local build directory
             args.generate_lib_path = cmf.find_tosa_file(
-                cmf.TosaFileType.GENERATE_LIBRARY, Path("reference_model"), False
+                cmf.TosaFileType.GENERATE_LIBRARY, None, False
             )
         if not args.generate_lib_path.is_file():
             print(

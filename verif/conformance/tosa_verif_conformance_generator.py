@@ -487,12 +487,12 @@ def parse_args(argv=None):
         action="store_true",
         help=f"Enable lazy data generation (only for {TosaProfiles.TosaProFP})",
     )
-    rm_group = parser.add_mutually_exclusive_group(required=True)
+    rm_group = parser.add_mutually_exclusive_group()
     rm_group.add_argument(
         "--ref-model-directory",
         dest="ref_model_dir",
         type=Path,
-        help="(DEPRECATED - use ref-model-path) Reference Model directory - with build directory",
+        help="Reference Model directory - uses binaries in build directory",
     )
     rm_group.add_argument(
         "--ref-model-path",
@@ -525,7 +525,7 @@ def parse_args(argv=None):
         type=Path,
         help=(
             "Path to flatc executable. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_BUILD_FLATC_PATH}` in parent directory of `ref-model-path`"
+            f"`{cmf.DEFAULT_REF_MODEL_FLATC_PATH}` in parent directory of `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -621,6 +621,11 @@ def parse_args(argv=None):
     )
     args = parser.parse_args(argv)
 
+    if args.ref_model_dir is None and args.ref_model_path is None:
+        # Assume its in a local build directory
+        args.ref_model_path = cmf.find_tosa_file(
+            cmf.TosaFileType.REF_MODEL, None, False
+        )
     if args.ref_model_dir is not None:
         # Assume the ref model exe path based on the ref model directory
         args.ref_model_path = cmf.find_tosa_file(

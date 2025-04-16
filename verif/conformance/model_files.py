@@ -6,7 +6,7 @@ from enum import IntEnum
 from pathlib import Path
 
 DEFAULT_REF_MODEL_SCHEMA_PATH = Path("thirdparty/serialization_lib/schema")
-DEFAULT_REF_MODEL_BUILD_FLATC_PATH = Path(
+DEFAULT_REF_MODEL_FLATC_PATH = Path(
     "thirdparty/serialization_lib/third_party/flatbuffers"
 )
 DEFAULT_REF_MODEL_BUILD_EXE_PATH = Path("reference_model")
@@ -51,7 +51,7 @@ TOSA_FILE_TYPE_TO_DETAILS = {
     },
     TosaFileType.FLATC: {
         "name": "flatc",
-        "location": DEFAULT_REF_MODEL_BUILD_FLATC_PATH,
+        "location": DEFAULT_REF_MODEL_FLATC_PATH,
         "build": False,
     },
     TosaFileType.VERIFY_LIBRARY: {
@@ -78,6 +78,11 @@ def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
     location = TOSA_FILE_TYPE_TO_DETAILS[file_type]["location"]
     build = TOSA_FILE_TYPE_TO_DETAILS[file_type]["build"]
 
+    if ref_model_path is None:
+        # Assume current directory is the reference_model
+        ref_model_path = Path.cwd()
+        path_is_ref_model_exe = False
+
     if path_is_ref_model_exe:
         # Given a path to the reference_model executable
 
@@ -92,7 +97,7 @@ def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
                 search_path = ref_model_path.parents[1 + extra_level]
             else:
                 # Look in reference_model directory
-                search_path = ref_model_path.parents[2]
+                search_path = ref_model_path.parents[2 + extra_level]
         except IndexError:
             search_path = ref_model_path.parent
     else:
