@@ -2505,55 +2505,6 @@
             "default": {}
         }
     },
-    "const_shape": {
-        "group": "shape",
-        "support_for": [
-            "lazy_data_gen"
-        ],
-        "generation": {
-            "standard": {
-                "supports_any": [
-                    "tosa-pro-int",
-                    "tosa-pro-fp"
-                ],
-                "from_version": "v0.90.0",
-                "no_negative_tests": "true",
-                "generator_args": [
-                    [
-                        "--target-dtype",
-                        "shape",
-                        "--target-rank",
-                        "1",
-                        "--target-shape",
-                        "1"
-                    ],
-                    [
-                        "--target-dtype",
-                        "shape",
-                        "--tensor-dim-range",
-                        "1,64",
-                        "--target-rank",
-                        "0",
-                        "1",
-                        "2",
-                        "3",
-                        "4",
-                        "5",
-                        "6"
-                    ],
-                    [
-                        "--target-dtype",
-                        "shape",
-                        "--target-shape",
-                        "1,2147483647"
-                    ]
-                ]
-            }
-        },
-        "selection": {
-            "default": {}
-        }
-    },
     "conv2d": {
         "group": "tensor",
         "support_for": [
