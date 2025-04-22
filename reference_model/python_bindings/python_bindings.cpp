@@ -133,14 +133,16 @@ struct IModelRunnerPyWrapper
 
         // Rounding up while dividing by 8 in case of int4 padding etc.
         size_t size_bytes = (num_elements * itemsize_bits + 8 - 1) / 8;
-        uint8_t buffer[size_bytes];
-        int status = runner.getOutput(output_name, buffer, size_bytes);
+        std::vector<uint8_t> buffer(size_bytes);
+        int status = runner.getOutput(output_name, buffer.data(), size_bytes);
         if (status != 0)
         {
             return {};
         }
 
-        py::array_t<uint8_t> bytes(size_bytes, buffer);
+        // py::array should own its own memory, so copy the data
+        py::array_t<uint8_t> bytes(size_bytes);
+        std::copy_n(buffer.data(), size_bytes, bytes.mutable_data());
 
         return view_reshape(bytes, ser_tensor);
     }

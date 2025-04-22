@@ -428,7 +428,13 @@ if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
       src
   )
 
-  target_link_libraries(py_tosa_reference_model PRIVATE tosa_reference_model_lib)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+  target_include_directories(py_tosa_reference_model PRIVATE ${Python3_INCLUDE_DIRS})
+  target_link_libraries(py_tosa_reference_model
+    PRIVATE
+      tosa_reference_model_lib
+      ${Python3_LIBRARIES}
+  )
 
   target_compile_definitions(py_tosa_reference_model PRIVATE VERSION_INFO=${PROJECT_VERSION})
 

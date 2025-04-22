@@ -89,17 +89,20 @@ class CMakeBuild(build_py):
 
         # There should only be one of these but supporting multiple is fine,
         # Python will know which one to import
-        copied_so = False
-        so_dir = build_dir / "reference_model"
-        print(f"copying .so files from '{so_dir}' to '{package_dir}'")
-        for so_file in so_dir.glob("tosa_reference_model.*.so"):
-            shutil.copy(so_file, package_dir)
-            copied_so = True
+        shared_lib_ext = ".pyd" if sys.platform.startswith("win") else ".so"
+        shared_lib_pattern = f"tosa_reference_model.*{shared_lib_ext}"
 
-        if not copied_so:
+        shared_lib_paths = list(build_dir.rglob(shared_lib_pattern))
+        print(f"Copying shared libraries from '{build_dir}' to '{package_dir}'")
+
+        if not shared_lib_paths:
             raise RuntimeError(
-                f"Did not find any tosa_reference model so files to copy to the package directory in '{so_dir}'"
+                f"No shared library matching '{shared_lib_pattern}' found in '{build_dir}'"
             )
+
+        for shared_lib_path in shared_lib_paths:
+            print(f"Copying {shared_lib_path} to {package_dir}")
+            shutil.copy(shared_lib_path, package_dir)
 
         build_py.run(self)
 
