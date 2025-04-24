@@ -16,6 +16,7 @@
 #include "type_conversion.h"
 #include "arith_util.h"
 #include "cfloat.h"
+#include "func_debug.h"
 #include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
@@ -84,11 +85,7 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
         return 1;
 
     // output and input must be the same rank and size
-    if (inputs[0]->matchRankSize(*outputs[0]))
-    {
-        printNodeValidationError("OpRescale: input and output rank/size must match");
-        return 1;
-    }
+    ERROR_IF(inputs[0]->matchRankSize(*outputs[0]), "OpRescale: input and output rank/size must match");
 
     in  = dynamic_cast<TosaReference::TensorTemplate<TIn>*>(inputs[0]);
     out = dynamic_cast<TosaReference::TensorTemplate<TOut>*>(outputs[0]);
@@ -119,71 +116,39 @@ int OpRescale<Rank, InDtype, OutDtype>::checkTensorAttributes()
     const int in_rank          = inputs[0]->getRank();
     const auto rounding_mode   = attribute->rounding_mode();
 
-    if (rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND &&
-        rounding_mode != RoundingMode_INEXACT_ROUND)
-    {
-        printNodeValidationError("OpRescale: Unsupported rounding mode");
-        return 1;
-    }
+    ERROR_IF(rounding_mode != RoundingMode_SINGLE_ROUND && rounding_mode != RoundingMode_DOUBLE_ROUND &&
+                 rounding_mode != RoundingMode_INEXACT_ROUND,
+             "OpRescale: Unsupported rounding mode");
 
-    if (scale32 && (InDtype == TOSA_REF_TYPE_INT48))
-    {
-        printNodeValidationError("OpRescale: Scale set to true but input type is INT48");
-        return 1;
-    }
+    ERROR_IF(scale32 && (InDtype == TOSA_REF_TYPE_INT48), "OpRescale: Scale set to true but input type is INT48");
+    ERROR_IF(!scale32 && (rounding_mode == RoundingMode_DOUBLE_ROUND),
+             "OpRescale: Scale set to false but rounding mode set to double round");
 
-    if (!scale32 && (rounding_mode == RoundingMode_DOUBLE_ROUND))
-    {
-        printNodeValidationError("OpRescale: Scale set to false but rounding mode set to double round");
-        return 1;
-    }
+    ERROR_IF(input_unsigned && output_unsigned, "OpRescale: input_unsigned and output_unsigned set to true");
+    ERROR_IF(isI32(OutDtype) && input_unsigned, "OpRescale: Output signed int32 and input_unsigned set to true");
+    ERROR_IF(isI32(InDtype) && output_unsigned, "OpRescale: Input signed int32 and output_unsigned set to true");
+    ERROR_IF(isI48(InDtype) && output_unsigned, "OpRescale: Input signed int48 and output_unsigned set to true");
+    ERROR_IF(isI32(InDtype) && input_unsigned, "OpRescale: Input unsigned int32");
+    ERROR_IF(isI32(OutDtype) && output_unsigned, "OpRescale: Output unsigned int32");
+    ERROR_IF(isI48(InDtype) && input_unsigned, "OpRescale: Input unsigned int48");
 
-    if (input_unsigned && output_unsigned)
-    {
-        printNodeValidationError("OpRescale: input_unsigned and output_unsigned set to true");
-        return 1;
-    }
+    std::vector<int> input_shape      = inputs[0]->getShape();
+    std::vector<int> multiplier_shape = inputs[1]->getShape();
+    std::vector<int> shift_shape      = inputs[2]->getShape();
 
-    if (isI32(OutDtype) && input_unsigned)
+    if (per_channel)
     {
-        printNodeValidationError("OpRescale: Output signed int32 and input_unsigned set to true");
-        return 1;
-    }
+        ERROR_IF(in_rank < 1, "OpRescale: per_channel set to true and rank of input < 1");
 
-    if (isI32(InDtype) && output_unsigned)
-    {
-        printNodeValidationError("OpRescale: Input signed int32 and output_unsigned set to true");
-        return 1;
+        ERROR_IF(multiplier_shape[0] != input_shape[input_shape.size() - 1],
+                 "OpRescale: wrong size multiplier array for per_channel=true");
+        ERROR_IF(shift_shape[0] != input_shape[input_shape.size() - 1],
+                 "OpRescale: wrong size shift array for per_channel=true");
     }
-
-    if (isI48(InDtype) && output_unsigned)
-    {
-        printNodeValidationError("OpRescale: Input signed int48 and output_unsigned set to true");
-        return 1;
-    }
-
-    if (InDtype == TOSA_REF_TYPE_INT32 && input_unsigned)
-    {
-        printNodeValidationError("OpRescale: Input unsigned int32");
-        return 1;
-    }
-
-    if (OutDtype == TOSA_REF_TYPE_INT32 && output_unsigned)
-    {
-        printNodeValidationError("OpRescale: Output unsigned int32");
-        return 1;
-    }
-
-    if (InDtype == TOSA_REF_TYPE_INT48 && input_unsigned)
-    {
-        printNodeValidationError("OpRescale: Input unsigned int48");
-        return 1;
-    }
-
-    if (per_channel && in_rank < 1)
-    {
-        printNodeValidationError("OpRescale: per_channel set to true and rank of input < 1");
-        return 1;
+    else
+    {    // !per_channel
+        ERROR_IF(multiplier_shape[0] != 1, "OpRescale: wrong size multiplier array for per_channel=false");
+        ERROR_IF(shift_shape[0] != 1, "OpRescale: wrong size shift array for per_channel=false");
     }
 
     return 0;

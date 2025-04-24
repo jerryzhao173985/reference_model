@@ -102,54 +102,66 @@ void testCast(IN_TYPE in, OUT_TYPE expected)
     compareOutput<OUT_TYPE>(expectedOut, actualOut);
 }
 
-template <typename IN_TYPE, typename OUT_TYPE>
-void testRescale(IN_TYPE input,
-                 OUT_TYPE expected_output,
-                 int16_t multiplier,
-                 int8_t shift,
-                 IN_TYPE input_zp     = 0,
-                 OUT_TYPE output_zp   = 0,
-                 bool output_unsigned = false)
+template <typename IN_TYPE, typename OUT_TYPE, typename SCALE_TYPE>
+void testRescale(std::vector<IN_TYPE> input,
+                 std::vector<OUT_TYPE> expected_output,
+                 std::vector<SCALE_TYPE> multiplier,
+                 std::vector<int8_t> shift,
+                 TosaRescaleAttribute attr,
+                 IN_TYPE input_zp   = 0,
+                 OUT_TYPE output_zp = 0,
+                 bool expect_fail   = false)
 {
     RefModelTestBuilder tb{};
-    constexpr DType inDtype  = NativeType2DType<IN_TYPE>();
-    constexpr DType outDtype = NativeType2DType<OUT_TYPE>();
+    constexpr DType inDtype    = NativeType2DType<IN_TYPE>();
+    constexpr DType outDtype   = NativeType2DType<OUT_TYPE>();
+    constexpr DType scaleDtype = NativeType2DType<SCALE_TYPE>();
 
-    // Inputs
-    tb.addInput({ 1 }, inDtype);        // input tensor
-    tb.addInput({ 1 }, DType_INT16);    // multiplier
-    tb.addInput({ 1 }, DType_INT8);     // shift
-    tb.addInput({ 1 }, inDtype);        // input_zp
-    tb.addInput({ 1 }, outDtype);       // output_zp
+    // Inputs -- only tests the rank 1 case
+    tb.addInput({ static_cast<int>(input.size()) }, inDtype);            // input tensor
+    tb.addInput({ static_cast<int>(multiplier.size()) }, scaleDtype);    // multiplier
+    tb.addInput({ static_cast<int>(shift.size()) }, DType_INT8);         // shift
+    tb.addInput({ 1 }, inDtype);                                         // input_zp
+    tb.addInput({ 1 }, outDtype);                                        // output_zp
 
     // Output
-    tb.addOutput({ 1 }, outDtype);
+    tb.addOutput({ static_cast<int>(input.size()) }, outDtype);
 
-    // Attributes
-    auto attr = TosaRescaleAttribute(/* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
-                                     /* per_channel */ false, /* input_unsigned */ false,
-                                     /* output_unsigned */ output_unsigned);
     tb.addOp(Op_RESCALE, Attribute_RescaleAttribute, &attr);
-    tb.initializeRunner();
+    GraphStatus status = tb.initializeRunner();
 
-    std::vector<IN_TYPE> inputVal      = { input };
-    std::vector<int16_t> multiplierVal = { multiplier };
-    std::vector<int8_t> shiftVal       = { shift };
-    std::vector<IN_TYPE> inputZpVal    = { input_zp };
-    std::vector<OUT_TYPE> outputZpVal  = { output_zp };
-    std::vector<OUT_TYPE> expectedVal  = { expected_output };
+    if (status == GraphStatus::TOSA_ERROR)
+    {
+        CHECK_MESSAGE(expect_fail, "Unexpectedly failed initialization of the graph");
+        // If the graph is invalid there is no point in continuing the test
+        return;
+    }
+    else
+    {
+        CHECK(status == GraphStatus::TOSA_VALID);
+    }
+
+    std::vector<IN_TYPE> inputZpVal   = { input_zp };
+    std::vector<OUT_TYPE> outputZpVal = { output_zp };
 
     // Set inputs
-    tb.setInput(inputVal);
-    tb.setInput(multiplierVal);
-    tb.setInput(shiftVal);
+    tb.setInput(input);
+    tb.setInput(multiplier);
+    tb.setInput(shift);
     tb.setInput(inputZpVal);
     tb.setInput(outputZpVal);
 
-    // Run and compare
-    REQUIRE(tb.run() == GraphStatus::TOSA_VALID);
-    auto actualOut = tb.getOutput<OUT_TYPE>(0, expectedVal.size());
-    compareOutput<OUT_TYPE>(expectedVal, actualOut);
+    // Run and compare to expected result
+    if (expect_fail)
+    {
+        CHECK_MESSAGE(tb.run() == GraphStatus::TOSA_ERROR, "Unexpectedly passed an expect_fail test");
+    }
+    else
+    {
+        CHECK(tb.run() == GraphStatus::TOSA_VALID);
+        auto actualOut = tb.getOutput<OUT_TYPE>(0, expected_output.size());
+        compareOutput<OUT_TYPE>(expected_output, actualOut);
+    }
 }
 
 TEST_SUITE("reference_model")
@@ -312,12 +324,60 @@ TEST_SUITE("reference_model")
     {
         SUBCASE("Test value_extend64_impl of output_zp")
         {
+            const TosaRescaleAttribute attr{ /* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                             /* per_channel */ false, /* input_unsigned */ false,
+                                             /* output_unsigned */ true };
             // Expect: (65 - 1) * 4 >> 2 + 32768 = 32832
             // this test catches reported bugs where output_zp was incorrectly using IN_TYPE
-            testRescale<int8_t, uint16_t>(/* inputVals */ 65, /* expectedVals */ 32832,
-                                          /* multiplier */ 4, /* shift */ 2,
-                                          /* input_zp */ 1, /* output_zp */ 32768,
-                                          /* output_unsigned */ true);
+            testRescale<int8_t, uint16_t, int16_t>(/* inputVals */ { 65 }, /* expectedVals */ { 32832 },
+                                                   /* multiplier */ { 4 }, /* shift */ { 2 }, /* attr */ attr,
+                                                   /* input_zp */ 1, /* output_zp */ 32768, /* expected_fail */ false);
+        }
+
+        SUBCASE("Fail if per_channel=true and size(multiplier) != NC")
+        {
+            const TosaRescaleAttribute attr{ /* scale32 */ true, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                             /* per_channel */ true, /* input_unsigned */ false,
+                                             /* output_unsigned */ false };
+
+            testRescale<int8_t, int32_t, int32_t>(/* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
+                                                  /* multiplier */ { 4, 2 }, /* shift */ { 16, 5, 9 }, /* attr */ attr,
+                                                  /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
+        }
+
+        SUBCASE("Fail if per_channel=true and size(shift) != NC")
+        {
+            const TosaRescaleAttribute attr{ /* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                             /* per_channel */ true, /* input_unsigned */ false,
+                                             /* output_unsigned */ false };
+
+            testRescale<int32_t, int8_t, int16_t>(
+                /* inputVals */ { 0, -12, 0, 12 }, /* expectedVals -- not used */ { 0 },
+                /* multiplier */ { 4, 1024, 2048, 115 }, /* shift */ { 12 }, /* attr */ attr,
+                /* input_zp */ 0, /* output_zp */ -12, /* expected_fail */ true);
+        }
+
+        SUBCASE("Fail if per_channel=false and size(multipliers) > 1")
+        {
+            const TosaRescaleAttribute attr{ /* scale32 */ true, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                             /* per_channel */ false, /* input_unsigned */ false,
+                                             /* output_unsigned */ false };
+
+            testRescale<int8_t, int32_t, int32_t>(/* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
+                                                  /* multiplier */ { 4, 519 }, /* shift */ { 12 }, /* attr */ attr,
+                                                  /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
+        }
+
+        SUBCASE("Fail if per_channel=false and size(shifts) > 1")
+        {
+            const TosaRescaleAttribute attr{ /* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
+                                             /* per_channel */ false, /* input_unsigned */ false,
+                                             /* output_unsigned */ false };
+
+            testRescale<int32_t, int8_t, int16_t>(
+                /* inputVals */ { 0, -12, 0, 12 }, /* expectedVals -- not used */ { 0 },
+                /* multiplier */ { 4 }, /* shift */ { 6, 16 }, /* attr */ attr,
+                /* input_zp */ 0, /* output_zp */ -12, /* expected_fail */ true);
         }
     }
 }    // TEST_SUITE("reference_model")
