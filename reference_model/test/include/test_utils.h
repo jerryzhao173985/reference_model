@@ -136,11 +136,11 @@ public:
             op, attr_type, attr, _mainBlock->GetInputs(), _mainBlock->GetOutputs()));
     }
 
-    void initializeRunner()
+    GraphStatus initializeRunner()
     {
         // Initializing with the block directly skips some extra checks like version matching,
         // which we don't need
-        _modelRunner.initialize(*_mainBlock);
+        return _modelRunner.initialize(*_mainBlock);
     }
 
     template <typename T>
