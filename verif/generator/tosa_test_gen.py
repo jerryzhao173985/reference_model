@@ -3981,6 +3981,13 @@ class TosaTestGen:
             "data_gen": PR_FS_DATAGEN,
             "compliance": {
                 "abs_error_lower_bound": 0.5,
+                "abs_error_base_bounds": {
+                    # This is err_base * 4 which results from expanding the
+                    # terms of the err_bnd expression for tanh
+                    DType.FP32: 3 * 4,
+                    DType.FP16: 1 * 4,
+                    DType.BF16: 1 * 4,
+                },
             },
         },
         "erf": {
@@ -4380,6 +4387,13 @@ class TosaTestGen:
             ),
             "data_gen": PR_FS_DATAGEN,
             "broadcastable_inputs": 2,
+            "compliance": {
+                "abs_error_base_bounds": {
+                    DType.FP32: 3,
+                    DType.FP16: 1,
+                    DType.BF16: 1,
+                },
+            },
         },
         "sub": {
             "op": Op.SUB,

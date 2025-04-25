@@ -232,9 +232,10 @@ int OpTanh<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.bounds_mode)
             {
-                // ABS_ERROR bounds return 4*(1+abs(a))
+                // ABS_ERROR bounds return 4 * (2 * abs(a))
+                // NOTE: 4 * err_base is added as part of compliance in tosa_verify
                 this->fcn = [](InEigenType a) -> OutEigenType {
-                    return 4.0f * (1.0f + static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a)));
+                    return 4.0 * 2.0 * static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a));
                 };
             }
             else

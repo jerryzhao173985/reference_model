@@ -232,7 +232,7 @@ int OpExp<Rank, Dtype>::register_fcn()
                 // ABS_ERROR bounds return (2*abs(a))
                 // NOTE: err_base is added as part of the compliance tosa_verify
                 this->fcn = [](InEigenType a) -> OutEigenType {
-                    return 2.0f * static_cast<OutEigenType>(a > static_cast<InEigenType>(0) ? a : (-a));
+                    return 2.0 * static_cast<OutEigenType>(a > static_cast<InEigenType>(0) ? a : (-a));
                 };
             }
             else

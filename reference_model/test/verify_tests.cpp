@@ -199,6 +199,40 @@ auto reduceProductTolerance(uint64_t M, uint64_t N, const std::vector<FP>& resul
     return tolerances_fp64;
 }
 
+template <typename FP>
+void checkAbsErrorInjection(std::vector<FP>& data,
+                            std::vector<double>& bounds,
+                            const std::vector<int32_t>& shape,
+                            const std::string& jsonCfg,
+                            double errorFactor,
+                            bool expectFailure)
+{
+    auto noisyData = data;
+    std::vector<double> data_fp64(data.begin(), data.end());
+
+    std::for_each(std::begin(noisyData), std::end(noisyData), [=](auto& value) {
+        if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
+        {
+            // If we used lower precision here, we would add more error.
+            double value64 = static_cast<double>(value);
+            value64 += value64 * errorFactor;
+            value = static_cast<FP>(value64);
+        }
+    });
+    const auto referenceTensor =
+        TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
+    const auto boundsTensor =
+        TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds.data()));
+    const auto implementationTensor = TosaVerifTensor("out1", DType2tosa_datatype_t(NativeType2DType<FP>()), shape,
+                                                      reinterpret_cast<uint8_t*>(noisyData.data()));
+    if (expectFailure)
+        REQUIRE_FALSE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
+                                      jsonCfg.c_str()));
+    else
+        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
+                                jsonCfg.c_str()));
+}
+
 }    // namespace
 
 TEST_SUITE_BEGIN("verify");
@@ -619,7 +653,6 @@ TEST_CASE("positive - abs error")
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
-    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
 
     // Set up simple bounds of the input to 2.0
     std::vector<double> bounds_fp64(elementCount);
@@ -635,48 +668,64 @@ TEST_CASE("positive - abs error")
     SUBCASE("inside")
     {
         // Generate some data that meets the ABS_ERROR requirements of the result.
-        auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [=](auto& value) {
-            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
-            {
-                // If we used 32-bit precision here, we would add more error.
-                double value64 = static_cast<double>(value);
-                value64 += value64 * insideErrBound;
-                value = static_cast<float>(value64);
-            }
-        });
-        const auto referenceTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
-        const auto boundsTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
-        const auto implementationTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
-        REQUIRE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
-                                jsonCfg.c_str()));
+        checkAbsErrorInjection<float>(data_fp32, bounds_fp64, shape, jsonCfg, /* errorFactor */ insideErrBound,
+                                      /* expectFailure */ false);
     }
 
     SUBCASE("outside")
     {
         // Generate some data that exceeds a requirements for each value in the tensor.
-        auto otherData_fp32 = data_fp32;
-        std::for_each(std::begin(otherData_fp32), std::end(otherData_fp32), [=](auto& value) {
-            if (std::abs(value) != 0.0 && !std::isinf(value) && !std::isnan(value))
-            {
-                // If we used 32-bit precision here, we would add more error.
-                double value64 = static_cast<double>(value);
-                value64 += value64 * outsideErrBound;
-                value = static_cast<float>(value64);
-            }
-        });
+        // Generate some data that meets the ABS_ERROR requirements of the result.
+        checkAbsErrorInjection<float>(data_fp32, bounds_fp64, shape, jsonCfg, /* errorFactor */ outsideErrBound,
+                                      /* expectFailure */ true);
+    }
+}
 
-        const auto referenceTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(data_fp64.data()));
-        const auto boundsTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp64_t, shape, reinterpret_cast<uint8_t*>(bounds_fp64.data()));
-        const auto implementationTensor =
-            TosaVerifTensor("out1", tosa_datatype_fp32_t, shape, reinterpret_cast<uint8_t*>(otherData_fp32.data()));
-        REQUIRE_FALSE(tvf_verify_data(referenceTensor.cTensor(), boundsTensor.cTensor(), implementationTensor.cTensor(),
-                                      jsonCfg.c_str()));
+TEST_CASE("positive - abs error with base bound")
+{
+    std::string jsonCfg = R"({
+        "tensors" : {
+            "out1" : {
+                "mode": "ABS_ERROR",
+                "data_type": "FP32",
+                "abs_error_info": {
+                    "base_bound": 5
+                }
+            }
+        }
+    })";
+
+    const auto shape        = std::vector<int32_t>{ 4, 4, 4 };
+    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+
+    // Generate some random floats using the full range of fp32.
+    auto data_fp32 = generateRandomTensorData<float>(elementCount, true);
+    std::vector<double> data_fp64(data_fp32.begin(), data_fp32.end());
+
+    // Set up simple bounds of the input to 2.0
+    std::vector<double> bounds_fp64(elementCount);
+    std::for_each(std::begin(bounds_fp64), std::end(bounds_fp64), [](auto& value) { value = 2.0; });
+
+    // Lower than exp2(-23) * (base_bound + bounds[] - 0.5)
+    // The 0.5 accounts for error when casting the result back to fp32
+    // Error in the fp64 operations is too small to be relevant
+    constexpr double insideErrBound = 7.7e-7;
+    // Greater than exp2(-23) * (base_bound + bounds[] + 0.5)
+    constexpr double outsideErrBound = 9.0e-7;
+
+    SUBCASE("inside")
+    {
+        // Generate some data that meets the ABS_ERROR requirements of the result.
+        checkAbsErrorInjection<float>(data_fp32, bounds_fp64, shape, jsonCfg, /* errorFactor */ insideErrBound,
+                                      /* expectFailure */ false);
+    }
+
+    SUBCASE("outside")
+    {
+        // Generate some data that exceeds a requirements for each value in the tensor.
+        // Generate some data that meets the ABS_ERROR requirements of the result.
+        checkAbsErrorInjection<float>(data_fp32, bounds_fp64, shape, jsonCfg, /* errorFactor */ outsideErrBound,
+                                      /* expectFailure */ true);
     }
 }
 
