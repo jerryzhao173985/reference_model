@@ -733,6 +733,6 @@ void parse_value(const std::string& text, tosa_level_t& value)
     else if (text == "EIGHTK")
         value = func_config_t::EIGHTK;
     else
-        throw cxxopts::argument_incorrect_type("TOSA_LEVEL");
+        throw cxxopts::exceptions::incorrect_argument_type("TOSA_LEVEL");
     return;
 }
