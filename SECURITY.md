@@ -15,5 +15,5 @@ These third party sources are:
 * Eigen 3.4.0
 * json 3.8.0 (and its dependencies)
 * pybind11 2.12.0
-* cxxopts 2.2.1
+* cxxopts 3.2.1
 * doctest 2.4.9

@@ -20,8 +20,8 @@ add_subdirectory(serialization_lib EXCLUDE_FROM_ALL)
 if (NOT TARGET cxxopts)
   FetchContent_Declare(
   cxxopts
-  URL https://github.com/jarro2783/cxxopts/archive/v2.2.1.tar.gz
-  URL_HASH SHA256=984aa3c8917d649b14d7f6277104ce38dd142ce378a9198ec926f03302399681
+  URL https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.2.1.tar.gz
+  URL_HASH SHA256=841f49f2e045b9c6365997c2a8fbf76e6f215042dda4511a5bb04bc5ebc7f88a
   )
   FetchContent_MakeAvailable(cxxopts)
 endif()
@@ -31,6 +31,7 @@ if (NOT TARGET doctest)
     doctest
     URL https://github.com/doctest/doctest/archive/refs/tags/v2.4.11.tar.gz
     URL_HASH SHA256=632ed2c05a7f53fa961381497bf8069093f0d6628c5f26286161fbd32a560186
+    PATCH_COMMAND ${CMAKE_COMMAND} -DDOCTEST_SOURCE_DIR=<SOURCE_DIR> -P ${CMAKE_CURRENT_LIST_DIR}/patch_doctest2.4.11.cmake
   )
   FetchContent_MakeAvailable(doctest)
 endif()
