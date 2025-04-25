@@ -623,9 +623,10 @@ int OpPow<Rank, Dtype>::register_fcn()
             if (g_func_config.bounds_mode)
             {
                 // ABS_ERROR bounds return 2*(1+abs(log(abs(x))*y))
+                // NOTE: err_base is added as part of compliance in tosa_verify
                 this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {
                     OutEigenType z = log(x > (InEigenType)0 ? x : (-x)) * y;
-                    return 2 * (1.0f + (z > (OutEigenType)0 ? z : (-z)));
+                    return 7.5 * (z > (OutEigenType)0 ? z : (-z));
                 };
             }
             else
