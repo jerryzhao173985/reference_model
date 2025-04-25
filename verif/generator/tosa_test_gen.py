@@ -308,7 +308,7 @@ class TosaTestGen:
         elif op["op"] in (Op.SIN, Op.COS):
             mode = gtu.ComplianceMode.ABS_ERROR
             normal_divisor = op_compliance.get("abs_error_normal_divisor", 1)
-            if op is Op.SIN:
+            if op["op"] == Op.SIN:
                 max_compare = op_compliance.get(
                     "abs_error_max_compare", math.pi * gtu.normal_min(inputType)
                 )

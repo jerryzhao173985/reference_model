@@ -3,6 +3,8 @@
 import struct
 from enum import IntEnum
 
+import ml_dtypes
+import numpy as np
 from conformance.tosa_profiles import TosaProfiles
 from tosa.DType import DType
 from tosa.NanPropagationMode import NanPropagationMode
@@ -285,6 +287,7 @@ def get_float32_bitstring(f):
 
 
 def normal_frac(dtype):
+    """Returns the number of bits in the mantissa for a dtype."""
     if dtype == DType.FP32:
         return 23
     elif dtype == DType.FP16:
@@ -296,7 +299,23 @@ def normal_frac(dtype):
     elif dtype == DType.FP8E5M2:
         return 2
     else:
-        raise Exception(f"Unknown support dtype for normal_frac: {dtype}")
+        raise ValueError(f"Unknown dtype for normal_frac: {dtype}")
+
+
+def normal_min(dtype):
+    """Returns the smallest normal number representable in a dtype."""
+    if dtype == DType.FP32:
+        return np.finfo(np.float32).smallest_normal
+    elif dtype == DType.FP16:
+        return np.finfo(np.float16).smallest_normal
+    elif dtype == DType.BF16:
+        return ml_dtypes.finfo(ml_dtypes.bfloat16).smallest_normal
+    elif dtype == DType.FP8E4M3:
+        return ml_dtypes.finfo(ml_dtypes.float8_e4m3fn).smallest_normal
+    elif dtype == DType.FP8E5M2:
+        return ml_dtypes.finfo(ml_dtypes.float8_e5m2).smallest_normal
+    else:
+        raise ValueError(f"Unknown dtype for normal_min: {dtype}")
 
 
 def has_nan_mode_by_enum(op_enum: int) -> bool:
