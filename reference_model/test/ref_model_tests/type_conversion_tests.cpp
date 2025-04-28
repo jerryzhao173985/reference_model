@@ -327,11 +327,12 @@ TEST_SUITE("reference_model")
             const TosaRescaleAttribute attr{ /* scale32 */ false, /* rounding_mode */ RoundingMode_SINGLE_ROUND,
                                              /* per_channel */ false, /* input_unsigned */ false,
                                              /* output_unsigned */ true };
-            // Expect: (65 - 1) * 4 >> 2 + 32768 = 32832
+            // Expect: (((65 - 1) * 4 + (1 << 1)) >> 2) + 32768 = 32832
             // this test catches reported bugs where output_zp was incorrectly using IN_TYPE
-            testRescale<int8_t, uint16_t, int16_t>(/* inputVals */ { 65 }, /* expectedVals */ { 32832 },
-                                                   /* multiplier */ { 4 }, /* shift */ { 2 }, /* attr */ attr,
-                                                   /* input_zp */ 1, /* output_zp */ 32768, /* expected_fail */ false);
+            testRescale<int8_t, uint16_t, /* scale */ int16_t>(
+                /* inputVals */ { 65 }, /* expectedVals */ { 32832 },
+                /* multiplier */ { 4 }, /* shift */ { 2 }, /* attr */ attr,
+                /* input_zp */ 1, /* output_zp */ 32768, /* expected_fail */ false);
         }
 
         SUBCASE("Fail if per_channel=true and size(multiplier) != NC")
@@ -340,9 +341,10 @@ TEST_SUITE("reference_model")
                                              /* per_channel */ true, /* input_unsigned */ false,
                                              /* output_unsigned */ false };
 
-            testRescale<int8_t, int32_t, int32_t>(/* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
-                                                  /* multiplier */ { 4, 2 }, /* shift */ { 16, 5, 9 }, /* attr */ attr,
-                                                  /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
+            testRescale<int8_t, int32_t, /* scale */ int32_t>(
+                /* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
+                /* multiplier */ { 4, 2 }, /* shift */ { 16, 5, 9 }, /* attr */ attr,
+                /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
         }
 
         SUBCASE("Fail if per_channel=true and size(shift) != NC")
@@ -351,7 +353,7 @@ TEST_SUITE("reference_model")
                                              /* per_channel */ true, /* input_unsigned */ false,
                                              /* output_unsigned */ false };
 
-            testRescale<int32_t, int8_t, int16_t>(
+            testRescale<int32_t, int8_t, /* scale */ int16_t>(
                 /* inputVals */ { 0, -12, 0, 12 }, /* expectedVals -- not used */ { 0 },
                 /* multiplier */ { 4, 1024, 2048, 115 }, /* shift */ { 12 }, /* attr */ attr,
                 /* input_zp */ 0, /* output_zp */ -12, /* expected_fail */ true);
@@ -363,9 +365,10 @@ TEST_SUITE("reference_model")
                                              /* per_channel */ false, /* input_unsigned */ false,
                                              /* output_unsigned */ false };
 
-            testRescale<int8_t, int32_t, int32_t>(/* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
-                                                  /* multiplier */ { 4, 519 }, /* shift */ { 12 }, /* attr */ attr,
-                                                  /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
+            testRescale<int8_t, int32_t, /* scale */ int32_t>(
+                /* inputVals */ { 20, -5, -16 }, /* expectedVals -- not used */ { 0 },
+                /* multiplier */ { 4, 519 }, /* shift */ { 12 }, /* attr */ attr,
+                /* input_zp */ -19, /* output_zp */ 0, /* expected_fail */ true);
         }
 
         SUBCASE("Fail if per_channel=false and size(shifts) > 1")
@@ -374,10 +377,31 @@ TEST_SUITE("reference_model")
                                              /* per_channel */ false, /* input_unsigned */ false,
                                              /* output_unsigned */ false };
 
-            testRescale<int32_t, int8_t, int16_t>(
+            testRescale<int32_t, int8_t, /* scale */ int16_t>(
                 /* inputVals */ { 0, -12, 0, 12 }, /* expectedVals -- not used */ { 0 },
                 /* multiplier */ { 4 }, /* shift */ { 6, 16 }, /* attr */ attr,
                 /* input_zp */ 0, /* output_zp */ -12, /* expected_fail */ true);
         }
-    }
+
+        SUBCASE("Check inexact rescale with unsigned output")
+        {
+            const TosaRescaleAttribute attr{ /* scale32 */ false, /* rounding_mode */ RoundingMode_INEXACT_ROUND,
+                                             /* per_channel */ false, /* input_unsigned */ false,
+                                             /* output_unsigned */ true };
+
+            // Expect: (((65 - 1) * 4 + (1 << 1)) >> 2) + 32768 = 32832
+            // Error is low enough that we only allow one result in this case
+            testRescale<int8_t, uint16_t, /* scale */ int16_t>(
+                /* inputVals */ { 65 }, /* expectedVals */ { 32832 },
+                /* multiplier */ { 4 }, /* shift */ { 2 }, /* attr */ attr,
+                /* input_zp */ 1, /* output_zp */ 32768, /* expected_fail */ false);
+
+            // Expect: ((103 + 95) * 147 + (1 << 7)) >> 8 = 114
+            // Error is low enough that we only allow one result in this case
+            testRescale<int8_t, uint8_t, /* scale */ int16_t>(
+                /* inputVals */ { 103 }, /* expectedVals */ { 114 },
+                /* multiplier */ { 147 }, /* shift */ { 8 }, /* attr */ attr,
+                /* input_zp */ -95, /* output_zp */ 0, /* expected_fail */ false);
+        }
+    }    // TEST_CASE("RESCALE Op")
 }    // TEST_SUITE("reference_model")

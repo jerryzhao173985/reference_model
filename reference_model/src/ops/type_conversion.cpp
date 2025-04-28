@@ -331,12 +331,15 @@ int OpRescale<Rank, InDtype, OutDtype>::eval()
 
             if (g_func_config.compliance_mode)
             {
+                // Following the specification, allow 0.5 total error + 3 rounding errors relative to `out_ref`
+                // and one rounding error relative to `out_ref + out_zp`.
+                const double out_ref_with_zp = out_ref + static_cast<double>(output_zp_extended);
+                const double half_ulp        = std::exp2(-23 /*-normal_frac<fp32>()*/ - 1);
+                const double err_bnd         = 0.5 + (3 * std::abs(out_ref) + std::abs(out_ref_with_zp)) * half_ulp;
+
                 // Alter result to be min or max of error bound limits depending on mode
                 // In the normal (first) pass of precise mode - choose the minimum
                 // In the bounds (second) pass of precise mode - choose the maximum
-                const double err_bnd = 0.5 + 3 * std::abs(out_ref) * std::exp2(-23 /*-normal_frac<fp32>()*/ - 1);
-
-                // Force the rounding depending on minimum/maximum value
                 out_ref = (g_func_config.bounds_mode) ? std::floor(out_ref + err_bnd) : std::ceil(out_ref - err_bnd);
             }
 
