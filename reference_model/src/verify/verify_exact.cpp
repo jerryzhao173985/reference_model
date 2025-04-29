@@ -14,8 +14,8 @@
 
 #include <cmath>
 
+#include "cfloat.h"
 #include "func_debug.h"
-#include "half.hpp"
 #include "verifiers.h"
 #include "verify_utils.h"
 
@@ -69,7 +69,7 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
             return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBounds);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
             return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBounds);
         }

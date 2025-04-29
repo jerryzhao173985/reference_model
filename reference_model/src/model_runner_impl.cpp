@@ -15,6 +15,7 @@
 
 #include "model_runner_impl.h"
 
+using ct::float16;
 using namespace TosaReference;
 
 ModelRunnerImpl::ModelRunnerImpl()
@@ -182,8 +183,8 @@ int ModelRunnerImpl::setInputForPrecMode(Tensor* tensor, std::string input_name,
     switch (ser_dtype)
     {
         case DType::DType_FP16: {
-            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
-            const size_t elements = size / sizeof(half_float::half);
+            auto typed_ptr        = reinterpret_cast<float16*>(raw_ptr);
+            const size_t elements = size / sizeof(float16);
             status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
@@ -220,8 +221,8 @@ int ModelRunnerImpl::setInput(std::string input_name, uint8_t* raw_ptr, size_t s
     switch (tensor->getDtype())
     {
         case TOSA_REF_TYPE_FP16: {
-            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
-            const size_t elements = size / sizeof(half_float::half);
+            auto typed_ptr        = reinterpret_cast<float16*>(raw_ptr);
+            const size_t elements = size / sizeof(float16);
             status                = setInput(input_name, ArrayProxy(elements, typed_ptr));
             break;
         }
@@ -346,8 +347,8 @@ int ModelRunnerImpl::getOutput(std::string output_name, uint8_t* raw_ptr, size_t
     switch (tensor->getDtype())
     {
         case TOSA_REF_TYPE_FP16: {
-            auto typed_ptr        = reinterpret_cast<half_float::half*>(raw_ptr);
-            const size_t elements = size / sizeof(half_float::half);
+            auto typed_ptr        = reinterpret_cast<float16*>(raw_ptr);
+            const size_t elements = size / sizeof(float16);
             status                = tensor->writeToVector(ArrayProxy(elements, typed_ptr));
             break;
         }
@@ -502,7 +503,7 @@ void ModelRunnerImpl::checkGraphStatus(SubgraphTraverser& main_gt)
 // Template explicit specialization
 template int ModelRunnerImpl::setInput<double>(std::string input_name, ArrayProxy<double> vals);
 template int ModelRunnerImpl::setInput<float>(std::string input_name, ArrayProxy<float> vals);
-template int ModelRunnerImpl::setInput<half_float::half>(std::string input_name, ArrayProxy<half_float::half> vals);
+template int ModelRunnerImpl::setInput<float16>(std::string input_name, ArrayProxy<float16> vals);
 template int ModelRunnerImpl::setInput<int8_t>(std::string input_name, ArrayProxy<int8_t> vals);
 template int ModelRunnerImpl::setInput<int16_t>(std::string input_name, ArrayProxy<int16_t> vals);
 template int ModelRunnerImpl::setInput<int32_t>(std::string input_name, ArrayProxy<int32_t> vals);
@@ -511,7 +512,7 @@ template int ModelRunnerImpl::setInput<unsigned char>(std::string input_name, Ar
 
 template std::vector<double> ModelRunnerImpl::getOutput<double>(std::string output_name);
 template std::vector<float> ModelRunnerImpl::getOutput<float>(std::string output_name);
-template std::vector<half_float::half> ModelRunnerImpl::getOutput<half_float::half>(std::string output_name);
+template std::vector<float16> ModelRunnerImpl::getOutput<float16>(std::string output_name);
 template std::vector<int8_t> ModelRunnerImpl::getOutput<int8_t>(std::string output_name);
 template std::vector<int16_t> ModelRunnerImpl::getOutput<int16_t>(std::string output_name);
 template std::vector<int32_t> ModelRunnerImpl::getOutput<int32_t>(std::string output_name);

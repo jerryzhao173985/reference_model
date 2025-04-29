@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -61,7 +60,7 @@ void testReduceSpecial(tosa::Op reduceOp, bool propagate, std::vector<T>& in, st
 
 TEST_SUITE("reference_model")
 {
-    TEST_CASE_TEMPLATE("REDUCE_MAX FP_SPECIAL", FP_TYPE, float, half, bfloat16)
+    TEST_CASE_TEMPLATE("REDUCE_MAX FP_SPECIAL", FP_TYPE, float, float16, bfloat16)
     {
         constexpr DType dtype           = NativeType2DType<FP_TYPE>();
         constexpr TOSA_REF_TYPE refType = DType2RefType(dtype);
@@ -113,7 +112,7 @@ TEST_SUITE("reference_model")
         }
     }
 
-    TEST_CASE_TEMPLATE("REDUCE_MIN FP_SPECIAL", FP_TYPE, float, half, bfloat16)
+    TEST_CASE_TEMPLATE("REDUCE_MIN FP_SPECIAL", FP_TYPE, float, float16, bfloat16)
     {
         constexpr DType dtype           = NativeType2DType<FP_TYPE>();
         constexpr TOSA_REF_TYPE refType = DType2RefType(dtype);

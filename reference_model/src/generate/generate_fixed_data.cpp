@@ -11,9 +11,9 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+#include "cfloat.h"
 #include "generate.h"
 #include "generate_utils.h"
-#include "half.hpp"
 
 #include <algorithm>
 #include <array>
@@ -153,8 +153,8 @@ bool generateFixedData(const GenerateConfig& cfg, void* data, size_t size)
             return copyFixedDataINT<int8_t, TOSA_REF_TYPE_BOOL>(T, inData, outData, broadcastMode);
         }
         case DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
-            return copyFixedDataFP<half_float::half, TOSA_REF_TYPE_FP16>(T, inData, outData, broadcastMode);
+            float16* outData = reinterpret_cast<float16*>(data);
+            return copyFixedDataFP<float16, TOSA_REF_TYPE_FP16>(T, inData, outData, broadcastMode);
         }
         case DType_FP32: {
             float* outData = reinterpret_cast<float*>(data);

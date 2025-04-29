@@ -32,7 +32,6 @@
 #include "dtype_limits.h"
 #include "func_config.h"
 #include "func_debug.h"
-#include "half.hpp"
 #include "inttypes.h"
 #include "ops/template_types.h"
 #include "subgraph_traverser.h"
@@ -197,27 +196,6 @@ constexpr T saturate(const uint32_t width, const intmax_t value)
     // clang-format on
 }
 
-inline void float_trunc_bytes(float* src)
-{
-    /* Set the least significant two bytes to zero for the input float value.*/
-    uint32_t* ptr = reinterpret_cast<uint32_t*>(src);
-    *ptr          = *ptr & UINT32_C(0xffff0000);
-}
-
-inline void truncateFloatToBFloat(float* src, int64_t size)
-{
-    /* Set the least significant two bytes to zero for each float
-    value in the input src buffer. */
-    ASSERT_MEM(src);
-    ASSERT_MSG(size > 0, "Size of src (representing number of values in src) must be a positive integer.");
-    for (; size != 0; src++, size--)
-    {
-        // Rounding first in order to prevent unrepresentative BF16 number
-        *src = static_cast<float>(static_cast<bf16>(*src));
-        float_trunc_bytes(src);
-    }
-}
-
 inline bool checkValidBFloat(float src)
 {
     /* Checks if the least significant two bytes are zero. */
@@ -231,24 +209,23 @@ float fpTrunc(T input)
     float f_in = static_cast<float>(input);
 
     /* Truncates a float value based on the TOSA_REF_TYPE it represents.*/
-    switch (Dtype)
+    if constexpr (Dtype == TOSA_REF_TYPE_BF16)
     {
-        case TOSA_REF_TYPE_BF16:
-            truncateFloatToBFloat(&f_in, 1);
-            break;
-        case TOSA_REF_TYPE_FP16:
-            // Cast to temporary float16 value before casting back to float32
-            {
-                half_float::half h = half_float::half_cast<half_float::half, float>(f_in);
-                f_in               = half_float::half_cast<float, half_float::half>(h);
-                break;
-            }
-        case TOSA_REF_TYPE_FP32:
-            // No-op for fp32
-            break;
-        default:
-            ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-cast.", EnumNameTOSAREFTYPE(Dtype));
+        return static_cast<float>(static_cast<bf16>(input));
     }
+    else if constexpr (Dtype == TOSA_REF_TYPE_FP16)
+    {
+        return static_cast<float>(static_cast<float16>(input));
+    }
+    else if constexpr (Dtype == TOSA_REF_TYPE_FP32)
+    {
+        // No-op for fp32
+    }
+    else
+    {
+        ASSERT_MSG(false, "TOSA_REF_TYPE %s should not be float-cast.", EnumNameTOSAREFTYPE(Dtype));
+    }
+
     return f_in;
 }
 

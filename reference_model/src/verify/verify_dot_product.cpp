@@ -13,7 +13,6 @@
 //    limitations under the License.
 
 #include "func_debug.h"
-#include "half.hpp"
 #include "verifiers.h"
 
 #include <cfloat>
@@ -165,7 +164,7 @@ bool verifyDotProduct(const CTensor* referenceTensor,
             break;
         }
         case tosa_datatype_fp16_t: {
-            const half_float::half* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const float16* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[DP] Missing data for implementation");
             return validateDataDP(refData, refBndData, impData, refShape, dpInfo);
             break;

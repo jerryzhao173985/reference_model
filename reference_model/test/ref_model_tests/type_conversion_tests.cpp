@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -170,7 +169,7 @@ TEST_SUITE("reference_model")
     {
         SUBCASE("fp32 -> fp16")
         {
-            testCastFpSpecial<float, half>();
+            testCastFpSpecial<float, float16>();
         }
 
         SUBCASE("fp32 -> bf16")
@@ -190,17 +189,17 @@ TEST_SUITE("reference_model")
 
         SUBCASE("fp16 -> fp32")
         {
-            testCastFpSpecial<half, float>();
+            testCastFpSpecial<float16, float>();
         }
 
         SUBCASE("fp16 -> fp8e4m3")
         {
-            testCastFpSpecial<half, fp8_e4m3>();
+            testCastFpSpecial<float16, fp8_e4m3>();
         }
 
         SUBCASE("fp16 -> fp8e5m2")
         {
-            testCastFpSpecial<half, fp8_e5m2>();
+            testCastFpSpecial<float16, fp8_e5m2>();
         }
 
         SUBCASE("bf16 -> fp32")
@@ -225,7 +224,7 @@ TEST_SUITE("reference_model")
 
         SUBCASE("fp8e5m2 -> fp16")
         {
-            testCastFpSpecial<fp8_e5m2, half>();
+            testCastFpSpecial<fp8_e5m2, float16>();
         }
 
         SUBCASE("fp8e5m2 -> bf16")
@@ -240,7 +239,7 @@ TEST_SUITE("reference_model")
 
         SUBCASE("fp8e4m3 -> fp16")
         {
-            testCastFpSpecial<fp8_e4m3, half>();
+            testCastFpSpecial<fp8_e4m3, float16>();
         }
 
         SUBCASE("fp8e4m3 -> bf16")

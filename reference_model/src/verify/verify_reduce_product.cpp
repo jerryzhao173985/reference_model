@@ -60,10 +60,9 @@ bool verifyReduceProduct(const CTensor* referenceTensor,
             return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo, &calcErrorBounds<float>);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[RP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo,
-                                &calcErrorBounds<half_float::half>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &rpInfo, &calcErrorBounds<float16>);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);

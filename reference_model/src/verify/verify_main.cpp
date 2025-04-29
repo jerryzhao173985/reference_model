@@ -180,7 +180,7 @@ tvf_status_t validateResultFile(const std::string resultFile,
             break;
         }
         case TosaReference::TOSA_REF_TYPE_FP16: {
-            nperror = NumpyUtilities::validateNpyHeader<half_float::half>(resultFile.c_str(), shape);
+            nperror = NumpyUtilities::validateNpyHeader<float16>(resultFile.c_str(), shape);
             break;
         }
         case TosaReference::TOSA_REF_TYPE_BF16: {
@@ -347,8 +347,8 @@ bool createTensorMap(const std::string resultFile,
     }
     else if (tosaRefType == TosaReference::TOSA_REF_TYPE_FP16)
     {
-        half_float::half* fp16dataBuf = new half_float::half[elements];
-        nperror                       = NumpyUtilities::readFromNpyFile(resultFile.c_str(), elements, fp16dataBuf);
+        float16* fp16dataBuf = new float16[elements];
+        nperror              = NumpyUtilities::readFromNpyFile(resultFile.c_str(), elements, fp16dataBuf);
         if (nperror == NumpyUtilities::NO_ERROR)
         {
             databuf_size = sizeof(*fp16dataBuf) * elements;

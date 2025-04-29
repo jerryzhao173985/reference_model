@@ -18,7 +18,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "half.hpp"
 #include "verifiers.h"
 
 namespace TosaReference
@@ -71,10 +70,9 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
             return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<float>);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo,
-                                &calcErrorBounds<half_float::half>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<float16>);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);

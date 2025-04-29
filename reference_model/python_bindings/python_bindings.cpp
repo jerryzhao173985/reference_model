@@ -279,7 +279,7 @@ size_t get_itemsize_bits(tosa::TosaSerializationTensor* tens)
     switch (tens->GetDtype())
     {
         case tosa::DType_FP16:
-            return 8 * sizeof(half_float::half);
+            return 8 * sizeof(ct::float16);
         case tosa::DType_FP32:
             return 8 * sizeof(float);
         case tosa::DType_BF16:

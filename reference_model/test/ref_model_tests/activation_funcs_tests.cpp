@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -72,7 +71,7 @@ void testSigmoidSpecial(std::vector<FP_TYPE>& inVals, std::vector<FP_TYPE>& expe
 
 TEST_SUITE("reference_model")
 {
-    TEST_CASE_TEMPLATE("Tanh FP special values", FP_TYPE, float, half, bfloat16)
+    TEST_CASE_TEMPLATE("Tanh FP special values", FP_TYPE, float, float16, bfloat16)
     {
         SUBCASE("special behaviour")
         {
@@ -90,7 +89,7 @@ TEST_SUITE("reference_model")
         }
     }
 
-    TEST_CASE_TEMPLATE("Sigmoid FP special values", FP_TYPE, float, half, bfloat16)
+    TEST_CASE_TEMPLATE("Sigmoid FP special values", FP_TYPE, float, float16, bfloat16)
     {
         SUBCASE("special behaviour")
         {

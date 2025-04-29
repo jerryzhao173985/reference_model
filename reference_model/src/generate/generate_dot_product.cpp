@@ -13,7 +13,6 @@
 //    limitations under the License.
 
 #include "generate_dot_product.h"
-#include "half.hpp"
 
 namespace
 {
@@ -77,7 +76,7 @@ bool generateMatMul(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             (cfg.inputPos == 0) ? generateMatMulA(cfg, generator, outData, size)
                                 : generateMatMulB(cfg, generator, outData, size);
             break;
@@ -221,7 +220,7 @@ bool generateConv2D(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             switch (cfg.inputPos)
             {
                 case 0:
@@ -339,7 +338,7 @@ bool generateReduceSum(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             generateReduceSumData(cfg, generator, outData, size);
             break;
         }
@@ -423,7 +422,7 @@ bool generateAvgPool2D(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             generateAvgPool2DData(cfg, generator, outData, size);
             break;
         }
@@ -562,7 +561,7 @@ bool generateDepthwiseConv2D(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             switch (cfg.inputPos)
             {
                 case 0:
@@ -744,7 +743,7 @@ bool generateTransposeConv2D(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             switch (cfg.inputPos)
             {
                 case 0:
@@ -933,7 +932,7 @@ bool generateConv3D(const TosaReference::GenerateConfig& cfg,
             break;
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             switch (cfg.inputPos)
             {
                 case 0:

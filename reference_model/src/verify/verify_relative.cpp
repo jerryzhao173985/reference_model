@@ -87,10 +87,9 @@ bool verifyRelative(const CTensor* referenceTensor,
             return validateData(refData, nullptr, impData, refShape, modeStr, &rInfo, &calcErrorBounds<fp8e5m2>);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[R] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &rInfo,
-                                &calcErrorBounds<half_float::half>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &rInfo, &calcErrorBounds<float16>);
         }
         default:
             WARNING("[Verifier][R] Data-type not supported.");

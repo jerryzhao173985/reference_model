@@ -11,10 +11,10 @@
 //    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
+#include "cfloat.h"
 #include "dtype_limits.h"
 #include "generate.h"
 #include "generate_utils.h"
-#include "half.hpp"
 
 #include <algorithm>
 #include <array>
@@ -319,7 +319,7 @@ bool generatePseudoRandom(const GenerateConfig& cfg, void* data, size_t size)
             return generateFP(cfg, outData, size);
         }
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             return generateFP(cfg, outData, size);
         }
         case DType::DType_BF16: {

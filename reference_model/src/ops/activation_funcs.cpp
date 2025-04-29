@@ -42,7 +42,7 @@ int OpClamp<Rank, Dtype>::register_fcn()
     switch (DType2RefType(serializationDtype))
     {
         case TOSA_REF_TYPE_FP16: {
-            std::vector<half_float::half> min_float_data, max_float_data;
+            std::vector<ct::float16> min_float_data, max_float_data;
             TosaSerializationHandler::ConvertU8toF16(attribute->min_val(), /* size = */ 1, min_float_data);
             TosaSerializationHandler::ConvertU8toF16(attribute->max_val(), /* size = */ 1, max_float_data);
             min = (InEigenType)min_float_data[0];

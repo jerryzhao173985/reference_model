@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -84,7 +83,7 @@ void testSelectFpSpecial()
 
 TEST_SUITE("reference_model")
 {
-    TEST_CASE_TEMPLATE("SELECT FP SPECIAL", IN_TYPE, float, half, bfloat16)
+    TEST_CASE_TEMPLATE("SELECT FP SPECIAL", IN_TYPE, float, float16, bfloat16)
     {
         testSelectFpSpecial<IN_TYPE>();
     }

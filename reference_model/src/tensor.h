@@ -29,6 +29,7 @@
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
 using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
 using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
+using ct::float16;
 
 using namespace tosa;
 
@@ -300,7 +301,7 @@ public:
 
     virtual int readfromVector(const ArrayProxy<double> vals);
     virtual int readfromVector(const ArrayProxy<float> vals);
-    virtual int readfromVector(const ArrayProxy<half_float::half> vals);
+    virtual int readfromVector(const ArrayProxy<float16> vals);
     virtual int readfromVector(const ArrayProxy<int8_t> vals);
     virtual int readfromVector(const ArrayProxy<uint16_t> vals);
     virtual int readfromVector(const ArrayProxy<int16_t> vals);
@@ -313,7 +314,7 @@ public:
 
     virtual int writeToVector(ArrayProxy<double> vals);
     virtual int writeToVector(ArrayProxy<float> vals);
-    virtual int writeToVector(ArrayProxy<half_float::half> vals);
+    virtual int writeToVector(ArrayProxy<float16> vals);
     virtual int writeToVector(ArrayProxy<int8_t> vals);
     virtual int writeToVector(ArrayProxy<uint16_t> vals);
     virtual int writeToVector(ArrayProxy<int16_t> vals);

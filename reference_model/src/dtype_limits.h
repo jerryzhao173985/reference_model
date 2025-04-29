@@ -17,10 +17,8 @@
 
 #include "cfloat.h"
 #include "dtype.h"
-#include "half.hpp"
 
 using namespace ct;
-using namespace half_float;
 
 namespace TosaReference
 {
@@ -61,16 +59,16 @@ struct DtypeLimits<TOSA_REF_TYPE_FP32>
 template <>
 struct DtypeLimits<TOSA_REF_TYPE_FP16>
 {
-    static constexpr half lowest       = std::numeric_limits<half>::lowest();
-    static constexpr half max          = std::numeric_limits<half>::max();
-    static constexpr half min          = std::numeric_limits<half>::min();
-    static constexpr half denorm_min   = std::numeric_limits<half>::denorm_min();
-    static constexpr half infinity     = std::numeric_limits<half>::infinity();
-    static constexpr half quiet_NaN    = std::numeric_limits<half>::quiet_NaN();
-    static constexpr half low_extreme  = -infinity;
-    static constexpr half high_extreme = infinity;
-    static constexpr bool has_infinity = true;
-    static constexpr bool has_nan      = true;
+    static constexpr float16 lowest       = std::numeric_limits<float16>::lowest();
+    static constexpr float16 max          = std::numeric_limits<float16>::max();
+    static constexpr float16 min          = std::numeric_limits<float16>::min();
+    static constexpr float16 denorm_min   = std::numeric_limits<float16>::denorm_min();
+    static constexpr float16 infinity     = std::numeric_limits<float16>::infinity();
+    static constexpr float16 quiet_NaN    = std::numeric_limits<float16>::quiet_NaN();
+    static constexpr float16 low_extreme  = -infinity;
+    static constexpr float16 high_extreme = infinity;
+    static constexpr bool has_infinity    = true;
+    static constexpr bool has_nan         = true;
 };
 
 template <>

@@ -16,10 +16,9 @@
 #ifndef OP_TEMPLATE_TYPES_H
 #define OP_TEMPLATE_TYPES_H
 
+#include "cfloat.h"
 #include "config.h"
 #include "dtype.h"
-#include "half.hpp"
-
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -155,7 +154,7 @@ struct GetAccEigenType;
 template <>
 struct GetAccEigenType<TOSA_REF_TYPE_FP16>
 {
-    using type = half_float::half;
+    using type = ct::float16;
 };
 template <TOSA_REF_TYPE Dtype>
 struct GetAccEigenType

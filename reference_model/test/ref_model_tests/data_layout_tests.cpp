@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -60,7 +59,7 @@ void testReshape(std::vector<T>& inVals, std::vector<int32_t>& oldShape, std::ve
 
 TEST_SUITE("reference_model")
 {
-    TEST_CASE_TEMPLATE("RESHAPE", T, float, half, bfloat16, fp8_e5m2, fp8_e4m3, int32_t, int16_t, int8_t)
+    TEST_CASE_TEMPLATE("RESHAPE", T, float, float16, bfloat16, fp8_e5m2, fp8_e4m3, int32_t, int16_t, int8_t)
     {
 
         SUBCASE("rank 1 -> rank 0")
