@@ -322,6 +322,7 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       test/ref_model_tests/type_conversion_tests.cpp
       test/ref_model_tests/activation_funcs_tests.cpp
       test/ref_model_tests/data_layout_tests.cpp
+      test/ref_model_tests/dump_tensor_tests.cpp
   )
 
   list(APPEND CXX_SOURCE_TESTS ${CXX_SOURCE})

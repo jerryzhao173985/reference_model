@@ -235,7 +235,8 @@ int OpTanh<Rank, Dtype>::register_fcn()
                 // ABS_ERROR bounds return 4 * (2 * abs(a))
                 // NOTE: 4 * err_base is added as part of compliance in tosa_verify
                 this->fcn = [](InEigenType a) -> OutEigenType {
-                    return 4.0 * 2.0 * static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a));
+                    return static_cast<OutEigenType>(4.0 * 2.0) *
+                           static_cast<OutEigenType>(a > (InEigenType)0 ? a : (-a));
                 };
             }
             else

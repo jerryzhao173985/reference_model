@@ -695,8 +695,9 @@ TEST_CASE("positive - abs error with base bound")
         }
     })";
 
-    const auto shape        = std::vector<int32_t>{ 4, 4, 4 };
-    const auto elementCount = std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>());
+    const auto shape = std::vector<int32_t>{ 4, 4, 4 };
+    const auto elementCount =
+        static_cast<size_t>(std::accumulate(std::begin(shape), std::end(shape), 1, std::multiplies<>()));
 
     // Generate some random floats using the full range of fp32.
     auto data_fp32 = generateRandomTensorData<float>(elementCount, true);

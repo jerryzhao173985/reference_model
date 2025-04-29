@@ -1904,7 +1904,7 @@ TEST_CASE("positive - FP32 FP Special")
     const float inf             = std::numeric_limits<float>::infinity();
     const float min             = std::numeric_limits<float>::min();
     const float max             = std::numeric_limits<float>::max();
-    const float ulpmax          = 2.02824096e+31;    // max - std::nextafter(max, 0.0)
+    const float ulpmax          = 2.02824096e+31f;    // max - std::nextafter(max, 0.0)
     const float mindenorm       = std::numeric_limits<float>::denorm_min();
     const float nanFloat        = std::nanf("1");
 

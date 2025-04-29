@@ -206,8 +206,8 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
         return false;
     }
 
-    DataType min = std::stoll(prinfo.range[0]);
-    DataType max = std::stoll(prinfo.range[1]);
+    DataType min = static_cast<DataType>(std::stoll(prinfo.range[0]));
+    DataType max = static_cast<DataType>(std::stoll(prinfo.range[1]));
     if (min > max)
     {
         std::swap(min, max);
@@ -220,7 +220,7 @@ bool shuffleINTbyRow(const TosaReference::GenerateConfig& cfg, DataType* data, s
     const auto W     = cfg.shape[1];    // Width of rows
     if (W > range)
     {
-        WARNING("[Generator][PR][INT] Cannot fill data size %d with given shuffle range %ld.", W, range);
+        WARNING("[Generator][PR][INT] Cannot fill data size %d with given shuffle range %d.", W, range);
         return false;
     }
 

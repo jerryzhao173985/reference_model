@@ -626,7 +626,7 @@ int OpPow<Rank, Dtype>::register_fcn()
                 // NOTE: err_base is added as part of compliance in tosa_verify
                 this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {
                     OutEigenType z = log(x > (InEigenType)0 ? x : (-x)) * y;
-                    return 7.5 * (z > (OutEigenType)0 ? z : (-z));
+                    return static_cast<OutEigenType>(7.5) * (z > (OutEigenType)0 ? z : (-z));
                 };
             }
             else
