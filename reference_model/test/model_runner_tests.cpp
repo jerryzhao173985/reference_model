@@ -30,7 +30,6 @@
 using namespace TosaReference;
 using namespace tosa;
 using namespace ct;
-using namespace half_float;
 
 TEST_SUITE("model_runner")
 {

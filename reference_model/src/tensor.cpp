@@ -16,7 +16,6 @@
 #include "tensor.h"
 #include "arith_util.h"
 #include "array_proxy.h"
-#include "half.hpp"
 
 using namespace TosaReference;
 using namespace Eigen;
@@ -110,16 +109,16 @@ int TosaReference::Tensor::dumpTensorParams(std::ostream& out) const
 
 int TosaReference::Tensor::readFromNpyFile(const char* filename)
 {
-    uint32_t elements            = getElementCount();
-    double* f64databuf           = nullptr;
-    float* f32databuf            = nullptr;
-    half_float::half* f16databuf = nullptr;
-    int32_t* i32databuf          = nullptr;
-    int64_t* i64databuf          = nullptr;
-    bool* bdatabuf               = nullptr;
-    bf16* bf16databuf            = nullptr;
-    fp8e4m3* f8e4m3databuf       = nullptr;
-    fp8e5m2* f8e5m2databuf       = nullptr;
+    uint32_t elements      = getElementCount();
+    double* f64databuf     = nullptr;
+    float* f32databuf      = nullptr;
+    float16* f16databuf    = nullptr;
+    int32_t* i32databuf    = nullptr;
+    int64_t* i64databuf    = nullptr;
+    bool* bdatabuf         = nullptr;
+    bf16* bf16databuf      = nullptr;
+    fp8e4m3* f8e4m3databuf = nullptr;
+    fp8e5m2* f8e5m2databuf = nullptr;
     NumpyUtilities::NPError nperror;
     TOSA_REF_TYPE dtype       = getDtype();
     DType serialization_dtype = getSerializationDtype();
@@ -157,7 +156,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, f8e5m2databuf);
             break;
         case DType_FP16:
-            f16databuf = (half_float::half*)calloc(sizeof(half_float::half), elements);
+            f16databuf = (float16*)calloc(sizeof(float16), elements);
             ASSERT_MEM(f16databuf);
 
             nperror = NumpyUtilities::readFromNpyFile(filename, elements, f16databuf);
@@ -228,7 +227,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
             ASSERT_MEM(f32databuf);
             for (uint32_t i = 0; i < elements; i++)
             {
-                f32databuf[i] = half_float::half_cast<float, half_float::half>(f16databuf[i]);
+                f32databuf[i] = static_cast<float>(f16databuf[i]);
             }
             if (setTensorValueFloat(elements, f32databuf))
             {
@@ -322,7 +321,7 @@ int TosaReference::Tensor::readFromNpyFile(const char* filename)
                     ASSERT_MEM(f64databuf);
                     for (uint32_t i = 0; i < elements; i++)
                     {
-                        f64databuf[i] = half_float::half_cast<double, half_float::half>(f16databuf[i]);
+                        f64databuf[i] = static_cast<double>(f16databuf[i]);
                     }
                     if (setTensorValueDouble(elements, f64databuf))
                     {
@@ -425,7 +424,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
 {
     float* f32databuf               = nullptr;
     double* f64databuf              = nullptr;
-    half_float::half* f16databuf    = nullptr;
+    float16* f16databuf             = nullptr;
     uint8_t* ui8databuf             = nullptr;
     int8_t* i8databuf               = nullptr;
     int16_t* i16databuf             = nullptr;
@@ -458,7 +457,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
         case TOSA_REF_TYPE_FP16:
             f32databuf = (float*)calloc(sizeof(float), elements);
             ASSERT_MEM(f32databuf);
-            f16databuf = (half_float::half*)calloc(sizeof(half_float::half), elements);
+            f16databuf = (float16*)calloc(sizeof(float16), elements);
             ASSERT_MEM(f16databuf);
 
             if (getTensorValueFloat(elements, f32databuf))
@@ -470,7 +469,7 @@ int TosaReference::Tensor::writeToNpyFile(const char* filename) const
             // Convert fp32 to fp16 so that output file contains valid fp16 data
             for (uint32_t i = 0; i < elements; i++)
             {
-                f16databuf[i] = half_float::half_cast<half_float::half, float>(f32databuf[i]);
+                f16databuf[i] = static_cast<float16>(f32databuf[i]);
             }
             nperror = NumpyUtilities::writeToNpyFile(filename, shape, f16databuf);
 
@@ -836,7 +835,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<float> vals)
     return 0;
 }
 
-int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> vals)
+int TosaReference::Tensor::readfromVector(const ArrayProxy<float16> vals)
 {
     uint32_t elements = getElementCount();
     std::vector<float> tensor(elements);
@@ -863,7 +862,7 @@ int TosaReference::Tensor::readfromVector(const ArrayProxy<half_float::half> val
             // Convert from fp16 to fp32
             for (uint32_t i = 0; i < elements; i++)
             {
-                tensor[i] = half_float::half_cast<float, half_float::half>(vals[i]);
+                tensor[i] = static_cast<float>(vals[i]);
             }
 
             setTensorValueFloat(elements, tensor.data());
@@ -1210,7 +1209,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<float> vals)
     return 0;
 }
 
-int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
+int TosaReference::Tensor::writeToVector(ArrayProxy<float16> vals)
 {
     uint32_t elements = getElementCount();
     std::vector<float> tensor(elements);
@@ -1230,7 +1229,7 @@ int TosaReference::Tensor::writeToVector(ArrayProxy<half_float::half> vals)
             // Convert fp32 to fp16
             for (uint32_t i = 0; i < elements; i++)
             {
-                vals[i] = half_float::half_cast<half_float::half, float>(tensor[i]);
+                vals[i] = static_cast<float16>(tensor[i]);
             }
             break;
         default:

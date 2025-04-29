@@ -14,7 +14,6 @@
 
 #include "generate_full_range.h"
 #include "cfloat.h"
-#include "half.hpp"
 
 using namespace std;
 
@@ -70,7 +69,7 @@ bool generateFullRange(const GenerateConfig& cfg, void* data, size_t size)
             // TODO: Re-enable subnorm testing
             // Skip sub-normal values as they are allowed to be flushed to zero
             // This is not currently supported by Conformance Testing
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
+            float16* outData = reinterpret_cast<float16*>(data);
             zeroSubnorm(outData, elements);
             break;
         }

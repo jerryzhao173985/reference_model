@@ -18,7 +18,6 @@
 #endif
 #include "tensor_ops.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
 

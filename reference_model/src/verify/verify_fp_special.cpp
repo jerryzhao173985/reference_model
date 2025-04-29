@@ -14,7 +14,6 @@
 
 #include <cfloat>
 
-#include "half.hpp"
 #include "verifiers.h"
 
 namespace
@@ -30,21 +29,6 @@ bool compliant(const double& referenceValue, const double& boundValue, const Dat
            (std::isnan(referenceValue) == std::isnan(double(implementationValue)) &&
             std::isfinite(referenceValue) == std::isfinite(double(implementationValue)) &&
             std::signbit(referenceValue) == std::signbit(double(implementationValue)));
-}
-
-template <>
-bool compliant(const double& referenceValue, const double& boundValue, const half_float::half& implementationValue)
-{
-    // Compliant when values are zero (maybe different sign)
-    // OR both NaNs
-    // OR ref is not NaN but bound value is NaN
-    // OR have the same finiteness AND the same sign
-    return (referenceValue == 0.0 && implementationValue == 0.0) ||
-           (std::isnan(referenceValue) && half_float::isnan(implementationValue)) ||
-           (!std::isnan(referenceValue) && std::isnan(boundValue)) ||
-           (std::isnan(referenceValue) == half_float::isnan(implementationValue) &&
-            std::isfinite(referenceValue) == half_float::isfinite(implementationValue) &&
-            std::signbit(referenceValue) == half_float::signbit(implementationValue));
 }
 
 template <typename Datatype>
@@ -98,7 +82,7 @@ bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* boundsTensor
             return verify(refData, refBndData, impData, elementCount, refShape);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[FS] Missing data for implementation");
 
             return verify(refData, refBndData, impData, elementCount, refShape);

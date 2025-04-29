@@ -15,7 +15,6 @@
 #include "cfloat.h"
 #include "dtype.h"
 #include "dtype_limits.h"
-#include "half.hpp"
 
 // Include this last because it redefines REQUIRE
 #include "test_utils.h"
@@ -608,7 +607,7 @@ void testPow(std::vector<FP_TYPE>& inVals1, std::vector<FP_TYPE>& inVals2, std::
 
 TEST_SUITE("reference_model")
 {
-    TEST_CASE_TEMPLATE("ARGMAX FP SPECIAL", IN_TYPE, float, half, bfloat16, fp8_e5m2, fp8_e4m3)
+    TEST_CASE_TEMPLATE("ARGMAX FP SPECIAL", IN_TYPE, float, float16, bfloat16, fp8_e5m2, fp8_e4m3)
     {
         SUBCASE("propagate")
         {

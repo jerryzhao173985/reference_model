@@ -19,7 +19,6 @@
 #include <utility>
 
 #include "func_debug.h"
-#include "half.hpp"
 #include "verifiers.h"
 
 namespace TosaReference
@@ -99,10 +98,10 @@ bool verifyAbsError(const CTensor* referenceTensor,
             return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo, &calcErrorBounds<float>);
         }
         case tosa_datatype_fp16_t: {
-            const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
+            const auto* impData = reinterpret_cast<const float16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[AE] Missing data for implementation");
             return validateData(refData, refBndData, impData, refShape, modeStr, &aeInfo,
-                                &calcErrorBounds<half_float::half>);
+                                &calcErrorBounds<ct::float16>);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);

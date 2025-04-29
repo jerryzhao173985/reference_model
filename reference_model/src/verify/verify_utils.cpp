@@ -480,7 +480,7 @@ template bool
 template bool
     validateData(const double* referenceData,
                  const double* boundsData,
-                 const half_float::half* implementationData,
+                 const ct::float16* implementationData,
                  const std::vector<int32_t>& shape,
                  const std::string& modeStr,
                  const void* cfgPtr,

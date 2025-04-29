@@ -17,7 +17,6 @@
 #include "arith_util.h"
 #include "cfloat.h"
 #include "func_debug.h"
-#include "half.hpp"
 #include "quant_util.h"
 #include "template_types.h"
 #include <cfenv>
@@ -515,8 +514,8 @@ CastHelper<InDtype, TOSA_REF_TYPE_FP16>::CastHelper()
 {
     // Integer data converted to fp16 (stored as fp32)
     fcn = [](InEigenType in) -> float {
-        half_float::half h = half_float::half(static_cast<float>(in));
-        float out          = half_float::half_cast<float, half_float::half>(h);
+        float16 h = float16(static_cast<float>(in));
+        float out = static_cast<float>(h);
         return out;
     };
 }
@@ -551,20 +550,18 @@ CastHelper<TOSA_REF_TYPE_FP32, TOSA_REF_TYPE_BF16>::CastHelper()
 template <TOSA_REF_TYPE OutDtype>
 CastHelper<TOSA_REF_TYPE_FP16, OutDtype>::CastHelper()
 {
-    // fp16 data (stored as fp32) converted to integer
     fcn = [](float in) -> OutEigenType {
-        // Cast from float representation back to half_float before rounding
-        half_float::half h = half_float::half(in);
-        if (h >= half_float::half(float(OutMax)))
+        // Round input to float16, clamp to integer bounds, then convert back to int
+        float16 h = static_cast<float16>(in);
+        if (h >= static_cast<float16>(static_cast<float>(OutMax)))
             return OutMax;
-
-        if (h <= half_float::half(float(OutMin)))
+        if (h <= static_cast<float16>(static_cast<float>(OutMin)))
             return OutMin;
-
         ScopedFEnv round_guard(FE_TONEAREST);
-        h                = static_cast<half_float::half>(std::nearbyint(h));
-        OutEigenType out = half_float::half_cast<OutEigenType, half_float::half>(h);
-
+        // round to nearest-even in float domain and truncate to float16 bits
+        h = static_cast<float16>(std::nearbyint(static_cast<float>(h)));
+        // convert float16 -> float -> integer
+        OutEigenType out = static_cast<OutEigenType>(static_cast<float>(h));
         return out;
     };
 }
@@ -645,8 +642,8 @@ CastHelper<TOSA_REF_TYPE_FP8E4M3, TOSA_REF_TYPE_FP16>::CastHelper()
 {
     // fp8e4m3 data (stored as fp32) converted to fp16 (stored as fp32)
     fcn = [](float in) -> float {
-        half_float::half h = half_float::half(in);
-        float out          = half_float::half_cast<half_float::half, float>(h);
+        float16 h = float16(in);
+        float out = static_cast<float>(h);
         return out;
     };
 }
@@ -689,8 +686,8 @@ CastHelper<TOSA_REF_TYPE_FP8E5M2, TOSA_REF_TYPE_FP16>::CastHelper()
 {
     // fp8e5m2 data (stored as fp32) converted to fp16 (stored as fp32)
     fcn = [](float in) -> float {
-        half_float::half h = half_float::half(in);
-        float out          = half_float::half_cast<half_float::half, float>(h);
+        float16 h = float16(in);
+        float out = static_cast<float16>(h);
         return out;
     };
 }

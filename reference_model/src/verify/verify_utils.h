@@ -18,7 +18,6 @@
 
 #include "cfloat.h"
 #include "dtype.h"
-#include "half.hpp"
 #include "types.h"
 
 #include <cmath>
@@ -37,6 +36,7 @@
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
 using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
 using fp8e5m2 = ct::cfloat<int8_t, 5, true, true, true>;
+using ct::float16;
 
 namespace TosaReference
 {
@@ -185,7 +185,7 @@ struct AccPrecision<float>
     static constexpr int32_t normal_frac = 23;
 };
 template <>
-struct AccPrecision<half_float::half>
+struct AccPrecision<float16>
 {
     static constexpr double normal_min   = const_exp2(-14);
     static constexpr double normal_max   = const_exp2(16) - const_exp2(15 - 10);

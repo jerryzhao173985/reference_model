@@ -12,7 +12,6 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 #include "generate.h"
-#include "half.hpp"
 #include "test_utils.h"
 
 #include <doctest/doctest.h>
@@ -1136,9 +1135,9 @@ void depthwise_conv2d_test_FP16(const std::string tosaName[3],
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_SET_", setStr);
 
-    std::vector<half_float::half> buffer(tosaElements[param]);
+    std::vector<float16> buffer(tosaElements[param]);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
-    check_output<half_float::half>(buffer, expected);
+    check_output<float16>(buffer, expected);
 }
 
 TEST_CASE("positive - FP16 depthwise_conv2d dot product (first 3 values)")
@@ -1294,11 +1293,10 @@ void transpose_conv2d_test_FP16(const std::string tosaName[3],
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_SET_", setStr);
 
-    std::vector<half_float::half> buffer(tosaElements[param]);
+    std::vector<float16> buffer(tosaElements[param]);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
-    std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
-                                             buffer.end());
-    check_output<half_float::half>(last_three, lastExpected);
+    std::vector<float16> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())), buffer.end());
+    check_output<float16>(last_three, lastExpected);
 }
 
 TEST_CASE("positive - FP16 transpose_conv2d dot product (last 3 values)")
@@ -1454,9 +1452,9 @@ void conv3d_test_FP16(const std::string tosaName[3],
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_SET_", setStr);
 
-    std::vector<half_float::half> buffer(tosaElements[param]);
+    std::vector<float16> buffer(tosaElements[param]);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName[param].c_str(), (void*)buffer.data(), tosaElements[param] * 2));
-    check_output<half_float::half>(buffer, expected);
+    check_output<float16>(buffer, expected);
 }
 
 TEST_CASE("positive - FP16 conv3d dot product (first 3 values)")
@@ -1802,34 +1800,32 @@ TEST_CASE("positive - FP16 full range")
         std::string jsonCfg = templateJsonCfg;
         update_json_template(jsonCfg, "_START_", "0");
 
-        std::vector<half_float::half> buffer(tosaElements);
+        std::vector<float16> buffer(tosaElements);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
         // TODO: Re-enable subnorm testing - (0, 1, 2)
         std::vector<uint16_t> expected = { 0, 0, 0 };
-        check_output<half_float::half>(buffer, expected);
+        check_output<float16>(buffer, expected);
 
-        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
-                                                 buffer.end());
+        std::vector<float16> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())), buffer.end());
         // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
         std::vector<uint16_t> last_expected = { 45005, 45006, 45007 };
-        check_output<half_float::half>(last_three, last_expected);
+        check_output<float16>(last_three, last_expected);
     }
     SUBCASE("ceil - startVal 100")
     {
         std::string jsonCfg = templateJsonCfg;
         update_json_template(jsonCfg, "_START_", "100");
 
-        std::vector<half_float::half> buffer(tosaElements);
+        std::vector<float16> buffer(tosaElements);
         REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
         // TODO: Re-enable subnorm testing - (100, 101, 102)
         std::vector<uint16_t> expected = { 0, 0, 0 };
-        check_output<half_float::half>(buffer, expected);
+        check_output<float16>(buffer, expected);
 
-        std::vector<half_float::half> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())),
-                                                 buffer.end());
+        std::vector<float16> last_three(buffer.end() - std::min<int>(3, static_cast<int>(buffer.size())), buffer.end());
         // To calculate last_expected: last value = tosaElements % 65535 - 1 + startVal
         std::vector<uint16_t> last_expected = { 45105, 45106, 45107 };
-        check_output<half_float::half>(last_three, last_expected);
+        check_output<float16>(last_three, last_expected);
     }
 }
 
@@ -2006,25 +2002,25 @@ void special_test_FP16(const std::string tosaName,
                        const std::string templateJsonCfg,
                        const std::string opStr,
                        const std::string startIndexStr,
-                       const std::vector<std::pair<half_float::half, half_float::half>> expected,
+                       const std::vector<std::pair<float16, float16>> expected,
                        const std::vector<valueType> expectedValueType)
 {
     std::string jsonCfg = templateJsonCfg;
     update_json_template(jsonCfg, "_OP_", opStr);
     update_json_template(jsonCfg, "_START_", startIndexStr);
 
-    std::vector<half_float::half> buffer(tosaElements);
+    std::vector<float16> buffer(tosaElements);
     REQUIRE(tgd_generate_data(jsonCfg.c_str(), tosaName.c_str(), (void*)buffer.data(), tosaElements * 2));
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
         std::stringstream msg;
         msg << "index: " << idx << " expected between: " << expected[idx].first << " and: " << expected[idx].second
             << ", but got: " << buffer[idx];
-        if (std::isnan(expected[idx].first) || std::isnan(expected[idx].second))
+        if (std::isnan(double(expected[idx].first)) || std::isnan(double(expected[idx].second)))
         {
-            REQUIRE_MESSAGE((std::isnan(expected[idx].first) && std::isnan(expected[idx].second)),
+            REQUIRE_MESSAGE((std::isnan(double(expected[idx].first)) && std::isnan(double(expected[idx].second))),
                             "Incorrect test - cannot have range that includes NaN, both values must be NaN");
-            REQUIRE_MESSAGE(std::isnan(buffer[idx]), msg.str());
+            REQUIRE_MESSAGE(std::isnan(double(buffer[idx])), msg.str());
         }
         else
         {
@@ -2043,15 +2039,15 @@ void special_test_FP16(const std::string tosaName,
 
                 if (expectedValueType[idx] == OddInteger)
                 {
-                    half_float::half halfValue = buffer[idx] / half_float::half(2.0);
-                    bool isOdd                 = halfValue != round(halfValue);
+                    float16 halfValue = buffer[idx] / float16(2.0);
+                    bool isOdd        = halfValue != round(halfValue);
                     imsg << " that is odd";
                     REQUIRE_MESSAGE(isOdd, imsg.str());
                 }
                 if (expectedValueType[idx] == EvenInteger)
                 {
-                    half_float::half halfValue = buffer[idx] / half_float::half(2.0);
-                    bool isEven                = halfValue == round(halfValue);
+                    float16 halfValue = buffer[idx] / float16(2.0);
+                    bool isEven       = halfValue == round(halfValue);
                     imsg << " that is even";
                     REQUIRE_MESSAGE(isEven, imsg.str());
                 }
@@ -2089,46 +2085,40 @@ TEST_CASE("positive - FP16 FP Special")
         }
     })";
 
-    const std::string tosaName0       = "input0";
-    const std::string tosaName1       = "input1";
-    const size_t tosaElements         = 3 * 6 * 4;
-    const half_float::half max        = std::numeric_limits<half_float::half>::max();
-    const half_float::half min        = std::numeric_limits<half_float::half>::min();
-    const half_float::half pythagoras = ct::compat::cast<half_float::half>(1.41421);
-    const half_float::half two        = half_float::half(2.0);
-    const half_float::half ulpmax     = half_float::half(32.0);    // max - nextafter(max, 0.0)
-    const half_float::half inf        = std::numeric_limits<half_float::half>::infinity();
+    const std::string tosaName0 = "input0";
+    const std::string tosaName1 = "input1";
+    const size_t tosaElements   = 3 * 6 * 4;
+    const float16 max           = std::numeric_limits<float16>::max();
+    const float16 min           = std::numeric_limits<float16>::min();
+    const float16 pythagoras    = ct::compat::cast<float16>(1.41421);
+    const float16 two           = static_cast<float16>(2.0);
+    const float16 ulpmax        = static_cast<float16>(0.00390625f);    // max - std::nextafter(max, 0.0)
+    const float16 inf           = std::numeric_limits<float16>::infinity();
 
     SUBCASE("pow, input 0")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { min, max },
-                                                                                { min, max },
-                                                                                { max, max } };
-        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        std::vector<std::pair<float16, float16>> expected = { { min, max }, { min, max }, { max, max } };
+        std::vector<valueType> expectedValueType          = { Float, Float, Float };
         special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
     SUBCASE("pow, input 1")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { pythagoras, pythagoras },
-                                                                                { -pythagoras, -pythagoras },
-                                                                                { two, max } };
-        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        std::vector<std::pair<float16, float16>> expected = { { pythagoras, pythagoras },
+                                                              { -pythagoras, -pythagoras },
+                                                              { two, max } };
+        std::vector<valueType> expectedValueType          = { Float, Float, Float };
         special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "POW", "2", expected, expectedValueType);
     }
     SUBCASE("sub, input 0")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { max, max },
-                                                                                { -ulpmax, -ulpmax },
-                                                                                { inf, inf } };
-        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        std::vector<std::pair<float16, float16>> expected = { { max, max }, { -ulpmax, -ulpmax }, { inf, inf } };
+        std::vector<valueType> expectedValueType          = { Float, Float, Float };
         special_test_FP16(tosaName0, tosaElements, templateJsonCfg, "SUB", "2", expected, expectedValueType);
     }
     SUBCASE("sub, input 1")
     {
-        std::vector<std::pair<half_float::half, half_float::half>> expected = { { -ulpmax, -ulpmax },
-                                                                                { max, max },
-                                                                                { inf, inf } };
-        std::vector<valueType> expectedValueType                            = { Float, Float, Float };
+        std::vector<std::pair<float16, float16>> expected = { { -ulpmax, -ulpmax }, { max, max }, { inf, inf } };
+        std::vector<valueType> expectedValueType          = { Float, Float, Float };
         special_test_FP16(tosaName1, tosaElements, templateJsonCfg, "SUB", "2", expected, expectedValueType);
     }
 }
@@ -2856,7 +2846,7 @@ void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t
     check_output<StorageType>(buffer, expected);
 }
 
-TEST_CASE_TEMPLATE("positive - Fixed Data", TYPE, bool, int8_t, int16_t, int32_t, half_float::half, float)
+TEST_CASE_TEMPLATE("positive - Fixed Data", TYPE, bool, int8_t, int16_t, int32_t, float16, float)
 {
     // Testing of fixed data into high-level storage types
 

@@ -15,7 +15,6 @@
 #include "generate_special.h"
 #include "dtype_limits.h"
 #include "generate_special_utils.h"
-#include "half.hpp"
 
 #include <map>
 #include <random>
@@ -112,9 +111,9 @@ bool generateSpecial(const GenerateConfig& cfg, void* data, size_t size)
     switch (cfg.dataType)
     {
         case DType::DType_FP16: {
-            half_float::half* outData = reinterpret_cast<half_float::half*>(data);
-            return generate<half_float::half, half_float::half, TOSA_REF_TYPE_FP16>(
-                cfg, outData, size, getSpecialConfig<SpecialConfig::FP>());
+            float16* outData = reinterpret_cast<float16*>(data);
+            return generate<float16, float16, TOSA_REF_TYPE_FP16>(cfg, outData, size,
+                                                                  getSpecialConfig<SpecialConfig::FP>());
         }
         case DType::DType_FP32: {
             float* outData = reinterpret_cast<float*>(data);

@@ -15,7 +15,6 @@
 #define _TEST_UTILS_H
 
 #include "cfloat.h"
-#include "half.hpp"
 #include "model_runner.h"
 #include "tosa_generated.h"
 
@@ -26,7 +25,6 @@
 using namespace ct;
 using namespace tosa;
 using namespace TosaReference;
-using namespace half_float;
 
 using fp8_e4m3 = cfloat_advanced<8, 4, FloatFeatures::HasNaN | FloatFeatures::HasDenorms>;
 using fp8_e5m2 = cfloat_advanced<8, 5, float_support::AllFeats>;
@@ -58,7 +56,7 @@ constexpr DType NativeType2DType()
     if constexpr (std::is_same<T, binary16>::value)
         return DType_FP16;
 
-    if constexpr (std::is_same<T, half_float::half>::value)
+    if constexpr (std::is_same<T, float16>::value)
         return DType_FP16;
 
     if constexpr (std::is_same<T, float>::value)
@@ -83,108 +81,109 @@ constexpr DType NativeType2DType()
 class RefModelTestBuilder
 {
 private:
-    TosaSerializationHandler _serHandler;
-    TosaSerializationRegion* _mainRegion;
-    TosaSerializationBasicBlock* _mainBlock;
-    IModelRunner _modelRunner;
+    TosaSerializationHandler serHandler_;
+    TosaSerializationRegion* mainRegion_;
+    TosaSerializationBasicBlock* mainBlock_;
+    IModelRunner modelRunner_;
     // This will start at 0 and increase by 1 every time we use setInput.
-    int _inputsAlreadySet;
+    size_t inputsAlreadySet_;
 
 public:
     RefModelTestBuilder()
         : RefModelTestBuilder(func_config_t{}, func_debug_t{})
     {}
     RefModelTestBuilder(func_config_t funcConfig, func_debug_t funcDebug)
-        : _modelRunner(funcConfig, funcDebug)
-        , _inputsAlreadySet(0)
+        : modelRunner_(funcConfig, funcDebug)
+        , inputsAlreadySet_(0)
     {
         // Create the main region
-        _serHandler.GetRegions().push_back(std::make_unique<TosaSerializationRegion>("region_main"));
-        _mainRegion = _serHandler.GetMainRegion();
+        serHandler_.GetRegions().push_back(std::make_unique<TosaSerializationRegion>("region_main"));
+        mainRegion_ = serHandler_.GetMainRegion();
 
         // Create the main block
-        _mainRegion->GetBlocks().push_back(std::make_unique<TosaSerializationBasicBlock>("block_main", "region_main"));
-        _mainBlock = _mainRegion->GetBlockByName("block_main");
+        mainRegion_->GetBlocks().push_back(std::make_unique<TosaSerializationBasicBlock>("block_main", "region_main"));
+        mainBlock_ = mainRegion_->GetBlockByName("block_main");
     }
 
     void addInput(std::vector<int32_t> shape, DType dtype)
     {
-        int previousSize      = _mainBlock->GetInputs().size();
+        size_t previousSize   = mainBlock_->GetInputs().size();
         std::string inputName = getInputName(previousSize);
-        _mainBlock->GetInputs().push_back(inputName);
+        mainBlock_->GetInputs().push_back(inputName);
 
         std::vector<uint8_t> data;    // empty data: these are not constants
-        _mainBlock->GetTensors().push_back(
+        mainBlock_->GetTensors().push_back(
             std::make_unique<TosaSerializationTensor>(inputName, shape, dtype, data, false, false));
     }
 
     void addInputShape(int32_t rank)
     {
-        int previousSize      = _mainBlock->GetInputs().size();
+        size_t previousSize   = mainBlock_->GetInputs().size();
         std::string inputName = getInputName(previousSize);
-        _mainBlock->GetInputs().push_back(inputName);
+        mainBlock_->GetInputs().push_back(inputName);
 
         std::vector<uint8_t> data;    // empty data: these are not constants
-        _mainBlock->GetShapes().push_back(std::make_unique<TosaSerializationShape>(inputName, rank, data));
+        mainBlock_->GetShapes().push_back(std::make_unique<TosaSerializationShape>(inputName, rank, data));
     }
 
     void addOutput(std::vector<int32_t> shape, DType dtype)
     {
-        int previousSize       = _mainBlock->GetOutputs().size();
+        size_t previousSize    = mainBlock_->GetOutputs().size();
         std::string outputName = getOutputName(previousSize);
-        _mainBlock->GetOutputs().push_back(outputName);
+        mainBlock_->GetOutputs().push_back(outputName);
 
         std::vector<uint8_t> data;    // empty data: these are not constants
-        _mainBlock->GetTensors().push_back(
+        mainBlock_->GetTensors().push_back(
             std::make_unique<TosaSerializationTensor>(outputName, shape, dtype, data, false, false));
     }
 
     // addOp should be used once all inputs and outputs have already been added.
-    void addOp(Op op, Attribute attr_type, TosaAttributeBase* attr)
+    void addOp(Op op, Attribute attr_type, TosaAttributeBase* attr, TosaOpLocation loc = {})
     {
-        _mainBlock->GetOperators().push_back(std::make_unique<TosaSerializationOperator>(
-            op, attr_type, attr, _mainBlock->GetInputs(), _mainBlock->GetOutputs()));
+        // No location information for unit-test flatbuffers
+        mainBlock_->GetOperators().push_back(std::make_unique<TosaSerializationOperator>(
+            op, attr_type, attr, mainBlock_->GetInputs(), mainBlock_->GetOutputs(), loc));
     }
 
     GraphStatus initializeRunner()
     {
         // Initializing with the block directly skips some extra checks like version matching,
         // which we don't need
-        return _modelRunner.initialize(*_mainBlock);
+        return modelRunner_.initialize(*mainBlock_);
     }
 
     template <typename T>
     void setInput(std::vector<T>& vals)
     {
-        REQUIRE_MESSAGE(_inputsAlreadySet < _mainBlock->GetInputs().size(),
+        REQUIRE_MESSAGE(inputsAlreadySet_ < mainBlock_->GetInputs().size(),
                         "Error in test setup: setting more inputs than the number that were added");
         // The vector-based call to setInput doesn't work with cfloat.h types.
         // But the raw-ptr one does, so use that one.
         uint8_t* data = reinterpret_cast<uint8_t*>(vals.data());
-        _modelRunner.setInput(_mainBlock->GetInputs()[_inputsAlreadySet], data, vals.size() * sizeof(T));
-        _inputsAlreadySet++;
+        modelRunner_.setInput(mainBlock_->GetInputs()[inputsAlreadySet_], data, vals.size() * sizeof(T));
+        inputsAlreadySet_++;
     }
 
-    std::string getInputName(int num)
+    std::string getInputName(size_t num)
     {
         return "input" + std::to_string(num);
     }
 
-    std::string getOutputName(int num)
+    std::string getOutputName(size_t num)
     {
         return "output" + std::to_string(num);
     }
 
     GraphStatus run()
     {
-        return _modelRunner.run();
+        return modelRunner_.run();
     }
 
     template <typename T>
-    std::vector<T> getOutput(int i, size_t size)
+    std::vector<T> getOutput(size_t num, size_t size)
     {
         std::vector<T> output(size);
-        _modelRunner.getOutput(getOutputName(i), reinterpret_cast<uint8_t*>(output.data()), size * sizeof(T));
+        modelRunner_.getOutput(getOutputName(num), reinterpret_cast<uint8_t*>(output.data()), size * sizeof(T));
         return output;
     }
 };
