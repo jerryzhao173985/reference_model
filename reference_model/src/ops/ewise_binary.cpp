@@ -621,7 +621,7 @@ int OpPow<Rank, Dtype>::register_fcn()
         case TOSA_REF_TYPE_FP64:
             if (g_func_config.bounds_mode)
             {
-                // ABS_ERROR bounds return 2*(1+abs(log(abs(x))*y))
+                // ABS_ERROR bounds return 7.5*(abs(log(abs(x))*y))
                 // NOTE: err_base is added as part of compliance in tosa_verify
                 this->fcn = [](InEigenType x, InEigenType y) -> OutEigenType {
                     OutEigenType z = log(x > (InEigenType)0 ? x : (-x)) * y;
