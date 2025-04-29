@@ -4771,1100 +4771,319 @@ TOSAREF_TENSOR_ALLOCATE(4, bool)
 TOSAREF_TENSOR_ALLOCATE(5, bool)
 TOSAREF_TENSOR_ALLOCATE(6, bool)
 
-template <>
-int TosaReference::Tensor0<double>::dumpTensor(FILE* out) const
+bool parseWidthPrecision(const std::string& formatStr, int& width, int& precision)
 {
-    std::string fp_fmt = "[ %" + g_func_config.fp_format + "f ]\n";
+    std::istringstream iss(formatStr);
+    char dot = 0;
+    if (!(iss >> width))
+        return false;
+    if (iss >> dot && dot == '.' && !(iss >> precision))
+        return false;
+    return true;
+}
 
-    if (tensor == nullptr)
+template <typename T>
+std::string formatElement(const T& val, int width, int precision)
+{
+    std::ostringstream oss;
+    oss << std::fixed << std::setw(width) << std::setprecision(precision) << val;
+    return oss.str();
+}
+
+template <typename TensorType, typename Accessor>
+void dumpRecursive(std::ostringstream& oss,
+                   const TensorType& tensor,
+                   const std::vector<int>& shape,
+                   size_t dim,
+                   std::vector<int>& indices,
+                   Accessor accessor,
+                   int width,
+                   int precision)
+{
+    if (shape.size() == 0)
+    {
+        oss << "[ " << formatElement(accessor(indices), width, precision) << " ]";
+        return;
+    }
+
+    if (dim == shape.size())
+    {
+        oss << " " << formatElement(accessor(indices), width, precision) << " ";
+        return;
+    }
+
+    oss << "[";
+    for (int i = 0; i < shape[dim]; ++i)
+    {
+        indices[dim] = i;
+        dumpRecursive(oss, tensor, shape, dim + 1, indices, accessor, width, precision);
+    }
+    oss << "]";
+    if (dim != 0)
+        oss << "\n";
+}
+
+template <typename TensorType, typename Accessor>
+int dumpTensorGeneric(const TensorType& tensorObj, FILE* out, Accessor accessor)
+{
+    if (!tensorObj.is_allocated())
     {
         fprintf(out, "<Not allocated>\n");
         return 0;
     }
 
-    fprintf(out, fp_fmt.c_str(), (*tensor)(0));
+    int width, precision;
+    if (!parseWidthPrecision(g_func_config.fp_format, width, precision))
+    {
+        width     = 0;
+        precision = 5;
+    }
 
+    std::ostringstream oss;
+    std::vector<int> indices(tensorObj.getShape().size(), 0);
+
+    dumpRecursive(oss, tensorObj, tensorObj.getShape(), static_cast<size_t>(0), indices, accessor, width, precision);
+    oss << "\n";
+
+    std::string output = oss.str();
+
+    fputs(output.c_str(), out);
     return 0;
+}
+
+template <>
+int TosaReference::Tensor0<double>::dumpTensor(FILE* out) const
+{
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>&) { return (*tensor)(); });
 }
 
 template <>
 int TosaReference::Tensor1<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, fp_fmt.c_str(), (*tensor)(i0));
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0]); });
 }
 
 template <>
 int TosaReference::Tensor2<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1));
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1]); });
 }
 
 template <>
 int TosaReference::Tensor3<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2));
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2]); });
 }
 
 template <>
 int TosaReference::Tensor4<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3));
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3]); });
 }
 
 template <>
 int TosaReference::Tensor5<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4));
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(
+        *this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4]); });
 }
 
 template <>
 int TosaReference::Tensor6<double>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, "[");
-                        for (int i5 = 0; i5 < shape[5]; i5++)
-                        {
-                            fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4, i5));
-                        }
-                        fprintf(out, "]\n");
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) {
+        return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
+    });
 }
 
 template <>
 int TosaReference::Tensor0<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = "[ %" + g_func_config.fp_format + "f ]\n";
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, fp_fmt.c_str(), (*tensor)(0));
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>&) { return (*tensor)(); });
 }
 
 template <>
 int TosaReference::Tensor1<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, fp_fmt.c_str(), (*tensor)(i0));
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0]); });
 }
 
 template <>
 int TosaReference::Tensor2<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1));
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1]); });
 }
 
 template <>
 int TosaReference::Tensor3<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2));
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2]); });
 }
 
 template <>
 int TosaReference::Tensor4<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3));
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3]); });
 }
 
 template <>
 int TosaReference::Tensor5<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4));
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(
+        *this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4]); });
 }
 
 template <>
 int TosaReference::Tensor6<float>::dumpTensor(FILE* out) const
 {
-    std::string fp_fmt = " %" + g_func_config.fp_format + "f ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, "[");
-                        for (int i5 = 0; i5 < shape[5]; i5++)
-                        {
-                            fprintf(out, fp_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4, i5));
-                        }
-                        fprintf(out, "]\n");
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) {
+        return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
+    });
 }
 
 template <>
 int TosaReference::Tensor0<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = "[ %lld ]\n";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, i64_fmt.c_str(), (*tensor)(0));
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>&) { return (*tensor)(); });
 }
 
 template <>
 int TosaReference::Tensor1<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, i64_fmt.c_str(), (*tensor)(i0));
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0]); });
 }
 
 template <>
 int TosaReference::Tensor2<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, i64_fmt.c_str(), (*tensor)(i0, i1));
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1]); });
 }
 
 template <>
 int TosaReference::Tensor3<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, i64_fmt.c_str(), (*tensor)(i0, i1, i2));
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2]); });
 }
 
 template <>
 int TosaReference::Tensor4<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, i64_fmt.c_str(), (*tensor)(i0, i1, i2, i3));
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3]); });
 }
 
 template <>
 int TosaReference::Tensor5<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, i64_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4));
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(
+        *this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4]); });
 }
 
 template <>
 int TosaReference::Tensor6<int64_t>::dumpTensor(FILE* out) const
 {
-    std::string i64_fmt = " %lld ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, "[");
-                        for (int i5 = 0; i5 < shape[5]; i5++)
-                        {
-                            fprintf(out, i64_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4, i5));
-                        }
-                        fprintf(out, "]\n");
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) {
+        return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
+    });
 }
 
 template <>
 int TosaReference::Tensor0<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = "[ %d ]\n";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, i32_fmt.c_str(), (*tensor)(0));
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>&) { return (*tensor)(); });
 }
 
 template <>
 int TosaReference::Tensor1<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, i32_fmt.c_str(), (*tensor)(i0));
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0]); });
 }
 
 template <>
 int TosaReference::Tensor2<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, i32_fmt.c_str(), (*tensor)(i0, i1));
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1]); });
 }
 
 template <>
 int TosaReference::Tensor3<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, i32_fmt.c_str(), (*tensor)(i0, i1, i2));
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2]); });
 }
 
 template <>
 int TosaReference::Tensor4<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, i32_fmt.c_str(), (*tensor)(i0, i1, i2, i3));
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3]); });
 }
 
 template <>
 int TosaReference::Tensor5<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, i32_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4));
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(
+        *this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4]); });
 }
 
 template <>
 int TosaReference::Tensor6<int32_t>::dumpTensor(FILE* out) const
 {
-    std::string i32_fmt = " %d ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, "[");
-                        for (int i5 = 0; i5 < shape[5]; i5++)
-                        {
-                            fprintf(out, i32_fmt.c_str(), (*tensor)(i0, i1, i2, i3, i4, i5));
-                        }
-                        fprintf(out, "]\n");
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) {
+        return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
+    });
 }
 
 template <>
 int TosaReference::Tensor0<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = "[ %s ]\n";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(0)));
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>&) { return (*tensor)(); });
 }
 
 template <>
 int TosaReference::Tensor1<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0)));
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0]); });
 }
 
 template <>
 int TosaReference::Tensor2<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0, i1)));
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1]); });
 }
 
 template <>
 int TosaReference::Tensor3<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0, i1, i2)));
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2]); });
 }
 
 template <>
 int TosaReference::Tensor4<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0, i1, i2, i3)));
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out,
+                             [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3]); });
 }
 
 template <>
 int TosaReference::Tensor5<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0, i1, i2, i3, i4)));
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(
+        *this, out, [&](const std::vector<int>& idx) { return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4]); });
 }
 
 template <>
 int TosaReference::Tensor6<bool>::dumpTensor(FILE* out) const
 {
-    std::string bool_fmt = " %s ";
-
-    if (tensor == nullptr)
-    {
-        fprintf(out, "<Not allocated>\n");
-        return 0;
-    }
-
-    fprintf(out, "[");
-    for (int i0 = 0; i0 < shape[0]; i0++)
-    {
-        fprintf(out, "[");
-        for (int i1 = 0; i1 < shape[1]; i1++)
-        {
-            fprintf(out, "[");
-            for (int i2 = 0; i2 < shape[2]; i2++)
-            {
-                fprintf(out, "[");
-                for (int i3 = 0; i3 < shape[3]; i3++)
-                {
-                    fprintf(out, "[");
-                    for (int i4 = 0; i4 < shape[4]; i4++)
-                    {
-                        fprintf(out, "[");
-                        for (int i5 = 0; i5 < shape[5]; i5++)
-                        {
-                            fprintf(out, bool_fmt.c_str(), bool_to_str((*tensor)(i0, i1, i2, i3, i4, i5)));
-                        }
-                        fprintf(out, "]\n");
-                    }
-                    fprintf(out, "]\n");
-                }
-                fprintf(out, "]\n");
-            }
-            fprintf(out, "]\n");
-        }
-        fprintf(out, "]\n");
-    }
-    fprintf(out, "]\n");
-
-    return 0;
+    return dumpTensorGeneric(*this, out, [&](const std::vector<int>& idx) {
+        return (*tensor)(idx[0], idx[1], idx[2], idx[3], idx[4], idx[5]);
+    });
 }
 
 template <class T>
