@@ -11,15 +11,14 @@ Steps:
 - Tests are converted to JSON and/or copied and saved to desired output directory.
 """
 import argparse
+import concurrent.futures
 import json
 import logging
-import multiprocessing as mp
 import os
 import re
 import shlex
 import shutil
 import subprocess
-from functools import partial
 from pathlib import Path
 
 import conformance.model_files as cmf
@@ -55,32 +54,21 @@ class GenConformanceError(Exception):
     pass
 
 
-def _run_sh_command(args, cwd, full_cmd):
-    """Run an external command and capture stdout/stderr."""
+def _run_sh_command_mp(cwd, full_cmd):
+    """Run an external command and capture stdout/stderr (suitable for multi-processing)."""
     # Quote the command line for printing
     try:
         full_cmd_esc = [shlex.quote(x) for x in full_cmd]
     except Exception as e:
         raise Exception(f"Error quoting command: {e}")
-    if args.capture_output:
-        logger.info(f"Command: {full_cmd_esc}")
 
     rc = subprocess.run(
         full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
     )
+    stderr = rc.stderr.decode("utf-8")
+    stdout = rc.stdout.decode("utf-8")
 
-    if args.capture_output:
-        stderr = rc.stderr.decode("utf-8")
-        stdout = rc.stdout.decode("utf-8")
-        logger.info(f"stderr: \n{stderr}")
-        logger.info(f"stdout: \n{stdout}")
-    if rc.returncode != 0:
-        raise Exception(
-            "Error running command: {}.\n{}".format(
-                " ".join(full_cmd_esc), rc.stderr.decode("utf-8")
-            )
-        )
-    return (rc.stdout, rc.stderr)
+    return (full_cmd_esc, rc.returncode, stdout, stderr)
 
 
 def build_op_tests(
@@ -190,24 +178,39 @@ def build_op_tests(
         build_cmds_list.append(build_cmd_neg_test)
 
     logger.info(f"Processing {operator} tests in {len(build_cmds_list)} batch(es)")
+
+    cwd = args.ref_model_path.parent
+    job_pool = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        for build_cmd in build_cmds_list:
+            job_pool.append(executor.submit(_run_sh_command_mp, cwd, build_cmd))
+        concurrent.futures.wait(job_pool)
+
     error = False
-    for i, cmd in enumerate(build_cmds_list):
-        try:
-            raw_stdout, _ = _run_sh_command(args, args.ref_model_path.parent, cmd)
+    for i, job in enumerate(job_pool):
+        cmd, rc, out, err = job.result()
+
+        if args.capture_output:
+            logger.info(f"Command: {shlex.join(cmd)}")
+            logger.info(f"stderr: \n{err}")
+            logger.info(f"stdout: \n{out}")
+
+        if rc == 0:
             logger.info(
                 f"{operator} test batch {(i + 1)}/{len(build_cmds_list)} completed successfully"
             )
 
             if args.tests_list_file is not None:
                 with args.tests_list_file.open("a") as fd:
-                    fd.write(raw_stdout.decode("utf-8"))
-
-        except Exception as e:
+                    fd.write(out)
+        else:
             logger.error(
                 f"{operator} test batch {(i + 1)}/{len(build_cmds_list)} unsuccessful, skipping"
             )
-            logger.error(f" build_op_tests error: {e} ")
+            err_string = "Error running command: {}.\n{}".format(" ".join(cmd), err)
+            logger.error(f" build_op_tests error: {err_string} ")
             error = True
+
     if error:
         raise (GenConformanceError())
 
@@ -250,15 +253,13 @@ def _get_all_tests_list(test_type, test_root_dir, operator):
     return tests
 
 
-def generate_results(
-    args, profile_ext, operator, op_build_dir, supports=[], tests=None
-):
+def generate_results(args, operator, op_build_dir, supports=[], tests=None):
     """Run tests on reference model and save result to the test directory."""
     if "lazy_data_gen" in supports and args.lazy_data_generation:
         logger.info("Skipping running tests due to lazy data gen")
         return
 
-    num_cores = args.num_cores
+    jobs = args.jobs
 
     # Use the test runner
     ref_cmd_base = [
@@ -268,11 +269,11 @@ def generate_results(
         "--schema-path",
         str(args.schema_path),
         "-j",
-        str(num_cores),
+        str(jobs),
         "-v",
         "-t",
     ]
-    ref_cmds = []
+    ref_cmds_list = []
 
     if not tests:
         # Do not need to run ERRORIF tests as they don't have result files
@@ -291,29 +292,44 @@ def generate_results(
             continue
         ref_cmd = ref_cmd_base.copy()
         ref_cmd.append(str(test.absolute()))
-        ref_cmds.append(ref_cmd)
+        ref_cmds_list.append(ref_cmd)
 
     if skipped:
         logger.info(f"{skipped} new compliance tests skipped for results generation")
 
+    if len(ref_cmds_list) == 0:
+        # Nothing more to do
+        return
+
     fail_string = "UNEXPECTED_FAILURE"
     failed_counter = 0
 
-    job_pool = mp.Pool(args.num_cores)
-    sh_partial = partial(_run_sh_command, args, args.ref_model_path.parent)
-    pool_results = job_pool.map(sh_partial, ref_cmds)
-    job_pool.close()
-    job_pool.join()
+    cwd = args.ref_model_path.parent
+    job_pool = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        for ref_cmd in ref_cmds_list:
+            job_pool.append(executor.submit(_run_sh_command_mp, cwd, ref_cmd))
+        concurrent.futures.wait(job_pool)
 
     # Use captured output for run_sh_command to work out if test passed.
-    for i, rc in enumerate(pool_results):
-        if fail_string in str(rc[0]):
-            logger.error(f"Test {i + 1}/{len(ref_cmds)}: {ref_cmds[i][-1]} failed.")
+    for i, job in enumerate(job_pool):
+        cmd, rc, out, err = job.result()
+        if args.capture_output:
+            logger.info(f"Command: {shlex.join(cmd)}")
+            logger.info(f"stderr: \n{err}")
+            logger.info(f"stdout: \n{out}")
+        if rc != 0:
+            raise Exception("Error running command: {}.\n{}".format(" ".join(cmd), err))
+        test_name = cmd[-1]
+        if fail_string in out:
+            logger.error(f"Test {i + 1}/{len(ref_cmds_list)}: {test_name} failed.")
             failed_counter += 1
         else:
-            logger.debug(f"Test {i + 1}/{len(ref_cmds)}: {ref_cmds[i][-1]} passed.")
+            logger.debug(f"Test {i + 1}/{len(ref_cmds_list)}: {test_name} passed.")
 
-    logger.info(f"{len(ref_cmds) - failed_counter}/{len(ref_cmds)} tests passed")
+    logger.info(
+        f"{len(ref_cmds_list) - failed_counter}/{len(ref_cmds_list)} tests passed"
+    )
     logger.info("Ran tests on model and saved results of passing tests")
 
 
@@ -324,7 +340,6 @@ def convert_tests(
     operator,
     op_build_dir,
     output_dir,
-    op_profiles_extensions_list,
     supports=[],
     tests=None,
     group=None,
@@ -378,14 +393,15 @@ def convert_tests(
             )
             raise (GenConformanceError())
 
-    job_pool = mp.Pool(args.num_cores)
-
-    pool_results = job_pool.map(c2c_main, c2c_args_list)
-    job_pool.close()
-    job_pool.join()
+    job_pool = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as executor:
+        for c2c_args in c2c_args_list:
+            job_pool.append(executor.submit(c2c_main, c2c_args))
+        concurrent.futures.wait(job_pool)
 
     failed_counter = 0
-    for i, result in enumerate(pool_results):
+    for i, job in enumerate(job_pool):
+        result = job.result()
         if result != 0:
             logger.error(
                 f"test {i + 1}/{len(c2c_args_list)}: {c2c_args_list[i][-1]} failed to convert."
@@ -606,7 +622,8 @@ def parse_args(argv=None):
     )
     parser.add_argument(
         "-j",
-        dest="num_cores",
+        "--jobs",
+        dest="jobs",
         type=int,
         default=6,
         help="Number of simultaneous jobs to split the tasks into for multiprocessing",
@@ -718,6 +735,45 @@ def _get_log_level(verbosity):
     return loglevels[min(verbosity, len(loglevels) - 1)]
 
 
+def op_selected(
+    op,
+    supports_any,
+    supports_all,
+    proext_curr,
+    proext_done_list,
+    proext_all_list,
+    gen_name,
+    gen_dict,
+    test_version,
+):
+    """Check if the op is selected via the chosen profiles/extensions."""
+    supported = supports_any + supports_all
+
+    if proext_curr not in supported:
+        logger.info(
+            f"No match for profile/extension {proext_curr} for generation group {gen_name} - skipping"
+        )
+        return False
+
+    if any(p in supported for p in proext_done_list):
+        logger.info(f"Already used this generator {gen_name} before - skipping")
+        return False
+
+    # Already checked that the profile is in supported (any or all), so this
+    # verifies that all conditions are met
+    if not all(p in proext_all_list for p in supports_all):
+        logger.info(
+            f"For profile/extension {proext_curr} the profiles/extensions chosen do not meet all the requirements of {supports_all} - skipping"
+        )
+        return False
+
+    if not in_version(test_version, gen_dict):
+        logger.warning(f"{op} [{gen_name}] is not in {test_version} - skipping")
+        return False
+
+    return True
+
+
 def main():
     args = parse_args()
     if args is None:
@@ -752,38 +808,39 @@ def main():
     profileExtDone = []
 
     try:
-        for profile_ext in profileExtList:
+        if args.unit_tests in ("operator",):
             # Operator unit tests
-            if args.unit_tests in ("operator",):
-                logger.debug(f"{action} OPERATOR unit tests")
-                if args.param_config is None:
-                    # Use default config
-                    config = PROFILE_OPS_INFO["operator_test_params"]
-                    test_params_file = args.param_json_dir / config
-                else:
-                    test_params_file = args.param_config
+            logger.debug(f"{action} OPERATOR unit tests")
+            if args.param_config is None:
+                # Use default config
+                config = PROFILE_OPS_INFO["operator_test_params"]
+                test_params_file = args.param_json_dir / config
+            else:
+                test_params_file = args.param_config
 
-                try:
-                    with open(test_params_file, "r") as fd:
-                        test_params = json.load(fd)
-                except Exception as e:
-                    logger.error(
-                        f"Couldn't load operator test params - {test_params_file}: {e}"
-                    )
-                    return 1
-                logger.debug(f"Using config file: {str(test_params_file)}")
+            try:
+                with open(test_params_file, "r") as fd:
+                    test_params = json.load(fd)
+            except Exception as e:
+                logger.error(
+                    f"Couldn't load operator test params - {test_params_file}: {e}"
+                )
+                return 1
+            logger.debug(f"Using config file: {str(test_params_file)}")
 
-                operators = args.operators
-                if not operators:
-                    # Create tests for all the operators
-                    operators = list(test_params.keys())
+            operators = args.operators
+            if not operators:
+                # Create tests for all the operators
+                operators = list(test_params.keys())
 
+            # Use a set to ignore duplicate operators chosen
+            operators = set(operators)
+
+            for profile_ext in profileExtList:
                 print(
                     f"{action} conformance tests for TOSA {profile_ext} profile/extension"
                 )
-
-                # Use a set to ignore duplicate operators chosen
-                for op in set(operators):
+                for op in operators:
                     logger.info(f"OPERATOR: {op}")
                     if op not in test_params:
                         logger.warning(
@@ -812,38 +869,23 @@ def main():
                             else:
                                 supports_any = old_profile_info
 
-                        supported = supports_any + supports_all
-
-                        if profile_ext not in supported:
-                            logger.info(
-                                f"No match for profile/extension {profile_ext} for generation group {gen_name} - skipping"
-                            )
-                            continue
-
-                        if any(p in supported for p in profileExtDone):
-                            logger.info(
-                                f"Already used this generator {gen_name} before - skipping"
-                            )
-                            continue
-
-                        # Already checked that the profile is in supported (any or all), so this
-                        # verifies that all conditions are met
-                        if not all(p in profileExtList for p in supports_all):
-                            logger.info(
-                                f"For profile/extension {profile_ext} the profiles/extensions chosen do not meet all the requirements of {supports_all} - skipping"
-                            )
-                            continue
-
-                        if not in_version(args.test_version, gen_dict):
-                            logger.warning(
-                                f"{op} [{gen_name}] is not in {args.test_version} - skipping"
-                            )
-                            continue
-
-                        no_neg_tests = (
-                            "no_negative_tests" in gen_dict
-                            and gen_dict["no_negative_tests"] == "true"
+                        selected_op = op_selected(
+                            op,
+                            supports_any,
+                            supports_all,
+                            profile_ext,
+                            profileExtDone,
+                            profileExtList,
+                            gen_name,
+                            gen_dict,
+                            args.test_version,
                         )
+
+                        if not selected_op:
+                            continue
+
+                        no_neg_tests = gen_dict.get("no_negative_tests", False)
+                        gen_neg_dim_range = gen_dict.get("negative_dim_range", None)
 
                         if no_neg_tests:
                             if args.test_type == "negative":
@@ -856,23 +898,8 @@ def main():
                         else:
                             test_type = args.test_type
 
-                        gen_neg_dim_range = (
-                            gen_dict["negative_dim_range"]
-                            if "negative_dim_range" in gen_dict
-                            else None
-                        )
-
                         # Work out which selection criteria we are using
-                        if "selector" in gen_dict:
-                            selector_name = gen_dict["selector"]
-                            if selector_name not in test_params[op]["selection"]:
-                                logger.warn(
-                                    f"Could not find {selector_name} in selection dict for {op} - using default"
-                                )
-                                selector_name = "default"
-                        else:
-                            selector_name = "default"
-
+                        selector_name = gen_dict.get("selector", "default")
                         if selector_name not in test_params[op]["selection"]:
                             logger.error(
                                 f"Could not find {selector_name} in selection dict for {op}"
@@ -900,7 +927,6 @@ def main():
                             logger.info(f"Running and converting all {op} tests")
                             generate_results(
                                 args,
-                                profile_ext,
                                 op,
                                 op_build_dir,
                                 supports=supports,
@@ -917,7 +943,6 @@ def main():
                             op,
                             op_build_dir,
                             root_output_dir,
-                            supported,
                             supports=supports,
                             tests=operator_test_list,
                             group=operator_group,
@@ -926,7 +951,8 @@ def main():
 
                         check_op_tests_size(args, profile_ext, op, output_dir)
 
-            profileExtDone.append(profile_ext)
+                # End of this profile/extension - add it to the done list
+                profileExtDone.append(profile_ext)
 
     except GenConformanceError:
         return 1
