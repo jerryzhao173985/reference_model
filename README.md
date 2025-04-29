@@ -21,22 +21,50 @@ NumPy format.
 This package also contains a conformance test suite that can be
 created and then used to validate an implementation of TOSA.
 
+## High-level features
+* Reference implementation
+  * Implements the functional behavior of TOSA operations in accordance with
+    the official TOSA specification.
+  * Performs static verification of operation attributes to ensure they are
+    well-formed during TOSA graph construction.
+  * Validates the correctness of tensor shapes and types dynamically during
+    TOSA graph execution.
+  * Provides useful options for network evaluation, such as --dump_intermediates
+    to output intermediate tensors between layers.
+* Testing
+  * Framework test - converts individual operations from supported ML
+    frameworks (currently TensorFlow and TFLite) into TOSA operations,
+    then compares the output precision between TOSA reference model and
+    the framework's interpreter.
+  * CTS Unit test - generates unit tests for each TOSA operator, covering
+    both positive and negative test cases across all valid data types and
+    tensor shapes.
+  * CTS Conformance test - a comprehensive test suite with a broader range
+    of parameters to create the necessary coverage.
+[For details please refer to "TOSA Unit Test Infrastructure" section](#TOSA-Unit-Test-Infrastructure)
+
 ## Installation Requirements
 
-The *TOSA Reference Model* and testing suite requires the following
-tools:
+The *TOSA Reference Model* and testing suite requires the following tools:
 
-* CMake version 3.16 or later
-* GNU Make 4.1 or later
-* GCC (tested with 9.4.0) or Clang C++ compiler (tested with clang-10)
-  with C++17 support
+| Tool      | Version           | Note                                      |
+|-----------|-------------------|-------------------------------------------|
+| CMake     | 3.16 or later     | tested with 3.30                          |
+| GNU Make  | 4.1 or later      |                                           |
+| GCC       | 9.4.0 or later    | with C++17 support                        |
+| Clang C++ | 14 or later       | tested with clang-14 (with C++17 support) |
 
-The model includes the following git submodules:
+==Either GCC or Clang can be used==
 
-* TOSA Serialization Library
-* JSON for Modern C++ - 3.8.0
-* Eigen 3.3.7
-* doctest 2.4.9 (When building unit tests)
+The model includes the following dependencies:
+
+| Module                     | Version            | Note                         |
+|----------------------------|--------------------|------------------------------|
+| TOSA Serialization Library |                    | sync with Git submodules     |
+| JSON for Modern C++        | 3.8.0              | sync with Cmake FetchContent |
+| Eigen                      | 3.4.0              | sync with Cmake FetchContent |
+| doctest                    | 2.4.11             | sync with Cmake FetchContent |
+|                            |                    | for building unit tests      |
 
 The model is written using
 C++17 and has been primarily tested on Ubuntu x86_64 20.04 LTS Linux
@@ -44,9 +72,11 @@ systems.
 
 The testing infrastructure requires:
 
-* Python 3.6 or later
-* FlatBuffers 2.0 or later
-* NumPy 1.15 or later
+| Infra       | Version          | Note                       |
+|-------------|------------------|----------------------------|
+| Python      | 3.8 or later     | tested with 3.10           |
+| FlatBuffers | 24.3.25          |                            |
+| NumPy       | 1.26 or later    | tested with 1.26 and 2.1.1 |
 
 Check out the required git submodules with:
 
@@ -80,6 +110,8 @@ cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
+
+If you need debug info, you can use `-DCMAKE_BUILD_TYPE=Debug`.
 
 The resulting executable will be named:
 `reference_model/tosa_reference_model`. This executable can be disabled with
@@ -367,6 +399,17 @@ help get coverage of additional shapes.
 By default only the positive tests will be produced, use the
 argument `--test-type both` to build positive and negative tests.
 
+``` bash
+tosa_verif_build_tests
+  --generate-lib-path build/reference_model/libtosa_reference_generate_lib.so \
+  --test-type both --filter add
+```
+
+This will produce ADD tests of both test types (positive and negative - ERROR_IF)
+and all valid data types, across the default rank range of 1 to 4 in the vtest
+output directory. It will be mostly a exhaustive permutation of tests, using
+randomly generated shapes per test.
+
 Additional parameters on some operators can be found in the command
 line help.
 
@@ -500,6 +543,8 @@ You can repeat this switch multiple times to pass multiple different arguments.
 
 For an example of how to read these arguments in your SUT module, please see the
 `tosa_mock_sut_run.py` file.
+
+==Detailed information about TOSA testing can be found in verif/README.md==.
 
 
 ### TOSA Framework Unit Tests
@@ -645,4 +690,4 @@ loaded_data_val = load_npy(file_path, dtype_val)
 
 The *TOSA Reference Model* and TOSA Unit Tests are licensed under Apache-2.0.
 
-Copyright (c) 2020-2024 Arm Limited.
+Copyright (c) 2020-2025 Arm Limited.
