@@ -18,6 +18,8 @@
 
 #include "dtype.h"
 #include "half.hpp"
+
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
 
