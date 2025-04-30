@@ -29,6 +29,8 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
+
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #ifdef _WIN32

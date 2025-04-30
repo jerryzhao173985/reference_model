@@ -22,8 +22,10 @@
 #include "ops/template_types.h"
 #include "tosa_serialization_handler.h"
 #include <list>
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
+
+#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
+#include <unsupported/Eigen/CXX11/Tensor>
 
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
 using fp8e4m3 = ct::cfloat<int8_t, 4, true, true, false>;
