@@ -41,11 +41,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   set(CXX_FLAGS
       -Wformat=2 -Wconversion -Wimplicit-fallthrough
       -Wformat-security
-      -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=3
+      -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2
       -D_GLIBCXX_ASSERTIONS
       -fstack-clash-protection -fstack-protector-strong
-      -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing
-      -fcf-protection=full)
+      -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing)
 
   set(LINKER_FLAGS
       -Wl,-z,nodlopen -Wl,-z,noexecstack
