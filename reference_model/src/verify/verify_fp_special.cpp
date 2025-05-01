@@ -76,6 +76,7 @@ bool verifyFpSpecial(const CTensor* referenceTensor, const CTensor* boundsTensor
 {
     // Validate that tensors are provided
     TOSA_REF_REQUIRE(referenceTensor != nullptr, "[FS] Reference tensor is missing");
+    TOSA_REF_REQUIRE(boundsTensor != nullptr, "[FS] Reference bounds tensor is missing");
     TOSA_REF_REQUIRE(implementationTensor != nullptr, "[FS] Implementation tensor is missing");
 
     // Get number of elements

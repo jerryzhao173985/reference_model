@@ -68,6 +68,7 @@ bool verifyRescaleInexact(const CTensor* referenceTensor,
 {
     // Validate that tensors are provided
     TOSA_REF_REQUIRE(referenceTensor != nullptr, "[RI] Reference tensor is missing");
+    TOSA_REF_REQUIRE(boundsTensor != nullptr, "[RI] Reference bounds tensor is missing");
     TOSA_REF_REQUIRE(implementationTensor != nullptr, "[RI] Implementation tensor is missing");
 
     const std::vector<int32_t> refShape(referenceTensor->shape, referenceTensor->shape + referenceTensor->num_dims);
