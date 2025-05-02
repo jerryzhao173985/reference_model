@@ -17,6 +17,7 @@
 
 #include "array_proxy.h"
 #include "cfloat.h"
+#include "config.h"
 #include "dtype.h"
 #include "model_common.h"
 #include "ops/template_types.h"
@@ -24,7 +25,6 @@
 #include <list>
 #include <vector>
 
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using bf16    = ct::cfloat<int16_t, 8, true, true, true>;
