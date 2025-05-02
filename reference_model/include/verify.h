@@ -20,14 +20,9 @@
 #ifndef VERIFY_H
 #define VERIFY_H
 
+#include "config.h"
 #include "types.h"
 #include <cstdlib>
-
-#ifdef _MSC_VER
-#define TOSA_EXPORT __declspec(dllexport)
-#else
-#define TOSA_EXPORT
-#endif
 
 #ifdef __cplusplus
 extern "C"

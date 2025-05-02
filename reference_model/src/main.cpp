@@ -18,6 +18,7 @@
 
 #include "arith_util.h"
 #include "command_line_utils.h"
+#include "config.h"
 #include "custom_op_interface.h"
 #include "custom_registry.h"
 #include "load_library.h"
@@ -29,8 +30,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <stdio.h>
-
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #include <unsupported/Eigen/CXX11/Tensor>
 #ifdef _WIN32
 #include <ctype.h>

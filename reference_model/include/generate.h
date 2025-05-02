@@ -1,4 +1,4 @@
-// Copyright (c) 2023, ARM Limited.
+// Copyright (c) 2023, 2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -19,13 +19,8 @@
 #ifndef GENERATE_H
 #define GENERATE_H
 
+#include "config.h"
 #include <stddef.h>
-
-#ifdef _MSC_VER
-#define TOSA_EXPORT __declspec(dllexport)
-#else
-#define TOSA_EXPORT
-#endif
 
 #ifdef __cplusplus
 extern "C"

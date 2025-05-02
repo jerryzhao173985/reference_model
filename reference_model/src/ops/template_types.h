@@ -16,10 +16,10 @@
 #ifndef OP_TEMPLATE_TYPES_H
 #define OP_TEMPLATE_TYPES_H
 
+#include "config.h"
 #include "dtype.h"
 #include "half.hpp"
 
-#define EIGEN_DEFAULT_DENSE_INDEX_TYPE int64_t
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
 
