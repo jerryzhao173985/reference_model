@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.18)
 
 # Copyright (c) 2020-2025, ARM Limited.
 #
@@ -13,6 +13,8 @@ cmake_minimum_required (VERSION 3.16)
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
+
+include(CheckLinkerFlag)
 
 project(tosa_reference_model LANGUAGES CXX)
 
@@ -45,17 +47,36 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
       -D_GLIBCXX_ASSERTIONS
       -fstack-clash-protection -fstack-protector-strong
       -fno-delete-null-pointer-checks -fno-strict-overflow -fno-strict-aliasing)
-
-  set(LINKER_FLAGS
-      -Wl,-z,nodlopen -Wl,-z,noexecstack
-      -Wl,-z,relro -Wl,-z,now
-      -Wl,--as-needed -Wl,--no-copy-dt-needed-entries
-      -pie)
 else()
   # TODO: Add compiler flags for non-linux systems
   set(CXX_FLAGS "")
-  set(LINKER_FLAGS "")
 endif()
+
+function(filter_unsupported_linker_flags in_flags out_flags)
+  set(_out_list "")
+  foreach(_flag IN LISTS ${in_flags})
+    check_linker_flag(CXX "${_flag}" _supported_flag)
+    if(_supported_flag)
+      list(APPEND _out_list "${_flag}")
+    else()
+      message(STATUS "Skipping unsupported linker flag: ${_flag}")
+    endif()
+  endforeach()
+  set(${out_flags} "${_out_list}" PARENT_SCOPE)
+endfunction()
+
+# Set linker flags, if the selected linker supports them
+message(STATUS "Using linker: ${CMAKE_LINKER}")
+set(_linker_flags
+  "-Wl,-z,nodlopen"
+  "-Wl,-z,noexecstack"
+  "-Wl,-z,relro"
+  "-Wl,-z,now"
+  "-Wl,--as-needed"
+  "-Wl,--no-copy-dt-needed-entries"
+  "-pie"
+)
+filter_unsupported_linker_flags(_linker_flags LINKER_FLAGS)
 
 # Apply flags only target
 function(apply_flags target)
@@ -187,11 +208,15 @@ add_library(tosa_reference_verify_lib SHARED
 )
 
 # Linker flags specific to shared lib
-set(LINKER_FLAGS_SHARED_LIB
-    -Wl,-z,noexecstack
-    -Wl,-z,relro -Wl,-z,now
-    -Wl,--as-needed -Wl,--no-copy-dt-needed-entries
-    -fPIC)
+set(_shared_lib_linker_flags
+  "-Wl,-z,noexecstack"
+  "-Wl,-z,relro"
+  "-Wl,-z,now"
+  "-Wl,--as-needed"
+  "-Wl,--no-copy-dt-needed-entries"
+  "-fPIC"
+)
+filter_unsupported_linker_flags(_shared_lib_linker_flags LINKER_FLAGS_SHARED_LIB)
 
 target_compile_options(tosa_reference_verify_lib PRIVATE ${CXX_FLAGS})
 target_link_options(tosa_reference_verify_lib PRIVATE ${LINKER_FLAGS_SHARED_LIB})
