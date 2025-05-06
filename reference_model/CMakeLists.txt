@@ -413,7 +413,8 @@ if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
 
   set_target_properties(py_tosa_reference_model PROPERTIES OUTPUT_NAME tosa_reference_model)
 
-  apply_flags(py_tosa_reference_model)
+  target_compile_options(py_tosa_reference_model PRIVATE "${CXX_FLAGS}")
+  target_link_options(py_tosa_reference_model PRIVATE ${LINKER_FLAGS_SHARED_LIB})
 
   target_include_directories(py_tosa_reference_model
     SYSTEM PUBLIC # Suppress warnings for third-party headers
