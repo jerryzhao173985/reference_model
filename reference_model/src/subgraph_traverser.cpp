@@ -324,7 +324,7 @@ int SubgraphTraverser::initializeGraph()
                 EnumNamesOp()[op->GetOp()], EnumNameTOSAREFTYPE(bias_dtype), EnumNameTOSAREFTYPE(output_dtype));
         }
 
-        DEBUG_INFO(GT, "Creating operator id_%03lu, %8s, %zu input tensors, %zu output tensors", idx,
+        DEBUG_INFO(GT, "Creating operator id_%03" PRIu64 ", %8s, %zu input tensors, %zu output tensors", idx,
                    EnumNamesOp()[op->GetOp()], op->GetInputTensorNames().size(), op->GetOutputTensorNames().size());
 
         GraphNode* node = nullptr;
