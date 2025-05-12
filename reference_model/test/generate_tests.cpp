@@ -2840,7 +2840,8 @@ void fixed_data_test(const std::vector<int8_t> values, const std::vector<int32_t
     update_json_template(jsonCfg, "_SHAPE_", numbers_to_string(shape));
     update_json_template(jsonCfg, "_DATA_", numbers_to_string(values));
 
-    size_t elements = static_cast<size_t>(std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>()));
+    size_t elements = static_cast<size_t>(
+        std::accumulate(shape.begin(), shape.end(), static_cast<size_t>(1), std::multiplies<size_t>()));
     std::vector<StorageType> expected(elements);
     for (size_t idx = 0; idx < expected.size(); ++idx)
     {
