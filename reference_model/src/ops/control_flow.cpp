@@ -66,7 +66,7 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
                block_outputs.size(), num_output_tensors);
 
     // set graph traverser's input = basic block's input
-    for (size_t i = 0; i < num_input_tensors; i++)
+    for (size_t i = 0; i < static_cast<size_t>(num_input_tensors); i++)
     {
         TosaReference::Tensor* tensor = block_sgt.getInputTensor(static_cast<uint32_t>(i));
         ERROR_IF(!tensor->is_allocated(), "block %s input tensor %s are not initialized before use", block_name.c_str(),
@@ -119,9 +119,9 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
 
     // make sure output tensor is evaluated and show its value
     bool all_output_valid = true;
-    for (uint32_t i = 0; i < num_output_tensors; i++)
+    for (size_t i = 0; i < static_cast<size_t>(num_output_tensors); i++)
     {
-        const TosaReference::Tensor* ct = block_sgt.getOutputTensor(i);
+        const TosaReference::Tensor* ct = block_sgt.getOutputTensor(static_cast<uint32_t>(i));
         ASSERT_MEM(ct);
         if (!ct->getIsValid())
         {
@@ -141,7 +141,7 @@ int OpControlFlow::evalBlock(TosaSerializationBasicBlock* block,
     }
 
     // set basic block's output = subgraph_traverser's output
-    for (size_t i = 0; i < num_output_tensors; i++)
+    for (size_t i = 0; i < static_cast<size_t>(num_output_tensors); i++)
     {
         TosaReference::Tensor* tensor = block_sgt.getOutputTensor(static_cast<uint32_t>(i));
         ERROR_IF(!tensor->is_allocated(), "block %s input tensor %s are not initialized before use", block_name.c_str(),
@@ -183,7 +183,7 @@ int OpCondIf<Rank>::checkTensorAttributes()
              inputs[0]->getElementCount());
 
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
+    LEVEL_CHECK(num_inputs <= static_cast<size_t>(tosa_level.MAX_TENSOR_LIST_SIZE),
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
     cond = dynamic_cast<TosaReference::TensorTemplate<TCond>*>(inputs[0]);
@@ -215,13 +215,11 @@ int OpCondIf<Rank>::checkTensorAttributes()
     size_t num_input_tensor  = getInputs().size() - 1;
     size_t num_output_tensor = getOutputs().size();
 
-    ERROR_IF((int32_t)then_block->GetInputs().size() != num_input_tensor,
-             "OpCondIf: then_block has unexpected number of input");
-    ERROR_IF((int32_t)else_block->GetInputs().size() != num_input_tensor,
-             "OpCondIf: else_block has unexpected number of input");
-    ERROR_IF((int32_t)then_block->GetOutputs().size() != num_output_tensor,
+    ERROR_IF(then_block->GetInputs().size() != num_input_tensor, "OpCondIf: then_block has unexpected number of input");
+    ERROR_IF(else_block->GetInputs().size() != num_input_tensor, "OpCondIf: else_block has unexpected number of input");
+    ERROR_IF(then_block->GetOutputs().size() != num_output_tensor,
              "OpCondIf: then_block has unexpected number of output");
-    ERROR_IF((int32_t)else_block->GetOutputs().size() != num_output_tensor,
+    ERROR_IF(else_block->GetOutputs().size() != num_output_tensor,
              "OpCondIf: else_block has unexpected number of output");
 
     for (size_t i = 0; i < num_input_tensor; i++)
@@ -239,7 +237,7 @@ int OpCondIf<Rank>::checkTensorAttributes()
                  "OpCondIf: input tensor rank mismatch with then_block input rank");
         ERROR_IF(operator_input->getRank() != (int32_t)else_block_input->GetShape().size(),
                  "OpCondIf: input tensor rank mismatch with else_block input rank");
-        for (size_t d = 0; d < operator_input->getRank(); d++)
+        for (size_t d = 0; d < static_cast<size_t>(operator_input->getRank()); d++)
         {
             ERROR_IF(operator_input->getShape()[d] != then_block_input->GetShape()[d],
                      "OpCondIf: input tensor dimension mismatch with then_block input dimension");
@@ -263,7 +261,7 @@ int OpCondIf<Rank>::checkTensorAttributes()
                  "OpCondIf: output tensor rank mismatch with then_block output rank");
         ERROR_IF(operator_output->getRank() != (int32_t)else_block_output->GetShape().size(),
                  "OpCondIf: output tensor rank mismatch with else_block output rank");
-        for (size_t d = 0; d < operator_output->getRank(); d++)
+        for (size_t d = 0; d < static_cast<size_t>(operator_output->getRank()); d++)
         {
             ERROR_IF(operator_output->getShape()[d] != then_block_output->GetShape()[d],
                      "OpCondIf: output tensor dimension mismatch with then_block output dimension");
@@ -335,7 +333,7 @@ int OpWhileLoop::checkTensorAttributes()
     }
 
     auto tosa_level = g_func_config.tosa_level;
-    LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
+    LEVEL_CHECK(num_inputs <= static_cast<size_t>(tosa_level.MAX_TENSOR_LIST_SIZE),
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
     auto cond_region = tsh->GetRegionByName(attribute->cond_graph());
@@ -359,13 +357,12 @@ int OpWhileLoop::checkTensorAttributes()
 
     // Make sure operator input/output matches block input/output
     size_t num_block_tensor = getInputs().size();
-    ERROR_IF((int32_t)getOutputs().size() != num_block_tensor,
-             "OpWhileLoop: operator input tensor doesn't match output");
-    ERROR_IF((int32_t)cond_block->GetInputs().size() != num_block_tensor,
+    ERROR_IF(getOutputs().size() != num_block_tensor, "OpWhileLoop: operator input tensor doesn't match output");
+    ERROR_IF(cond_block->GetInputs().size() != num_block_tensor,
              "OpWhileLoop: cond_block has unexpected number of input");
-    ERROR_IF((int32_t)body_block->GetInputs().size() != num_block_tensor,
+    ERROR_IF(body_block->GetInputs().size() != num_block_tensor,
              "OpWhileLoop: body_block has unexpected number of input");
-    ERROR_IF((int32_t)body_block->GetOutputs().size() != num_block_tensor,
+    ERROR_IF(body_block->GetOutputs().size() != num_block_tensor,
              "OpWhileLoop: body_block has unexpected number of output");
     for (size_t i = 0; i < num_block_tensor; i++)
     {
@@ -394,7 +391,7 @@ int OpWhileLoop::checkTensorAttributes()
         ERROR_IF(operator_input->getRank() != (int32_t)body_block_output->GetShape().size(),
                  "OpWhileLoop: input tensor rank mismatch with body_block output rank");
 
-        for (size_t d = 0; d < operator_input->getRank(); d++)
+        for (size_t d = 0; d < static_cast<size_t>(operator_input->getRank()); d++)
         {
             ERROR_IF(operator_input->getShape()[d] != cond_block_input->GetShape()[d],
                      "OpWhileLoop: input tensor dimension mismatch with cond_block input dimension");

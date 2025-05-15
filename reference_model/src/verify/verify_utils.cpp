@@ -208,7 +208,7 @@ std::vector<int32_t> indexToPosition(int64_t index, const std::vector<int32_t>& 
     std::vector<int32_t> pos;
     for (auto d = shape.end() - 1; d >= shape.begin(); --d)
     {
-        pos.insert(pos.begin(), index % *d);
+        pos.insert(pos.begin(), static_cast<int32_t>(index % *d));
         index /= *d;
     }
     ASSERT_MSG(index == 0, "index too large for given shape")

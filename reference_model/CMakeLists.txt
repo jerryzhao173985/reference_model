@@ -74,7 +74,7 @@ set(_linker_flags
   "-Wl,-z,now"
   "-Wl,--as-needed"
   "-Wl,--no-copy-dt-needed-entries"
-  "-pie"
+  "-fpie"
 )
 filter_unsupported_linker_flags(_linker_flags LINKER_FLAGS)
 

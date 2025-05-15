@@ -207,6 +207,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 0, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 0, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 1: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -219,6 +220,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 1, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 2: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -231,6 +233,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 2, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 3: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -243,6 +246,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 3, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 4: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -255,6 +259,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 4, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 4, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 5: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -267,6 +272,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 5, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 5, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
             case 6: {                                                                                                  \
                 switch (outputRank)                                                                                    \
@@ -279,6 +285,7 @@
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 6, 5, DTYPE)                                                     \
                     DEF_FACTORY_TWO_RANK_ONE_TYPE(OP, 6, 6, DTYPE)                                                     \
                 }                                                                                                      \
+                break;                                                                                                 \
             }                                                                                                          \
         }                                                                                                              \
     }

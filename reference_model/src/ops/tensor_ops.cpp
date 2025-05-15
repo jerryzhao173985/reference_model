@@ -359,9 +359,9 @@ int OpArgMax<Rank, Dtype>::checkTensorAttributes()
     }
 
     bool shape_check = true;
-    for (size_t i = 0; i < input->getRank(); i++)
+    for (size_t i = 0; i < static_cast<size_t>(input->getRank()); i++)
     {
-        if (i < attribute->axis())
+        if (i < static_cast<size_t>(attribute->axis()))
         {
             if (input->getShape()[i] != output->getShape()[i])
             {
@@ -369,7 +369,7 @@ int OpArgMax<Rank, Dtype>::checkTensorAttributes()
                 break;
             }
         }
-        else if (i > attribute->axis())
+        else if (i > static_cast<size_t>(attribute->axis()))
         {
             if (input->getShape()[i] != output->getShape()[i - 1])
             {
@@ -412,7 +412,7 @@ int OpArgMax<Rank, Dtype>::eval()
     matrix_dimensions[1] = 1;
     for (size_t i = 0; i < Rank; i++)
     {
-        if (i == attribute->axis())
+        if (i == static_cast<size_t>(attribute->axis()))
             continue;
         matrix_dimensions[1] *= dimensions[i];
     }
@@ -456,7 +456,7 @@ int OpArgMax<Rank, Dtype>::eval()
     size_t out_idx = 0;
     while (in_idx < Rank)
     {
-        if (in_idx != attribute->axis())
+        if (in_idx != static_cast<size_t>(attribute->axis()))
         {
             output_shape[out_idx] = dimensions[in_idx];
             out_idx++;
@@ -1762,8 +1762,10 @@ int OpFFT2d<Dtype>::eval()
                         // Perform the periodic calculation in integer maths to keep
                         // the accuracy of the co-efficients similar for FP32 normal
                         // and FP64 precise mode
-                        int32_t ay = (static_cast<int64_t>(iy) * static_cast<int64_t>(oy)) % in_real_height;
-                        int32_t ax = (static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_real_width;
+                        int32_t ay =
+                            static_cast<int32_t>(static_cast<int64_t>(iy) * static_cast<int64_t>(oy)) % in_real_height;
+                        int32_t ax =
+                            static_cast<int32_t>(static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_real_width;
 
                         // Use explicit cast to ensure intermediate calculations are completed using OutEigenType
                         a = static_cast<OutEigenType>(
@@ -1909,8 +1911,10 @@ int OpRFFT2d<Dtype>::eval()
                         // Perform the periodic calculation in integer maths to keep
                         // the accuracy of the co-efficients similar for FP32 normal
                         // and FP64 precise mode
-                        int32_t ay = (static_cast<int64_t>(iy) * static_cast<int64_t>(oy)) % in_height;
-                        int32_t ax = (static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_width;
+                        int32_t ay =
+                            static_cast<int32_t>(static_cast<int64_t>(iy) * static_cast<int64_t>(oy)) % in_height;
+                        int32_t ax =
+                            static_cast<int32_t>(static_cast<int64_t>(ix) * static_cast<int64_t>(ox)) % in_width;
 
                         // Use explicit cast to ensure intermediate calculations are completed using OutEigenType
                         a = static_cast<OutEigenType>(

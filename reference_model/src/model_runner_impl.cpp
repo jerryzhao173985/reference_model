@@ -93,7 +93,7 @@ GraphStatus ModelRunnerImpl::run()
             // Make sure output tensor is evaluated and show its value
             int num_output_tensors = _main_gt->getNumOutputTensors();
             bool all_output_valid  = true;
-            for (uint32_t i = 0; i < num_output_tensors; i++)
+            for (uint32_t i = 0; i < static_cast<uint32_t>(num_output_tensors); i++)
             {
                 const Tensor* ct = _main_gt->getOutputTensor(i);
                 ASSERT_MEM(ct);
