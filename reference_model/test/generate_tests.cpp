@@ -820,7 +820,7 @@ void test_int4_check(std::vector<int8_t> buffer, size_t elements, int8_t min, in
     for (auto e = buffer.begin(); e < buffer.end(); ++e)
     {
         // Check the first value is within range
-        int8_t v0        = (int8_t)(*e << 4) >> 4;
+        int8_t v0        = static_cast<int8_t>(static_cast<int8_t>(*e << 4) >> 4);
         bool withinRange = (v0 >= min && v0 <= max);
         std::stringstream msg;
         msg << "Index " << index << " (low half)"
@@ -828,7 +828,7 @@ void test_int4_check(std::vector<int8_t> buffer, size_t elements, int8_t min, in
         REQUIRE_MESSAGE(withinRange, msg.str());
 
         // Check the second value is within range
-        int8_t v1 = *e >> 4;
+        int8_t v1 = static_cast<int8_t>(*e >> 4);
         if (index + 1 < elements)
         {
             bool withinRange = (v1 >= min && v1 <= max);

@@ -45,7 +45,8 @@ DataType aboveMax()
     // If we can't fit that value in DataType, then we just return the maximum
     // finite value.
     if (double(std::numeric_limits<DataType>::max()) >= double(DtypeLimits<TosaRefType>::max) * 2)
-        return ct::compat::cast<DataType>(DtypeLimits<TosaRefType>::max) * static_cast<DataType>(2);
+        return static_cast<DataType>(ct::compat::cast<DataType>(DtypeLimits<TosaRefType>::max) *
+                                     static_cast<DataType>(2));
     else
         return std::numeric_limits<DataType>::max();
 }
@@ -181,7 +182,10 @@ private:
                 return ct::compat::cast<DataType>(round(static_cast<double>(getFloat(min, max))));
             case Odd: {
                 DataType val = ct::compat::cast<DataType>(
-                    round(round(static_cast<double>(getFloat(min, max - static_cast<DataType>(1.0)))) / 2.0) * 2.0 +
+                    round(round(static_cast<double>(
+                              getFloat(min, static_cast<DataType>(max - static_cast<DataType>(1.0))))) /
+                          2.0) *
+                        2.0 +
                     1.0);
                 // For large values of floating point (such as with FP8) there
                 // may not be enough range to express an odd number - so check
@@ -189,7 +193,10 @@ private:
             }
             case Even: {
                 DataType val = ct::compat::cast<DataType>(
-                    round(round(static_cast<double>(getFloat(min + static_cast<DataType>(1.0), max))) / 2.0) * 2.0);
+                    round(round(static_cast<double>(
+                              getFloat(static_cast<DataType>(min + static_cast<DataType>(1.0)), max))) /
+                          2.0) *
+                    2.0);
                 // For large values of floating point (such as with FP8) there
                 // may not be enough range to express an even number - so check
                 return _checkEven(val) ? val : static_cast<DataType>(2.0);
@@ -319,6 +326,8 @@ public:
         auto max = _static_evaluate<TosaRefType, DataType>(_rangeMax, false);
 
         DataType rnd;
+        float neg_min      = -static_cast<float>(min);
+        float safe_neg_min = std::max(neg_min, static_cast<float>(std::numeric_limits<DataType>::min()));
         switch (_value)
         {
             case RndFloat:
@@ -329,7 +338,7 @@ public:
                 break;
             case RndSignInteger:
                 // Negative min to positive max
-                rnd = rng.getInteger(-min, max);
+                rnd = rng.getInteger(static_cast<DataType>(safe_neg_min), max);
                 break;
             case RndEvenInteger:
                 rnd = rng.getEvenInteger(min, max);
@@ -341,7 +350,7 @@ public:
                 WARNING("[Generator][S] Unsupported special value type.");
                 return static_cast<DataType>(0.0);
         }
-        return _negative ? -rnd : rnd;
+        return static_cast<DataType>(_negative ? -rnd : rnd);
     }
 
 private:
@@ -508,7 +517,7 @@ private:
         }
         else
         {
-            return negate ? -rawVal : rawVal;
+            return static_cast<DataType>(negate ? -rawVal : rawVal);
         }
     }
 

@@ -65,7 +65,7 @@ bool generate(const GenerateConfig& cfg, StorageType* data, size_t size, const S
     const auto T = numElementsFromShape(cfg.shape);
     // Make sure start index is within the number of elements
     // for modes like repeat last value
-    startIndex %= T;
+    startIndex = static_cast<uint8_t>(startIndex % T);
     for (int64_t t = 0; t < T; ++t)
     {
         int64_t valsIndex;

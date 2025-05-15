@@ -208,11 +208,11 @@ int OpResize<InDtype, OutDtype, resize_t>::eval()
                         {
                             resize_t native_acc;
                             resize_t one = static_cast<resize_t>(1.0f);
-                            native_acc   = static_cast<resize_t>(v00) * (one - dy) * (one - dx);
-                            native_acc += static_cast<resize_t>(v01) * (one - dy) * dx;
-                            native_acc += static_cast<resize_t>(v10) * dy * (one - dx);
-                            native_acc += static_cast<resize_t>(v11) * dy * dx;
-                            acc = static_cast<OutEigenType>(native_acc);
+                            native_acc   = static_cast<resize_t>(v00 * (one - dy) * (one - dx));
+                            native_acc   = static_cast<resize_t>(native_acc + (v01 * (one - dy) * dx));
+                            native_acc   = static_cast<resize_t>(native_acc + (v10 * dy * (one - dx)));
+                            native_acc   = static_cast<resize_t>(native_acc + (v11 * dy * dx));
+                            acc          = static_cast<OutEigenType>(native_acc);
                         }
                         else
                         {

@@ -193,7 +193,7 @@ int main(int argc, char** argv)
             // make sure output tensor is evaluated and show its value
             int num_output_tensors = main_gt.getNumOutputTensors();
             bool all_output_valid  = true;
-            for (uint32_t i = 0; i < num_output_tensors; i++)
+            for (uint32_t i = 0; i < static_cast<uint32_t>(num_output_tensors); i++)
             {
                 const Tensor* ct = main_gt.getOutputTensor(i);
                 ASSERT_MEM(ct);
@@ -349,7 +349,7 @@ int readInputTensors(SubgraphTraverser& gt, json& test_desc)
             return 1;
         }
 
-        for (size_t i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < static_cast<size_t>(tensorCount); i++)
         {
             tensor = gt.getInputTensorByName(test_desc["ifm_name"][i].get<std::string>());
             if (!tensor)
@@ -429,7 +429,7 @@ int writeFinalTensors(SubgraphTraverser& gt, json& test_desc, const std::string&
             return 1;
         }
 
-        for (size_t i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < static_cast<size_t>(tensorCount); i++)
         {
             tensor = gt.getOutputTensorByName(test_desc["ofm_name"][i].get<std::string>());
             if (!tensor)
@@ -476,7 +476,7 @@ int readVariableTensors(SubgraphTraverser& gt, json test_desc)
             return 1;
         }
 
-        for (size_t i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < static_cast<size_t>(tensorCount); i++)
         {
             tensor = gt.getVariableTensorByName(test_desc["variable_name"][i].get<std::string>());
             if (!tensor)
@@ -544,7 +544,7 @@ int writeVariableTensors(SubgraphTraverser& gt, json test_desc)
             return 1;
         }
 
-        for (size_t i = 0; i < tensorCount; i++)
+        for (size_t i = 0; i < static_cast<size_t>(tensorCount); i++)
         {
             tensor = gt.getVariableTensorByName(test_desc["variable_name"][i].get<std::string>());
             if (!tensor)

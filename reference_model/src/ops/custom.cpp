@@ -52,7 +52,7 @@ int OpCustom::eval()
     auto inputs       = getInputs();
     size_t num_inputs = inputs.size();
     auto tosa_level   = g_func_config.tosa_level;
-    LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
+    LEVEL_CHECK(num_inputs <= static_cast<size_t>(tosa_level.MAX_TENSOR_LIST_SIZE),
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
     auto implementation_attrs_vec = attribute->implementation_attrs();

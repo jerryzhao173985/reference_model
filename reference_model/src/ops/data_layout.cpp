@@ -47,7 +47,7 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
     ERROR_IF(inputs.empty(), "Concat operator must have at least one input tensor");
 
     size_t num_inputs = inputs.size();
-    LEVEL_CHECK(num_inputs <= tosa_level.MAX_TENSOR_LIST_SIZE,
+    LEVEL_CHECK(num_inputs <= static_cast<size_t>(tosa_level.MAX_TENSOR_LIST_SIZE),
                 "num_inputs should be smaller than or equal to MAX_TENSOR_LIST_SIZE");
 
     for (size_t i = 0; i < num_inputs; i++)
@@ -65,7 +65,7 @@ int OpConcat<Rank, Dtype>::checkTensorAttributes()
         for (size_t i = 0; i < Rank; i++)
         {
             int32_t input_dim = inputs[j]->getShape()[i];
-            if (i == attribute->axis())
+            if (i == static_cast<size_t>(attribute->axis()))
             {
                 output_dim_on_axis += input_dim;
             }
@@ -379,7 +379,7 @@ int OpSlice<Rank, Dtype>::eval()
     ERROR_IF(static_cast<int32_t>(size_tensor.size()) != in->getRank(),
              "OpSlice: size array length needs to be rank(input)");
 
-    for (size_t i = 0; i < in->getRank(); i++)
+    for (size_t i = 0; i < static_cast<size_t>(in->getRank()); i++)
     {
         int32_t b = static_cast<int32_t>(start_tensor(static_cast<long>(i)));
         int32_t s = static_cast<int32_t>(size_tensor(static_cast<long>(i)));
