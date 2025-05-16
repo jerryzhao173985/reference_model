@@ -1,21 +1,10 @@
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import math
 
 import numpy as np
+from frameworks.test_gen_utils import DTYPE_ATTRIBUTES
 from tosa.DType import DType
-
-DTYPE_ATTRIBUTES = {
-    DType.BOOL: {"str": "b", "width": 1},
-    DType.INT4: {"str": "i4", "width": 4},
-    DType.INT8: {"str": "i8", "width": 8},
-    DType.INT16: {"str": "i16", "width": 16},
-    DType.INT32: {"str": "i32", "width": 32},
-    DType.INT48: {"str": "i48", "width": 48},
-    DType.FP16: {"str": "f16", "width": 16},
-    DType.BF16: {"str": "bf16", "width": 16},
-    DType.FP32: {"str": "f32", "width": 32},
-}
 
 
 class ArgGen:

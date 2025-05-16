@@ -1,11 +1,11 @@
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import json
 
 # Used by basic_test_generator to create test description
 
 
-def write_test_json(
+def write_test_json_tf(
     filename,
     tf_model_filename=None,
     tf_result_npy_filename=None,
@@ -70,6 +70,54 @@ def write_test_json(
         if not isinstance(framework_exclusions, list):
             framework_exclusions = [framework_exclusions]
         test_desc["framework_exclusions"] = framework_exclusions
+
+    if quantized:
+        test_desc["quantized"] = 1
+
+    if num_variables:
+        test_desc["num_variables"] = num_variables
+
+    with open(filename, "w") as f:
+        json.dump(test_desc, f, indent="  ")
+
+
+def write_test_json_torch(
+    filename,
+    torch_mlir_filename=None,
+    torch_result_npy_filename=None,
+    ifm_name=None,
+    ifm_file=None,
+    ifm_shape=None,
+    quantized=False,
+    test_name=None,
+    num_variables=None,
+):
+    test_desc = dict()
+
+    if test_name:
+        test_desc["name"] = test_name
+
+    if torch_mlir_filename:
+        test_desc["torch_mlir_filename"] = torch_mlir_filename
+
+    if torch_result_npy_filename:
+        test_desc["torch_result_npy_filename"] = torch_result_npy_filename
+
+    if ifm_file:
+        if not isinstance(ifm_file, list):
+            ifm_file = [ifm_file]
+        test_desc["ifm_file"] = ifm_file
+
+    # Make sure these arguments are wrapped as lists
+    if ifm_name:
+        if not isinstance(ifm_name, list):
+            ifm_name = [ifm_name]
+        test_desc["ifm_name"] = ifm_name
+
+    if ifm_shape:
+        if not isinstance(ifm_shape, list):
+            ifm_shape = [ifm_shape]
+        test_desc["ifm_shape"] = ifm_shape
 
     if quantized:
         test_desc["quantized"] = 1

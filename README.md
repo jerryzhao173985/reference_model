@@ -551,14 +551,23 @@ For an example of how to read these arguments in your SUT module, please see the
 
 Included in the TOSA Unit Test infrastructure are scripts to enable the creation
 of TOSA unit tests for example frameworks. Included at the moment is support for
-TensorFlow and TensorFlow Lite.
+TensorFlow, TensorFlow Lite, and PyTorch.
 
 #### Setup
 
-Installation (via `pip install`) of the following python package is required to
+Installation (via `pip install`) of the following python packages is required to
 generate the tests:
 
 * `tensorflow`
+* `torch`
+* `torch-mlir`
+
+To install `torch-mlir` via `pip`, run:
+
+```bash
+pip install torch-mlir \
+    -f https://github.com/llvm/torch-mlir-release/releases/expanded_assets/dev-wheels
+```
 
 A built copy of the tensorflow framework from source is required to compile the
 tests to TOSA - see the online documentation <https://www.tensorflow.org/install/source>
@@ -568,22 +577,64 @@ The following tools are used from this build:
 * `tensorflow/basel-bin/tensorflow/compiler/mlir/lite/flatbuffer_translate`
 * `tensorflow/basel-bin/tensorflow/compiler/mlir/tf-opt`
 
+A built copy of the torch-mlir framework from source is required to compile the
+tests to TOSA - see the online documentation <https://github.com/llvm/torch-mlir>
+on how to do this.
+The following tool is used from this build:
+
+* `torch-mlir/build/bin/torch-mlir-opt`
+
 #### Usage
+
+1. Generate Unit Test Models
 
 The command to generate the unit test framework models:
 
 ```bash
-tosa_verif_framework_generator -o tests
+tosa_verif_framework_generator -o all_tests 
 ```
+
+Some useful flags:
+
+| Flag                             | Description                                            |
+| -------------------------------- | ------------------------------------------------------ |
+| `--framework <framework-name>`   | Framework to generate tests for (`tf`, `torch`, `all`) |
+| `--filter <regex>`               | Only generate tests whose names match the given regex  |
+
+2. Convert to TOSA and Run on Reference Model
 
 Next to convert these models to TOSA and then run them on the reference model:
 
 ```bash
-tosa_verif_framework_compiler_runner \
-  --tf-base-dir tensorflow           \
-  --tools-base-dir reference_model   \
-  --recursive                        \
-  --test tests
+tosa_verif_framework_compiler_runner       \
+  --torch-mlir-base-dir <torch-mlir-dir>   \
+  --tf-base-dir <tensorflow-dir>           \
+  --tools-base-dir <reference_model-dir>   \
+  --recursive                              \
+  --test all_tests 
+```
+
+Run only TensorFlow/TensorFlow Lite tests:
+
+```bash
+tosa_verif_framework_compiler_runner       \
+  --framework tf                           \
+  --framework tflite                       \
+  --tf-base-dir <tensorflow-dir>           \
+  --tools-base-dir <reference_model-dir>   \
+  --recursive                              \
+  --test tf_tests 
+```
+
+Run only PyTorch tests:
+
+```bash
+tosa_verif_framework_compiler_runner       \
+  --framework torch                        \
+  --torch-mlir-base-dir <torch-mlir-dir>   \
+  --tools-base-dir <reference_model-dir>   \
+  --recursive                              \
+  --test torch_tests 
 ```
 
 ## Other tools

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -46,8 +46,13 @@ def parse_args():
         "--tf-base-dir",
         dest="tf_base_dir",
         type=str,
-        required=True,
         help="Tensorflow/MLIR base directory",
+    )
+    parser.add_argument(
+        "--torch-mlir-base-dir",
+        dest="torch_mlir_base_dir",
+        type=str,
+        help="Torch-MLIR base directory",
     )
     parser.add_argument(
         "--tools-base-dir",
@@ -92,13 +97,13 @@ def parse_args():
         "--no-compiler",
         dest="no_compiler",
         action="store_true",
-        help="Do not run TF MLIR/tfopt/TOSA compiler.  Just run TOSA Reference model",
+        help="Do not run torch-mlir-opt/TF MLIR/tfopt/TOSA compiler. Just run TOSA Reference model",
     )
     parser.add_argument(
         "--no-ref-model",
         dest="no_ref",
         action="store_true",
-        help="Do not run TOSA reference model, just run TF MLIR/tfopt/TOSA compiler.",
+        help="Do not run TOSA reference model, just run torch-mlir-opt/TF MLIR/tfopt/TOSA compiler.",
     )
     parser.add_argument(
         "--valgrind",
@@ -122,7 +127,8 @@ def parse_args():
         dest="framework",
         default=[],
         action="append",
-        help="Frameworks to test (tf, tflite)",
+        choices=["tf", "tflite", "torch"],
+        help="Frameworks to test (tf, tflite, torch)",
     )
     parser.add_argument(
         "--override-exclusions",
@@ -141,7 +147,7 @@ def parse_args():
     parser.add_argument(
         "--xunit-classname-prefix",
         dest="xunit_classname_prefix",
-        default="TFUnitTests",
+        default="FrameworkUnitTests",
         help="Prefix for xunit classname",
     )
     parser.add_argument(
@@ -189,8 +195,15 @@ def parse_args():
     args = parser.parse_args()
 
     # No easy way to both do array append and override a default value
+    # Defaulted to run TF/TFL tests (to not disrupt existing set ups)
     if not args.framework:
         args.framework = ["tf", "tflite"]
+
+    # Validate base dirs
+    if ("tf" in args.framework or "tflite" in args.framework) and not args.tf_base_dir:
+        parser.error("--tf-base-dir required for TF/TFL tests")
+    if "torch" in args.framework and not args.torch_mlir_base_dir:
+        parser.error("--torch-mlir-base-dir required for torch tests")
 
     # Autodetect CPU count
     if args.jobs <= 0:
@@ -388,7 +401,7 @@ def compile_dynamic_model(
             return (TestResult.COMPILER_ERROR, 0.0, e, test_name)
 
 
-def run_test(args, test_path, framework):
+def run_test_tf(args, test_path, framework):
     msg = ""
 
     try:
@@ -889,6 +902,399 @@ def run_test(args, test_path, framework):
     )
 
 
+def run_test_torch(args, test_path):
+    msg = ""
+
+    try:
+        with open(test_path / "test.json", "r") as f:
+            test_desc = json.load(f)
+    except Exception:
+        raise Exception(f"Could not load or parse test from {test_path / 'test.json'}")
+
+    test_name = None
+    if "name" in test_desc:
+        test_name = test_desc["name"]
+    else:
+        test_name = test_path.name
+    if not test_name:
+        raise Exception(f"Could not parse test_name from {test_path}")
+
+    ignored_fail = ""
+    unexpected_pass = ""
+    fail_logcolor = LogColors.RED
+    pass_logcolor = LogColors.GREEN
+    if test_name in args.ignored_fails:
+        ignored_fail = "Ignored Failure"
+        fail_logcolor = LogColors.GREEN
+        unexpected_pass = "Unexpected Pass"
+        pass_logcolor = LogColors.RED
+
+    print_color(LogColors.GREEN, f"## Running Torch test {test_name}")
+
+    torch_mlir_opt = os.path.join(
+        args.torch_mlir_base_dir, "build", "bin", "torch-mlir-opt"
+    )
+
+    torch_mlir_filename = os.path.join(test_path, "torch.mlir")
+    input_tensor_prefix = "TosaInput_"
+    flatbuffer_dir = "flatbuffer-torch"
+
+    try:
+        # Write the hard-coded placeholder input (reshaped as necesary) to
+        # the file that compiler specified.
+        reference_runner_ifm_name = []
+        for i in range(len(test_desc["ifm_file"])):
+            ifm_tensor_name = f"{input_tensor_prefix}{i}"
+
+            assert test_desc["ifm_file"][i].endswith(".npy")
+            ifm_np = np.load(test_path / test_desc["ifm_file"][i])
+
+            # We sometimes encounter input shape/expected input shape mismatches
+            # due to a missing batch dimension on the input (e.g. a single 3D image).
+            #
+            # Make sure input numpy and input shape from descriptor match,
+            # expand_dims on the outer dimensions until the rank matches,
+            # then do the shape comparison.
+            while len(list(ifm_np.shape)) < len(test_desc["ifm_shape"][i]):
+                ifm_np = np.expand_dims(ifm_np, axis=0)
+
+            # After legalization, complex tensors are expected to be represented
+            # as a single floating point tensor of shape [?, ..., ?, 2].
+            expected_shape = test_desc["ifm_shape"][i]
+            if str(test_path).endswith("c64"):
+                expected_shape.append(2)
+
+            assert list(ifm_np.shape) == expected_shape
+
+            reference_runner_ifm_name.append(ifm_tensor_name)
+
+    except KeyError:
+        # No additional inputs.  Ignore.
+        pass
+
+    # 1. Compile to TOSA MLIR
+    tosa_mlir_filename = str(test_path / "output_torch.tosa.mlir")
+
+    compiler_cmd = [
+        torch_mlir_opt,
+        "--verify-each",
+        "--torch-backend-to-tosa-backend-pipeline",
+        torch_mlir_filename,
+        "-o",
+        tosa_mlir_filename,
+    ]
+
+    flatbuffer_dir_fullpath = test_path / flatbuffer_dir
+
+    flatbuffer_dir_fullpath.mkdir(exist_ok=True)
+
+    # 2. Serialize to TOSA flatbuffer
+    compile_and_serialize_cmd = compiler_cmd.copy()
+    compile_and_serialize_cmd.extend(
+        [
+            "--tosa-serialize",
+            f"--tosa-flatbuffer-filename={flatbuffer_dir_fullpath / f'{test_name}.tosa'}",
+        ]
+    )
+
+    if not args.no_compiler:
+        try:
+            compiler_stdout, compiler_stderr = run_sh_command(
+                compile_and_serialize_cmd, args.verbose, True
+            )
+            compiler_rc = parse_compiler_output(compiler_stdout, compiler_stderr)
+            if compiler_rc == TestResult.NOT_LOWERED:
+                print_color(
+                    fail_logcolor,
+                    f"Results {ignored_fail} NOT_LOWERED {test_name}, framework Torch",
+                )
+                return (
+                    get_rc_ignored_failures(TestResult.NOT_LOWERED, ignored_fail),
+                    0.0,
+                    "",
+                    test_name,
+                )
+
+            pass
+
+        except Exception as e:
+            if "same scale constraint" in str(e):
+                print_color(
+                    fail_logcolor,
+                    f"Results {ignored_fail} INVALID_MLIR {test_name}: {e}",
+                )
+                return (
+                    get_rc_ignored_failures(TestResult.INVALID_MLIR, ignored_fail),
+                    0.0,
+                    e,
+                    test_name,
+                )
+            else:
+                print_color(
+                    fail_logcolor,
+                    f"Results {ignored_fail} COMPILER_ERROR {test_name}: {e}",
+                )
+                return (
+                    get_rc_ignored_failures(TestResult.COMPILER_ERROR, ignored_fail),
+                    0.0,
+                    e,
+                    test_name,
+                )
+
+    try:
+        torch_result = np.load(test_path / test_desc["torch_result_npy_filename"])
+    except KeyError:
+        assert 0, "fail to load torch result numpy"
+
+    # TOSA has no notion of complex datatypes, it represents complex values using two
+    # fp32 output tensors representing real and imaginary values. When legalizing
+    # complex operations from frameworks, these two output tensors are combined into
+    # a single tensor of shape [?, ..., ?, 2] whereby each inner pair of values
+    # represents the real and imaginary parts of a complex value. This is completed
+    # by inserting reshape and concatenate TOSA operations during the legalization to
+    # maintain a one-to-one correspondance with framework outputs, thus simplifying
+    # legalization. Here torch_result should also match this format before being
+    # compared to the ref model output.
+    if torch_result.dtype == np.complex64:
+        ifm_shape = torch_result.shape + (2,)
+        torch_result = torch_result.view(np.float32)
+        torch_result = torch_result.reshape(ifm_shape)
+
+    # Generate test descriptor per flatbuffer generation
+    # Input .npy will be shared across different frameworks
+    # Output .npy will be generated in its corresponding flatbuffer
+    reference_runner_ifm_file = [
+        str(Path("..") / ifm_file) for ifm_file in test_desc["ifm_file"]
+    ]
+
+    # Check if there's any operator in output graph.
+    empty_graph = True
+    with open(tosa_mlir_filename, "r") as f:
+        for line in f:
+            # TOSA assembly instructions all start with `tosa.`
+            if re.search(r"tosa\.", line):
+                empty_graph = False
+
+                break
+
+    # Fast-forward input tensor to output tensor if TOSA graph is empty.
+    if empty_graph:
+        reference_runner_ofm_name = reference_runner_ifm_name
+    else:
+        reference_runner_ofm_name = ["TosaOutput_0"]
+
+    if "num_variables" in test_desc:
+        num_variable = test_desc["num_variables"]
+    else:
+        num_variable = 0
+    reference_runner_variable_name = []
+    reference_runner_variable_file = []
+
+    for i in range(num_variable):
+        variable_name_str = "Variable_" + str(i)
+        variable_file_str = "variable_output_" + str(i) + ".npy"
+        reference_runner_variable_name.append(variable_name_str)
+        reference_runner_variable_file.append(variable_file_str)
+
+    write_reference_runner_json(
+        filename=str(test_path / flatbuffer_dir / "desc.json"),
+        tosa_filename=f"{test_name}.tosa",
+        ifm_name=reference_runner_ifm_name,
+        ifm_file=reference_runner_ifm_file,
+        ofm_name=reference_runner_ofm_name,
+        ofm_file=["ref_model_output_0.npy"],
+        variable_name=reference_runner_variable_name,
+        variable_file=reference_runner_variable_file,
+    )
+
+    ref_model_cmd = [
+        str(args.tools_base_dir / "build" / "reference_model" / "tosa_reference_model"),
+        f"--test_desc={test_path / flatbuffer_dir / 'desc.json'}",
+    ]
+
+    if args.debug_ref_model:
+        ref_model_cmd.extend(["-D ALL", "-l high"])
+
+    if args.precise_mode:
+        ref_model_cmd.extend(["--precise_mode=1"])
+
+    if args.valgrind:
+        ref_model_cmd = [
+            "valgrind",
+            "--show-leak-kinds=all",
+            "--log-fd=1",
+            "-q",
+        ] + ref_model_cmd
+
+    ref_model_cmd = ref_model_cmd + [f"--tosa_level={args.tosa_level}"]
+
+    # Clean out any ref_model result first
+    for f in (test_path / flatbuffer_dir).glob("ref_model_*.npy"):
+        f.unlink()
+
+    if args.no_ref:
+        return (TestResult.PASS, 0.0, msg)
+
+    try:
+        ref_model_stdout, ref_model_stderr = run_sh_command(
+            ref_model_cmd, args.verbose, True
+        )
+        ref_model_rc = parse_reference_model_output(ref_model_stdout, ref_model_stderr)
+        if ref_model_rc != TestResult.PASS:
+            return (ref_model_rc, 0.0, "")
+    except Exception as e:
+        ref_model_rc = parse_reference_model_output("", str(e))
+        if ref_model_rc != TestResult.PASS:
+            print_color(
+                fail_logcolor,
+                f"Results {ignored_fail} {TestResultErrorStr[ref_model_rc]} {test_name}: {e}",
+            )
+            return (get_rc_ignored_failures(ref_model_rc, ignored_fail), 0.0, "")
+        print_color(
+            fail_logcolor,
+            f"Results {ignored_fail} REF_MODEL_RUNTIME_ERROR {test_name}: {e}",
+        )
+        return (
+            get_rc_ignored_failures(TestResult.REF_MODEL_RUNTIME_ERROR, ignored_fail),
+            0.0,
+            e,
+            test_name,
+        )
+
+    if args.precise_mode == 1 and (
+        torch_result.dtype == np.float16 or torch_result.dtype == np.float32
+    ):
+        torch_result = torch_result.astype(np.float64)
+    elif torch_result.dtype == np.float16:
+        torch_result = torch_result.astype(np.float32)
+    elif torch_result.dtype == np.int8:
+        torch_result = torch_result.astype(np.int8)
+    elif torch_result.dtype == np.uint8:
+        torch_result = torch_result.astype(np.uint8)
+    elif torch_result.dtype == np.int16:
+        torch_result = torch_result.astype(np.int16)
+    elif torch_result.dtype == np.uint16:
+        torch_result = torch_result.astype(np.uint16)
+    elif torch_result.dtype == np.int64:
+        torch_result = torch_result.astype(np.int32)
+
+    # For now, search for the first output from ref_model
+    ref_model_result_files = list((test_path / flatbuffer_dir).glob("ref_model_*.npy"))
+    ref_model_result = np.load(ref_model_result_files[0])
+
+    if np.issubdtype(torch_result.dtype, np.unsignedinteger) and (
+        torch_result.dtype != ref_model_result.dtype
+    ):
+        ref_model_result = ref_model_result.astype(torch_result.dtype)
+
+    assert (
+        torch_result.dtype == ref_model_result.dtype
+    ), f"Numpy type mismatch {torch_result.dtype} != {ref_model_result.dtype} when comparing result"
+
+    # Size comparison
+    # Size = 1 tensors can be equivalently represented as having rank 0 or rank
+    # >= 0, allow that special case
+    torch_result = np.squeeze(torch_result)
+    ref_model_result = np.squeeze(ref_model_result)
+
+    if np.shape(torch_result) != np.shape(ref_model_result):
+        print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
+        msg = f"Shapes mismatch: Reference {np.shape(torch_result)} vs {np.shape(ref_model_result)}"
+        print(msg)
+        return (
+            get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+            0.0,
+            msg,
+            test_name,
+        )
+
+    # for quantized test, allow +-(args.quantize_tolerance) error
+    if ref_model_result.dtype == np.int32:
+        assert torch_result.dtype == np.int32
+
+        if np.all(
+            np.absolute(ref_model_result - torch_result) <= args.quantize_tolerance
+        ):
+            print_color(pass_logcolor, f"Results {unexpected_pass} {test_name}")
+        else:
+            print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
+
+            tolerance = args.quantize_tolerance + 1
+            while not np.all(
+                np.absolute(ref_model_result - torch_result) <= args.quantize_tolerance
+            ):
+                tolerance = tolerance + 1
+                if tolerance >= 10:
+                    break
+
+            msg = f"Result is within {tolerance} {test_path}"
+            print(msg)
+
+            np.set_printoptions(threshold=128)
+            print(f"torch_result: {torch_result.shape}\n")
+            print(torch_result)
+            print(f"ref_model_result: {ref_model_result.shape}\n")
+            print(ref_model_result)
+            # print(torch_result - ref_model_result)
+            return (
+                get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+                tolerance,
+                msg,
+                test_name,
+            )
+    else:
+        if np.allclose(
+            ref_model_result, torch_result, atol=args.tolerance, equal_nan=True
+        ):
+            print_color(pass_logcolor, f"Results {unexpected_pass} PASS {test_name}")
+        else:
+            print_color(fail_logcolor, f"Results {ignored_fail} MISCOMPARE {test_name}")
+
+            # Many of these tests would match with a reasonable looser tolerence.
+            # Determine what would have worked.
+            tolerance = args.tolerance * 10.0
+            while not np.allclose(
+                ref_model_result, torch_result, atol=tolerance, equal_nan=True
+            ):
+                tolerance = tolerance * 10.0
+                if tolerance > 1.0e10:
+                    tolerance = math.inf
+                    break
+
+            msg = f"Result is within {tolerance:.0e} {test_name}"
+            print(msg)
+
+            np.set_printoptions(precision=4, threshold=128)
+            print(f"torch_result: {torch_result.shape}\n")
+            print(torch_result)
+            print(f"ref_model_result: {ref_model_result.shape}\n")
+            print(ref_model_result)
+            # print(torch_result - ref_model_result)
+            return (
+                get_rc_ignored_failures(TestResult.MISMATCH, ignored_fail),
+                tolerance,
+                msg,
+                test_name,
+            )
+
+    return (
+        get_rc_ignored_failures(TestResult.PASS, ignored_fail),
+        args.tolerance,
+        msg,
+        test_name,
+    )
+
+
+def run_test(args, test_path, framework):
+    """Select and run the appropriate framework test"""
+    if framework in ("tf", "tflite"):
+        return run_test_tf(args, test_path, framework)
+    elif framework == "torch":
+        return run_test_torch(args, test_path)
+    else:
+        raise ValueError(f"Unknown framework: {framework}")
+
+
 def worker_thread(task_queue, args, result_queue):
     while True:
         try:
@@ -965,7 +1371,13 @@ def main():
             tdirList = [tdir]
 
         for t in tdirList:
+            test_name = str(t).split("/")[-1]
             for f in args.framework:
+                # Skip if target framework and test's framework are different
+                if f in ("tf", "tflite") and "tf" not in test_name:
+                    continue
+                if f == "torch" and "torch" not in test_name:
+                    continue
                 task_queue.put((t, f))
 
     for i in range(args.jobs):

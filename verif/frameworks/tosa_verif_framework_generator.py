@@ -8,968 +8,52 @@ import traceback
 
 import numpy as np
 
-#  Level | Level for Humans | Level Description
-# -------|------------------|------------------------------------
-#  0     | DEBUG            | [Default] Print all messages
-#  1     | INFO             | Filter out INFO messages
-#  2     | WARNING          | Filter out INFO & WARNING messages
-#  3     | ERROR            | Filter out all messages
-# Filter tensorflow debug message except errors
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+# All of the available supported frameworks
+AVAILABLE_FRAMEWORKS = []
 
-# Flake8 E402 - ignore imports not at top of file to allow os.environ setting
-import tensorflow as tf  # noqa: E402
-from frameworks.write_test_json import write_test_json  # noqa: E402
-from frameworks.arg_gen import ArgGen  # noqa: E402
-from frameworks.tensor_gen import TGen  # noqa: E402
-from frameworks.test_builder import TBuilder  # noqa: E402
+try:
+    #  Level | Level for Humans | Level Description
+    # -------|------------------|------------------------------------
+    #  0     | DEBUG            | [Default] Print all messages
+    #  1     | INFO             | Filter out INFO messages
+    #  2     | WARNING          | Filter out INFO & WARNING messages
+    #  3     | ERROR            | Filter out all messages
+    # Filter TensorFlow debug message except errors
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+
+    # Flake8 E402 - ignore imports not at top of file to allow os.environ setting
+    import tensorflow as tf  # noqa: E402
+    from frameworks.tf.tf_op_list import TF_OP_LIST  # noqa: E402
+    from frameworks.write_test_json import write_test_json_tf  # noqa: E402
+    from frameworks.test_gen_utils import get_tf_dtype  # noqa: E402
+
+    from tensorflow.lite.python.interpreter import OpResolverType  # noqa: E402
+
+    AVAILABLE_FRAMEWORKS.append("tf")
+    AVAILABLE_FRAMEWORKS.append("tflite")
+except ImportError:
+    print(
+        "Cannot import TensorFlow in `tosa_verif_framework_generator`. Skipping TF/TFL tests"
+    )
+
+try:
+    # Flake8 E402 - ignore imports not at top of file to allow os.environ setting
+    from torch_mlir import fx  # noqa: E402
+    from frameworks.torch.torch_op_list import TORCH_OP_LIST  # noqa: E402
+    from frameworks.write_test_json import write_test_json_torch  # noqa: E402
+    from frameworks.test_gen_utils import get_torch_dtype  # noqa: E402
+
+    AVAILABLE_FRAMEWORKS.append("torch")
+except ImportError:
+    print(
+        "Cannot import Torch-MLIR in `tosa_verif_framework_generator`. Skipping Torch tests"
+    )
+
+from frameworks.shape_list import shape_list  # noqa: E402
 from frameworks.test_gen_utils import (  # noqa: E402
     QuantType,
-    get_tf_dtype,
     get_shape_str,
 )  # noqa: E402
-
-from tensorflow.lite.python.interpreter import OpResolverType  # noqa: E402
-
-# All of the supported frameworks
-ALL_FRAMEWORKS = ["tf", "tflite"]
-
-# Lists of different data types
-TYPE_F = [tf.float32]
-TYPE_I = [tf.int32]
-TYPE_FI = [tf.float32, tf.int32]
-TYPE_B = [tf.bool]
-TYPE_FIB = [tf.float32, tf.int32, tf.bool]
-TYPE_H = [tf.float16]
-TYPE_FH = [tf.float32, tf.float16]
-TYPE_FHI = [tf.float32, tf.float16, tf.int32]
-TYPE_FHIB = [tf.float32, tf.float16, tf.int32, tf.bool]
-
-# The list of operator tests
-# Each dictionary entry for an op is a dictionary with the following required members:
-#   'operands': tuple (number_of_placeholder_tensors, number_of_constant_tensors)
-#   'build_fcn: tuple (Test builder function, Tensor generator function,
-#                      Argument generator function)
-#   'types': list of Tensorflow types that should be tested for this op
-#               OR
-#            a dictionary of {'framework_name': [type_list] } for cases where only
-#            a subset of the types should be tested in each framework.  This can also
-#            be used to restrict an operator to a particular framework.
-#
-# And optional members:
-#   'template':      boolean (indicates that this is a templated op which gets further
-#                    processing in createDynamicOpLists)
-#   'bias':          boolean indicating that there is a bias component to be generated
-#   'qtypes':        List of QuantType quantized types to generate for this op
-#   'rank':          tuple (lowest rank, highest rank). Dimension range of input tensor.
-#   'custom_shapes': List of custom shapes for specific operators
-
-TF_OP_LIST = {
-    "add": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Add, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_FI,
-            "tflite": list(
-                TYPE_FI + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "sub": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Sub, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_FI,
-            "tflite": list(TYPE_FI + [QuantType.ALL_U8, QuantType.ALL_I8]),
-            # QuantType.ALL_I16 fail in TFLite conversion
-        },
-    },
-    "mul": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Mul, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_FI,
-            "tflite": list(
-                TYPE_FI + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "floor_div": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.FloorDiv, TGen.tgDiv, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "exp": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Exp, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "rcp": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Rcp, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "relu": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Relu, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "relu1": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Relu1, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": [],
-            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "relu0To1": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Relu0To1, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": [],
-            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "relu6": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Relu6, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "leaky_relu": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.LeakyRelu, TGen.tgBasic, ArgGen.agFloat),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "prelu": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Prelu, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "gelu": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Gelu, TGen.tgBasicPositive, ArgGen.agNone),
-        "types": {
-            # Need compiler support for tf.Erf.
-            # "tf": TYPE_F,
-            "tflite": list(
-                # Only float32, int8 and uint8 supported currently
-                TYPE_F
-                + [QuantType.ALL_U8, QuantType.ALL_I8]
-            ),
-        },
-    },
-    "concat": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Concat, TGen.tgBasic, ArgGen.agAxes),
-        "types": TYPE_FI,
-        "rank": (0, 4),
-        "custom_shapes": {
-            "custom_shape_only": False,
-            "shape_list": [()],
-        },
-    },
-    "bitwise_and": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.BitwiseAnd, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {"tf": TYPE_I},  # Not supported in TF Lite
-    },
-    "bitwise_or": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.BitwiseOr, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {"tf": TYPE_I},  # Not supported in TF Lite
-    },
-    "bitwise_not": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.BitwiseNot, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {"tf": TYPE_I},  # Not supported in TF Lite
-    },
-    "bitwise_xor": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.BitwiseXor, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {"tf": TYPE_I},  # Not supported in TF Lite
-    },
-    "logical_and": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.LogicalAnd, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_B,
-    },
-    "logical_or": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.LogicalOr, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_B,
-    },
-    "logical_not": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.LogicalNot, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_B,
-    },
-    "reduce_any": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceAny, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": TYPE_B,
-    },
-    "reduce_all": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceAll, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": TYPE_B,
-    },
-    "reduce_min": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceMin, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_FI,
-            "tflite": list(TYPE_FI + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "reduce_max": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceMax, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_FI,
-            "tflite": list(TYPE_FI + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "reduce_sum": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceSum, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_F,
-            # v2 converter doesn't recognize quantized reduce_sum
-            # "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-            "tflite": TYPE_F,
-        },
-    },
-    "reduce_mean": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceMean, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "reduce_product": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceProduct, TGen.tgBasic, ArgGen.agAxesListKeepdims),
-        "types": TYPE_F,
-    },
-    "min": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Min, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "max": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Max, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "pow": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Pow, TGen.tgPow, ArgGen.agNone),
-        # Technically, integer is supported, but only for positive exponents.
-        # Needs a random argument generator.
-        "types": TYPE_F,
-    },
-    "abs": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Abs, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "ceil": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Ceil, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "floor": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Floor, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "log": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Log, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "negate": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Negate, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "rsqrt": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Rsqrt, TGen.tgBasicPositive, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(TYPE_F + [QuantType.ALL_I8]),
-        },
-    },
-    "sign": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Sign, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-        },
-    },
-    "sigmoid": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Sigmoid, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "tanh": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Tanh, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "erf": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Erf, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-        },
-    },
-    "sin": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Sin, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "cos": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Cos, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "atan2": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Atan2, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": TYPE_F,
-        },
-    },
-    "square": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Square, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "squared_difference": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.SquaredDifference, TGen.tgBFuzz, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(TYPE_FI + [QuantType.ALL_I8]),
-        },
-    },
-    "equal": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Equal, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "greater_equal": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.GreaterEqual, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "greater": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Greater, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "less": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Less, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "less_equal": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.LessEqual, TGen.tgBFuzz, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "conv2d_TEMPLATE": {
-        "operands": (1, 1),
-        "build_fcn": (TBuilder.Conv2d, TGen.tgConv2d, ArgGen.agConv2d),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "conv2d_relu_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv2dRelu, TGen.tgConv2d, ArgGen.agNone),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "conv2d_relu6_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv2dRelu6, TGen.tgConv2d, ArgGen.agNone),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "conv2d_relu_n1_to_1_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv2dReluN1To1, TGen.tgConv2d, ArgGen.agNone),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    # This test is converted as:
-    # tfl.conv2d(){fused_activation_function="NONE"} + tfl.tanh()
-    # TODO: anyway to generate tfl.conv2d(){fused_activation_function="TANH"}?
-    "conv2d_tanh_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv2dTanh, TGen.tgConv2d, ArgGen.agNone),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "conv2d_bias_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv2dWithBias, TGen.tgConv2d, ArgGen.agConv2d),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "bias": True,
-        "template": True,
-    },
-    "conv3d_TEMPLATE": {
-        "operands": (1, 1),
-        "build_fcn": (TBuilder.Conv3d, TGen.tgConv3d, ArgGen.agConv3d),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                # Quantization to 16x8-bit not yet supported by tflite.
-            ],
-        },
-        "template": True,
-        "rank": (1, 5),
-    },
-    "conv3d_bias_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.Conv3dWithBias, TGen.tgConv3d, ArgGen.agConv3d),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                # Quantization to 16x8-bit not yet supported by tflite.
-            ],
-        },
-        "bias": True,
-        "template": True,
-        "rank": (1, 5),
-    },
-    "depthwise_conv2d_TEMPLATE": {
-        "operands": (1, 1),
-        "build_fcn": (
-            TBuilder.DepthwiseConv2d,
-            TGen.tgDepthwiseConv2d,
-            ArgGen.agDepthwiseConv2d,
-        ),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "depthwise_conv2d_bias_TEMPLATE": {
-        "operands": (1, 2),
-        "build_fcn": (
-            TBuilder.DepthwiseConv2dWithBias,
-            TGen.tgDepthwiseConv2d,
-            ArgGen.agDepthwiseConv2d,
-        ),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "bias": True,
-        "template": True,
-    },
-    "transpose_conv2d_TEMPLATE": {
-        "operands": (1, 1),
-        "build_fcn": (
-            TBuilder.TransposeConv2d,
-            TGen.tgTransposeConv2d,
-            ArgGen.agTransposeConv2d,
-        ),
-        "types": {
-            "tf": [tf.float32],
-            "tflite": [
-                tf.float32,
-                QuantType.CONV_U8_U8,
-                QuantType.CONV_I8_I8,
-                QuantType.CONV_I16_I8,
-            ],
-        },
-        "template": True,
-    },
-    "argmax": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Argmax, TGen.tgBasic, ArgGen.agAxes),
-        "types": {"tf": TYPE_F},
-    },
-    "avg_pool2d": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.AvgPool2d, TGen.tgPooling, ArgGen.agPooling),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "max_pool2d": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.MaxPool2d, TGen.tgPooling, ArgGen.agPooling),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-            # ALL_I16 not supported yet
-            # In tensorflow/compiler/mlir/lite/ir/tfl_ops.td,
-            # QI16 is missing from MaxPoolOperandAndResultConstraints
-            # If adding QI16 back this test can run through.
-        },
-    },
-    "reshape": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Reshape, TGen.tgBasic, ArgGen.agReshape),
-        "types": TYPE_FI,
-    },
-    "transpose": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Transpose, TGen.tgBasic, ArgGen.agTranspose),
-        "types": TYPE_FI,
-    },
-    "slice": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Slice, TGen.tgBasic, ArgGen.agSlice),
-        "types": TYPE_FI,
-    },
-    "strided_slice": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.StridedSlice, TGen.tgBasic, ArgGen.agStridedSlice),
-        "types": TYPE_FI,
-    },
-    "select": {
-        "operands": (3, 0),
-        "build_fcn": (TBuilder.Select, TGen.tgSelect, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "addn": {
-        "operands": (4, 0),
-        "build_fcn": (TBuilder.Addn, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "concatv2": {
-        "operands": (4, 0),
-        "build_fcn": (TBuilder.Concatv2, TGen.tgBasic, ArgGen.agAxes),
-        "types": TYPE_FI,
-        "rank": (0, 4),
-        "custom_shapes": {
-            "custom_shape_only": False,
-            "shape_list": [()],
-        },
-    },
-    "stack": {
-        "operands": (4, 0),
-        "build_fcn": (TBuilder.Stack, TGen.tgBasic, ArgGen.agStack),
-        "types": TYPE_FI,
-    },
-    "unstack": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Unstack, TGen.tgPooling, ArgGen.agAxes),
-        "types": TYPE_F,
-    },
-    "mirrorpad": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.MirrorPad, TGen.tgBasic, ArgGen.agMirrorPad),
-        "types": TYPE_FI,
-    },
-    "pad": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Pad, TGen.tgBasic, ArgGen.agPad),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8]),
-        },
-    },
-    "expand_dims": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ExpandDims, TGen.tgBasic, ArgGen.agStack),
-        "types": TYPE_FI,
-    },
-    "shape": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Shape, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "rank": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Rank, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "fill": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Fill, TGen.tgBasic, ArgGen.agFill),
-        "types": TYPE_FI,
-    },
-    "elu": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Elu, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "softmax": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Softmax, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-    },
-    "log_softmax": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.LogSoftmax, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "dynamic_linear": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.DynamicLinear, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tf": [],
-            "tflite": list(TYPE_F),
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(14, 19)],
-        },
-        # number of operands of tuples which spcifies which dim to set to None
-        # In this case, we have 1 input. So we have 1 tuple
-        # We're setting the first input's first dim to None
-        "dynamic_shape_dim": [
-            (0,),
-        ],
-    },
-    "matmul": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.MatMul, TGen.tgMatmul, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F
-                + [QuantType.ALL_U8, QuantType.ALL_I8]
-                # 16 bits matmul fail to convert
-            ),
-        },
-    },
-    "add_scalar": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.AddScalar, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "add_1d": {
-        "operands": (2, 0),
-        "build_fcn": (TBuilder.Add1d, TGen.tgBasic, ArgGen.agNone),
-        "types": TYPE_F,
-    },
-    "split": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Split, TGen.tgBasic, ArgGen.agSplit),
-        "types": TYPE_FI,
-    },
-    "tile": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Tile, TGen.tgBasic, ArgGen.agTile),
-        "types": TYPE_FI,
-    },
-    "reverse": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Reverse, TGen.tgBasic, ArgGen.agAxes),
-        "types": {"tf": TYPE_FI},
-    },
-    "gather": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Gather, TGen.tgBasic, ArgGen.agGather),
-        "types": TYPE_FI,
-    },
-    "gather_nd": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.GatherNd, TGen.tgBasic, ArgGen.agGatherND),
-        "types": TYPE_FI,
-    },
-    "scatter_nd": {
-        "operands": (1, 2),
-        "build_fcn": (TBuilder.ScatterNd, TGen.tgScatterND, ArgGen.agNone),
-        "types": TYPE_FI,
-    },
-    "space_to_batch": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.SpaceToBatch, TGen.tgBasic, ArgGen.agSpaceToBatch),
-        "types": TYPE_F,
-    },
-    "batch_to_space": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.BatchToSpace, TGen.tgBasic, ArgGen.agBatchToSpace),
-        "types": TYPE_F,
-    },
-    "space_to_depth": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.SpaceToDepth, TGen.tgBasic, ArgGen.agSpaceToDepth),
-        "types": TYPE_F,
-    },
-    "depth_to_space": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.DepthToSpace, TGen.tgBasic, ArgGen.agDepthToSpace),
-        "types": TYPE_F,
-    },
-    "one_hot": {
-        "operands": (3, 1),
-        "build_fcn": (TBuilder.OneHot, TGen.tgOneHot, ArgGen.agOneHot),
-        "types": TYPE_FI,
-    },
-    "fakequant": {
-        "operands": (1, 0),
-        "build_fcn": (
-            TBuilder.Fakequant,
-            TGen.tgBasic,
-            ArgGen.agFakequant,
-        ),
-        "types": {"tf": TYPE_F},
-    },
-    "resize": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Resize, TGen.tgPooling, ArgGen.agResize),
-        "types": {
-            "tf": TYPE_F,
-            "tflite": list(
-                TYPE_F + [QuantType.ALL_U8, QuantType.ALL_I8, QuantType.ALL_I16]
-            ),
-        },
-        "custom_shapes": {
-            "custom_shape_only": False,
-            "shape_list": [(3, 1, 1, 7)],
-        },
-    },
-    "left_shift": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.LeftShift, TGen.tgBasic, ArgGen.agShift),
-        "types": {"tf": [tf.int32, tf.int16, tf.int8]},
-    },
-    "right_shift": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.RightShift, TGen.tgBasic, ArgGen.agShift),
-        "types": {"tf": [tf.int32, tf.int16, tf.int8]},
-    },
-    "while": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.While, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": list(TYPE_F),
-        },
-    },
-    "lstm": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.LSTM, TGen.tgRecurrent, ArgGen.agNone),
-        "types": {
-            "tflite": [
-                tf.float32,
-                # tf.int32
-            ]
-        },
-    },
-    "lstm_stateful": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.SLSTM, TGen.tgRecurrent, ArgGen.agNone),
-        "types": {
-            "tflite": [
-                tf.float32,
-            ]
-        },
-        "num_variables": 2,
-    },
-    "gru": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.GRU, TGen.tgRecurrent, ArgGen.agNone),
-        "types": {
-            "tflite": [
-                tf.float32,
-                # tf.int32
-            ]
-        },
-    },
-    "rnn": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.RNN, TGen.tgRecurrent, ArgGen.agNone),
-        "types": {
-            "tflite": [
-                tf.float32,
-            ]
-        },
-    },
-    "callonce": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.CallOnce, TGen.tgBasic, ArgGen.agNone),
-        "types": {
-            "tflite": [tf.float32],
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(1,)],
-        },
-    },
-    "rfft2d": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.RFFT2d, TGen.tgRFFT2d, ArgGen.agRFFT2d),
-        "types": {
-            "tflite": TYPE_F,
-        },
-    },
-    "real": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Real, TGen.tgComplexComponents, ArgGen.agNone),
-        "types": {
-            "tflite": [tf.complex64],
-        },
-    },
-    "imag": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.Imag, TGen.tgComplexComponents, ArgGen.agNone),
-        "types": {
-            "tflite": [tf.complex64],
-        },
-    },
-    "broadcastto": {
-        "operands": (1, 1),
-        "build_fcn": (TBuilder.BroadcastTo, TGen.tgBroadcastTo, ArgGen.agNone),
-        "types": {
-            "tf": TYPE_FIB,
-        },
-    },
-    "reduce_max_special_fp": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceMax, TGen.tgReduce, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_F,
-            # This test generates special floating number such as nan and inf that cannot be quantized.
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(14, 19)],
-        },
-    },
-    "reduce_min_special_fp": {
-        "operands": (1, 0),
-        "build_fcn": (TBuilder.ReduceMin, TGen.tgReduce, ArgGen.agAxesListKeepdims),
-        "types": {
-            "tf": TYPE_F,
-            # This test generates special floating number such as nan and inf that cannot be quantized.
-        },
-        "custom_shapes": {
-            "custom_shape_only": True,
-            "shape_list": [(14, 19)],
-        },
-    },
-}
-
-# Shapes to be tested; default can be overwritten
-shape_list = [
-    (1,),
-    (64,),
-    (14, 19),
-    (13, 21, 3),
-    (1, 8, 16),
-    (1, 4, 4, 4),
-    (1, 8, 4, 17),
-    (1, 4, 8, 19),
-    (1, 32, 32, 8),
-    (1, 7, 7, 9),
-    (3, 1, 1, 7),
-    (2, 2, 7, 7, 2),
-    (1, 4, 8, 21, 17),
-    (3, 32, 16, 16, 5),
-]
 
 
 def gen_rand_shapes(args):
@@ -1012,9 +96,12 @@ def gen_rand_shapes(args):
                 shape_list.append(tuple(new_shape))
 
 
+# === TF/TFL test builders & runners === #
+
+
 # Construct, run and save a whole tensorflow tf.function to a protobuf file
 # or convert to .tflite if it's quantized unit test
-def run_unit_test(
+def run_unit_test_tf(
     op_name,
     args,
     test_dir,
@@ -1400,7 +487,7 @@ def run_unit_test(
             num_varaibles = 0
 
         # Write out test descriptor
-        write_test_json(
+        write_test_json_tf(
             filename=os.path.join(test_dir, "test.json"),
             tf_model_filename=tf_model_filename,
             tf_result_npy_filename=tf_result_npy_filename,
@@ -1425,7 +512,7 @@ def run_unit_test(
     return True
 
 
-def build_const_net(
+def build_const_net_tf(
     args,
     curr_shape,
     op_name,
@@ -1440,9 +527,11 @@ def build_const_net(
 ):
     if quantized_inference_dtype:
         quant_dtype = get_tf_dtype(quantized_inference_dtype)
-        test_dir = "test_{}_{}".format(op_name, get_shape_str(curr_shape, quant_dtype))
+        test_dir = "test_tf_{}_{}".format(
+            op_name, get_shape_str(curr_shape, quant_dtype)
+        )
     else:
-        test_dir = "test_{}_{}".format(op_name, get_shape_str(curr_shape, dtype))
+        test_dir = "test_tf_{}_{}".format(op_name, get_shape_str(curr_shape, dtype))
     test_dir = os.path.join(args.output_dir, test_dir)
 
     # If the operator has an additional function to generate arguments, call it
@@ -1497,10 +586,12 @@ def op_name_hash(op_name):
     return result
 
 
-def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_args):
+def generate_op_tests_tf(
+    args, op_name, shape_list, result_name, filter, unit_test_args
+):
     if not args.quiet:
         print(
-            "Generating tests for {}                                        ".format(
+            "Generating TF/TFL tests for {}                                        ".format(
                 op_name
             )
         )
@@ -1566,7 +657,7 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
 
     # populate non quantized unit test arguments
     for dtype in nonquantized_dtypes:
-        excluded_framework_set = set(ALL_FRAMEWORKS)
+        excluded_framework_set = set(AVAILABLE_FRAMEWORKS)
         if dtype in tf_nonquantized_dtypes:
             excluded_framework_set.remove("tf")
         if dtype in tflite_nonquantized_dtypes:
@@ -1574,7 +665,7 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
         excluded_framework_list = list(excluded_framework_set)
 
         for curr_shape in shape_list:
-            build_const_net(
+            build_const_net_tf(
                 args,
                 curr_shape,
                 op_name,
@@ -1592,7 +683,7 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
     # must exclude 'tf' and source dtype being tf.float32
     for dtype in quantized_dtypes:
         for curr_shape in shape_list:
-            build_const_net(
+            build_const_net_tf(
                 args,
                 curr_shape,
                 op_name,
@@ -1609,7 +700,7 @@ def generate_op_tests(args, op_name, shape_list, result_name, filter, unit_test_
     return unit_test_args
 
 
-def createDynamicOpLists():
+def create_dynamic_op_lists_tf():
     """The templated operators are conv2d-style operators with a number of kernel
     sizes.  Since the operator is unchanged, we generate the range of kernel
     sizes here in this loop and remove the original templates from the list.
@@ -1678,8 +769,290 @@ def createDynamicOpLists():
         del TF_OP_LIST[k]
 
 
+# === Torch test builders & runners === #
+
+
+# Construct, run and save a whole Torch module to a Torch MLIR file
+def run_unit_test_torch(
+    op_name,
+    args,
+    test_dir,
+    curr_shape,
+    addl_args,
+    dtype,
+    quantized_inference_dtype,
+    seed,
+):
+    try:
+        op = TORCH_OP_LIST[op_name]
+        op_fcn, tensor_gen_fcn, arg_gen_fcn = op["build_fcn"]
+
+        # Get and seed a random number generator for this test
+        rng = np.random.default_rng(seed)
+
+        # return placeholders=(str: name, np.array: value)
+        # consts=(str: name, np.array: value)
+        placeholders, consts = (
+            tensor_gen_fcn(op, curr_shape, dtype, rng, False)
+            if tensor_gen_fcn.__name__ == "tgBFuzz"
+            else tensor_gen_fcn(op, curr_shape, dtype, rng)
+        )
+
+        # if test doesn't have any placeholders/consts, terminated
+        if len(placeholders) == 0 and len(consts) == 0:
+            return True
+
+        if not args.quiet:
+            print("   {}              ".format(test_dir))
+
+        try:
+            os.mkdir(test_dir)
+        except FileExistsError:
+            pass
+
+        const_nodes = [value for name, value in consts]
+
+        # TODO: add quantized types support
+        if quantized_inference_dtype:
+            is_quantized = True
+        else:
+            is_quantized = False
+
+        torch_mlir_filename = None
+        torch_result_npy_filename = None
+
+        placeholder_names = []
+        placeholder_vals = []
+        placeholder_npy_filenames = []
+        placeholder_shapes = []
+        placeholder_annotations = [None]
+
+        _, test_name = os.path.split(test_dir)
+
+        for idx, (name, val) in enumerate(placeholders):
+            placeholder_annotations.append((val.shape, dtype, True))
+
+            placeholder_names.append(name)
+            placeholder_npy_filenames.append("{}.npy".format(name.split(":")[0]))
+            placeholder_shapes.append(val.shape)
+
+        # Get test builder class
+        fcn_node = op_fcn(*const_nodes, *addl_args)
+
+        # Save output numpy array directly
+        for idx, (name, val) in enumerate(placeholders):
+            placeholder_vals.append(val)
+
+            # Complex tensors are expected to be repsesented by a
+            # single floating point tensor of shape [?, ..., ?, 2].
+            if val.dtype == np.complex64:
+                val_shape = val.shape + (2,)
+                val = val.view(np.float32)
+                val = val.reshape(val_shape)
+
+            np.save(os.path.join(test_dir, placeholder_npy_filenames[idx]), val, False)
+
+        # Create Torch MLIR with placeholder values using FX Importer (PyTorch 2.0)
+        mlir_module = fx.export_and_import(
+            fcn_node, *placeholder_vals, output_type="torch"
+        )
+
+        torch_mlir_filename = "torch.mlir"
+
+        with open(os.path.join(test_dir, torch_mlir_filename), "w") as f:
+            f.write(str(mlir_module))
+
+        # Generate Torch reference output numpy
+        torch_result = fcn_node.forward(*placeholder_vals)
+        torch_result_npy_filename = "torch_result.npy"
+        np.save(
+            os.path.join(test_dir, torch_result_npy_filename),
+            torch_result.detach().numpy(),
+            False,
+        )
+
+        # For specifying the number of variable tensors if the graph has any
+        try:
+            num_varaibles = op["num_variables"]
+        except KeyError:
+            num_varaibles = 0
+
+        # Write out test descriptor
+        write_test_json_torch(
+            filename=os.path.join(test_dir, "test.json"),
+            torch_mlir_filename=torch_mlir_filename,
+            torch_result_npy_filename=torch_result_npy_filename,
+            ifm_name=placeholder_names,
+            ifm_file=placeholder_npy_filenames,
+            ifm_shape=placeholder_shapes,
+            quantized=is_quantized,
+            test_name=test_name,
+            num_variables=num_varaibles,
+        )
+    except Exception as e:
+        msg = "Error running task: {}".format(e)
+        print(msg)
+        print("".join(traceback.format_exception(None, value=e, tb=e.__traceback__)))
+        return False
+    return True
+
+
+def build_const_net_torch(
+    args,
+    curr_shape,
+    op_name,
+    dtype,
+    quantized_inference_dtype,
+    seed,
+    rng,
+    filter,
+    unit_test_args,
+):
+    if quantized_inference_dtype:
+        quant_dtype = get_torch_dtype(quantized_inference_dtype)
+        test_dir = "test_torch_{}_{}".format(
+            op_name, get_shape_str(curr_shape, quant_dtype)
+        )
+    else:
+        test_dir = "test_torch_{}_{}".format(op_name, get_shape_str(curr_shape, dtype))
+    test_dir = os.path.join(args.output_dir, test_dir)
+
+    # If the operator has an additional function to generate arguments, call it
+    # here and iterate through the argument list that it generates
+    op = TORCH_OP_LIST[op_name]
+    op_fcn, tensor_gen_fcn, arg_gen_fcn = op["build_fcn"]
+
+    try:
+        rank_lo, rank_hi = op["rank"]
+    except KeyError:
+        # Set testing rank to (1, 4) in default.
+        rank_lo = 1
+        rank_hi = 4
+
+    if len(curr_shape) not in range(rank_lo, rank_hi + 1):
+        return
+
+    addl_args_tuple = arg_gen_fcn(op, curr_shape, rng)
+
+    for desc, addl_args in addl_args_tuple:
+        # Only filter on the full test_name, not the output directory
+        _, test_name = os.path.split(test_dir + desc)
+        if not filter or filter.search(test_name):
+            unit_test_args.append(
+                [
+                    op_name,
+                    args,
+                    test_dir + desc,
+                    curr_shape,
+                    addl_args,
+                    dtype,
+                    quantized_inference_dtype,
+                    seed,
+                ]
+            )
+
+
+def generate_op_tests_torch(args, op_name, shape_list, filter, unit_test_args):
+    if not args.quiet:
+        print(
+            "Generating Torch tests for {}                                        ".format(
+                op_name
+            )
+        )
+
+    op = TORCH_OP_LIST[op_name]
+
+    # Seed the RNG so that we get the same random tests for each test each time
+    # If the number of tests for a given generation function changes, the tests
+    # for that operator may also change accordingly, but this will at least keep
+    # down churn across operators.
+
+    bounded_hash_val = (args.random_seed + op_name_hash(op_name)) % np.iinfo(
+        np.int32
+    ).max
+    rng = np.random.default_rng(bounded_hash_val)
+
+    torch_dtypes = op["types"]
+
+    # TODO: add support for Torch quantized types
+
+    # append custom_shapes or replace shape_list with custom_shapes
+    try:
+        custom_shapes = op["custom_shapes"]
+        if custom_shapes["custom_shape_only"]:
+            shape_list = custom_shapes["shape_list"]
+        else:
+            shape_list = shape_list.copy()
+            shape_list.extend(custom_shapes["shape_list"])
+    except KeyError:
+        pass
+
+    # populate unit test arguments
+    for dtype in torch_dtypes:
+        for curr_shape in shape_list:
+            build_const_net_torch(
+                args,
+                curr_shape,
+                op_name,
+                dtype,
+                None,
+                bounded_hash_val,
+                rng,
+                filter,
+                unit_test_args,
+            )
+
+    return unit_test_args
+
+
+def create_dynamic_op_lists_torch():
+    """The templated operators are conv2d-style operators with a number of kernel
+    sizes.  Since the operator is unchanged, we generate the range of kernel
+    sizes here in this loop and remove the original templates from the list.
+
+    This could be expanded to non-conv2d-style operators in the future."""
+
+    # Dynamically create op lists for convolutions with a list of kernel sizes
+    KERNELS = [
+        [1, 1],
+        [3, 3],
+        [5, 5],
+    ]
+
+    TEMPLATE_LIST = ["conv2d", "conv2d_bias", "maxpool2d", "avg_pool2d"]
+
+    for t in TEMPLATE_LIST:
+        for k in KERNELS:
+            testName = "{}_{}x{}".format(t, k[0], k[1])
+            TORCH_OP_LIST[testName] = TORCH_OP_LIST["{}_TEMPLATE".format(t)].copy()
+            TORCH_OP_LIST[testName]["filter"] = k
+            TORCH_OP_LIST[testName]["template"] = False
+
+    # Delete any templates after having created any dynamic ops
+    # This is a two-pass operation because it's bad practice to delete
+    # keys from dictionaries while iterating
+    keyList = []
+    for k in TORCH_OP_LIST:
+        try:
+            if TORCH_OP_LIST[k]["template"]:
+                keyList.append(k)
+                continue
+        except KeyError:
+            pass
+
+    for k in keyList:
+        del TORCH_OP_LIST[k]
+
+
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--framework",
+        dest="framework",
+        choices=["tf", "torch", "all"],
+        default="all",
+        help="Framework to generate tests for (tf, torch, or all)",
+    )
     parser.add_argument(
         "--seed", dest="random_seed", default=42, type=int, help="Random seed"
     )
@@ -1746,8 +1119,9 @@ def main():
     if args.jobs <= 0:
         args.jobs = os.cpu_count()
 
-    # Disable TF info messages
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    if "tf" in AVAILABLE_FRAMEWORKS:
+        # Disable TF info messages
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
     try:
         os.makedirs(args.output_dir)
@@ -1757,19 +1131,40 @@ def main():
     if args.random_shapes:
         gen_rand_shapes(args)
 
-    # Build dynamic ops
-    createDynamicOpLists()
+    # Determine the specified frameworks
+    if args.framework != "all" and args.framework not in AVAILABLE_FRAMEWORKS:
+        raise ValueError(f"Requested framework `{args.framework}` not available")
 
-    # Generate the test list and arguments to run_unit_test()
-    unit_test_args = []
+    if args.framework == "all":
+        frameworks = list(AVAILABLE_FRAMEWORKS)
+    elif args.framework == "torch":
+        frameworks = ["torch"]
+    else:
+        frameworks = ["tf", "tflite"]
 
-    for op in TF_OP_LIST:
-        generate_op_tests(args, op, shape_list, "result", filter, unit_test_args)
-
+    tf_args = []
+    torch_args = []
     errors = 0
-    for t in unit_test_args:
-        if not run_unit_test(*t):
-            errors = errors + 1
+
+    # Create dynamic ops, generate tests, and run tests
+    if "tf" in frameworks:
+        create_dynamic_op_lists_tf()
+
+        for op in TF_OP_LIST:
+            generate_op_tests_tf(args, op, shape_list, "result", filter, tf_args)
+
+        for t in tf_args:
+            if not run_unit_test_tf(*t):
+                errors = errors + 1
+    if "torch" in frameworks:
+        create_dynamic_op_lists_torch()
+
+        for op in TORCH_OP_LIST:
+            generate_op_tests_torch(args, op, shape_list, filter, torch_args)
+
+        for t in torch_args:
+            if not run_unit_test_torch(*t):
+                errors = errors + 1
 
     if not args.quiet:
         print("\nAll tasks done - with {} errors".format(errors))

@@ -16,3 +16,5 @@ result.xml
 vtest/
 examples/*/*/out.npy
 py_package/*.so
+torch_tests/
+tf_tests/

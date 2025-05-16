@@ -1,28 +1,13 @@
-# Copyright (c) 2020-2024, ARM Limited.
+# Copyright (c) 2020-2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
-import enum
-
 import numpy as np
 import tensorflow as tf
+from frameworks.test_gen_utils import ElemSignedness
+from frameworks.test_gen_utils import RAND_INT_MAX
+from frameworks.test_gen_utils import RAND_INT_MIN
+from frameworks.test_gen_utils import RAND_SCALE_FACTOR
 
 # FIXME: replace hardcoded '* 2' with random integers, where possible
-
-# The scaling factor for random numbers generated in input tensors.  The
-# random numbers are calculated as:
-# (np.random.rand() - RAND_SHIFT_FACTOR) * RAND_SCALE_FACTOR
-# FIXME: improve range here
-RAND_SCALE_FACTOR = 4.0
-# Amount to add to random numbers
-RAND_SHIFT_FACTOR = 0.5
-
-RAND_INT_MIN = -128
-RAND_INT_MAX = 128
-
-
-class ElemSignedness(enum.Enum):
-    ALL_RANGE = 1
-    POSITIVE = 2
-    NEGATIVE = 3
 
 
 class TGen:
