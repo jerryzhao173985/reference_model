@@ -64,6 +64,7 @@ struct UlpVerifyInfo
     UlpVerifyInfo() = default;
 
     double ulp;
+    double ulpLower;
 };
 
 /// \brief Dot-product verification meta-data
@@ -212,6 +213,15 @@ struct AccPrecision<fp8e5m2>
     static constexpr int32_t normal_frac = 2;
 };
 
+/// \brief Defined error bounds range used as ref - low <= value <= ref + high
+struct ErrorBoundsRange
+{
+    ErrorBoundsRange() = default;
+
+    double low;
+    double high;
+};
+
 /// \brief Single value error bounds check for ULP, ABS_ERROR and other compliance modes
 ///
 /// \param testValue        Implementation value
@@ -222,8 +232,11 @@ struct AccPrecision<fp8e5m2>
 ///
 /// \return True if compliant else false
 template <typename OutType>
-bool tosaCheckFloatBound(
-    OutType testValue, double referenceValue, double errorBound, double& resultDifference, std::string& resultWarning);
+bool tosaCheckFloatBound(OutType testValue,
+                         double referenceValue,
+                         ErrorBoundsRange errorBounds,
+                         double& resultDifference,
+                         std::string& resultWarning);
 
 /// \brief Whole tensor checker for values inside error bounds
 ///
@@ -232,8 +245,8 @@ bool tosaCheckFloatBound(
 /// \param implementationData   Implementation output tensor data
 /// \param shape                Tensor shape - all tensors must be this shape
 /// \param modeStr              Short string indicating which compliance mode we are testing
-/// \param cfgPtr               Pointer to this mode's configuration data, passed to the calcErrorBound()
-/// \param calcErrorBound       Pointer to a function that can calculate the error bound per ref value
+/// \param cfgPtr               Pointer to this mode's configuration data, passed to the calcErrorBounds()
+/// \param calcErrorBounds      Pointer to a function that can calculate the error bounds range per ref value
 ///
 /// \return True if compliant else false
 template <typename OutType>
@@ -243,7 +256,7 @@ bool validateData(const double* referenceData,
                   const std::vector<int32_t>& shape,
                   const std::string& modeStr,
                   const void* cfgPtr,
-                  double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
+                  ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
 
 // Unused arguments helper function
 template <typename... Args>
