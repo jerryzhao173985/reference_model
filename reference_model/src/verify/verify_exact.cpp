@@ -12,16 +12,20 @@
 //    See the License for the specific language governing permissions and
 //    limitations under the License.
 
+#include <cmath>
+
 #include "func_debug.h"
 #include "half.hpp"
 #include "verifiers.h"
-#include <cmath>
+#include "verify_utils.h"
 
+namespace TosaReference
+{
 namespace
 {
-double calcErrorBound(double referenceValue, double boundsValue, const void* cfgPtr)
+ErrorBoundsRange calcErrorBounds(double referenceValue, double boundsValue, const void* cfgPtr)
 {
-    return 0.0;
+    return { 0.0, 0.0 };
 }
 
 template <typename OutDtype>
@@ -37,9 +41,6 @@ bool exact_int(const OutDtype& referenceValue, const OutDtype& implementationVal
     return referenceValue == implementationValue;
 }
 }    // namespace
-
-namespace TosaReference
-{
 
 bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTensor)
 {
@@ -65,17 +66,17 @@ bool verifyExact(const CTensor* referenceTensor, const CTensor* implementationTe
         case tosa_datatype_fp32_t: {
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBounds);
         }
         case tosa_datatype_fp16_t: {
             const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBounds);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[E] Missing data for implementation");
-            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBound);
+            return validateData(refData_dbl, nullptr, impData, refShape, modeStr, nullptr, &calcErrorBounds);
         }
         case tosa_datatype_fp8e4m3_t: {
             const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);

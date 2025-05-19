@@ -119,6 +119,14 @@ std::enable_if_t<std::is_floating_point_v<FP>, FP> increment(FP input, uint64_t 
     return input;
 }
 
+template <typename FP>
+std::enable_if_t<std::is_floating_point_v<FP>, FP> decrement(FP input, uint64_t steps)
+{
+    for (uint64_t step = 0; step < steps; ++step)
+        input = std::nextafter(input, -std::numeric_limits<FP>::infinity());
+    return input;
+}
+
 auto& getRandomGenerator()
 {
     static std::mt19937 gen(0);
@@ -814,7 +822,7 @@ TEST_CASE("positive - relative")
 */
 
 template <typename FP_TYPE>
-void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp = 1.0)
+void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp = 1.0, double ulp_lower = 0.0)
 {
     DType dtype               = NativeType2DType<FP_TYPE>();
     tosa_datatype_t tosaDtype = DType2tosa_datatype_t(dtype);
@@ -826,6 +834,7 @@ void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp 
                 "data_type": "_DATATYPE_",
                 "ulp_info": {
                   "ulp": _ULP_
+                  _ULPLOWER_ENTRY_ _ULPLOWER_VALUE_
                 }
             }
         }
@@ -833,6 +842,18 @@ void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp 
 
     update_json_template(jsonCfg, "_DATATYPE_", tosa::EnumNameDType(dtype));
     update_json_template(jsonCfg, "_ULP_", std::to_string(ulp));
+
+    if (ulp_lower != 0.0)
+    {
+        // Add "ulp_lower": N to JSON with leading comma
+        update_json_template(jsonCfg, "_ULPLOWER_ENTRY_", ", \"ulp_lower\": ");
+        update_json_template(jsonCfg, "_ULPLOWER_VALUE_", std::to_string(ulp_lower));
+    }
+    else
+    {
+        update_json_template(jsonCfg, "_ULPLOWER_ENTRY_", "");
+        update_json_template(jsonCfg, "_ULPLOWER_VALUE_", "");
+    }
 
     const auto shape            = std::vector<int32_t>{ 1 };
     std::vector<double> refVec  = { ref };
@@ -850,6 +871,28 @@ void checkULPVerification(double ref, FP_TYPE imp, bool should_pass, double ulp 
         REQUIRE(verified);
     else
         REQUIRE_FALSE(verified);
+}
+
+TEST_CASE_TEMPLATE("normal handling - ulp", FP_TYPE, float)
+{
+    SUBCASE("within upper bounds (same lower)")
+    checkULPVerification<FP_TYPE>(134.0, increment<FP_TYPE>(134, 1), true, /* ulp */ 1.0);
+    SUBCASE("within lower bounds (same lower)")
+    checkULPVerification<FP_TYPE>(134.0, decrement<FP_TYPE>(134, 1), true, /* ulp */ 1.0);
+    SUBCASE("outside upper bounds (same lower)")
+    checkULPVerification<FP_TYPE>(134.0, increment<FP_TYPE>(134, 2), false, /* ulp */ 1.0);
+    SUBCASE("outside lower bounds (same lower)")
+    checkULPVerification<FP_TYPE>(134.0, decrement<FP_TYPE>(134, 2), false, /* ulp */ 1.0);
+
+    // Test of the lower bounds setting
+    SUBCASE("within upper bounds (different lower)")
+    checkULPVerification<FP_TYPE>(134.0, increment<FP_TYPE>(134, 1), true, /* ulp */ 1.0, /* ulp_lower */ 2.0);
+    SUBCASE("within lower bounds (different lower)")
+    checkULPVerification<FP_TYPE>(134.0, decrement<FP_TYPE>(134, 2), true, /* ulp */ 1.0, /* ulp_lower */ 2.0);
+    SUBCASE("outside upper bounds (different lower)")
+    checkULPVerification<FP_TYPE>(134.0, increment<FP_TYPE>(134, 2), false, /* ulp */ 1.0, /* ulp_lower */ 2.0);
+    SUBCASE("outside lower bounds (different lower)")
+    checkULPVerification<FP_TYPE>(134.0, decrement<FP_TYPE>(134, 3), false, /* ulp */ 1.0, /* ulp_lower */ 2.0);
 }
 
 TEST_CASE_TEMPLATE("overflow handling - ulp", FP_TYPE, float, binary16, bfloat16, fp8_e4m3, fp8_e5m2)

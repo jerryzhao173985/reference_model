@@ -63,6 +63,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VerifyMode,
 void from_json(const nlohmann::json& j, UlpVerifyInfo& ulpInfo)
 {
     j.at("ulp").get_to(ulpInfo.ulp);
+    if (j.contains("ulp_lower"))
+    {
+        j.at("ulp_lower").get_to(ulpInfo.ulpLower);
+    }
+    else
+    {
+        ulpInfo.ulpLower = ulpInfo.ulp;
+    }
 }
 
 void from_json(const nlohmann::json& j, DotProductVerifyInfo& dotProductInfo)
@@ -124,7 +132,8 @@ void from_json(const nlohmann::json& j, VerifyConfig& cfg)
 {
     j.at("mode").get_to(cfg.mode);
     j.at("data_type").get_to(cfg.dataType);
-    cfg.ulpInfo.ulp = 0;
+    cfg.ulpInfo.ulp      = 0;
+    cfg.ulpInfo.ulpLower = 0;
     if (j.contains("ulp_info"))
     {
         j.at("ulp_info").get_to(cfg.ulpInfo);
@@ -292,8 +301,11 @@ static_assert(std::numeric_limits<double>::is_iec559,
               "verification is invalid");
 
 template <typename OutType>
-bool tosaCheckFloatBound(
-    OutType testValue, double referenceValue, double errorBound, double& resultDifference, std::string& resultWarning)
+bool tosaCheckFloatBound(OutType testValue,
+                         double referenceValue,
+                         ErrorBoundsRange errorBounds,
+                         double& resultDifference,
+                         std::string& resultWarning)
 {
     // Both must be NaNs to be correct
     if (std::isnan(referenceValue))
@@ -307,14 +319,18 @@ bool tosaCheckFloatBound(
         return false;
     }
 
-    // Check the errorBound
-    TOSA_REF_REQUIRE(errorBound >= 0.f, " Invalid error bound (%g), expected positive value", errorBound);
-    if (!std::isfinite(errorBound))
+    // Check the errorBounds
+    TOSA_REF_REQUIRE(errorBounds.low >= 0.f, " Invalid lower error bound (%g), expected positive value",
+                     errorBounds.low);
+    TOSA_REF_REQUIRE(errorBounds.high >= 0.f, " Invalid higher error bound (%g), expected positive value",
+                     errorBounds.high);
+    if (std::isinf(errorBounds.low) && std::isinf(errorBounds.high))
     {
-        // When the errorBound is infinite (or NaN) there is no valid check to perform
+        // When the errorBounds are both infinite then there is no valid check to
+        // perform
         // This can happen for example in POW or EXP when the resulting reference
         // value is infinite, but the bounds value determined by compliance is finite.
-        // Multiplying these two together to produce the errorBound will create an
+        // Multiplying these two together to produce the Min/Max will create an
         // infinite.
         resultDifference = 0.0;
         return true;
@@ -328,18 +344,17 @@ bool tosaCheckFloatBound(
         testValue      = -testValue;
     }
 
-    // Scale by the number of ULPs requested by the user.
-    double referenceMax = referenceValue + errorBound;
-    double referenceMin = referenceValue - errorBound;
-
     // Some definitions for readability
     constexpr bool typeHasInf = std::numeric_limits<OutType>::has_infinity;
     constexpr bool typeRequiresSubnormals =
         std::is_same<OutType, fp8e4m3>::value || std::is_same<OutType, fp8e5m2>::value;
-
     constexpr double inf        = std::numeric_limits<double>::infinity();
     constexpr double normal_max = AccPrecision<OutType>::normal_max;
     constexpr double normal_min = AccPrecision<OutType>::normal_min;
+
+    // Scale the reference value by the error bound to find the Max/Min
+    double referenceMax = referenceValue + errorBounds.high;
+    double referenceMin = referenceValue - errorBounds.low;
 
     if (referenceMax > normal_max)
         referenceMax = +inf;
@@ -382,8 +397,8 @@ bool tosaCheckFloatBound(
     {
         std::ostringstream ossBuff;
         ossBuff << "value " << std::setprecision(DBL_DIG) << testValue64 << " has a difference of " << resultDifference
-                << " compared to an error bound of +/- " << errorBound << " (range: " << referenceMin << " <= ref "
-                << referenceValue << " <= " << referenceMax << ").";
+                << " compared to the error bound - low: " << errorBounds.low << " & high: " << errorBounds.high
+                << " (range: " << referenceMin << " <= ref " << referenceValue << " <= " << referenceMax << ").";
         resultWarning.assign(ossBuff.str().c_str());
     }
     return withinBound;
@@ -396,7 +411,7 @@ bool validateData(const double* referenceData,
                   const std::vector<int32_t>& shape,
                   const std::string& modeStr,
                   const void* cfgPtr,
-                  double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr))
+                  ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr))
 {
     const size_t T = static_cast<size_t>(numElements(shape));
     TOSA_REF_REQUIRE(T > 0, "Invalid shape for reference tensor");
@@ -407,7 +422,7 @@ bool validateData(const double* referenceData,
     {
         TOSA_REF_REQUIRE(cfgPtr != nullptr, "Missing config for validation");
     }
-    TOSA_REF_REQUIRE(calcErrorBound != nullptr, "Missing error bound function validation");
+    TOSA_REF_REQUIRE(calcErrorBounds != nullptr, "Missing error bound function validation");
 
     std::string warning, worstWarning;
     double worstDifference = 0.0;
@@ -417,10 +432,10 @@ bool validateData(const double* referenceData,
 
     for (size_t i = 0; i < T; ++i)
     {
-        double difference = 0.0;
-        double boundVal   = (boundsData == nullptr) ? 0.0 : boundsData[i];
-        double errBound   = calcErrorBound(referenceData[i], boundVal, cfgPtr);
-        bool valid        = tosaCheckFloatBound(implementationData[i], referenceData[i], errBound, difference, warning);
+        double difference          = 0.0;
+        double boundVal            = (boundsData == nullptr) ? 0.0 : boundsData[i];
+        ErrorBoundsRange errBounds = calcErrorBounds(referenceData[i], boundVal, cfgPtr);
+        bool valid = tosaCheckFloatBound(implementationData[i], referenceData[i], errBounds, difference, warning);
         if (!valid)
         {
             compliant = false;
@@ -454,40 +469,45 @@ bool validateData(const double* referenceData,
 }
 
 // Instantiate the needed check functions
-template bool validateData(const double* referenceData,
-                           const double* boundsData,
-                           const float* implementationData,
-                           const std::vector<int32_t>& shape,
-                           const std::string& modeStr,
-                           const void* cfgPtr,
-                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
-template bool validateData(const double* referenceData,
-                           const double* boundsData,
-                           const half_float::half* implementationData,
-                           const std::vector<int32_t>& shape,
-                           const std::string& modeStr,
-                           const void* cfgPtr,
-                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
-template bool validateData(const double* referenceData,
-                           const double* boundsData,
-                           const bf16* implementationData,
-                           const std::vector<int32_t>& shape,
-                           const std::string& modeStr,
-                           const void* cfgPtr,
-                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
-template bool validateData(const double* referenceData,
-                           const double* boundsData,
-                           const fp8e4m3* implementationData,
-                           const std::vector<int32_t>& shape,
-                           const std::string& modeStr,
-                           const void* cfgPtr,
-                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
-template bool validateData(const double* referenceData,
-                           const double* boundsData,
-                           const fp8e5m2* implementationData,
-                           const std::vector<int32_t>& shape,
-                           const std::string& modeStr,
-                           const void* cfgPtr,
-                           double (*calcErrorBound)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool
+    validateData(const double* referenceData,
+                 const double* boundsData,
+                 const float* implementationData,
+                 const std::vector<int32_t>& shape,
+                 const std::string& modeStr,
+                 const void* cfgPtr,
+                 ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool
+    validateData(const double* referenceData,
+                 const double* boundsData,
+                 const half_float::half* implementationData,
+                 const std::vector<int32_t>& shape,
+                 const std::string& modeStr,
+                 const void* cfgPtr,
+                 ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool
+    validateData(const double* referenceData,
+                 const double* boundsData,
+                 const bf16* implementationData,
+                 const std::vector<int32_t>& shape,
+                 const std::string& modeStr,
+                 const void* cfgPtr,
+                 ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool
+    validateData(const double* referenceData,
+                 const double* boundsData,
+                 const fp8e4m3* implementationData,
+                 const std::vector<int32_t>& shape,
+                 const std::string& modeStr,
+                 const void* cfgPtr,
+                 ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
+template bool
+    validateData(const double* referenceData,
+                 const double* boundsData,
+                 const fp8e5m2* implementationData,
+                 const std::vector<int32_t>& shape,
+                 const std::string& modeStr,
+                 const void* cfgPtr,
+                 ErrorBoundsRange (*calcErrorBounds)(double referenceValue, double boundsValue, const void* cfgPtr));
 
 }    // namespace TosaReference

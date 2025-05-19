@@ -44,7 +44,12 @@
                             "properties":
                             {
                                 "ulp": {
-                                    "description": "ulp range limit - positive float",
+                                    "description": "ulp range limit (both upper and lower unless ulp_lower set to non-zero) - positive float",
+                                    "type": "number",
+                                    "minimum": 0
+                                },
+                                "ulp_lower": {
+                                    "description": "ulp lower range limit (ulp is used as the upper limit) - positive float",
                                     "type": "number",
                                     "minimum": 0
                                 }

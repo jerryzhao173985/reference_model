@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, ARM Limited.
+// Copyright (c) 2023-2025, ARM Limited.
 //
 //    Licensed under the Apache License, Version 2.0 (the "License");
 //    you may not use this file except in compliance with the License.
@@ -27,12 +27,13 @@ namespace TosaReference
 namespace
 {
 template <typename OutType>
-double calcErrorBound(double referenceValue, double boundsValue, const void* cfgPtr)
+ErrorBoundsRange calcErrorBounds(double referenceValue, double boundsValue, const void* cfgPtr)
 {
     const auto cfg = reinterpret_cast<const UlpVerifyInfo*>(cfgPtr);
     unused(boundsValue);
 
-    double errBound = 0.0;
+    double errBoundLow  = 0.0;
+    double errBoundHigh = 0.0;
     if (std::isfinite(referenceValue) && std::abs(referenceValue) != 0.0)
     {
         // Work out the values magnitude - by raising 2 to the power of the
@@ -42,9 +43,10 @@ double calcErrorBound(double referenceValue, double boundsValue, const void* cfg
         // i.e. the ULP.
         double ulpValue = refPower2 * exp2(-AccPrecision<OutType>::normal_frac);
 
-        errBound = ulpValue * cfg->ulp;
+        errBoundHigh = ulpValue * cfg->ulp;
+        errBoundLow  = ulpValue * cfg->ulpLower;
     }
-    return errBound;
+    return { errBoundLow, errBoundHigh };
 }
 }    // namespace
 
@@ -66,28 +68,28 @@ bool verifyULP(const CTensor* referenceTensor, const CTensor* implementationTens
         case tosa_datatype_fp32_t: {
             const auto* impData = reinterpret_cast<const float*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBound<float>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<float>);
         }
         case tosa_datatype_fp16_t: {
             const auto* impData = reinterpret_cast<const half_float::half*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
             return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo,
-                                &calcErrorBound<half_float::half>);
+                                &calcErrorBounds<half_float::half>);
         }
         case tosa_datatype_bf16_t: {
             const auto* impData = reinterpret_cast<const bf16*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBound<bf16>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<bf16>);
         }
         case tosa_datatype_fp8e4m3_t: {
             const auto* impData = reinterpret_cast<const fp8e4m3*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBound<fp8e4m3>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<fp8e4m3>);
         }
         case tosa_datatype_fp8e5m2_t: {
             const auto* impData = reinterpret_cast<const fp8e5m2*>(implementationTensor->data);
             TOSA_REF_REQUIRE(impData != nullptr, "[ULP] Missing data for implementation");
-            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBound<fp8e5m2>);
+            return validateData(refData, nullptr, impData, refShape, modeStr, &ulpInfo, &calcErrorBounds<fp8e5m2>);
         }
         default:
             WARNING("[Verifier][ULP] Data-type not supported.");

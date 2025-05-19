@@ -280,6 +280,8 @@ class TosaTestGen:
         elif "ulp" in op_compliance:
             mode = gtu.ComplianceMode.ULP
             compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
+            if "ulp_lower" in op["compliance"]:
+                compliance_tens["ulp_info"]["ulp_lower"] = op["compliance"]["ulp_lower"]
         elif "relative" in op_compliance:
             mode = gtu.ComplianceMode.RELATIVE
             compliance_tens["relative_info"] = {
@@ -5332,7 +5334,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": PR_FS_IS_DATAGEN,
-            "compliance": {"ulp": 0.5},
+            "compliance": {"ulp": 0.5, "ulp_lower": 1.0},
             "allow_multiple_special_tests": True,
         },
         "rescale": {
