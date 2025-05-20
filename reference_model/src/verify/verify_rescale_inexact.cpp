@@ -87,6 +87,7 @@ bool verifyRescaleInexact(const CTensor* referenceTensor,
                 return validateRescale<int32_t>(referenceTensor->data, boundsTensor->data, implementationTensor->data,
                                                 refShape);
             }
+            break;
         }
 
         case tosa_datatype_int16_t: {
@@ -100,6 +101,7 @@ bool verifyRescaleInexact(const CTensor* referenceTensor,
                 return validateRescale<int16_t>(referenceTensor->data, boundsTensor->data, implementationTensor->data,
                                                 refShape);
             }
+            break;
         }
         case tosa_datatype_int8_t: {
             if (unsignedData)
@@ -112,6 +114,7 @@ bool verifyRescaleInexact(const CTensor* referenceTensor,
                 return validateRescale<int8_t>(referenceTensor->data, boundsTensor->data, implementationTensor->data,
                                                refShape);
             }
+            break;
         }
         default:
             WARNING("[Verifier][RI] Data-type not supported.");
