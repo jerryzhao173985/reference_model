@@ -134,10 +134,10 @@ public:
     }
 
     // addOp should be used once all inputs and outputs have already been added.
-    void addOp(Op op, Attribute attr_type, TosaAttributeBase* attr)
+    void addOp(Op op, Attribute attr_type, TosaAttributeBase* attr, TosaOpLocation loc = {})
     {
         _mainBlock->GetOperators().push_back(std::make_unique<TosaSerializationOperator>(
-            op, attr_type, attr, _mainBlock->GetInputs(), _mainBlock->GetOutputs()));
+            op, attr_type, attr, _mainBlock->GetInputs(), _mainBlock->GetOutputs(), loc));
     }
 
     GraphStatus initializeRunner()
