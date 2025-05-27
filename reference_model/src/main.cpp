@@ -276,10 +276,13 @@ int loadSharedLibs(std::string& custom_op_lib_path)
         reinterpret_cast<get_customOp_function_t>(LIBFUNC(lib_handle, "getCustomOpCreationFuncs"));
     if (get_customOp_creation_funcs == nullptr)
     {
+        CLOSELIB(lib_handle);
         FATAL_ERROR("Can't find the getCustomOpCreationFuncs \n");
     }
 
-    return get_customOp_creation_funcs(&MasterRegistry::register_function);
+    int result = get_customOp_creation_funcs(&MasterRegistry::register_function);
+    CLOSELIB(lib_handle);
+    return result;
 }
 
 int loadGraph(TosaSerializationHandler& tsh, json& test_desc)
