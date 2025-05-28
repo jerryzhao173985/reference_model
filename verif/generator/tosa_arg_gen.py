@@ -2252,6 +2252,12 @@ class TosaArgGen:
                 # Create a copy of the test dictionary in case we
                 # need to add a new test
                 gen_args_dict = args_dict.copy()
+                gen_args_dict["profiles_supported"] = args_dict[
+                    "profiles_supported"
+                ].copy()
+                gen_args_dict["extensions_required"] = args_dict[
+                    "extensions_required"
+                ].copy()
 
                 # Only create one test by default - no sets of tests
                 num_test_sets = 0
@@ -2269,9 +2275,9 @@ class TosaArgGen:
                     if len(shapeList[0]) <= 1:
                         continue
                     arg_str = f"{arg_str}_dyn" if arg_str else "dyn"
-                    gen_args_dict["extensions_required"] = args_dict.get(
-                        "extensions_required", set()
-                    ).add(TosaProfiles.TosaExtDynamic)
+                    gen_args_dict["extensions_required"].add(
+                        TosaProfiles.TosaExtDynamic
+                    )
                     no_more_special_tests = True
 
                     # Fallback to using initial tests data generator for the
