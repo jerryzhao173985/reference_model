@@ -229,6 +229,13 @@ class TosaTestGen:
             # No compliance for error tests
             return None
 
+        def _get_op_compliance_dtype_value(op_compliance, entry, dtype):
+            if dtype not in op_compliance[entry]:
+                raise ValueError(
+                    f"Missing data type {self.typeStr(dtype)} from compliance {entry} in op {op['op']}"
+                )
+            return op_compliance[entry][dtype]
+
         # Create compliance meta data for expected output tensor
         compliance_tens = {
             "mode": None,
@@ -239,9 +246,15 @@ class TosaTestGen:
         }
 
         op_compliance = op.get("compliance", {})
+        ulp_mode = "ulp" in op_compliance
+        relative_mode = "relative_scale" in op_compliance
+        abs_error_mode = op_compliance.get("abs_error_mode", False)
+        assert (ulp_mode, relative_mode, abs_error_mode).count(
+            True
+        ) <= 1, "More than one compliance mode chosen"
         mode = None
 
-        # Check what data generation we have done
+        # Check what data generation we have done or compliance settings
         if (
             op["op"] == Op.RESCALE
             and argsDict["rounding_mode"] == RoundingMode.INEXACT_ROUND
@@ -277,51 +290,46 @@ class TosaTestGen:
                 "abs_bound": abs_bound,
                 "variance_error_bound": variance_bound,
             }
-        elif "ulp" in op_compliance:
-            mode = gtu.ComplianceMode.ULP
-            compliance_tens["ulp_info"] = {"ulp": op["compliance"]["ulp"]}
-            if "ulp_lower" in op["compliance"]:
-                compliance_tens["ulp_info"]["ulp_lower"] = op["compliance"]["ulp_lower"]
-        elif "relative" in op_compliance:
-            mode = gtu.ComplianceMode.RELATIVE
-            compliance_tens["relative_info"] = {
-                "max": argsDict["max_abs_value"],
-                "scale": op["compliance"]["relative"],
-                "ulp_bound": op["compliance"]["ulp_bound"],
-            }
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
             compliance_tens["reduce_product_info"] = {"n": argsDict["n"]}
-        elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID, Op.LOG):
+        elif ulp_mode:
+            mode = gtu.ComplianceMode.ULP
+            compliance_tens["ulp_info"] = {"ulp": op_compliance["ulp"]}
+            if "ulp_lower" in op_compliance:
+                compliance_tens["ulp_info"]["ulp_lower"] = op_compliance["ulp_lower"]
+        elif relative_mode:
+            mode = gtu.ComplianceMode.RELATIVE
+            compliance_tens["relative_info"] = {
+                "max": argsDict["max_abs_value"],
+                "scale": op_compliance["relative_scale"],
+                "ulp_bound": op_compliance["relative_ulp_bound"],
+            }
+        elif abs_error_mode:
             mode = gtu.ComplianceMode.ABS_ERROR
             abs_error_info = {}
+            # Add any defined settings to the abs_error_info
             if "abs_error_lower_bound" in op_compliance:
                 abs_error_info["lower_bound"] = op_compliance["abs_error_lower_bound"]
             if "abs_error_base_bounds" in op_compliance:
-                if inputType not in op_compliance["abs_error_base_bounds"]:
-                    raise ValueError(
-                        f"Missing data type {self.typeStr(inputType)} from abs_error_base_bounds in op {op['op']}"
-                    )
-                abs_error_info["base_bound"] = op_compliance["abs_error_base_bounds"][
-                    inputType
+                abs_error_info["base_bound"] = _get_op_compliance_dtype_value(
+                    op_compliance, "abs_error_base_bounds", inputType
+                )
+            if "abs_error_bound_as_magnitude" in op_compliance:
+                abs_error_info["bound_as_magnitude"] = op_compliance[
+                    "abs_error_bound_as_magnitude"
                 ]
+            if "abs_error_normal_divisor" in op_compliance:
+                abs_error_info["normal_divisor"] = op_compliance[
+                    "abs_error_normal_divisor"
+                ]
+            if "abs_error_max_compare" in op_compliance:
+                abs_error_info["max_compare"] = _get_op_compliance_dtype_value(
+                    op_compliance, "abs_error_max_compare", inputType
+                )
             if abs_error_info:
                 compliance_tens["abs_error_info"] = abs_error_info
-        elif op["op"] in (Op.SIN, Op.COS):
-            mode = gtu.ComplianceMode.ABS_ERROR
-            normal_divisor = op_compliance.get("abs_error_normal_divisor", 1)
-            if op["op"] == Op.SIN:
-                max_compare = op_compliance.get(
-                    "abs_error_max_compare", math.pi * gtu.normal_min(inputType)
-                )
-            else:
-                max_compare = op_compliance.get("abs_error_max_compare", 0.0)
 
-            compliance_tens["abs_error_info"] = {
-                "normal_divisor": normal_divisor,
-                "bound_as_magnitude": True,
-                "max_compare": max_compare,
-            }
         elif argsDict["dg_type"] == gtu.DataGenType.SPECIAL:
             if gtu.ComplianceMode.DOT_PRODUCT in op["data_gen"][inputType]:
                 # Use special mode that only checks for matching inf/nan/zeroes
@@ -3958,6 +3966,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": PR_FS_DATAGEN,
+            "compliance": {"abs_error_mode": True},
         },
         "tanh": {
             "op": Op.TANH,
@@ -3977,6 +3986,7 @@ class TosaTestGen:
             ),
             "data_gen": PR_FS_DATAGEN,
             "compliance": {
+                "abs_error_mode": True,
                 "abs_error_lower_bound": 0.5,
                 "abs_error_base_bounds": {
                     # This is err_base * 4 which results from expanding the
@@ -4385,6 +4395,7 @@ class TosaTestGen:
             "data_gen": PR_FS_DATAGEN,
             "broadcastable_inputs": 2,
             "compliance": {
+                "abs_error_mode": True,
                 "abs_error_base_bounds": {
                     DType.FP32: 3,
                     DType.FP16: 1,
@@ -4539,7 +4550,14 @@ class TosaTestGen:
             ),
             "data_gen": EW_UNARY_DATAGEN,
             "compliance": {
+                "abs_error_mode": True,
+                "abs_error_bound_as_magnitude": True,
                 "abs_error_normal_divisor": 2,
+                "abs_error_base_bounds": {
+                    DType.FP32: 1.0,
+                    DType.FP16: 1.0,
+                    DType.BF16: 1.0,
+                },
             },
         },
         "exp": {
@@ -4560,6 +4578,7 @@ class TosaTestGen:
             ),
             "data_gen": EW_UNARY_DATAGEN,
             "compliance": {
+                "abs_error_mode": True,
                 "abs_error_base_bounds": {
                     DType.FP32: 3,
                     DType.FP16: 1,
@@ -4603,7 +4622,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": EW_UNARY_DATAGEN,
-            "compliance": {"abs_error_lower_bound": 0.5},
+            "compliance": {"abs_error_mode": True, "abs_error_lower_bound": 0.5},
         },
         "logical_not": {
             "op": Op.LOGICAL_NOT,
@@ -4706,8 +4725,19 @@ class TosaTestGen:
             ),
             "data_gen": EW_UNARY_DATAGEN,
             "compliance": {
+                "abs_error_mode": True,
+                "abs_error_bound_as_magnitude": True,
                 "abs_error_normal_divisor": 2,
-                # "abs_error_max_compare": Calculated in tensorComplianceMetaData() as it has data_type
+                "abs_error_max_compare": {
+                    DType.FP32: math.pi * gtu.normal_min(DType.FP32),
+                    DType.FP16: math.pi * gtu.normal_min(DType.FP16),
+                    DType.BF16: math.pi * gtu.normal_min(DType.BF16),
+                },
+                "abs_error_base_bounds": {
+                    DType.FP32: 2.0,
+                    DType.FP16: 2.0,
+                    DType.BF16: 2.0,
+                },
             },
         },
         # Elementwise Ternary operators
@@ -5303,7 +5333,10 @@ class TosaTestGen:
                 TosaErrorValidator.evResizeOutputShapeNonInteger,
             ),
             "data_gen": PR_FS_IS_DYN_DATAGEN,
-            "compliance": {"relative": 0.006, "ulp_bound": 20.0},
+            "compliance": {
+                "relative_scale": 0.006,
+                "relative_ulp_bound": 20.0,
+            },
             "special_test_sets": STS_RESIZE,
         },
         # Type conversion

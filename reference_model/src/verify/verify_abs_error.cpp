@@ -41,15 +41,16 @@ ErrorBoundsRange calcErrorBounds(double referenceValue, double boundsValue, cons
         // Special case for SIN/COS
         // use the input value (stored in the bounds tensor) as the magnitude and value
         boundsMagnitude = boundsValue;
-        boundsValue     = 1.0;
+        boundsValue     = 0.0;
     }
     else
     {
         // Use the referenceValue as the magnitude
         boundsMagnitude = referenceValue;
-        // Add the base error bound to the bounds value
-        boundsValue += cfg->baseBound;
     }
+
+    // Add the base error bound to the bounds value
+    boundsValue += cfg->baseBound;
 
     double errorBound = 0.0;
     if (std::isfinite(boundsValue) || std::abs(boundsMagnitude) != 0.0)
