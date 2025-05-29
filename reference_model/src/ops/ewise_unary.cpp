@@ -281,7 +281,15 @@ int OpLog<Rank, Dtype>::register_fcn()
             this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(fpTrunc<Dtype>(log(a))); };
             break;
         case TOSA_REF_TYPE_FP64:
-            this->fcn = [](InEigenType a) -> OutEigenType { return log(a); };
+            if (g_func_config.bounds_mode)
+            {
+                // ABS_ERROR bounds return (5)
+                this->fcn = [](InEigenType a) -> OutEigenType { return static_cast<OutEigenType>(5); };
+            }
+            else
+            {
+                this->fcn = [](InEigenType a) -> OutEigenType { return log(a); };
+            }
             break;
         default:
             ERROR_IF(true, "unsupported TOSA_REF_TYPE %s", EnumNameTOSAREFTYPE(Dtype));

@@ -297,7 +297,7 @@ class TosaTestGen:
         elif op["op"] == Op.REDUCE_PRODUCT:
             mode = gtu.ComplianceMode.REDUCE_PRODUCT
             compliance_tens["reduce_product_info"] = {"n": argsDict["n"]}
-        elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID):
+        elif op["op"] in (Op.EXP, Op.POW, Op.TANH, Op.SIGMOID, Op.LOG):
             mode = gtu.ComplianceMode.ABS_ERROR
             abs_error_info = {}
             if "abs_error_lower_bound" in op_compliance:
@@ -4608,7 +4608,7 @@ class TosaTestGen:
                 TosaErrorValidator.evWrongOutputList,
             ),
             "data_gen": EW_UNARY_DATAGEN,
-            "compliance": {"ulp": 5},
+            "compliance": {"abs_error_lower_bound": 0.5},
         },
         "logical_not": {
             "op": Op.LOGICAL_NOT,
