@@ -63,7 +63,7 @@ class VerifierLibrary:
         if self.lib_path is None or not self.lib_path.is_file():
             raise VerifierError(f"Could not find verify library - {self.lib_path}")
 
-        self.lib = ct.cdll.LoadLibrary(self.lib_path)
+        self.lib = ct.cdll.LoadLibrary(str(self.lib_path))
 
         self.tvf_verify_data = self.lib.tvf_verify_data
         self.tvf_verify_data.argtypes = [

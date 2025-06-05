@@ -1532,11 +1532,13 @@ class TosaTensorValuesGen:
             # REQUIRE(value >= (-1 << (shift - 1)) && value < (1 << (shift - 1)));
             min_shift = min(shift_arr)
             if input_unsigned:
-                max_value = (1 << min_shift) + input_zp - 1
+                # Make sure values can hold scaled numbers - use int64
+                max_value = (np.int64(1) << min_shift) + input_zp - 1
                 min_value = 0 + input_zp
             else:
-                max_value = (1 << (min_shift - 1)) + input_zp - 1
-                min_value = (-1 << (min_shift - 1)) + input_zp
+                # Make sure values can hold scaled numbers - use int64
+                max_value = (np.int64(1) << (min_shift - 1)) + input_zp - 1
+                min_value = (np.int64(-1) << (min_shift - 1)) + input_zp
 
             dtype = dtypeList[0]
             highval_lookup = {dtype: max_value}
@@ -1546,7 +1548,7 @@ class TosaTensorValuesGen:
                 dtype,
                 highval_lookup,
                 lowval_lookup,
-                unsigned=argsDict["input_unsigned"],
+                unsigned=input_unsigned,
             )
             argsDict["data_range"] = data_range
 

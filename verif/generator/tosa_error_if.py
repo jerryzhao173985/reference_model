@@ -3053,7 +3053,8 @@ class TosaErrorValidator:
                 for i in range(len(output_shape)):
                     # Make sure perms are within range before testing for wrong shapes
                     if (
-                        perms[i] < len(input_shape)
+                        perms[i] >= 0
+                        and perms[i] < len(input_shape)
                         and output_shape[i] != input_shape[perms[i]]
                     ):
                         error_result = True

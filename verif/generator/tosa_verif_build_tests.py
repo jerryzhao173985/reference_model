@@ -113,7 +113,10 @@ def parseArgs(argv):
         "--generate-lib-path",
         dest="generate_lib_path",
         type=Path,
-        help="Path to TOSA generate library.",
+        help=(
+            "Path to TOSA generate library.  Defaults to "
+            f"`{cmf.get_default_location(cmf.TosaFileType.GENERATE_LIBRARY)}`"
+        ),
     )
 
     # Constraints on tests
@@ -375,7 +378,7 @@ def main(argv=None):
     )
     if args.selection_config is not None:
         # Try loading the selection config
-        if not args.generate_lib_path.is_file():
+        if not args.selection_config.is_file():
             print(
                 f"Argument error: Test selection config (--test-selection-config) not found {str(args.selection_config)}"
             )

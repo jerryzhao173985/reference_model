@@ -6,9 +6,10 @@ from enum import IntEnum
 from pathlib import Path
 
 DEFAULT_REF_MODEL_SCHEMA_PATH = Path("thirdparty/serialization_lib/schema")
-DEFAULT_REF_MODEL_FLATC_PATH = Path(
-    "thirdparty/serialization_lib/third_party/flatbuffers"
-)
+# This is the Linux/Mac location for FLATC built in SerLib
+DEFAULT_FLATC_PATH = Path("thirdparty/serialization_lib/third_party/flatbuffers")
+FLATC_IN_BUILD = False
+
 DEFAULT_REF_MODEL_BUILD_EXE_PATH = Path("reference_model")
 DEFAULT_VERIFY_BUILD_EXE_PATH = Path("reference_model/verify")
 DEFAULT_BUILD_DIR = Path("build")
@@ -25,6 +26,8 @@ elif sys.platform == "win32":
     LIBRARY_PREFIX = ""
     LIBRARY_SUFFIX = "dll"
     EXE_SUFFIX = ".exe"
+    DEFAULT_FLATC_PATH = Path("_deps/flatbuffers-build")
+    FLATC_IN_BUILD = True
 
 
 class TosaFileType(IntEnum):
@@ -50,9 +53,9 @@ TOSA_FILE_TYPE_TO_DETAILS = {
         "build": False,
     },
     TosaFileType.FLATC: {
-        "name": "flatc",
-        "location": DEFAULT_REF_MODEL_FLATC_PATH,
-        "build": False,
+        "name": f"flatc{EXE_SUFFIX}",
+        "location": DEFAULT_FLATC_PATH,
+        "build": FLATC_IN_BUILD,
     },
     TosaFileType.VERIFY_LIBRARY: {
         "name": f"{LIBRARY_PREFIX}tosa_reference_verify_lib.{LIBRARY_SUFFIX}",
@@ -72,10 +75,20 @@ TOSA_FILE_TYPE_TO_DETAILS = {
 }
 
 
-def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
-    """Return the possible path to the required tosa file type."""
+def get_default_location(file_type, build_path=DEFAULT_BUILD_DIR):
+    """Return the default location in the reference_model folder."""
     name = TOSA_FILE_TYPE_TO_DETAILS[file_type]["name"]
     location = TOSA_FILE_TYPE_TO_DETAILS[file_type]["location"]
+    build = TOSA_FILE_TYPE_TO_DETAILS[file_type]["build"]
+
+    if build:
+        return build_path / location / BUILD_SUB_DIR / name
+    else:
+        return location / name
+
+
+def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
+    """Return the possible path to the required tosa file type."""
     build = TOSA_FILE_TYPE_TO_DETAILS[file_type]["build"]
 
     if ref_model_path is None:
@@ -107,9 +120,7 @@ def find_tosa_file(file_type, ref_model_path, path_is_ref_model_exe=True):
         else:
             search_path = ref_model_path
 
-    if build:
-        search_path = search_path / location / BUILD_SUB_DIR / name
-    else:
-        search_path = search_path / location / name
+    # Already added the build folder in previous stage
+    search_path = search_path / get_default_location(file_type, build_path="")
 
     return search_path

@@ -1,8 +1,14 @@
 """Color printing module."""
-# Copyright (c) 2020-2023, ARM Limited.
+# Copyright (c) 2020-2023,2025, ARM Limited.
 # SPDX-License-Identifier: Apache-2.0
+import os
+import sys
 from enum import Enum
 from enum import unique
+
+if sys.platform == "win32":
+    # Enable ANSI color printing on Windows
+    os.system("color")
 
 color_printing = True
 

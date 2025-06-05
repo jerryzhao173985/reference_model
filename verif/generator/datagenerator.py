@@ -40,7 +40,7 @@ class GenerateLibrary:
 
         self.test_desc = None
         self.json_config = None
-        self.lib = ct.cdll.LoadLibrary(self.lib_path)
+        self.lib = ct.cdll.LoadLibrary(str(self.lib_path))
 
         self.tgd_generate_data = self.lib.tgd_generate_data
         self.tgd_generate_data.argtypes = [

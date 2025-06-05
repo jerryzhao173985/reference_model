@@ -51,7 +51,10 @@ def parseArgs(argv):
         "--ref-model-path",
         dest="ref_model_path",
         type=Path,
-        help="Path to TOSA reference model executable",
+        help=(
+            "Path to TOSA reference model executable. Defaults to "
+            f"`{cmf.get_default_location(cmf.TosaFileType.REF_MODEL)}`"
+        ),
     )
     parser.add_argument(
         "--generate-lib-path",
@@ -59,14 +62,15 @@ def parseArgs(argv):
         type=Path,
         help=(
             "Path to TOSA generate library. Defaults to "
-            "the library in the directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.GENERATE_LIBRARY)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
         "--verify-lib-path",
         dest="verify_lib_path",
         type=Path,
-        help="DEPRECATED - use `--tosa-verify-path`",
+        # DEPRECATED
+        help=argparse.SUPPRESS,
     )
     parser.add_argument(
         "--verify-path",
@@ -74,7 +78,7 @@ def parseArgs(argv):
         type=Path,
         help=(
             "Path to TOSA verify executable. Defaults to the executable "
-            "in the directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.VERIFY)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -84,7 +88,7 @@ def parseArgs(argv):
         type=Path,
         help=(
             "Path to TOSA reference model flat buffer schema. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_SCHEMA_PATH}` in parents parent directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.SCHEMA)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -93,7 +97,7 @@ def parseArgs(argv):
         type=Path,
         help=(
             "Path to flatc executable. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_FLATC_PATH}` in parent directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.FLATC)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(

@@ -187,7 +187,8 @@ def usableDTypes(*, excludes=None):
 
 
 def product(shape):
-    value = 1
+    # Make sure we use a large enough storage type
+    value = np.int64(1)
     for n in shape:
         value *= n
     return value

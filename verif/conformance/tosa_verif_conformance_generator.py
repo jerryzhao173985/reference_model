@@ -513,7 +513,10 @@ def parse_args(argv=None):
         "--ref-model-path",
         dest="ref_model_path",
         type=Path,
-        help="Path to TOSA reference model executable",
+        help=(
+            "Path to TOSA reference model executable. Defaults to "
+            f"`{cmf.get_default_location(cmf.TosaFileType.REF_MODEL)}`"
+        ),
     )
     parser.add_argument(
         "--generate-lib-path",
@@ -521,7 +524,7 @@ def parse_args(argv=None):
         type=Path,
         help=(
             "Path to TOSA generate library. Defaults to "
-            "the library in the directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.GENERATE_LIBRARY)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -531,7 +534,7 @@ def parse_args(argv=None):
         type=Path,
         help=(
             "Path to TOSA reference model flat buffer schema. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_SCHEMA_PATH}` in parents parent directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.SCHEMA)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -540,7 +543,7 @@ def parse_args(argv=None):
         type=Path,
         help=(
             "Path to flatc executable. Defaults to "
-            f"`{cmf.DEFAULT_REF_MODEL_FLATC_PATH}` in parent directory of `ref-model-path`"
+            f"`{cmf.get_default_location(cmf.TosaFileType.FLATC)}` in relation to `ref-model-path`"
         ),
     )
     parser.add_argument(
@@ -831,7 +834,7 @@ def main():
             operators = args.operators
             if not operators:
                 # Create tests for all the operators
-                operators = list(test_params.keys())
+                operators = sorted(test_params.keys())
 
             # Use a set to ignore duplicate operators chosen
             operators = set(operators)
