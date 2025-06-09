@@ -202,7 +202,9 @@ bool SubgraphTraverser::findDtypeAndRankByName(const std::string& name, TOSA_REF
         rank  = static_cast<int32_t>(ser_tensor->GetShape().size());
         return true;
     }
-    if (auto ser_shape = getSerializationShapeByName(name))
+
+    auto ser_shape = getSerializationShapeByName(name);
+    if (ser_shape)
     {
         // shape values: dtype is TOSA_REF_TYPE_SHAPE and rank is 1
         dtype = TOSA_REF_TYPE_SHAPE;

@@ -36,10 +36,10 @@ public:
     {
         ASSERT_MSG(value > 0, "AvgPool2d reciprocal_scale() error: # of elements should be > 1 but is %d", value);
         uint32_t value_u32 = (uint32_t)value;
-        int32_t k          = 32 - LEADING_ZEROS_32(value_u32 - 1);    // (1<<k)/2 < value <= (1<<k)
-        int64_t numerator  = ((INT64_C(1) << 30) + 1) << k;
-        multiplier         = numerator / value;    // (1<<30) <= multiplier < (1<<31)
-        shift              = 30 + k;
+        int32_t k         = 32 - static_cast<int32_t>(LEADING_ZEROS_32(value_u32 - 1));    // (1<<k)/2 < value <= (1<<k)
+        int64_t numerator = ((INT64_C(1) << 30) + 1) << k;
+        multiplier        = static_cast<int32_t>(numerator / value);    // (1<<30) <= multiplier < (1<<31)
+        shift             = 30 + k;
     }
 
     static int32_t apply_scale_32(int32_t value, int32_t multiplier, int32_t shift, bool double_round = true)

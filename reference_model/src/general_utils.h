@@ -28,7 +28,7 @@ const uint32_t getElementCount(std::vector<int32_t>& shape)
     uint32_t elements = 1;
     for (size_t i = 0; i < shape.size(); i++)
     {
-        elements *= shape[i];
+        elements *= static_cast<uint32_t>(shape[i]);
     }
 
     return elements;

@@ -81,7 +81,7 @@ int main()
     {
         if (actual_outputs[i] != expected_outputs[i])
         {
-            WARNING("Actual output (%f) doesn't match expected output (%f).");
+            WARNING("Actual output (%f) doesn't match expected output (%f).", actual_outputs[i], expected_outputs[i]);
             if_accurate = false;
         }
     }

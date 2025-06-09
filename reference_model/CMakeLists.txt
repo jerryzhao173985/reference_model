@@ -156,14 +156,17 @@ endif()
 apply_flags(tosa_reference_model_lib)
 
 target_include_directories(tosa_reference_model_lib
-  SYSTEM PUBLIC # Suppress warnings for third-party headers
-    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
     include
     src/verify
     src
+)
+
+target_include_directories(tosa_reference_model_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
 )
 
 target_link_libraries(tosa_reference_model_lib
@@ -222,14 +225,17 @@ target_compile_options(tosa_reference_verify_lib PRIVATE ${CXX_FLAGS})
 target_link_options(tosa_reference_verify_lib PRIVATE ${LINKER_FLAGS_SHARED_LIB})
 
 target_include_directories(tosa_reference_verify_lib
-  SYSTEM PUBLIC # Suppress warnings for third-party headers
-    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
     include
     src/verify
     src
+)
+
+target_include_directories(tosa_reference_verify_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
 )
 
 # Build TOSA generator library
@@ -252,14 +258,17 @@ target_compile_options(tosa_reference_generate_lib PRIVATE ${CXX_FLAGS})
 target_link_options(tosa_reference_generate_lib PRIVATE ${LINKER_FLAGS_SHARED_LIB})
 
 target_include_directories(tosa_reference_generate_lib
-  SYSTEM PUBLIC # Suppress warnings for third-party headers
-    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   PUBLIC
     ${PUBLIC_INCLUDE_DIRS}
   PRIVATE
     include
     src/verify
     src
+)
+
+target_include_directories(tosa_reference_generate_lib
+  SYSTEM PUBLIC # Suppress warnings for third-party headers
+    "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
 )
 
 # Build TOSA Refererence Model executable
@@ -280,14 +289,17 @@ endif()
   apply_flags(tosa_reference_model)
 
   target_include_directories(tosa_reference_model
-    SYSTEM PUBLIC # Suppress warnings for third-party headers
-      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
       include
       src/verify
       src
+  )
+
+  target_include_directories(tosa_reference_model
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   )
 
   target_link_libraries(tosa_reference_model
@@ -336,9 +348,6 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
   apply_flags(unit_tests)
 
   target_include_directories(unit_tests
-    SYSTEM PUBLIC # Suppress warnings for third-party headers
-      "$<BUILD_INTERFACE:${DOCTEST_DIR}>"
-      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
@@ -347,6 +356,12 @@ if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
       src/verify
       src
     )
+
+    target_include_directories(unit_tests
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${DOCTEST_DIR}>"
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
+  )
 
   # GCC-8 and below require explicit linking against stdc++fs
   set(is_gnu "$<CXX_COMPILER_ID:GNU>")
@@ -376,14 +391,17 @@ if(BUILD_MODEL_RUNNER_SAMPLE)
   apply_flags(model_runner_sample)
 
   target_include_directories(model_runner_sample
-    SYSTEM PUBLIC # Suppress warnings for third-party headers
-      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
       include
       src/verify
       src
+  )
+
+  target_include_directories(model_runner_sample
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   )
 
   target_link_libraries(model_runner_sample
@@ -418,14 +436,17 @@ if (BUILD_TOSA_REFERENCE_MODEL_PYBIND)
   target_link_options(py_tosa_reference_model PRIVATE ${LINKER_FLAGS_SHARED_LIB})
 
   target_include_directories(py_tosa_reference_model
-    SYSTEM PUBLIC # Suppress warnings for third-party headers
-      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
     PUBLIC
       ${PUBLIC_INCLUDE_DIRS}
     PRIVATE
       include
       src/verify
       src
+  )
+
+  target_include_directories(py_tosa_reference_model
+    SYSTEM PUBLIC # Suppress warnings for third-party headers
+      "$<BUILD_INTERFACE:${PRIVATE_INCLUDE_DIRS}>"
   )
 
   find_package(Python3 REQUIRED COMPONENTS Interpreter Development)

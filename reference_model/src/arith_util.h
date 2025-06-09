@@ -211,11 +211,11 @@ float fpTrunc(T input)
     /* Truncates a float value based on the TOSA_REF_TYPE it represents.*/
     if constexpr (Dtype == TOSA_REF_TYPE_BF16)
     {
-        return static_cast<float>(static_cast<bf16>(input));
+        return static_cast<float>(ct::compat::cast<bf16>(input));
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP16)
     {
-        return static_cast<float>(static_cast<float16>(input));
+        return static_cast<float>(ct::compat::cast<float16>(input));
     }
     else if constexpr (Dtype == TOSA_REF_TYPE_FP32)
     {
@@ -399,7 +399,7 @@ T applyClip(T value,
     if (std::is_floating_point<U>::value)
         REQUIRE_SIMPLE(sgt, !(std::isnan(min_val) || std::isnan(max_val)), "Operand min and max cannot be NaN");
 
-    value = applyMax<T>(value, min_val, nan_mode);
+    value = applyMax<T>(value, static_cast<T>(min_val), nan_mode);
 
     // Handle the numbers of an unsigned type U that becomes unrepresentable when type casting to signed.
     if (std::is_signed_v<T> && std::is_unsigned_v<U> && max_val > static_cast<U>(std::numeric_limits<T>::max()))
@@ -407,7 +407,7 @@ T applyClip(T value,
         max_val = std::numeric_limits<T>::max();
     }
 
-    value = applyMin<T>(value, max_val, nan_mode);
+    value = applyMin<T>(value, static_cast<T>(max_val), nan_mode);
 
     return value;
 }

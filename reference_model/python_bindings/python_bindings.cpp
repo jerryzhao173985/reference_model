@@ -43,7 +43,8 @@ struct IModelRunnerPyWrapper
 
     GraphStatus initialize(std::string tosa_binary)
     {
-        tosa::tosa_err_t error = handler.LoadFileTosaFlatbuffer(tosa_binary.data(), tosa_binary.size());
+        tosa::tosa_err_t error =
+            handler.LoadFileTosaFlatbuffer(tosa_binary.data(), static_cast<int>(tosa_binary.size()));
         if (error != tosa::TOSA_OK)
         {
             WARNING("An error occurred while loading the TOSA model.");
@@ -71,7 +72,8 @@ struct IModelRunnerPyWrapper
             py::array copied_input = input.attr("copy")();
             info                   = copied_input.request();
         }
-        return runner.setInput(input_name, static_cast<uint8_t*>(info.ptr), info.size * info.itemsize);
+        return runner.setInput(input_name, static_cast<uint8_t*>(info.ptr),
+                               static_cast<size_t>(info.size * info.itemsize));
     }
 
     int setInputs(std::vector<py::array> inputs)
@@ -141,7 +143,7 @@ struct IModelRunnerPyWrapper
         }
 
         // py::array should own its own memory, so copy the data
-        py::array_t<uint8_t> bytes(size_bytes);
+        py::array_t<uint8_t> bytes(static_cast<long>(size_bytes));
         std::copy_n(buffer.data(), size_bytes, bytes.mutable_data());
 
         return view_reshape(bytes, ser_tensor);
@@ -305,7 +307,7 @@ size_t get_num_elements(tosa::TosaSerializationTensor* tens)
 {
     size_t num_elements = 1;
     for (auto dim : tens->GetShape())
-        num_elements *= dim;
+        num_elements *= static_cast<size_t>(dim);
     return num_elements;
 }
 
