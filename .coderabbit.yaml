@@ -1,0 +1,74 @@
+# .coderabbit.yaml
+# ──────────────────────────────────────────────────────────
+language: "en-US"                 # Primary language for comments
+tone_instructions: |
+  You are a senior software engineer on a large distributed-systems team.
+  • Prioritise correctness, security, and long-term maintainability.
+  • Use concise, respectful, and constructive language.
+early_access: true                # Opt-in to new beta features
+enable_free_tier: false           # Remove if you rely on the free plan
+
+reviews:
+  profile: "strict"               # strict | balanced | chill
+  request_changes_workflow: true  # Block merge on critical findings
+  high_level_summary: true
+  sequence_diagram: true          # Needs early_access
+  docstring_generation:           # Auto-write/patch docstrings
+    enabled: true
+    style: "google"               # google | numpy | rst
+  review_status: true             # ✅ / ❌ status check in PR
+  collapse_walkthrough: false     # Expand by default
+  path_filters:                   # Skip vendor / artefacts
+    - "!**/*.min.*"
+    - "!**/dist/**"
+    - "!**/node_modules/**"
+    - "!**/*.lock"
+  path_instructions:              # Fine-grained rules per glob
+    - path: "**/*.py"
+      instructions: |
+        • Enforce PEP-8 & type-hints.
+        • Flag cyclomatic complexity > 10.
+        • Suggest pytest parametrised tests for new functions.
+    - path: "**/*.ts"
+      instructions: |
+        • Enforce strict null-checks and readonly where possible.
+        • Ensure ESLint @typescript-eslint/recommended rules pass.
+    - path: "**/*.sql"
+      instructions: |
+        • Run SQLFluff with the project’s .sqlfluff configuration.
+        • Surface security anti-patterns (SQL-injection, unsafe casting).
+  auto_review:
+    enabled: true
+    drafts: false                 # Ignore draft PRs
+    base_branches:
+      - "main"
+      - "release/*"
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT MERGE"
+    limit_by_labels:              # Only run when at least one matches
+      - "ready-for-review"
+
+chat:
+  auto_reply: true                # Respond when @mentioning the bot
+  summarise_threads: true         # TL;DR after ≥5 back-and-forth messages
+
+knowledge_base:
+  jira:
+    project_keys: ["APP", "CORE"]
+  linear:
+    workspace: "acme"
+  docs_paths:
+    - "docs/architecture/**"
+    - "docs/rfcs/**"
+
+code_generation:
+  committable_suggestions: true   # “Commit suggestion” buttons
+  generate_unit_tests:
+    enabled: true
+    framework: "pytest"
+  refactor_templates: true        # Offer refactor PRs on demand
+
+# Shared config (optional)
+# remote_config:
+#   url: "https://raw.githubusercontent.com/acme-corp/standards/main/.coderabbit.yaml"
