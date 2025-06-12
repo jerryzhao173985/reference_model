@@ -19,6 +19,8 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <cstdio>   // stdout
+#include <cmath>    // std::abs
 
 // Global configuration structures
 func_debug_t g_func_debug = {};  // Use default initialization

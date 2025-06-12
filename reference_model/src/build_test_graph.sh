@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+# script aborts on any error, unset variable, or pipeline failure. 
+# This prevents producing a half-linked binary when a previous step quietly failed.
+
 # Enhanced build script for graph examples
 # Run from the reference_model directory
 
