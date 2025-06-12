@@ -1,0 +1,25 @@
+{
+    "version": 3,
+    "configurePresets": [
+      {
+        "name": "macos-debug-arm64",
+        "displayName": "macOS • Debug • arm64",
+        "generator": "Unix Makefiles",
+        "binaryDir": "${sourceDir}/build/debug",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_OSX_ARCHITECTURES": "arm64",
+          "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "macos-debug-arm64",
+        "displayName": "Build (-j12)",
+        "configurePreset": "macos-debug-arm64",
+        "jobs": 12
+      }
+    ]
+  }
+  

@@ -1,0 +1,11 @@
+{
+  "cmake.cmakePreset": "macos-debug-arm64",
+  "cmake.configureOnOpen": true,
+
+  // let C/C++ IntelliSense piggy-back on CMake Tools
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "files.associations": {
+    "iostream": "cpp"
+  }
+}
+
