@@ -1,0 +1,171 @@
+# Copyright (c) 2025 ARM Limited.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+
+# CMake configuration for advanced TOSA operation tests
+
+# Advanced tensor operations unit tests
+if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
+    add_executable(test_advanced_tensor_ops
+        test_advanced_tensor_ops.cpp
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops.cpp
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops_complete.cpp
+    )
+    
+    target_include_directories(test_advanced_tensor_ops PRIVATE
+        ${CMAKE_SOURCE_DIR}/reference_model/include
+        ${CMAKE_SOURCE_DIR}/reference_model/src
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops
+        ${CMAKE_SOURCE_DIR}/thirdparty/serialization_lib/include
+    )
+    
+    target_link_libraries(test_advanced_tensor_ops PRIVATE
+        tosa_reference_model_lib
+        doctest::doctest
+        Eigen3::Eigen
+    )
+    
+    target_compile_features(test_advanced_tensor_ops PRIVATE cxx_std_17)
+    
+    # Add test to CTest
+    add_test(NAME AdvancedTensorOpsTest COMMAND test_advanced_tensor_ops)
+    
+    # Integration tests
+    add_executable(test_advanced_integration
+        test_advanced_integration.cpp
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops.cpp
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops_complete.cpp
+    )
+    
+    target_include_directories(test_advanced_integration PRIVATE
+        ${CMAKE_SOURCE_DIR}/reference_model/include
+        ${CMAKE_SOURCE_DIR}/reference_model/src
+        ${CMAKE_SOURCE_DIR}/reference_model/src/ops
+        ${CMAKE_SOURCE_DIR}/thirdparty/serialization_lib/include
+    )
+    
+    target_link_libraries(test_advanced_integration PRIVATE
+        tosa_reference_model_lib
+        doctest::doctest
+        Eigen3::Eigen
+    )
+    
+    target_compile_features(test_advanced_integration PRIVATE cxx_std_17)
+    
+    # Add integration test to CTest
+    add_test(NAME AdvancedIntegrationTest COMMAND test_advanced_integration)
+    
+    # Performance benchmark (optional)
+    if(BUILD_ADVANCED_BENCHMARKS)
+        add_executable(benchmark_advanced_ops
+            benchmark_advanced_ops.cpp
+            ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops.cpp
+            ${CMAKE_SOURCE_DIR}/reference_model/src/ops/advanced_tensor_ops_complete.cpp
+        )
+        
+        target_include_directories(benchmark_advanced_ops PRIVATE
+            ${CMAKE_SOURCE_DIR}/reference_model/include
+            ${CMAKE_SOURCE_DIR}/reference_model/src
+            ${CMAKE_SOURCE_DIR}/reference_model/src/ops
+        )
+        
+        target_link_libraries(benchmark_advanced_ops PRIVATE
+            tosa_reference_model_lib
+            Eigen3::Eigen
+        )
+        
+        target_compile_features(benchmark_advanced_ops PRIVATE cxx_std_17)
+    endif()
+endif()
+
+# Python test generator integration
+add_custom_target(generate_advanced_tests
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../verif/generator/tosa_advanced_test_gen.py
+            --output-dir ${CMAKE_BINARY_DIR}/advanced_test_data
+            --operations all
+            --dtypes FP32 FP64
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Generating advanced TOSA operation test data"
+)
+
+# Add dependency to ensure test data is generated before running tests
+if(BUILD_TOSA_REFERENCE_MODEL_TESTS)
+    add_dependencies(test_advanced_tensor_ops generate_advanced_tests)
+    add_dependencies(test_advanced_integration generate_advanced_tests)
+endif()
+
+# Custom test targets for different operation categories
+add_custom_target(test_tensor_fusion
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "TensorFusion"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running tensor fusion tests"
+)
+
+add_custom_target(test_spectral_ops
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "SpectralTransform"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running spectral transform tests"
+)
+
+add_custom_target(test_advanced_activations
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "AdvancedActivation"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running advanced activation tests"
+)
+
+add_custom_target(test_decomposition_ops
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "TensorDecomposition"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running tensor decomposition tests"
+)
+
+add_custom_target(test_statistical_ops
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "StatisticalOps"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running statistical operations tests"
+)
+
+add_custom_target(test_geometric_ops
+    COMMAND ${CMAKE_CTEST_COMMAND} -R "GeometricOps"
+    DEPENDS test_advanced_tensor_ops
+    COMMENT "Running geometric operations tests"
+)
+
+# Meta target to run all advanced tests
+add_custom_target(test_all_advanced
+    DEPENDS test_tensor_fusion
+            test_spectral_ops
+            test_advanced_activations
+            test_decomposition_ops
+            test_statistical_ops
+            test_geometric_ops
+    COMMENT "Running all advanced TOSA operation tests"
+)
+
+# Documentation generation from tests
+if(BUILD_DOCUMENTATION)
+    find_program(DOXYGEN_EXECUTABLE doxygen)
+    if(DOXYGEN_EXECUTABLE)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+            ${CMAKE_BINARY_DIR}/Doxyfile
+            @ONLY
+        )
+        
+        add_custom_target(doc_advanced_ops
+            COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Generating documentation for advanced operations"
+        )
+    endif()
+endif()
