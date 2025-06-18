@@ -1,0 +1,22 @@
+{
+  "tosa_file": "test.tosa",
+  "ifm_name": ["input"],
+  "ifm_file": ["input.npy"],
+  "ofm_name": ["output"],
+  "ofm_file": ["output.npy"],
+  "description": "Matrix transform operation test - transpose",
+  "precision": {
+    "operator": "MatrixTransform",
+    "data_type": "FLOAT32",
+    "compliance": {
+      "mode": "EXACT"
+    }
+  },
+  "expected_failure": false,
+  "expected_failure_desc": "",
+  "meta": {
+    "custom_domain": "TosaMlirCustom",
+    "custom_op": "MatrixTransform",
+    "implementation_attrs": "{\"transform_type\":\"transpose\"}"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "tosa_file": "test.tosa",
+  "ifm_name": ["query", "key", "value"],
+  "ifm_file": ["query.npy", "key.npy", "value.npy"],
+  "ofm_name": ["output"],
+  "ofm_file": ["output.npy"],
+  "description": "Attention operation test - scaled dot product",
+  "precision": {
+    "operator": "Attention",
+    "data_type": "FLOAT32",
+    "compliance": {
+      "mode": "ULP",
+      "ulp_tolerance": 4
+    }
+  },
+  "expected_failure": false,
+  "expected_failure_desc": "",
+  "meta": {
+    "custom_domain": "TosaMlirCustom",
+    "custom_op": "Attention",
+    "implementation_attrs": "{\"attention_type\":\"scaled_dot_product\", \"scale\": 0.125}"
+  }
+}
