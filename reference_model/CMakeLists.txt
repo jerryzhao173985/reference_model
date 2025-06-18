@@ -24,6 +24,9 @@ if(BUILD_TOSA_REFERENCE_MODEL_EXECUTABLE)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/verify verify)
 endif()
 
+# Add custom TOSA operations
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/custom_tosa_ops custom_tosa_ops)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
